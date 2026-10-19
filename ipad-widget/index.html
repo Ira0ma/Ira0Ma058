@@ -3,7 +3,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@500;600&display=swap">
 <style>
-/* Layout: one fixed 1210×860 iPad-landscape stage, scaled to fit the viewport; widgets placed on the image's grid. */
+/* Layout: one fixed 1210×723 iPad-landscape stage, scaled to fit the viewport; widgets placed on the image's grid. */
 :root {
   --night: #06070b;
   --glass: rgba(16, 18, 24, 0.74);
@@ -41,7 +41,7 @@ body {
   display: flex; align-items: center; justify-content: center;
 }
 #stage {
-  position: relative; width: 1210px; height: 860px; flex: none;
+  position: relative; width: 1210px; height: 723px; flex: none;
   transform-origin: center center;
 }
 .num { font-variant-numeric: tabular-nums; }
@@ -82,7 +82,7 @@ body {
 .tabs { display: flex; gap: 6px; margin-top: 6px; }
 .tabs button { flex: 1; font: inherit; font-size: 11.5px; color: var(--ink-2); background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 4px 0; cursor: pointer; }
 .tabs button[aria-pressed="true"] { color: var(--gold); border-color: rgba(227,184,103,.55); background: rgba(227,184,103,.10); }
-.tabs button:focus-visible, .icon-btn:focus-visible, .cal-nav button:focus-visible, a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.tabs button:focus-visible, .cal-nav button:focus-visible, a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
 /* indicators */
 #ind { left: 856px; top: 35px; width: 328px; height: 276px; padding: 18px 20px; display: flex; flex-direction: column; }
@@ -105,22 +105,13 @@ body {
 
 /* points */
 #points { left: 27px; top: 329px; width: 308px; height: 359px; padding: 18px 20px; }
-.icon-btn { margin-left: auto; background: none; border: 1px solid transparent; border-radius: 999px; color: var(--ink-2); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; padding: 4px 10px; line-height: 1; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; flex: none; }
-.icon-btn:hover { color: var(--gold); }
-.editing .icon-btn.edit { color: #14100a; background: var(--gold); }
-.card-title .aside + .icon-btn { margin-left: 2px; padding: 4px 8px; }
 .pt-list .ck { cursor: pointer; }
 .pt-list .ck { border: 0; padding: 0; }
 .pt-list li.off .ck { background: transparent; box-shadow: inset 0 0 0 1.5px rgba(227,184,103,.6); }
 .pt-list li.off .ck svg { opacity: 0; }
 .pt-list li.off h3, .pt-list li.off p { opacity: .55; }
-.edit-bar { display: none; position: absolute; left: 16px; right: 16px; bottom: 10px; align-items: center; justify-content: space-between; gap: 8px; }
-.editing .edit-bar { display: flex; }
 .pt-foot { position: absolute; left: 20px; bottom: 12px; font-size: 10.5px; color: var(--ink-3); }
-.editing .pt-foot { display: none; }
 [data-pt] { white-space: pre-line; }
-.editing .pt-list { gap: 8px; }
-.editing .pt-list li { padding-bottom: 8px; }
 .pt-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .pt-list li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--glass-line); }
 .pt-list li:last-child { border-bottom: 0; padding-bottom: 0; }
@@ -163,26 +154,6 @@ body {
 .grid7 .d.today::before { content: ""; position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; transform: translate(-50%,-50%); border-radius: 50%; border: 1.5px solid var(--gold); box-shadow: 0 0 10px rgba(227,184,103,.55), inset 0 0 8px rgba(227,184,103,.25); }
 .grid7 .d.hol::after { content: ""; position: absolute; left: 50%; bottom: -1px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--gold); }
 
-/* page dots */
-.dots { position: absolute; left: 0; right: 0; top: 716px; display: flex; justify-content: center; gap: 8px; }
-.dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.3); }
-.dots i:first-child { background: rgba(255,255,255,.9); }
-
-/* dock */
-.dock {
-  position: absolute; left: 88px; width: 1034px; top: 738px; height: 112px; border-radius: 34px;
-  background: rgba(40, 40, 46, 0.55); border: 1px solid rgba(255,255,255,.10);
-  -webkit-backdrop-filter: blur(30px) saturate(150%); backdrop-filter: blur(30px) saturate(150%);
-  display: flex; align-items: center; justify-content: center; gap: 32px;
-}
-.app { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 70px; text-decoration: none; color: var(--ink); }
-.app .ic { width: 64px; height: 64px; border-radius: 15px; overflow: hidden; box-shadow: 0 6px 16px rgba(0,0,0,.35); }
-.app .ic svg { width: 100%; height: 100%; display: block; }
-.app span { font-size: 11.5px; color: var(--ink-2); }
-.app:active .ic { transform: scale(.94); }
-.no-dock .dock, .no-dock .dots { display: none; }
-.dock-toggle { font: inherit; font-size: 11.5px; font-weight: 600; color: #14100a; background: var(--gold); border: 0; border-radius: 999px; padding: 5px 12px; cursor: pointer; white-space: nowrap; }
-.dock .div { width: 1px; height: 64px; background: rgba(255,255,255,.18); margin-top: -18px; }
 
 @media (prefers-reduced-motion: reduce) { .mkt .price { transition: none; } }
 </style>
@@ -246,7 +217,6 @@ body {
     <div class="card-title">
       <svg class="ico" viewBox="0 0 26 26"><rect x="4" y="3" width="18" height="21" rx="3" fill="#e3b867"/><rect x="4" y="3" width="18" height="5" rx="2" fill="#c8963f"/><path d="M8 12h10M8 16h10M8 20h6" stroke="#1a1408" stroke-width="1.6" stroke-linecap="round"/></svg>
       今日の注目ポイント
-      <button class="icon-btn edit" type="button" aria-pressed="false"><svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6 .8v1.6M6 9.6v1.6M.8 6h1.6M9.6 6h1.6M2.3 2.3l1.1 1.1M8.6 8.6l1.1 1.1M2.3 9.7l1.1-1.1M8.6 3.4l1.1-1.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><span>設定</span></button>
     </div>
     <ul class="pt-list">
       <li data-check="p1"><button class="ck" type="button" aria-label="チェックを切り替え"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -260,7 +230,6 @@ body {
 値動きに応じて柔軟に対応する。</p></div></li>
     </ul>
     <div class="pt-foot" id="pt-foot">サンプル表示（自動分析の読み込み前）</div>
-    <div class="edit-bar"><span></span><button class="dock-toggle" type="button"></button></div>
   </section>
 
   <!-- weather -->
@@ -290,20 +259,6 @@ body {
     <div class="month" data-offset="1"></div>
   </section>
 
-  <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
-
-  <nav class="dock" aria-label="Dock">
-    <a class="app" href="https://jp.tradingview.com/chart/" target="_blank" rel="noopener"><div class="ic"><svg viewBox="0 0 64 64"><defs><linearGradient id="a1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3aa0ff"/><stop offset="1" stop-color="#1257e6"/></linearGradient></defs><rect width="64" height="64" fill="url(#a1)"/><g fill="#fff"><rect x="14" y="36" width="7" height="14" rx="1.5"/><rect x="24.5" y="28" width="7" height="22" rx="1.5"/><rect x="35" y="20" width="7" height="30" rx="1.5"/><rect x="45.5" y="12" width="7" height="38" rx="1.5" opacity=".9"/></g></svg></div><span>チャート</span></a>
-    <div class="app"><div class="ic"><svg viewBox="0 0 64 64"><rect width="64" height="64" fill="#fbfaf6"/><rect width="64" height="17" fill="#f7c843"/><g stroke="#d9d6cc" stroke-width="1.2"><path d="M8 29h48M8 38h48M8 47h48M8 56h48"/></g></svg></div><span>メモ</span></div>
-    <div class="app"><div class="ic"><svg viewBox="0 0 64 64"><rect width="64" height="64" fill="#fff"/><text x="32" y="19" text-anchor="middle" font-size="12" font-weight="600" fill="#f23b30" font-family="-apple-system, Hiragino Sans, Noto Sans JP, sans-serif" data-clock="wd">火</text><text x="32" y="51" text-anchor="middle" font-size="33" font-weight="300" fill="#1c1c1e" font-family="-apple-system, Helvetica, Arial, sans-serif" data-clock="d">27</text></svg></div><span>カレンダー</span></div>
-    <div class="app"><div class="ic"><svg viewBox="0 0 64 64"><rect width="64" height="64" fill="#fff"/><g transform="translate(32 32)" opacity=".9"><ellipse rx="6.5" ry="12" cy="-10" fill="#f5b41b" transform="rotate(0)"/><ellipse rx="6.5" ry="12" cy="-10" fill="#f47b20" transform="rotate(45)"/><ellipse rx="6.5" ry="12" cy="-10" fill="#e8384f" transform="rotate(90)"/><ellipse rx="6.5" ry="12" cy="-10" fill="#c13584" transform="rotate(135)"/><ellipse rx="6.5" ry="12" cy="-10" fill="#7b4fd6" transform="rotate(180)"/><ellipse rx="6.5" ry="12" cy="-10" fill="#2f80ed" transform="rotate(225)"/><ellipse rx="6.5" ry="12" cy="-10" fill="#27ae60" transform="rotate(270)"/><ellipse rx="6.5" ry="12" cy="-10" fill="#9acd32" transform="rotate(315)"/></g></svg></div><span>写真</span></div>
-    <div class="app"><div class="ic"><svg viewBox="0 0 64 64"><defs><linearGradient id="a5" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ad1ff"/><stop offset="1" stop-color="#1673f0"/></linearGradient></defs><rect width="64" height="64" fill="#fff"/><circle cx="32" cy="32" r="25" fill="url(#a5)"/><g stroke="#fff" stroke-width="1" opacity=".7"><path d="M32 9v5M32 50v5M9 32h5M50 32h5"/></g><path d="M44 20 L35 35 L20 44 L29 29z" fill="#fff"/><path d="M44 20 L35 35 L29 29z" fill="#ff3b30"/></svg></div><span>ブラウザ</span></div>
-    <div class="app"><div class="ic"><svg viewBox="0 0 64 64"><defs><linearGradient id="a6" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#52b7ff"/><stop offset="1" stop-color="#1a6ef5"/></linearGradient></defs><rect width="64" height="64" fill="url(#a6)"/><rect x="12" y="19" width="40" height="27" rx="3" fill="#fff"/><path d="M13 21l19 14 19-14" fill="none" stroke="#1a6ef5" stroke-width="2.2" stroke-linejoin="round"/></svg></div><span>メール</span></div>
-    <div class="app"><div class="ic"><svg viewBox="0 0 64 64"><rect width="64" height="64" fill="#fff"/><path d="M10 20a3 3 0 0 1 3-3h13l4 4h21a3 3 0 0 1 3 3v22a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3z" fill="#1e88f5"/><path d="M10 26h44v20a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3z" fill="#4fb0ff"/></svg></div><span>ファイル</span></div>
-    <div class="div"></div>
-    <div class="app"><div class="ic"><svg viewBox="0 0 64 64"><defs><linearGradient id="a8" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9e9ec"/><stop offset="1" stop-color="#a9a9b0"/></linearGradient></defs><rect width="64" height="64" fill="url(#a8)"/><path d="M14 24a3 3 0 0 1 3-3h6l3-4h12l3 4h6a3 3 0 0 1 3 3v19a3 3 0 0 1-3 3H17a3 3 0 0 1-3-3z" fill="#2c2c30"/><circle cx="32" cy="33" r="8.5" fill="#6d6d74"/><circle cx="32" cy="33" r="5.5" fill="#1b1b1e"/></svg></div><span>カメラ</span></div>
-    <div class="app"><div class="ic"><svg viewBox="0 0 64 64"><defs><linearGradient id="a9" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4d4d9"/><stop offset="1" stop-color="#8e8e95"/></linearGradient></defs><rect width="64" height="64" fill="url(#a9)"/><g transform="translate(32 32)" fill="#3a3a3f"><circle r="17"/><g id="teeth"><rect x="-3" y="-23" width="6" height="8" rx="1.5"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(30)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(60)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(90)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(120)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(150)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(180)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(210)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(240)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(270)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(300)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(330)"/></g><circle r="10" fill="#c9c9ce"/><circle r="5" fill="#3a3a3f"/></g></svg></div><span>設定</span></div>
-  </nav>
 
 </div>
 </div>
@@ -313,7 +268,7 @@ body {
   "use strict";
   var stage = document.getElementById("stage");
   var fit = document.getElementById("fit");
-  var W = 1210, H = 860, scale = 1, dockHidden = false;
+  var W = 1210, H = 723, scale = 1;
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   var WD = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -339,7 +294,6 @@ body {
     var cs = getComputedStyle(fit);
     var aw = fit.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     var ah = fit.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
-    H = dockHidden ? 748 : 860; stage.style.height = H + "px";
     scale = Math.min(aw / W, ah / H);
     stage.style.transform = "scale(" + scale + ")";
     stage.style.margin = ((H * scale - H) / 2) + "px " + ((W * scale - W) / 2) + "px";
@@ -680,7 +634,7 @@ body {
     return { resize: resize, start: function () { resize(); if (!reduce) requestAnimationFrame(frame); } };
   })();
 
-  /* ---------- per-device settings: checkmarks and dock ---------- */
+  /* ---------- checkmarks (saved on this device, reset daily) ---------- */
   var NOTES = "notes-v1", notes = {};
   try { notes = JSON.parse(localStorage.getItem(NOTES)) || {}; } catch (e) {}
   function saveNotes() { try { localStorage.setItem(NOTES, JSON.stringify(notes)); } catch (e) {} }
@@ -695,16 +649,6 @@ body {
       li.classList.toggle("off", notes[checkKey(li)] === true);
     });
   }
-  var editing = false;
-  function setEditing(on) {
-    editing = on; stage.classList.toggle("editing", on);
-    document.querySelectorAll(".icon-btn.edit").forEach(function (b) {
-      b.setAttribute("aria-pressed", on); b.querySelector("span").textContent = on ? "閉じる" : "設定";
-    });
-  }
-  document.querySelectorAll(".icon-btn.edit").forEach(function (b) {
-    b.addEventListener("click", function () { setEditing(!editing); });
-  });
   stage.addEventListener("click", function (e) {
     var ckb = e.target.closest(".ck");
     if (ckb) {
@@ -715,17 +659,6 @@ body {
   applyNotes();
   document.querySelectorAll("#ind-list .stars").forEach(paintStars);
 
-  /* Dock (the row of app icons) can be hidden; the widgets then grow into the freed space. */
-  var dockBtn = document.querySelector(".dock-toggle");
-  function applyDock() {
-    dockHidden = notes.dockHidden === true;
-    stage.classList.toggle("no-dock", dockHidden);
-    dockBtn.textContent = dockHidden ? "下のアイコンを表示する" : "下のアイコンを隠す";
-  }
-  dockBtn.addEventListener("click", function () {
-    notes.dockHidden = !dockHidden; saveNotes(); applyDock(); layout();
-  });
-  applyDock();
 
   /* ---------- economic calendar ---------- */
   /* calendar.json is refreshed hourly by the Pages workflow (Forex Factory weekly feed). */
@@ -854,7 +787,7 @@ body {
   /* ---------- auto-update (home-screen app) ---------- */
   var buildMeta = document.querySelector('meta[name="build"]');
   function checkUpdate() {
-    if (!buildMeta || !window.fetch || editing) return;
+    if (!buildMeta || !window.fetch) return;
     fetch(location.pathname + "?v=" + Date.now(), { cache: "no-store" })
       .then(function (r) { return r.ok ? r.text() : Promise.reject(); })
       .then(function (t) {
