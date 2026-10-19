@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trade Desk">
+<meta name="theme-color" content="#06070b">
+<style>:root{--gutter:0px!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@500;600&display=swap">
+<title>Trade Desk Home</title>
+<style>
+/* Layout: one fixed 1210×860 iPad-landscape stage, scaled to fit the viewport; widgets placed on the image's grid. */
+:root {
+  --night: #06070b;
+  --glass: rgba(16, 18, 24, 0.74);
+  --glass-line: rgba(255, 236, 200, 0.10);
+  --ink: #f4f1ea;
+  --ink-2: rgba(244, 241, 234, 0.72);
+  --ink-3: rgba(244, 241, 234, 0.48);
+  --gold: #e3b867;
+  --gold-soft: rgba(227, 184, 103, 0.22);
+  --up-red: #ff6a5c;
+  --up-green: #43d27f;
+  --star: #f0573f;
+  --sans: -apple-system, "SF Pro Text", "Hiragino Sans", "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif;
+  --display: -apple-system, "SF Pro Display", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --mincho: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --gutter: 16px;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: var(--night);
+  color: var(--ink);
+  font-family: var(--sans);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -webkit-user-select: none; user-select: none;
+}
+#bg { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+#fit {
+  position: fixed; inset: 0;
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+  padding-block: max(calc(var(--gutter) / 2), env(safe-area-inset-top, 0px)) max(calc(var(--gutter) / 2), env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; justify-content: center;
+}
+#stage {
+  position: relative; width: 1210px; height: 860px; flex: none;
+  transform-origin: center center;
+}
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---------- status bar ---------- */
+.status { position: absolute; left: 22px; right: 22px; top: 8px; height: 22px; display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 600; letter-spacing: .01em; }
+.status .l { display: flex; gap: 14px; }
+.status .r { display: flex; align-items: center; gap: 7px; }
+.battery { width: 27px; height: 13px; border: 1.5px solid rgba(255,255,255,.55); border-radius: 4px; padding: 1.5px; position: relative; }
+.battery::after { content: ""; position: absolute; right: -4px; top: 3.5px; width: 2px; height: 4px; background: rgba(255,255,255,.55); border-radius: 0 1px 1px 0; }
+.battery i { display: block; height: 100%; background: var(--ink); border-radius: 1.5px; }
+
+/* ---------- cards ---------- */
+.card {
+  position: absolute; border-radius: 22px; overflow: hidden;
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  box-shadow: 0 18px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05);
+  -webkit-backdrop-filter: blur(22px) saturate(140%); backdrop-filter: blur(22px) saturate(140%);
+}
+.card > canvas.scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* clock */
+#clock { left: 27px; top: 35px; width: 241px; height: 276px; }
+#clock .content { position: relative; padding: 22px 22px; }
+#clock .time { font-family: var(--display); font-size: 70px; font-weight: 300; letter-spacing: -.02em; line-height: 1; }
+#clock .date { font-size: 21px; font-weight: 500; margin-top: 8px; }
+#clock .note { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); margin-top: 16px; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+
+/* markets */
+#markets { left: 281px; top: 35px; width: 560px; height: 276px; display: grid; grid-template-columns: 1fr 1px 1fr; }
+#markets .sep { background: var(--glass-line); margin: 22px 0; }
+.mkt { padding: 18px 20px 14px; display: flex; flex-direction: column; min-width: 0; }
+.mkt .head { display: flex; align-items: center; gap: 12px; }
+.mkt .badge { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex: none; box-shadow: 0 0 0 1px rgba(255,255,255,.12); }
+.mkt .badge svg { width: 100%; height: 100%; display: block; }
+.mkt .sym { font-size: 19px; font-weight: 600; letter-spacing: .01em; }
+.mkt .sym small { font-size: 12px; font-weight: 500; color: var(--ink-2); margin-left: 4px; }
+.mkt .jp { font-size: 11.5px; color: var(--ink-3); margin-top: 1px; }
+.mkt .price { font-family: var(--display); font-size: 36px; font-weight: 600; letter-spacing: -.01em; margin-top: 10px; line-height: 1.05; transition: color .4s; }
+.mkt .price .tail { font-size: 26px; }
+.mkt .price.flash-up { color: #ffe6b0; }
+.mkt .price.flash-down { color: #c9d4ff; }
+.mkt .chg { font-size: 14px; font-weight: 500; margin-top: 4px; }
+.mkt canvas.chart { width: 100%; height: 108px; display: block; margin-top: 8px; }
+.tabs { display: flex; gap: 6px; margin-top: 6px; }
+.tabs button { flex: 1; font: inherit; font-size: 11.5px; color: var(--ink-2); background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 4px 0; cursor: pointer; }
+.tabs button[aria-pressed="true"] { color: var(--gold); border-color: rgba(227,184,103,.55); background: rgba(227,184,103,.10); }
+.tabs button:focus-visible, .icon-btn:focus-visible, .cal-nav button:focus-visible, a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* indicators */
+#ind { left: 856px; top: 35px; width: 328px; height: 276px; padding: 18px 20px; display: flex; flex-direction: column; }
+.card-title { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 600; }
+.card-title .ico { width: 26px; height: 26px; flex: none; }
+.card-title .aside { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--ink-2); }
+.ind-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; }
+.ind-list li { display: grid; grid-template-columns: 54px 1fr auto; align-items: start; padding: 10px 0; border-bottom: 1px solid var(--glass-line); }
+.ind-list .t { font-size: 15px; font-weight: 600; }
+.ind-list .n { font-size: 14px; font-weight: 500; }
+.ind-list .s { font-size: 11.5px; color: var(--ink-3); margin-top: 3px; }
+.ind-list .stars { color: var(--star); font-size: 13px; letter-spacing: 1px; padding-top: 2px; }
+.ind-list .stars span { color: rgba(255,255,255,.18); }
+.more { margin-top: auto; font-size: 13px; color: var(--ink-2); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+.more:hover { color: var(--gold); }
+
+/* points */
+#points { left: 27px; top: 329px; width: 308px; height: 359px; padding: 18px 20px; }
+.icon-btn { margin-left: auto; background: none; border: 0; color: var(--ink-2); font-size: 18px; letter-spacing: 1px; cursor: pointer; padding: 0 2px; line-height: 1; }
+.pt-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.pt-list li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--glass-line); }
+.pt-list li:last-child { border-bottom: 0; padding-bottom: 0; }
+.pt-list .ck { width: 24px; height: 24px; border-radius: 50%; background: var(--gold); display: grid; place-items: center; box-shadow: 0 0 12px rgba(227,184,103,.35); }
+.pt-list h3 { margin: 1px 0 6px; font-size: 14.5px; font-weight: 600; }
+.pt-list p { margin: 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-2); }
+
+/* weather */
+#weather { left: 352px; top: 329px; width: 305px; height: 194px; padding: 16px 20px; }
+.wx-top { display: grid; grid-template-columns: 58px 1fr auto; align-items: center; gap: 10px; }
+.wx-top .big { width: 58px; height: 46px; }
+.wx-city { font-size: 13px; color: var(--ink-2); }
+.wx-temp { font-family: var(--display); font-size: 38px; font-weight: 400; line-height: 1.05; }
+.wx-temp sup { font-size: 18px; vertical-align: top; position: relative; top: 6px; margin-left: 1px; }
+.wx-desc { font-size: 12.5px; color: var(--ink-2); }
+.wx-hl { font-size: 13px; color: var(--ink-2); line-height: 1.7; text-align: right; }
+.wx-hours { display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 14px; text-align: center; }
+.wx-hours .h { font-size: 11.5px; color: var(--ink-3); }
+.wx-hours svg { width: 26px; height: 22px; margin: 6px auto 4px; display: block; }
+.wx-hours .d { font-size: 13.5px; font-weight: 500; }
+
+/* quote */
+#quote { left: 352px; top: 536px; width: 305px; height: 152px; }
+#quote .content { position: relative; padding: 26px 24px; font-family: var(--mincho); font-size: 19px; font-weight: 600; line-height: 1.6; letter-spacing: .06em; text-shadow: 0 2px 10px rgba(0,0,0,.7); }
+#quote .rule { width: 28px; height: 1px; background: var(--ink-2); margin-top: 14px; }
+
+/* calendar */
+#cal { left: 667px; top: 329px; width: 517px; height: 261px; padding: 14px 16px; display: grid; grid-template-columns: 1fr 1px 1fr; gap: 14px; }
+#cal .sep { background: var(--glass-line); }
+.month { min-width: 0; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+.cal-head h2 { margin: 0; font-size: 17px; font-weight: 600; color: var(--gold); letter-spacing: .02em; }
+.cal-nav { display: flex; gap: 6px; }
+.cal-nav button { width: 26px; height: 26px; border: 0; border-radius: 50%; background: transparent; color: var(--ink-2); cursor: pointer; display: grid; place-items: center; }
+.cal-nav button:hover { background: rgba(255,255,255,.08); color: var(--gold); }
+.grid7 { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-top: 8px; row-gap: 2px; }
+.grid7 .wd { font-size: 11.5px; color: var(--ink-2); padding-bottom: 4px; border-bottom: 1px solid var(--glass-line); margin-bottom: 4px; }
+.grid7 .wd.sun, .grid7 .wd.sat, .grid7 .d.sun, .grid7 .d.sat, .grid7 .d.hol { color: var(--gold); }
+.grid7 .d { position: relative; font-size: 13px; height: 25px; display: grid; place-items: center; }
+.grid7 .d.today::before { content: ""; position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; transform: translate(-50%,-50%); border-radius: 50%; border: 1.5px solid var(--gold); box-shadow: 0 0 10px rgba(227,184,103,.55), inset 0 0 8px rgba(227,184,103,.25); }
+.grid7 .d.hol::after { content: ""; position: absolute; left: 50%; bottom: -1px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--gold); }
+
+/* motto */
+.motto { position: absolute; right: 30px; top: 606px; width: 168px; text-shadow: 0 2px 12px rgba(0,0,0,.8); }
+.motto p { margin: 0; font-family: var(--mincho); font-size: 16px; font-weight: 600; line-height: 1.7; letter-spacing: .04em; }
+.motto .rule { width: 22px; height: 1px; background: var(--ink-2); margin: 14px 0 10px; }
+.motto .en { font-size: 9px; letter-spacing: .38em; line-height: 1.9; color: var(--ink-2); }
+
+/* page dots */
+.dots { position: absolute; left: 0; right: 0; top: 716px; display: flex; justify-content: center; gap: 8px; }
+.dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.3); }
+.dots i:first-child { background: rgba(255,255,255,.9); }
+
+/* dock */
+.dock {
+  position: absolute; left: 88px; width: 1034px; top: 738px; height: 112px; border-radius: 34px;
+  background: rgba(40, 40, 46, 0.55); border: 1px solid rgba(255,255,255,.10);
+  -webkit-backdrop-filter: blur(30px) saturate(150%); backdrop-filter: blur(30px) saturate(150%);
+  display: flex; align-items: center; justify-content: center; gap: 32px;
+}
+.app { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 70px; text-decoration: none; color: var(--ink); }
+.app .ic { width: 64px; height: 64px; border-radius: 15px; overflow: hidden; box-shadow: 0 6px 16px rgba(0,0,0,.35); }
+.app .ic svg { width: 100%; height: 100%; display: block; }
+.app span { font-size: 11.5px; color: var(--ink-2); }
+.app:active .ic { transform: scale(.94); }
+.dock .div { width: 1px; height: 64px; background: rgba(255,255,255,.18); margin-top: -18px; }
+
+@media (prefers-reduced-motion: reduce) { .mkt .price { transition: none; } }
+</style>
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div id="fit">
+<div id="stage">
+
+  <div class="status num">
+    <div class="l"><span data-clock="hm">9:41</span><span data-clock="md">5月27日(火)</span></div>
+    <div class="r">
+      <svg width="17" height="12" viewBox="0 0 17 12" aria-label="Wi-Fi"><path fill="#fff" d="M8.5 2.3c2.4 0 4.6.9 6.3 2.5l1.2-1.2C14 1.6 11.4.6 8.5.6S3 1.6 1 3.6l1.2 1.2C3.9 3.2 6.1 2.3 8.5 2.3zm0 3.4c1.5 0 2.9.6 3.9 1.5l1.2-1.2C12.3 4.8 10.5 4 8.5 4S4.7 4.8 3.4 6l1.2 1.2c1-.9 2.4-1.5 3.9-1.5zm0 3.4c.6 0 1.1.2 1.5.6L8.5 11.2 7 9.7c.4-.4.9-.6 1.5-.6z"/></svg>
+      <span>100%</span>
+      <div class="battery"><i></i></div>
+    </div>
+  </div>
+
+  <!-- clock -->
+  <section class="card" id="clock" aria-label="時計">
+    <canvas class="scene" data-scene="sunrise"></canvas>
+    <div class="content">
+      <div class="time num" data-clock="hm">9:41</div>
+      <div class="date" data-clock="md">5月27日(火)</div>
+      <div class="note">今日も、冷静に、<br>良いトレードを。</div>
+    </div>
+  </section>
+
+  <!-- markets -->
+  <section class="card" id="markets" aria-label="為替と金価格">
+    <div class="mkt" id="m-usdjpy">
+      <div class="head">
+        <div class="badge"><svg viewBox="0 0 40 40"><rect width="40" height="40" fill="#fff"/><g fill="#c8102e"><rect y="0" width="40" height="3.1"/><rect y="6.2" width="40" height="3.1"/><rect y="12.3" width="40" height="3.1"/><rect y="18.5" width="40" height="3.1"/><rect y="24.6" width="40" height="3.1"/><rect y="30.8" width="40" height="3.1"/><rect y="36.9" width="40" height="3.1"/></g><rect width="19" height="21.6" fill="#1c2f6b"/><g fill="#fff"><circle cx="4" cy="4" r="1"/><circle cx="9.5" cy="4" r="1"/><circle cx="15" cy="4" r="1"/><circle cx="6.7" cy="8" r="1"/><circle cx="12.2" cy="8" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="9.5" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="6.7" cy="16" r="1"/><circle cx="12.2" cy="16" r="1"/></g></svg></div>
+        <div><div class="sym">USD/JPY</div><div class="jp">米ドル／円</div></div>
+      </div>
+      <div class="price num" data-f="price">156.328</div>
+      <div class="chg num" data-f="chg">+0.412 (+0.26%)</div>
+      <canvas class="chart"></canvas>
+      <div class="tabs" role="group" aria-label="期間"></div>
+    </div>
+    <div class="sep"></div>
+    <div class="mkt" id="m-gold">
+      <div class="head">
+        <div class="badge"><svg viewBox="0 0 40 40"><defs><radialGradient id="gbg" cx="50%" cy="40%" r="65%"><stop offset="0" stop-color="#5a4320"/><stop offset="1" stop-color="#1c150b"/></radialGradient><linearGradient id="gbar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe6a3"/><stop offset=".55" stop-color="#e0a93e"/><stop offset="1" stop-color="#9c6a18"/></linearGradient></defs><rect width="40" height="40" fill="url(#gbg)"/><path d="M8 27 l3-6h9l3 6z" fill="url(#gbar)"/><path d="M17 27 l3-6h9l3 6z" fill="url(#gbar)"/><path d="M12.5 21 l3-6h9l3 6z" fill="url(#gbar)"/><path d="M15.5 15 l1-2h6.5l1 2z" fill="#fff3cc" opacity=".6"/></svg></div>
+        <div><div class="sym">GOLD<small>(XAU/USD)</small></div><div class="jp">金／米ドル</div></div>
+      </div>
+      <div class="price num" data-f="price">2,357.46</div>
+      <div class="chg num" data-f="chg">+12.38 (+0.53%)</div>
+      <canvas class="chart"></canvas>
+      <div class="tabs" role="group" aria-label="期間"></div>
+    </div>
+  </section>
+
+  <!-- indicators -->
+  <section class="card" id="ind" aria-label="今日の重要指標">
+    <div class="card-title">
+      <svg class="ico" viewBox="0 0 26 26" fill="none" stroke="#f4f1ea" stroke-width="1.6"><rect x="3.5" y="5" width="19" height="17" rx="3"/><path d="M3.5 10h19M8.5 2.8v4M17.5 2.8v4"/><path d="M8 14.5h2M12 14.5h2M16 14.5h2M8 18h2M12 18h2" stroke-linecap="round"/></svg>
+      今日の重要指標<span class="aside num" data-clock="md">5月27日(火)</span>
+    </div>
+    <ul class="ind-list">
+      <li><div class="t num">21:30</div><div><div class="n">米・耐久財受注 (前月比)</div><div class="s">4月</div></div><div class="stars">★★★</div></li>
+      <li><div class="t num">23:00</div><div><div class="n">米・消費者信頼感指数</div><div class="s">5月</div></div><div class="stars">★★★</div></li>
+      <li><div class="t num">23:00</div><div><div class="n">米・新築住宅販売件数</div><div class="s">4月</div></div><div class="stars">★★<span>★</span></div></li>
+    </ul>
+    <a class="more" href="https://jp.investing.com/economic-calendar/" target="_blank" rel="noopener">経済カレンダーを表示 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></a>
+  </section>
+
+  <!-- points -->
+  <section class="card" id="points" aria-label="今日の注目ポイント">
+    <div class="card-title">
+      <svg class="ico" viewBox="0 0 26 26"><rect x="4" y="3" width="18" height="21" rx="3" fill="#e3b867"/><rect x="4" y="3" width="18" height="5" rx="2" fill="#c8963f"/><path d="M8 12h10M8 16h10M8 20h6" stroke="#1a1408" stroke-width="1.6" stroke-linecap="round"/></svg>
+      今日の注目ポイント
+      <button class="icon-btn" type="button" aria-label="その他">···</button>
+    </div>
+    <ul class="pt-list">
+      <li><div class="ck"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div><h3>ドル円：押し目買い目線</h3><p>156.00付近のサポートに注目。<br>上抜けで156.80を目指す。</p></div></li>
+      <li><div class="ck"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div><h3>ゴールド：重要ラインを確認</h3><p>2,350の攻防。上抜けで2,370、<br>下抜けで2,330を意識。</p></div></li>
+      <li><div class="ck"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div><h3>本日のトレード戦略</h3><p>重要指標前はポジションを軽く、<br>値動きに応じて柔軟に対応する。</p></div></li>
+    </ul>
+  </section>
+
+  <!-- weather -->
+  <section class="card" id="weather" aria-label="天気">
+    <div class="wx-top">
+      <svg class="big" data-wx-main viewBox="0 0 58 46"></svg>
+      <div>
+        <div class="wx-city">東京</div>
+        <div class="wx-temp num"><span data-wx="temp">24</span><sup>°C</sup></div>
+        <div class="wx-desc" data-wx="desc">やや曇り</div>
+      </div>
+      <div class="wx-hl num">最高 <span data-wx="hi">26</span>°<br>最低 <span data-wx="lo">18</span>°</div>
+    </div>
+    <div class="wx-hours num" data-wx="hours"></div>
+  </section>
+
+  <!-- quote -->
+  <section class="card" id="quote" aria-label="今日の言葉">
+    <canvas class="scene" data-scene="dusk"></canvas>
+    <div class="content">継続が、<br>未来の自分を変えていく。<div class="rule"></div></div>
+  </section>
+
+  <!-- calendar -->
+  <section class="card" id="cal" aria-label="カレンダー">
+    <div class="month" data-offset="0"></div>
+    <div class="sep"></div>
+    <div class="month" data-offset="1"></div>
+  </section>
+
+  <div class="motto">
+    <p>相場と、<br>もっと高い景色へ。</p>
+    <div class="rule"></div>
+    <div class="en">DISCIPLINE<br>CREATES<br>FREEDOM.</div>
+  </div>
+
+  <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+
+  <nav class="dock" aria-label="Dock">
+    <a class="app" href="https://jp.tradingview.com/chart/" target="_blank" rel="noopener"><div class="ic"><svg viewBox="0 0 64 64"><defs><linearGradient id="a1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3aa0ff"/><stop offset="1" stop-color="#1257e6"/></linearGradient></defs><rect width="64" height="64" fill="url(#a1)"/><g fill="#fff"><rect x="14" y="36" width="7" height="14" rx="1.5"/><rect x="24.5" y="28" width="7" height="22" rx="1.5"/><rect x="35" y="20" width="7" height="30" rx="1.5"/><rect x="45.5" y="12" width="7" height="38" rx="1.5" opacity=".9"/></g></svg></div><span>チャート</span></a>
+    <div class="app"><div class="ic"><svg viewBox="0 0 64 64"><rect width="64" height="64" fill="#fbfaf6"/><rect width="64" height="17" fill="#f7c843"/><g stroke="#d9d6cc" stroke-width="1.2"><path d="M8 29h48M8 38h48M8 47h48M8 56h48"/></g></svg></div><span>メモ</span></div>
+    <div class="app"><div class="ic"><svg viewBox="0 0 64 64"><rect width="64" height="64" fill="#fff"/><text x="32" y="19" text-anchor="middle" font-size="12" font-weight="600" fill="#f23b30" font-family="-apple-system, Hiragino Sans, Noto Sans JP, sans-serif" data-clock="wd">火</text><text x="32" y="51" text-anchor="middle" font-size="33" font-weight="300" fill="#1c1c1e" font-family="-apple-system, Helvetica, Arial, sans-serif" data-clock="d">27</text></svg></div><span>カレンダー</span></div>
+    <div class="app"><div class="ic"><svg viewBox="0 0 64 64"><rect width="64" height="64" fill="#fff"/><g transform="translate(32 32)" opacity=".9"><ellipse rx="6.5" ry="12" cy="-10" fill="#f5b41b" transform="rotate(0)"/><ellipse rx="6.5" ry="12" cy="-10" fill="#f47b20" transform="rotate(45)"/><ellipse rx="6.5" ry="12" cy="-10" fill="#e8384f" transform="rotate(90)"/><ellipse rx="6.5" ry="12" cy="-10" fill="#c13584" transform="rotate(135)"/><ellipse rx="6.5" ry="12" cy="-10" fill="#7b4fd6" transform="rotate(180)"/><ellipse rx="6.5" ry="12" cy="-10" fill="#2f80ed" transform="rotate(225)"/><ellipse rx="6.5" ry="12" cy="-10" fill="#27ae60" transform="rotate(270)"/><ellipse rx="6.5" ry="12" cy="-10" fill="#9acd32" transform="rotate(315)"/></g></svg></div><span>写真</span></div>
+    <div class="app"><div class="ic"><svg viewBox="0 0 64 64"><defs><linearGradient id="a5" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ad1ff"/><stop offset="1" stop-color="#1673f0"/></linearGradient></defs><rect width="64" height="64" fill="#fff"/><circle cx="32" cy="32" r="25" fill="url(#a5)"/><g stroke="#fff" stroke-width="1" opacity=".7"><path d="M32 9v5M32 50v5M9 32h5M50 32h5"/></g><path d="M44 20 L35 35 L20 44 L29 29z" fill="#fff"/><path d="M44 20 L35 35 L29 29z" fill="#ff3b30"/></svg></div><span>ブラウザ</span></div>
+    <div class="app"><div class="ic"><svg viewBox="0 0 64 64"><defs><linearGradient id="a6" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#52b7ff"/><stop offset="1" stop-color="#1a6ef5"/></linearGradient></defs><rect width="64" height="64" fill="url(#a6)"/><rect x="12" y="19" width="40" height="27" rx="3" fill="#fff"/><path d="M13 21l19 14 19-14" fill="none" stroke="#1a6ef5" stroke-width="2.2" stroke-linejoin="round"/></svg></div><span>メール</span></div>
+    <div class="app"><div class="ic"><svg viewBox="0 0 64 64"><rect width="64" height="64" fill="#fff"/><path d="M10 20a3 3 0 0 1 3-3h13l4 4h21a3 3 0 0 1 3 3v22a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3z" fill="#1e88f5"/><path d="M10 26h44v20a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3z" fill="#4fb0ff"/></svg></div><span>ファイル</span></div>
+    <div class="div"></div>
+    <div class="app"><div class="ic"><svg viewBox="0 0 64 64"><defs><linearGradient id="a8" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9e9ec"/><stop offset="1" stop-color="#a9a9b0"/></linearGradient></defs><rect width="64" height="64" fill="url(#a8)"/><path d="M14 24a3 3 0 0 1 3-3h6l3-4h12l3 4h6a3 3 0 0 1 3 3v19a3 3 0 0 1-3 3H17a3 3 0 0 1-3-3z" fill="#2c2c30"/><circle cx="32" cy="33" r="8.5" fill="#6d6d74"/><circle cx="32" cy="33" r="5.5" fill="#1b1b1e"/></svg></div><span>カメラ</span></div>
+    <div class="app"><div class="ic"><svg viewBox="0 0 64 64"><defs><linearGradient id="a9" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4d4d9"/><stop offset="1" stop-color="#8e8e95"/></linearGradient></defs><rect width="64" height="64" fill="url(#a9)"/><g transform="translate(32 32)" fill="#3a3a3f"><circle r="17"/><g id="teeth"><rect x="-3" y="-23" width="6" height="8" rx="1.5"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(30)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(60)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(90)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(120)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(150)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(180)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(210)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(240)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(270)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(300)"/><rect x="-3" y="-23" width="6" height="8" rx="1.5" transform="rotate(330)"/></g><circle r="10" fill="#c9c9ce"/><circle r="5" fill="#3a3a3f"/></g></svg></div><span>設定</span></div>
+  </nav>
+
+</div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var stage = document.getElementById("stage");
+  var fit = document.getElementById("fit");
+  var W = 1210, H = 860, scale = 1;
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var WD = ["日", "月", "火", "水", "木", "金", "土"];
+
+  function rng(seed) { // mulberry32
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function prep(cv) {
+    var r = cv.getBoundingClientRect();
+    var w = cv.offsetWidth, h = cv.offsetHeight;
+    var k = (window.devicePixelRatio || 1) * Math.max(scale, r.width / Math.max(w, 1));
+    cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+    var c = cv.getContext("2d"); c.setTransform(k, 0, 0, k, 0, 0);
+    return { c: c, w: w, h: h };
+  }
+
+  /* ---------- fit stage ---------- */
+  function layout() {
+    var cs = getComputedStyle(fit);
+    var aw = fit.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    var ah = fit.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    scale = Math.min(aw / W, ah / H);
+    stage.style.transform = "scale(" + scale + ")";
+    stage.style.margin = ((H * scale - H) / 2) + "px " + ((W * scale - W) / 2) + "px";
+    drawScenes(); markets.forEach(function (m) { m.draw(); }); bg.resize();
+  }
+
+  /* ---------- clock ---------- */
+  function tickClock() {
+    var d = new Date();
+    var hm = d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0");
+    var md = (d.getMonth() + 1) + "月" + d.getDate() + "日(" + WD[d.getDay()] + ")";
+    document.querySelectorAll("[data-clock]").forEach(function (el) {
+      var k = el.getAttribute("data-clock");
+      el.textContent = k === "hm" ? hm : k === "md" ? md : k === "wd" ? WD[d.getDay()] : d.getDate();
+    });
+  }
+
+  /* ---------- mountain scenes ---------- */
+  function ridge(r, w, base, amp, rough) {
+    var pts = [], n = 64, y = 0, v = 0;
+    for (var i = 0; i <= n; i++) {
+      v += (r() - 0.5) * rough; v *= 0.86; y += v;
+      y = Math.max(-1, Math.min(1, y));
+      pts.push([w * i / n, base - amp * (0.5 + 0.5 * y) - amp * 0.35 * Math.sin(i / n * Math.PI * (1.3 + r()))]);
+    }
+    return pts;
+  }
+  function drawScene(cv) {
+    var p = prep(cv), c = p.c, w = p.w, h = p.h, kind = cv.getAttribute("data-scene");
+    var r = rng(kind === "sunrise" ? 11 : 29);
+    var sx = kind === "sunrise" ? w * 0.68 : w * 0.25, sy = kind === "sunrise" ? h * 0.66 : h * 0.62;
+    var sky = c.createLinearGradient(0, 0, 0, h);
+    sky.addColorStop(0, "#0b0d14"); sky.addColorStop(0.45, "#1a1a1f");
+    sky.addColorStop(0.7, kind === "sunrise" ? "#6b4a24" : "#3a3024"); sky.addColorStop(1, "#120f0b");
+    c.fillStyle = sky; c.fillRect(0, 0, w, h);
+    var glow = c.createRadialGradient(sx, sy, 0, sx, sy, w * 0.7);
+    glow.addColorStop(0, kind === "sunrise" ? "rgba(255,214,140,.95)" : "rgba(255,200,130,.45)");
+    glow.addColorStop(0.12, kind === "sunrise" ? "rgba(255,170,80,.55)" : "rgba(220,150,80,.25)");
+    glow.addColorStop(0.5, "rgba(120,80,40,.15)"); glow.addColorStop(1, "rgba(0,0,0,0)");
+    c.fillStyle = glow; c.fillRect(0, 0, w, h);
+    if (kind === "sunrise") { c.fillStyle = "rgba(255,240,205,1)"; c.beginPath(); c.arc(sx, sy, 7, 0, 7); c.fill(); }
+    var layers = [
+      { base: 0.72, amp: 0.20, col: [92, 78, 66, 0.75] },
+      { base: 0.80, amp: 0.22, col: [52, 45, 42, 0.92] },
+      { base: 0.90, amp: 0.20, col: [26, 24, 25, 1] },
+      { base: 1.02, amp: 0.18, col: [10, 10, 12, 1] }
+    ];
+    layers.forEach(function (L) {
+      var pts = ridge(r, w, h * L.base, h * L.amp, 0.45);
+      c.beginPath(); c.moveTo(0, h);
+      pts.forEach(function (q) { c.lineTo(q[0], q[1]); });
+      c.lineTo(w, h); c.closePath();
+      var g = c.createLinearGradient(0, h * (L.base - L.amp), 0, h);
+      g.addColorStop(0, "rgba(" + L.col.slice(0, 3).join(",") + "," + L.col[3] + ")");
+      g.addColorStop(1, "rgba(8,8,10,1)");
+      c.fillStyle = g; c.fill();
+      var mist = c.createLinearGradient(0, h * L.base - 4, 0, h * L.base + 18);
+      mist.addColorStop(0, "rgba(255,200,140,0)"); mist.addColorStop(0.5, "rgba(255,200,140,.06)"); mist.addColorStop(1, "rgba(255,200,140,0)");
+      c.fillStyle = mist; c.fillRect(0, h * L.base - 4, w, 22);
+    });
+    var shade = c.createLinearGradient(0, 0, 0, h * 0.55);
+    shade.addColorStop(0, "rgba(6,7,11,.75)"); shade.addColorStop(1, "rgba(6,7,11,0)");
+    c.fillStyle = shade; c.fillRect(0, 0, w, h * 0.55);
+  }
+  function drawScenes() { document.querySelectorAll("canvas.scene").forEach(drawScene); }
+
+  /* ---------- markets ---------- */
+  var TF = [{ k: "1時間", v: 0.25 }, { k: "4時間", v: 0.5 }, { k: "1日", v: 1 }, { k: "1週", v: 2.2 }];
+  function Market(el, o) {
+    this.el = el; this.o = o; this.tf = 2;
+    this.cv = el.querySelector("canvas.chart");
+    this.priceEl = el.querySelector('[data-f="price"]');
+    this.chgEl = el.querySelector('[data-f="chg"]');
+    var self = this, tabs = el.querySelector(".tabs");
+    TF.forEach(function (t, i) {
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = t.k; b.setAttribute("aria-pressed", i === self.tf);
+      b.addEventListener("click", function () {
+        self.tf = i; tabs.querySelectorAll("button").forEach(function (x, j) { x.setAttribute("aria-pressed", j === i); });
+        self.gen(); self.draw();
+      });
+      tabs.appendChild(b);
+    });
+    this.price = o.price; this.gen(); this.render();
+  }
+  Market.prototype.gen = function () {
+    var o = this.o, r = rng(o.seed + this.tf * 97), n = 38, f = TF[this.tf].v;
+    var span = (o.hi - o.lo) * 0.75 * f, start = this.price - span * 0.82, path = [];
+    for (var i = 0; i < n; i++) {
+      var t = i / (n - 1);
+      path.push(start + (this.price - start) * (t * t * 0.4 + t * 0.6) + (r() - 0.5) * span * 0.22 * Math.sin(t * Math.PI + 0.2));
+    }
+    path[n - 1] = this.price;
+    var cs = [], prev = path[0] - span * 0.03;
+    for (i = 0; i < n; i++) {
+      var op = prev, cl = path[i], wick = span * (0.03 + r() * 0.07);
+      cs.push({ o: op, c: cl, h: Math.max(op, cl) + wick * r(), l: Math.min(op, cl) - wick * r() });
+      prev = cl;
+    }
+    this.c = cs;
+  };
+  Market.prototype.draw = function () {
+    var p = prep(this.cv), c = p.c, w = p.w, h = p.h, o = this.o, cs = this.c;
+    var mn = Infinity, mx = -Infinity;
+    cs.forEach(function (k) { mn = Math.min(mn, k.l); mx = Math.max(mx, k.h); });
+    var step = o.step * (this.tf === 3 ? 2 : this.tf === 0 ? 0.5 : 1);
+    var lo = Math.floor(mn / step) * step, hi = Math.ceil(mx / step) * step;
+    if (hi - lo < step * 3) { hi = lo + step * 3; }
+    var axisW = 38, cw = w - axisW, top = 6, bot = h - 6;
+    var Y = function (v) { return bot - (v - lo) / (hi - lo) * (bot - top); };
+    c.font = "500 10.5px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif";
+    c.textBaseline = "middle"; c.textAlign = "left";
+    for (var v = lo; v <= hi + 1e-9; v += step) {
+      var y = Y(v);
+      c.strokeStyle = "rgba(255,236,200,.07)"; c.lineWidth = 1; c.setLineDash([2, 3]);
+      c.beginPath(); c.moveTo(0, Math.round(y) + .5); c.lineTo(cw - 4, Math.round(y) + .5); c.stroke();
+      c.setLineDash([]); c.fillStyle = "rgba(244,241,234,.5)";
+      c.fillText(o.axisFmt(v), cw + 2, y);
+    }
+    var bw = cw / cs.length, body = Math.max(2, bw * 0.55);
+    c.shadowColor = "rgba(227,184,103,.45)"; c.shadowBlur = 6;
+    cs.forEach(function (k, i) {
+      var x = i * bw + bw / 2, up = k.c >= k.o;
+      var col = up ? "#ecc67c" : "#a5834c";
+      c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 1;
+      c.beginPath(); c.moveTo(x, Y(k.h)); c.lineTo(x, Y(k.l)); c.stroke();
+      var y1 = Y(Math.max(k.o, k.c)), y2 = Y(Math.min(k.o, k.c));
+      c.fillRect(x - body / 2, y1, body, Math.max(1.2, y2 - y1));
+    });
+    c.shadowBlur = 0;
+  };
+  Market.prototype.render = function (dir) {
+    var o = this.o, s = o.fmt(this.price);
+    if (o.tailDigits) {
+      this.priceEl.innerHTML = s.slice(0, -o.tailDigits) + '<span class="tail">' + s.slice(-o.tailDigits) + "</span>";
+    } else { this.priceEl.textContent = s; }
+    var d = this.price - o.prev, pct = d / o.prev * 100, sign = d >= 0 ? "+" : "−";
+    this.chgEl.textContent = sign + o.chgFmt(Math.abs(d)) + " (" + sign + Math.abs(pct).toFixed(2) + "%)";
+    this.chgEl.style.color = d >= 0 ? o.upColor : o.downColor;
+    if (dir && !reduce) {
+      var pe = this.priceEl; pe.classList.add(dir > 0 ? "flash-up" : "flash-down");
+      setTimeout(function () { pe.classList.remove("flash-up", "flash-down"); }, 500);
+    }
+  };
+  Market.prototype.tick = function () {
+    var o = this.o, last = this.c[this.c.length - 1];
+    var np = this.price + (Math.random() - 0.5) * o.vol;
+    np = Math.max(o.lo + (o.hi - o.lo) * 0.1, Math.min(o.hi - (o.hi - o.lo) * 0.05, np));
+    var dir = Math.sign(np - this.price); this.price = np;
+    last.c = np; last.h = Math.max(last.h, np); last.l = Math.min(last.l, np);
+    this.render(dir); this.draw();
+  };
+  var nf = function (dec) { return function (v) { return v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec }); }; };
+  /* Change colors follow the reference design: USD/JPY's rise in red (Japanese chart convention), gold's in green. */
+  var markets = [
+    new Market(document.getElementById("m-usdjpy"), { price: 156.328, prev: 155.916, lo: 155.0, hi: 156.5, step: 0.5, seed: 7, vol: 0.012,
+      fmt: nf(3), tailDigits: 1, chgFmt: nf(3), axisFmt: nf(1), upColor: "var(--up-red)", downColor: "var(--up-green)" }),
+    new Market(document.getElementById("m-gold"), { price: 2357.46, prev: 2345.08, lo: 2340, hi: 2370, step: 10, seed: 3, vol: 0.45,
+      fmt: nf(2), tailDigits: 0, chgFmt: nf(2), axisFmt: nf(0), upColor: "var(--up-green)", downColor: "var(--up-red)" })
+  ];
+
+  /* ---------- weather ---------- */
+  var ICON = {
+    sun: '<g><circle cx="13" cy="11" r="5" fill="#f5c04a"/><g stroke="#f5c04a" stroke-width="1.6" stroke-linecap="round"><path d="M13 1.5v2.5M13 18v2.5M3.5 11H6M20 11h2.5M6.3 4.3l1.7 1.7M18 16l1.7 1.7M6.3 17.7L8 16M18 6l1.7-1.7"/></g></g>',
+    part: '<g><circle cx="10" cy="8" r="4.5" fill="#f5c04a"/><path d="M8 20h12a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4 1.4A3.3 3.3 0 0 0 8 20z" fill="#d9dde6"/></g>',
+    cloud: '<path d="M6 19h14a4.5 4.5 0 0 0 .4-9 6 6 0 0 0-11.5 1.6A3.8 3.8 0 0 0 6 19z" fill="#c7ccd6"/>',
+    moon: '<path d="M16.5 3.5a8 8 0 1 0 5.5 13.6A8.5 8.5 0 0 1 16.5 3.5z" fill="#e8e3d0"/>',
+    rain: '<g><path d="M6 15h14a4.5 4.5 0 0 0 .4-9 6 6 0 0 0-11.5 1.6A3.8 3.8 0 0 0 6 15z" fill="#aeb5c2"/><path d="M9 17l-1.5 3.5M14 17l-1.5 3.5M19 17l-1.5 3.5" stroke="#5aa8ff" stroke-width="1.6" stroke-linecap="round"/></g>'
+  };
+  var MAIN = '<g transform="translate(0 2)"><circle cx="20" cy="15" r="10" fill="#f5c04a"/><g stroke="#f5c04a" stroke-width="2" stroke-linecap="round" opacity=".85"><path d="M20 0v3M5 15h3M9.4 4.4l2 2M30.6 4.4l-2 2"/></g><path d="M16 42h28a9 9 0 0 0 .6-18 11.5 11.5 0 0 0-22 3.2A7.4 7.4 0 0 0 16 42z" fill="#e2e6ee"/></g>';
+  var demoHours = [[10, "sun", 25], [13, "sun", 26], [16, "part", 26], [19, "cloud", 23], [22, "moon", 21]];
+  function renderHours(list) {
+    document.querySelector('[data-wx="hours"]').innerHTML = list.map(function (x) {
+      return '<div><div class="h">' + x[0] + '時</div><svg viewBox="0 0 26 22">' + ICON[x[1]] + '</svg><div class="d">' + x[2] + '°</div></div>';
+    }).join("");
+  }
+  document.querySelector("[data-wx-main]").innerHTML = MAIN;
+  renderHours(demoHours);
+  function codeIcon(code, hour) {
+    if (code >= 51) return "rain";
+    if (code >= 3) return "cloud";
+    if (hour >= 18 || hour < 5) return "moon";
+    return code >= 1 ? "part" : "sun";
+  }
+  var DESC = function (c) { return c === 0 ? "快晴" : c <= 1 ? "晴れ" : c === 2 ? "やや曇り" : c === 3 ? "曇り" : c <= 48 ? "霧" : c <= 67 ? "雨" : c <= 77 ? "雪" : "にわか雨"; };
+  /* Live Tokyo weather when the network allows it; otherwise the sample values above stay. */
+  function loadWeather() {
+    if (!window.fetch) return;
+    fetch("https://api.open-meteo.com/v1/forecast?latitude=35.68&longitude=139.76&current=temperature_2m,weather_code&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FTokyo&forecast_days=1")
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (j) {
+        var q = function (k) { return document.querySelector('[data-wx="' + k + '"]'); };
+        q("temp").textContent = Math.round(j.current.temperature_2m);
+        q("desc").textContent = DESC(j.current.weather_code);
+        q("hi").textContent = Math.round(j.daily.temperature_2m_max[0]);
+        q("lo").textContent = Math.round(j.daily.temperature_2m_min[0]);
+        renderHours([10, 13, 16, 19, 22].map(function (hr) {
+          return [hr, codeIcon(j.hourly.weather_code[hr], hr), Math.round(j.hourly.temperature_2m[hr])];
+        }));
+      })
+      .catch(function () {});
+  }
+
+  /* ---------- calendar ---------- */
+  var HOL = "2026-01-01 2026-01-12 2026-02-11 2026-02-23 2026-03-20 2026-04-29 2026-05-03 2026-05-04 2026-05-05 2026-05-06 2026-07-20 2026-08-11 2026-09-21 2026-09-22 2026-09-23 2026-10-12 2026-11-03 2026-11-23 " +
+            "2027-01-01 2027-01-11 2027-02-11 2027-02-23 2027-03-21 2027-03-22 2027-04-29 2027-05-03 2027-05-04 2027-05-05 2027-07-19 2027-08-11 2027-09-20 2027-09-23 2027-10-11 2027-11-03 2027-11-23";
+  var calBase = new Date(); calBase.setDate(1);
+  function key(y, m, d) { return y + "-" + String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0"); }
+  function renderCal() {
+    var now = new Date();
+    document.querySelectorAll("#cal .month").forEach(function (box) {
+      var off = +box.getAttribute("data-offset");
+      var d0 = new Date(calBase.getFullYear(), calBase.getMonth() + off, 1);
+      var y = d0.getFullYear(), m = d0.getMonth(), first = d0.getDay(), days = new Date(y, m + 1, 0).getDate();
+      var html = '<div class="cal-head"><h2 class="num">' + y + "年 " + (m + 1) + '月</h2><div class="cal-nav">' +
+        '<button type="button" data-step="-1" aria-label="前の月"><svg width="8" height="12" viewBox="0 0 8 12"><path d="M6.5 1L1.5 6l5 5" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button>' +
+        '<button type="button" data-step="1" aria-label="次の月"><svg width="8" height="12" viewBox="0 0 8 12"><path d="M1.5 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button></div></div><div class="grid7 num">';
+      WD.forEach(function (w, i) { html += '<div class="wd' + (i === 0 ? " sun" : i === 6 ? " sat" : "") + '">' + w + "</div>"; });
+      for (var i = 0; i < first; i++) html += "<div></div>";
+      for (var d = 1; d <= days; d++) {
+        var wd = (first + d - 1) % 7, cls = "d";
+        if (wd === 0) cls += " sun"; if (wd === 6) cls += " sat";
+        if (HOL.indexOf(key(y, m, d)) >= 0) cls += " hol";
+        if (y === now.getFullYear() && m === now.getMonth() && d === now.getDate()) cls += " today";
+        html += '<div class="' + cls + '">' + d + "</div>";
+      }
+      box.innerHTML = html + "</div>";
+    });
+  }
+  document.getElementById("cal").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-step]"); if (!b) return;
+    calBase.setMonth(calBase.getMonth() + (+b.getAttribute("data-step"))); renderCal();
+  });
+
+  /* ---------- background ---------- */
+  var bg = (function () {
+    var cv = document.getElementById("bg"), c, w, h, parts = [], streaks = [], cityPts = [], t0 = performance.now();
+    function resize() {
+      var k = window.devicePixelRatio || 1;
+      w = innerWidth; h = innerHeight;
+      cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+      c = cv.getContext("2d"); c.setTransform(k, 0, 0, k, 0, 0);
+      var r = rng(5); parts = []; streaks = []; cityPts = [];
+      for (var i = 0; i < 70; i++) parts.push({ x: r(), y: 0.35 + r() * 0.65, s: 0.6 + r() * 3.2, a: 0.08 + r() * 0.35, ph: r() * 6.3, sp: 0.4 + r() });
+      for (i = 0; i < 7; i++) streaks.push({ y0: 0.55 + r() * 0.35, y1: 0.35 + r() * 0.4, bend: -0.2 + r() * 0.25, wd: 0.6 + r() * 1.4, a: 0.25 + r() * 0.5, ph: r() * 6.3 });
+      for (i = 0; i < 260; i++) { var ang = Math.PI * (0.98 + r() * 0.55), rad = 0.86 + r() * 0.13; cityPts.push([ang, rad, r()]); }
+      if (reduce) frame(t0);
+    }
+    function frame(now) {
+      var t = (now - t0) / 1000;
+      c.fillStyle = "#06070b"; c.fillRect(0, 0, w, h);
+      var g = c.createRadialGradient(w * 0.82, h * 0.95, 0, w * 0.82, h * 0.95, Math.max(w, h) * 0.75);
+      g.addColorStop(0, "rgba(150,100,40,.55)"); g.addColorStop(0.35, "rgba(70,45,20,.35)"); g.addColorStop(1, "rgba(6,7,11,0)");
+      c.fillStyle = g; c.fillRect(0, 0, w, h);
+      var g2 = c.createRadialGradient(w * 0.12, h * 0.95, 0, w * 0.12, h * 0.95, w * 0.4);
+      g2.addColorStop(0, "rgba(120,80,30,.35)"); g2.addColorStop(1, "rgba(6,7,11,0)");
+      c.fillStyle = g2; c.fillRect(0, 0, w, h);
+      // planet rim with city lights
+      var R = Math.max(w, h) * 0.55, cx = w * 0.98, cy = h * 1.12;
+      c.save(); c.beginPath(); c.arc(cx, cy, R, 0, 7); c.fillStyle = "rgba(10,10,14,.85)"; c.fill();
+      c.shadowColor = "rgba(255,190,100,.9)"; c.shadowBlur = 30; c.strokeStyle = "rgba(255,205,130,.75)"; c.lineWidth = 1.6;
+      c.beginPath(); c.arc(cx, cy, R, Math.PI * 0.95, Math.PI * 1.6); c.stroke(); c.restore();
+      cityPts.forEach(function (p) {
+        var x = cx + Math.cos(p[0]) * R * p[1], y = cy + Math.sin(p[0]) * R * p[1];
+        c.fillStyle = "rgba(255,200,120," + (0.25 + 0.5 * p[2]) + ")"; c.fillRect(x, y, 1.2, 1.2);
+      });
+      // faint candlesticks rising at the right
+      var base = h * 0.78, r = rng(9);
+      for (var i = 0; i < 26; i++) {
+        var x = w * (0.62 + i * 0.014), top = base - h * (0.04 + i * 0.012 + r() * 0.05), hh = h * (0.02 + r() * 0.04);
+        c.fillStyle = "rgba(230,180,100," + (0.05 + i * 0.006) + ")";
+        c.fillRect(x, top, Math.max(2, w * 0.005), hh); c.fillRect(x + Math.max(2, w * 0.005) / 2 - 0.5, top - hh * 0.5, 1, hh * 2);
+      }
+      // golden streaks
+      c.save(); c.globalCompositeOperation = "lighter";
+      streaks.forEach(function (s) {
+        var a = s.a * (0.75 + 0.25 * Math.sin(t * 0.6 + s.ph));
+        c.strokeStyle = "rgba(255,190,90," + a + ")"; c.lineWidth = s.wd;
+        c.shadowColor = "rgba(255,170,60,.9)"; c.shadowBlur = 14;
+        c.beginPath(); c.moveTo(-20, h * s.y0);
+        c.bezierCurveTo(w * 0.35, h * (s.y0 + s.bend), w * 0.6, h * (s.y1 + 0.25), w + 20, h * s.y1);
+        c.stroke();
+      });
+      c.shadowBlur = 0;
+      parts.forEach(function (p) {
+        var a = p.a * (0.55 + 0.45 * Math.sin(t * p.sp + p.ph));
+        var gg = c.createRadialGradient(p.x * w, p.y * h, 0, p.x * w, p.y * h, p.s * 3);
+        gg.addColorStop(0, "rgba(255,210,140," + a + ")"); gg.addColorStop(1, "rgba(255,210,140,0)");
+        c.fillStyle = gg; c.beginPath(); c.arc(p.x * w, p.y * h, p.s * 3, 0, 7); c.fill();
+      });
+      c.restore();
+      if (!reduce) requestAnimationFrame(frame);
+    }
+    return { resize: resize, start: function () { resize(); if (!reduce) requestAnimationFrame(frame); } };
+  })();
+
+  /* ---------- boot ---------- */
+  tickClock(); renderCal(); bg.start(); layout(); loadWeather();
+  var lastDay = new Date().getDate();
+  setInterval(function () {
+    tickClock();
+    if (new Date().getDate() !== lastDay) { lastDay = new Date().getDate(); renderCal(); }
+  }, 1000);
+  setInterval(function () { markets.forEach(function (m) { m.tick(); }); }, 2500);
+  window.addEventListener("resize", layout);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+})();
+</script>
+</body>
+</html>
