@@ -1,4 +1,4 @@
-"""Builds market.json for the widget: real candles for USD/JPY and gold plus an automatic
+"""Builds market.json for the widget: real candles for each selectable instrument plus an automatic
 technical read (trend from moving averages, levels from daily pivots, RSI, ATR).
 
 Usage: python3 analyze.py OUT.json            (fetches from Yahoo Finance / gold-api.com)
@@ -6,13 +6,27 @@ Usage: python3 analyze.py OUT.json            (fetches from Yahoo Finance / gold
 """
 import json
 import sys
+import time
 import urllib.request
 from datetime import datetime, timezone
 
 UA = {"User-Agent": "Mozilla/5.0 (TradeDeskWidget)"}
-SYMBOLS = {"usdjpy": "JPY=X", "gold": "GC=F"}
-NAMES = {"usdjpy": "ドル円", "gold": "ゴールド"}
-TICK = {"usdjpy": 0.05, "gold": 5.0}  # levels are rounded to these steps
+# key: (Yahoo symbol, Japanese name, level step, decimals, gold-api spot symbol for futures)
+INSTRUMENTS = {
+    "usdjpy": ("JPY=X", "ドル円", 0.05, 2, None),
+    "eurjpy": ("EURJPY=X", "ユーロ円", 0.05, 2, None),
+    "gbpjpy": ("GBPJPY=X", "ポンド円", 0.05, 2, None),
+    "audjpy": ("AUDJPY=X", "豪ドル円", 0.05, 2, None),
+    "eurusd": ("EURUSD=X", "ユーロドル", 0.0005, 4, None),
+    "gbpusd": ("GBPUSD=X", "ポンドドル", 0.0005, 4, None),
+    "audusd": ("AUDUSD=X", "豪ドル米ドル", 0.0005, 4, None),
+    "nzdusd": ("NZDUSD=X", "NZドル米ドル", 0.0005, 4, None),
+    "usdchf": ("CHF=X", "ドルスイス", 0.0005, 4, None),
+    "usdcad": ("CAD=X", "ドルカナダ", 0.0005, 4, None),
+    "gold": ("GC=F", "ゴールド", 5.0, 0, "XAU"),
+    "silver": ("SI=F", "シルバー", 0.05, 2, "XAG"),
+    "btc": ("BTC-USD", "ビットコイン", 100.0, 0, None),
+}
 N_CANDLES = 38
 
 
@@ -79,9 +93,9 @@ def atr(rows, n=14):
 
 
 def fmt(key, v):
-    step = TICK[key]
+    _, _, step, dec, _ = INSTRUMENTS[key]
     v = round(v / step) * step
-    return f"{v:.2f}" if key == "usdjpy" else f"{v:,.0f}"
+    return f"{v:,.{dec}f}"
 
 
 def analyze(key, daily, price):
@@ -105,7 +119,7 @@ def analyze(key, daily, price):
     else:
         trend = "range"
 
-    name = NAMES[key]
+    name = INSTRUMENTS[key][1]
     f = lambda v: fmt(key, v)
     if trend == "up":
         title = f"{name}：押し目買い目線"
@@ -123,41 +137,57 @@ def analyze(key, daily, price):
     }
 
 
+def r6(rows):
+    return [[t] + [float(f"{v:.6g}") for v in r] for t, *r in rows]
+
+
 def build(fixture=None):
-    out = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds")}
-    spot_gold = None
-    if fixture is None:
+    out = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"), "instruments": {}}
+    for key, (sym, name, _, _, spot_sym) in INSTRUMENTS.items():
         try:
-            spot_gold = float(get_json("https://api.gold-api.com/price/XAU")["price"])
-        except Exception as e:  # futures prices are still usable on their own
-            print("gold spot unavailable:", e)
-    for key, sym in SYMBOLS.items():
-        h1 = yahoo(sym, "60m", "1mo", fixture)
-        d1 = yahoo(sym, "1d", "6mo", fixture)
-        w1 = yahoo(sym, "1wk", "2y", fixture)
-        shift = 0.0
-        if key == "gold" and spot_gold and h1:
-            # GC=F is the futures contract; move it onto the spot price shown in the widget
-            shift = spot_gold - h1[-1][4]
-            for rows in (h1, d1, w1):
-                for r in rows:
-                    r[1:] = [v + shift for v in r[1:]]
-        price = h1[-1][4]
-        a = analyze(key, d1, price)
-        today = datetime.now(timezone.utc).date()
-        last_day = datetime.fromtimestamp(d1[-1][0], timezone.utc).date()
-        prev_close = d1[-2][4] if last_day >= today else d1[-1][4]
-        out[key] = {
-            "price": price, "prevClose": prev_close, "analysis": a,
-            "candles": {
-                "1h": h1[-N_CANDLES:],
-                "4h": aggregate(h1, 4 * 3600)[-N_CANDLES:],
-                "1d": d1[-N_CANDLES:],
-                "1w": w1[-N_CANDLES:],
-            },
-        }
-        print(key, round(price, 3), a["trend"], a["title"])
+            out["instruments"][key] = one(key, sym, spot_sym, fixture)
+        except Exception as e:  # one failing symbol must not drop the others
+            print(key, "failed:", e)
+        if fixture is None:
+            time.sleep(0.4)  # stay gentle with the data source
+    # keep the old top-level keys for pages that have not reloaded yet
+    for key in ("usdjpy", "gold"):
+        if key in out["instruments"]:
+            out[key] = out["instruments"][key]
     return out
+
+
+def one(key, sym, spot_sym, fixture):
+    h1 = yahoo(sym, "60m", "1mo", fixture)
+    d1 = yahoo(sym, "1d", "6mo", fixture)
+    w1 = yahoo(sym, "1wk", "2y", fixture)
+    spot = None
+    if spot_sym and fixture is None:
+        try:
+            spot = float(get_json(f"https://api.gold-api.com/price/{spot_sym}")["price"])
+        except Exception as e:  # futures prices are still usable on their own
+            print(key, "spot unavailable:", e)
+    if spot and h1:
+        # futures contract; move it onto the spot price shown in the widget
+        shift = spot - h1[-1][4]
+        for rows in (h1, d1, w1):
+            for r in rows:
+                r[1:] = [v + shift for v in r[1:]]
+    price = h1[-1][4]
+    a = analyze(key, d1, price)
+    today = datetime.now(timezone.utc).date()
+    last_day = datetime.fromtimestamp(d1[-1][0], timezone.utc).date()
+    prev_close = d1[-2][4] if last_day >= today else d1[-1][4]
+    print(key, round(price, 5), a["trend"], a["title"])
+    return {
+        "price": price, "prevClose": prev_close, "analysis": a,
+        "candles": {
+            "1h": r6(h1[-N_CANDLES:]),
+            "4h": r6(aggregate(h1, 4 * 3600)[-N_CANDLES:]),
+            "1d": r6(d1[-N_CANDLES:]),
+            "1w": r6(w1[-N_CANDLES:]),
+        },
+    }
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Trade Desk">
 <meta name="theme-color" content="#06070b">
 <link rel="apple-touch-icon" href="icon.png">
-<meta name="build" content="b646d990b7">
+<meta name="build" content="ba94ace053">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -80,12 +80,26 @@ body {
 #markets { left: 281px; top: 35px; width: 560px; height: 276px; display: grid; grid-template-columns: 1fr 1px 1fr; }
 #markets .sep { background: var(--glass-line); margin: 22px 0; }
 .mkt { padding: 18px 20px 14px; display: flex; flex-direction: column; min-width: 0; }
-.mkt .head { display: flex; align-items: center; gap: 12px; }
+.mkt { position: relative; }
+.mkt .head { display: flex; align-items: center; gap: 12px; font: inherit; color: inherit; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; border-radius: 10px; }
+.mkt .head .names { display: flex; flex-direction: column; }
+.mkt .head .chev { color: var(--ink-3); margin-left: 2px; align-self: center; }
+.mkt .head:hover .chev, .mkt .head:focus-visible .chev { color: var(--gold); }
+.badge-txt { width: 100%; height: 100%; display: grid; place-items: center; font-family: var(--display); font-weight: 700; font-size: 17px; color: #1a1408; background: radial-gradient(circle at 50% 35%, #f6d48f, #c99540); }
+.badge-txt.small { font-size: 12px; }
+.badge-txt.btc { background: radial-gradient(circle at 50% 35%, #ffb54d, #e07f12); color: #fff; font-size: 20px; }
+.picker { position: absolute; inset: 6px; z-index: 3; background: rgba(14,16,22,.98); border: 1px solid var(--glass-line); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.picker-h { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; }
+.picker-h button { font: inherit; font-size: 12px; background: none; border: 0; color: var(--ink-2); cursor: pointer; }
+.picker-list { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 6px; overflow-y: auto; }
+.picker-list button { font: inherit; font-size: 12px; letter-spacing: -.01em; text-align: left; color: var(--ink); background: rgba(255,255,255,.04); border: 1px solid transparent; border-radius: 8px; padding: 5px 6px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.picker-list button small { color: var(--ink-3); font-size: 10px; margin-left: 3px; }
+.picker-list button[aria-pressed="true"] { border-color: rgba(227,184,103,.6); color: var(--gold); }
 .mkt .badge { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex: none; box-shadow: 0 0 0 1px rgba(255,255,255,.12); }
 .mkt .badge svg { width: 100%; height: 100%; display: block; }
-.mkt .sym { font-size: 19px; font-weight: 600; letter-spacing: .01em; }
+.mkt .sym { display: block; font-size: 19px; font-weight: 600; letter-spacing: .01em; }
 .mkt .sym small { font-size: 12px; font-weight: 500; color: var(--ink-2); margin-left: 4px; }
-.mkt .jp { font-size: 11.5px; color: var(--ink-3); margin-top: 1px; }
+.mkt .jp { display: block; font-size: 11.5px; color: var(--ink-3); margin-top: 1px; }
 .mkt .price { font-family: var(--display); font-size: 36px; font-weight: 600; letter-spacing: -.01em; margin-top: 10px; line-height: 1.05; transition: color .4s; }
 .mkt .price .tail { font-size: 26px; }
 .mkt .price.flash-up { color: #ffe6b0; }
@@ -95,7 +109,7 @@ body {
 .tabs { display: flex; gap: 6px; margin-top: 6px; }
 .tabs button { flex: 1; font: inherit; font-size: 11.5px; color: var(--ink-2); background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 4px 0; cursor: pointer; }
 .tabs button[aria-pressed="true"] { color: var(--gold); border-color: rgba(227,184,103,.55); background: rgba(227,184,103,.10); }
-.tabs button:focus-visible, .cal-nav button:focus-visible, a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.tabs button:focus-visible, .mkt .head:focus-visible, .picker-list button:focus-visible, .cal-nav button:focus-visible, a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
 /* indicators */
 #ind { left: 856px; top: 35px; width: 328px; height: 276px; padding: 18px 20px; display: flex; flex-direction: column; }
@@ -217,27 +231,31 @@ body {
   </section>
 
   <!-- markets -->
-  <section class="card" id="markets" aria-label="為替と金価格">
-    <div class="mkt" id="m-usdjpy">
-      <div class="head">
-        <div class="badge"><svg viewBox="0 0 40 40"><rect width="40" height="40" fill="#fff"/><g fill="#c8102e"><rect y="0" width="40" height="3.1"/><rect y="6.2" width="40" height="3.1"/><rect y="12.3" width="40" height="3.1"/><rect y="18.5" width="40" height="3.1"/><rect y="24.6" width="40" height="3.1"/><rect y="30.8" width="40" height="3.1"/><rect y="36.9" width="40" height="3.1"/></g><rect width="19" height="21.6" fill="#1c2f6b"/><g fill="#fff"><circle cx="4" cy="4" r="1"/><circle cx="9.5" cy="4" r="1"/><circle cx="15" cy="4" r="1"/><circle cx="6.7" cy="8" r="1"/><circle cx="12.2" cy="8" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="9.5" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="6.7" cy="16" r="1"/><circle cx="12.2" cy="16" r="1"/></g></svg></div>
-        <div><div class="sym">USD/JPY</div><div class="jp">米ドル／円</div></div>
-      </div>
-      <div class="price num" data-f="price">156.328</div>
-      <div class="chg num" data-f="chg">+0.412 (+0.26%)</div>
+  <section class="card" id="markets" aria-label="相場">
+    <div class="mkt" id="m-0">
+      <button class="head" type="button" aria-label="銘柄を変える">
+        <span class="badge"></span>
+        <span class="names"><span class="sym"></span><span class="jp"></span></span>
+        <svg class="chev" width="10" height="7" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+      </button>
+      <div class="price num" data-f="price"></div>
+      <div class="chg num" data-f="chg"></div>
       <canvas class="chart"></canvas>
       <div class="tabs" role="group" aria-label="期間"></div>
+      <div class="picker" hidden><div class="picker-h"><span>銘柄を選ぶ</span><button type="button" class="picker-close">閉じる</button></div><div class="picker-list"></div></div>
     </div>
     <div class="sep"></div>
-    <div class="mkt" id="m-gold">
-      <div class="head">
-        <div class="badge"><svg viewBox="0 0 40 40"><defs><radialGradient id="gbg" cx="50%" cy="40%" r="65%"><stop offset="0" stop-color="#5a4320"/><stop offset="1" stop-color="#1c150b"/></radialGradient><linearGradient id="gbar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe6a3"/><stop offset=".55" stop-color="#e0a93e"/><stop offset="1" stop-color="#9c6a18"/></linearGradient></defs><rect width="40" height="40" fill="url(#gbg)"/><path d="M8 27 l3-6h9l3 6z" fill="url(#gbar)"/><path d="M17 27 l3-6h9l3 6z" fill="url(#gbar)"/><path d="M12.5 21 l3-6h9l3 6z" fill="url(#gbar)"/><path d="M15.5 15 l1-2h6.5l1 2z" fill="#fff3cc" opacity=".6"/></svg></div>
-        <div><div class="sym">GOLD<small>(XAU/USD)</small></div><div class="jp">金／米ドル</div></div>
-      </div>
-      <div class="price num" data-f="price">2,357.46</div>
-      <div class="chg num" data-f="chg">+12.38 (+0.53%)</div>
+    <div class="mkt" id="m-1">
+      <button class="head" type="button" aria-label="銘柄を変える">
+        <span class="badge"></span>
+        <span class="names"><span class="sym"></span><span class="jp"></span></span>
+        <svg class="chev" width="10" height="7" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+      </button>
+      <div class="price num" data-f="price"></div>
+      <div class="chg num" data-f="chg"></div>
       <canvas class="chart"></canvas>
       <div class="tabs" role="group" aria-label="期間"></div>
+      <div class="picker" hidden><div class="picker-h"><span>銘柄を選ぶ</span><button type="button" class="picker-close">閉じる</button></div><div class="picker-list"></div></div>
     </div>
   </section>
 
@@ -454,8 +472,8 @@ body {
 
   /* ---------- markets ---------- */
   var TF = [{ k: "1時間", v: 0.25 }, { k: "4時間", v: 0.5 }, { k: "1日", v: 1 }, { k: "1週", v: 2.2 }];
-  function Market(el, o) {
-    this.el = el; this.o = o; this.tf = 2;
+  function Market(el, key) {
+    this.el = el; this.tf = 2;
     this.cv = el.querySelector("canvas.chart");
     this.priceEl = el.querySelector('[data-f="price"]');
     this.chgEl = el.querySelector('[data-f="chg"]');
@@ -469,7 +487,7 @@ body {
       });
       tabs.appendChild(b);
     });
-    this.price = o.price; this.gen(); this.render();
+    this.setInst(key);
   }
   var TFKEY = ["1h", "4h", "1d", "1w"];
   Market.prototype.gen = function () {
@@ -503,7 +521,9 @@ body {
     [1, 2, 2.5, 5, 10].some(function (m) { step = m * mag; return step >= raw; });
     var lo = Math.floor(mn / step) * step, hi = Math.ceil(mx / step) * step;
     if (hi - lo < step * 3) { hi = lo + step * 3; }
-    var axisW = 38, cw = w - axisW, top = 6, bot = h - 6;
+    c.font = "500 10.5px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif";
+    var lab = function (v) { return step < 1 ? v.toFixed(step < 0.01 ? 3 : step < 0.1 ? 2 : 1) : v.toLocaleString("en-US", { maximumFractionDigits: 0 }); };
+    var axisW = Math.max(30, c.measureText(lab(hi)).width + 6), cw = w - axisW, top = 6, bot = h - 6;
     var Y = function (v) { return bot - (v - lo) / (hi - lo) * (bot - top); };
     c.font = "500 10.5px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif";
     c.textBaseline = "middle"; c.textAlign = "left";
@@ -512,7 +532,7 @@ body {
       c.strokeStyle = "rgba(255,236,200,.07)"; c.lineWidth = 1; c.setLineDash([2, 3]);
       c.beginPath(); c.moveTo(0, Math.round(y) + .5); c.lineTo(cw - 4, Math.round(y) + .5); c.stroke();
       c.setLineDash([]); c.fillStyle = "rgba(244,241,234,.5)";
-      c.fillText(step < 1 ? v.toFixed(step < 0.1 ? 2 : 1) : v.toLocaleString("en-US", { maximumFractionDigits: 0 }), cw + 2, y);
+      c.fillText(lab(v), cw + 2, y);
     }
     var bw = cw / cs.length, body = Math.max(2, bw * 0.55);
     c.shadowColor = "rgba(227,184,103,.45)"; c.shadowBlur = 6;
@@ -574,22 +594,80 @@ body {
   };
   function loadPrices() {
     if (!window.fetch) return;
-    var get = function (u) { return fetch(u, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }); };
-    get("https://open.er-api.com/v6/latest/USD").then(function (j) {
-      if (j && j.rates && j.rates.JPY) markets[0].applyLive(j.rates.JPY);
-    }).catch(function () {});
-    get("https://api.gold-api.com/price/XAU").then(function (j) {
-      if (j && j.price) markets[1].applyLive(+j.price);
-    }).catch(function () {});
+    markets.forEach(function (mk) {
+      var spot = INST[mk.key].spot, key = mk.key;
+      if (!spot) return;
+      fetch("https://api.gold-api.com/price/" + spot, { cache: "no-store" })
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+        .then(function (j) { if (j && j.price && mk.key === key) mk.applyLive(+j.price); })
+        .catch(function () {});
+    });
   }
   var nf = function (dec) { return function (v) { return v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec }); }; };
-  /* Change colors follow the reference design: USD/JPY's rise in red (Japanese chart convention), gold's in green. */
-  var markets = [
-    new Market(document.getElementById("m-usdjpy"), { price: 156.328, prev: 155.916, lo: 155.0, hi: 156.5, step: 0.5, seed: 7, vol: 0.012,
-      fmt: nf(3), tailDigits: 1, chgFmt: nf(3), axisFmt: nf(1), upColor: "var(--up-red)", downColor: "var(--up-green)" }),
-    new Market(document.getElementById("m-gold"), { price: 2357.46, prev: 2345.08, lo: 2340, hi: 2370, step: 10, seed: 3, vol: 0.45,
-      fmt: nf(2), tailDigits: 0, chgFmt: nf(2), axisFmt: nf(0), upColor: "var(--up-green)", downColor: "var(--up-red)" })
-  ];
+  /* Selectable instruments. demo is the offline sample price; spot is the gold-api.com symbol for minute updates. */
+  var BADGE = {
+    us: "FLAG", gold: "GOLD", silver: "SILVER",
+    txt: function (t, cls) { return '<span class="badge-txt ' + (cls || "") + '">' + t + "</span>"; }
+  };
+  var INST = {
+    usdjpy: { label: "USD/JPY", sub: "米ドル／円", name: "ドル円", dp: 3, tail: 1, demo: 158.1, badge: BADGE.us, unit: "yen" },
+    eurjpy: { label: "EUR/JPY", sub: "ユーロ／円", name: "ユーロ円", dp: 3, tail: 1, demo: 183.6, badge: BADGE.txt("€"), unit: "yen" },
+    gbpjpy: { label: "GBP/JPY", sub: "英ポンド／円", name: "ポンド円", dp: 3, tail: 1, demo: 211.9, badge: BADGE.txt("£"), unit: "yen" },
+    audjpy: { label: "AUD/JPY", sub: "豪ドル／円", name: "豪ドル円", dp: 3, tail: 1, demo: 103.2, badge: BADGE.txt("A$", "small"), unit: "yen" },
+    eurusd: { label: "EUR/USD", sub: "ユーロ／米ドル", name: "ユーロドル", dp: 5, tail: 1, demo: 1.1612, badge: BADGE.txt("€"), unit: "pips" },
+    gbpusd: { label: "GBP/USD", sub: "英ポンド／米ドル", name: "ポンドドル", dp: 5, tail: 1, demo: 1.3403, badge: BADGE.txt("£"), unit: "pips" },
+    audusd: { label: "AUD/USD", sub: "豪ドル／米ドル", name: "豪ドル米ドル", dp: 5, tail: 1, demo: 0.6528, badge: BADGE.txt("A$", "small"), unit: "pips" },
+    nzdusd: { label: "NZD/USD", sub: "NZドル／米ドル", name: "NZドル米ドル", dp: 5, tail: 1, demo: 0.5781, badge: BADGE.txt("NZ$", "small"), unit: "pips" },
+    usdchf: { label: "USD/CHF", sub: "米ドル／スイスフラン", name: "ドルスイス", dp: 5, tail: 1, demo: 0.8012, badge: BADGE.us, unit: "pips" },
+    usdcad: { label: "USD/CAD", sub: "米ドル／カナダドル", name: "ドルカナダ", dp: 5, tail: 1, demo: 1.3934, badge: BADGE.us, unit: "pips" },
+    gold: { label: "GOLD", small: "(XAU/USD)", sub: "金／米ドル", name: "ゴールド", dp: 2, tail: 0, demo: 4180, badge: BADGE.gold, unit: "usd", spot: "XAU" },
+    silver: { label: "SILVER", small: "(XAG/USD)", sub: "銀／米ドル", name: "シルバー", dp: 3, tail: 1, demo: 50.4, badge: BADGE.silver, unit: "usd", spot: "XAG" },
+    btc: { label: "BTC/USD", sub: "ビットコイン／米ドル", name: "ビットコイン", dp: 2, tail: 0, demo: 110250, badge: BADGE.txt("₿", "btc"), unit: "usd" }
+  };
+  var PICK_KEY = "mkt-v1", picks = ["usdjpy", "gold"];
+  try { var sp = JSON.parse(localStorage.getItem(PICK_KEY)); if (sp && INST[sp[0]] && INST[sp[1]]) picks = sp; } catch (e) {}
+  function atrText(key, atr) {
+    var u = INST[key].unit;
+    if (u === "yen") return "約" + atr.toFixed(2) + "円";
+    if (u === "pips") return "約" + Math.round(atr * 10000) + "pips";
+    return "約" + nf(atr < 10 ? 2 : 0)(atr) + "ドル";
+  }
+  Market.prototype.setInst = function (key) {
+    var i = INST[key], p = i.demo;
+    this.key = key; this.live = false; this.series = null; this.prevClose = null;
+    this.o = { price: p, prev: p * 0.9975, lo: p * 0.995, hi: p * 1.005, seed: key.length * 7, vol: p * 0.00009,
+               fmt: nf(i.dp), tailDigits: i.tail, chgFmt: nf(i.dp), upColor: "var(--up-green)", downColor: "var(--up-red)" };
+    this.price = p;
+    var h = this.el.querySelector(".head");
+    h.querySelector(".badge").innerHTML = i.badge === "FLAG" ? FLAG_SVG : i.badge === "GOLD" ? GOLD_SVG : i.badge === "SILVER" ? SILVER_SVG : i.badge;
+    h.querySelector(".sym").innerHTML = i.label + (i.small ? "<small>" + i.small + "</small>" : "");
+    h.querySelector(".jp").textContent = i.sub;
+    var m = market && (market.instruments || market)[key];
+    if (m) { this.series = m.candles; this.prevClose = m.prevClose; this.applyLive(m.price); }
+    else { this.gen(); this.render(); this.draw(); }
+  };
+  var FLAG_SVG = "<svg viewBox=\"0 0 40 40\"><rect width=\"40\" height=\"40\" fill=\"#fff\"/><g fill=\"#c8102e\"><rect y=\"0\" width=\"40\" height=\"3.1\"/><rect y=\"6.2\" width=\"40\" height=\"3.1\"/><rect y=\"12.3\" width=\"40\" height=\"3.1\"/><rect y=\"18.5\" width=\"40\" height=\"3.1\"/><rect y=\"24.6\" width=\"40\" height=\"3.1\"/><rect y=\"30.8\" width=\"40\" height=\"3.1\"/><rect y=\"36.9\" width=\"40\" height=\"3.1\"/></g><rect width=\"19\" height=\"21.6\" fill=\"#1c2f6b\"/><g fill=\"#fff\"><circle cx=\"4\" cy=\"4\" r=\"1\"/><circle cx=\"9.5\" cy=\"4\" r=\"1\"/><circle cx=\"15\" cy=\"4\" r=\"1\"/><circle cx=\"6.7\" cy=\"8\" r=\"1\"/><circle cx=\"12.2\" cy=\"8\" r=\"1\"/><circle cx=\"4\" cy=\"12\" r=\"1\"/><circle cx=\"9.5\" cy=\"12\" r=\"1\"/><circle cx=\"15\" cy=\"12\" r=\"1\"/><circle cx=\"6.7\" cy=\"16\" r=\"1\"/><circle cx=\"12.2\" cy=\"16\" r=\"1\"/></g></svg>", GOLD_SVG = "<svg viewBox=\"0 0 40 40\"><defs><radialGradient id=\"gbg\" cx=\"50%\" cy=\"40%\" r=\"65%\"><stop offset=\"0\" stop-color=\"#5a4320\"/><stop offset=\"1\" stop-color=\"#1c150b\"/></radialGradient><linearGradient id=\"gbar\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ffe6a3\"/><stop offset=\".55\" stop-color=\"#e0a93e\"/><stop offset=\"1\" stop-color=\"#9c6a18\"/></linearGradient></defs><rect width=\"40\" height=\"40\" fill=\"url(#gbg)\"/><path d=\"M8 27 l3-6h9l3 6z\" fill=\"url(#gbar)\"/><path d=\"M17 27 l3-6h9l3 6z\" fill=\"url(#gbar)\"/><path d=\"M12.5 21 l3-6h9l3 6z\" fill=\"url(#gbar)\"/><path d=\"M15.5 15 l1-2h6.5l1 2z\" fill=\"#fff3cc\" opacity=\".6\"/></svg>", SILVER_SVG = "<svg viewBox=\"0 0 40 40\"><defs><radialGradient id=\"sbg\" cx=\"50%\" cy=\"40%\" r=\"65%\"><stop offset=\"0\" stop-color=\"#4a4d55\"/><stop offset=\"1\" stop-color=\"#16171b\"/></radialGradient><linearGradient id=\"sbar\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\".55\" stop-color=\"#c3c7cf\"/><stop offset=\"1\" stop-color=\"#7d828c\"/></linearGradient></defs><rect width=\"40\" height=\"40\" fill=\"url(#sbg)\"/><path d=\"M8 27 l3-6h9l3 6z\" fill=\"url(#sbar)\"/><path d=\"M17 27 l3-6h9l3 6z\" fill=\"url(#sbar)\"/><path d=\"M12.5 21 l3-6h9l3 6z\" fill=\"url(#sbar)\"/><path d=\"M15.5 15 l1-2h6.5l1 2z\" fill=\"#ffffff\" opacity=\".6\"/></svg>";
+  var market = null;
+  var markets = [0, 1].map(function (i) {
+    var mk = new Market(document.getElementById("m-" + i), picks[i]);
+    var el = mk.el, picker = el.querySelector(".picker"), list = el.querySelector(".picker-list");
+    Object.keys(INST).forEach(function (k) {
+      var b = document.createElement("button");
+      b.type = "button"; b.dataset.key = k;
+      b.innerHTML = INST[k].label + "<small>" + INST[k].name + "</small>";
+      b.addEventListener("click", function () {
+        picks[i] = k; try { localStorage.setItem(PICK_KEY, JSON.stringify(picks)); } catch (e) {}
+        picker.hidden = true; mk.setInst(k); refreshPoints(); loadPrices();
+      });
+      list.appendChild(b);
+    });
+    el.querySelector(".head").addEventListener("click", function () {
+      list.querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.key === mk.key); });
+      picker.hidden = false;
+    });
+    el.querySelector(".picker-close").addEventListener("click", function () { picker.hidden = true; });
+    return mk;
+  });
 
   /* ---------- weather ---------- */
   var ICON = {
@@ -897,10 +975,21 @@ body {
   }
 
   /* ---------- automatic analysis (market.json, refreshed hourly by the Pages workflow) ---------- */
-  var market = null;
   function setPoint(i, title, body) {
     document.querySelector('[data-pt="' + i + 'h"]').textContent = title;
     document.querySelector('[data-pt="' + i + 'p"]').textContent = body;
+  }
+  function refreshPoints() {
+    if (!market) return;
+    var all = market.instruments || market;
+    markets.forEach(function (mk, i) {
+      var a = all[mk.key] && all[mk.key].analysis;
+      if (a) setPoint(i + 1, a.title, a.body);
+      else setPoint(i + 1, INST[mk.key].name, "この銘柄の分析データはまだありません。\n次の更新（1時間ごと）をお待ちください。");
+    });
+    var u = new Date(market.updated);
+    document.getElementById("pt-foot").textContent = "チャートから自動分析・" + u.getHours() + ":" + String(u.getMinutes()).padStart(2, "0") + "更新（参考情報）";
+    renderStrategy();
   }
   function renderStrategy() {
     if (!market) return;
@@ -911,15 +1000,16 @@ body {
       }).sort(function (a, b) { return a.t - b.t; })[0];
       if (next) line1 = next.t.getHours() + ":" + String(next.t.getMinutes()).padStart(2, "0") + " " + jaTitle(next) + "に注意。";
     }
-    var notes2 = [], j = market.usdjpy && market.usdjpy.analysis, g = market.gold && market.gold.analysis;
-    [[j, "ドル円"], [g, "ゴールド"]].forEach(function (x) {
+    var all = market.instruments || market, notes2 = [];
+    var sel = markets.map(function (mk) { return [all[mk.key] && all[mk.key].analysis, INST[mk.key].name, mk.key]; });
+    sel.forEach(function (x) {
       if (!x[0] || x[0].rsi == null) return;
       if (x[0].rsi >= 70) notes2.push(x[1] + "はRSI" + Math.round(x[0].rsi) + "で過熱、高値追いは慎重に。");
       else if (x[0].rsi <= 30) notes2.push(x[1] + "はRSI" + Math.round(x[0].rsi) + "で売られ過ぎ。");
     });
     var body = line1;
     if (notes2.length) body = line1.split("\n")[0] + "\n" + notes2[0];
-    else if (j && j.atr) body = line1.split("\n")[0] + "\nドル円の1日の値幅目安は約" + j.atr.toFixed(2) + "円。";
+    else if (sel[0][0] && sel[0][0].atr) body = line1.split("\n")[0] + "\n値幅目安：" + sel[0][1] + " " + atrText(sel[0][2], sel[0][0].atr) + "/日";
     setPoint(3, "本日のトレード戦略", body);
   }
   function loadMarket() {
@@ -928,17 +1018,16 @@ body {
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (d) {
         market = d;
-        [["usdjpy", 0], ["gold", 1]].forEach(function (x) {
-          var m = d[x[0]], mk = markets[x[1]];
+        var all = d.instruments || d;
+        markets.forEach(function (mk) {
+          var m = all[mk.key];
           if (!m) return;
-          if (m.analysis) setPoint(x[1] + 1, m.analysis.title, m.analysis.body);
           mk.series = m.candles; mk.prevClose = m.prevClose;
-          mk.applyLive(mk.live ? mk.price : m.price);
+          // spot-priced instruments keep their fresher minute quote
+          mk.applyLive(mk.live && INST[mk.key].spot ? mk.price : m.price);
           mk.gen(); mk.draw();
         });
-        var u = new Date(d.updated);
-        document.getElementById("pt-foot").textContent = "チャートから自動分析・" + u.getHours() + ":" + String(u.getMinutes()).padStart(2, "0") + "更新（参考情報）";
-        renderStrategy();
+        refreshPoints();
       })
       .catch(function () {});
   }
