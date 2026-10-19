@@ -28,7 +28,15 @@ INSTRUMENTS = {
     "silver": ("SI=F", "シルバー", 0.05, 2, "XAG"),
     "usoil": ("CL=F", "USオイル", 0.05, 2, None),
     "btc": ("BTC-USD", "BTC/USD", 100.0, 0, None),
+    "dxy": ("DX-Y.NYB", "ドル指数", 0.05, 2, None),
+    "jxy": (None, "円指数", 0.05, 2, None),  # computed below from six yen crosses
+    "vix": ("^VIX", "VIX", 0.1, 1, None),
 }
+KIND = {"dxy": "index", "jxy": "index", "vix": "vix"}  # wording of the automatic read
+# JXY: a yen strength index, the geometric mean of the yen against six currencies,
+# scaled to 100 at early-2020 rates. It is our own calculation, not TradingView's TVC:JXY.
+JXY_BASKET = {"JPY=X": 108.6, "EURJPY=X": 121.6, "GBPJPY=X": 143.8, "AUDJPY=X": 76.2, "CADJPY=X": 83.6, "CHFJPY=X": 112.0}
+TF_FETCH = [("1m", "1m", "5d"), ("5m", "5m", "5d"), ("15m", "15m", "5d"), ("1h", "60m", "3mo"), ("1d", "1d", "1y"), ("1w", "1wk", "5y")]
 N_CANDLES = 150  # per timeframe; the widget shows ~38 and lets you scroll back through the rest
 
 
@@ -127,13 +135,27 @@ def analyze(key, done, price):
 
     name = INSTRUMENTS[key][1]
     f = lambda v: fmt(key, v)
-    if trend == "up":
+    kind = KIND.get(key)
+    if kind == "vix":
+        mood = "恐怖水準" if price >= 30 else "警戒水準" if price >= 20 else "平常水準"
+        title = {"up": "VIX：上昇（リスクオフ警戒）", "down": "VIX：低下（リスクオン）", "range": "VIX：横ばい"}[trend]
+        body = f"現在{f(price)}で{mood}。\n{f(res)}を上抜けると警戒感が強まる。"
+    elif kind == "index":
+        title = {"up": f"{name}：上昇トレンド", "down": f"{name}：下落トレンド", "range": f"{name}：レンジ内の推移"}[trend]
+        if trend == "up":
+            body = f"{f(sup)}付近が下値の目安。\n{f(res)}を上抜ければ{f(res2)}が視野。"
+        elif trend == "down":
+            body = f"{f(res)}付近が上値の目安。\n{f(sup)}を割り込めば{f(sup2)}が視野。"
+        else:
+            lo, hi = (s1, r1) if s1 < price < r1 else (sup, res)
+            body = f"{f(lo)}〜{f(hi)}のレンジを想定。\n抜けた方向に注目。"
+    elif trend == "up":
         title = f"{name}：押し目買い目線"
         body = f"{f(sup)}付近の押し目に注目。\n{f(res)}を上抜ければ{f(res2)}が視野。"
     elif trend == "down":
         title = f"{name}：戻り売り目線"
         body = f"{f(res)}付近の戻りに注目。\n{f(sup)}を割り込めば{f(sup2)}が視野。"
-    else:
+    elif kind is None:
         lo, hi = (s1, r1) if s1 < price < r1 else (sup, res)
         title = f"{name}：レンジ内の攻防"
         body = f"{f(lo)}〜{f(hi)}のレンジを想定。\n抜けた方向へついていく。"
@@ -174,13 +196,40 @@ def build(fixture=None, prev=None):
     return out
 
 
+_cache = {}
+
+
+def fetch_series(sym, fixture):
+    """Raw candles per timeframe for one Yahoo symbol (cached within a run)."""
+    if sym not in _cache:
+        _cache[sym] = {tf: yahoo(sym, iv, rng, fixture) for tf, iv, rng in TF_FETCH}
+    return {tf: [r[:] for r in rows] for tf, rows in _cache[sym].items()}
+
+
+def jxy_series(fixture):
+    comps = {s: fetch_series(s, fixture) for s in JXY_BASKET}
+    out = {}
+    for tf, _, _ in TF_FETCH:
+        maps = [{r[0]: r for r in comps[s][tf]} for s in JXY_BASKET]
+        common = sorted(set.intersection(*(set(m) for m in maps)))
+        rows = []
+        for t in common:
+            o = h = l = c = 1.0
+            for m, ref in zip(maps, JXY_BASKET.values()):
+                _, po, ph, pl, pc = m[t]
+                o *= ref / po; c *= ref / pc
+                h *= ref / pl; l *= ref / ph  # yen strength moves opposite to the cross
+            k = 1 / len(JXY_BASKET)
+            rows.append([t, 100 * o ** k, 100 * h ** k, 100 * l ** k, 100 * c ** k])
+        if tf in ("1h", "1d") and len(rows) < 30:
+            raise ValueError(f"JXY: only {len(rows)} aligned {tf} candles")
+        out[tf] = rows
+    return out
+
+
 def one(key, sym, spot_sym, fixture):
-    m1 = yahoo(sym, "1m", "5d", fixture)
-    m5 = yahoo(sym, "5m", "5d", fixture)
-    m15 = yahoo(sym, "15m", "5d", fixture)
-    h1 = yahoo(sym, "60m", "3mo", fixture)
-    d1 = yahoo(sym, "1d", "1y", fixture)
-    w1 = yahoo(sym, "1wk", "5y", fixture)
+    ser = jxy_series(fixture) if key == "jxy" else fetch_series(sym, fixture)
+    m1, m5, m15, h1, d1, w1 = (ser[tf] for tf in ("1m", "5m", "15m", "1h", "1d", "1w"))
     spot = None
     if spot_sym and fixture is None:
         try:
@@ -213,7 +262,6 @@ def one(key, sym, spot_sym, fixture):
             "1w": r6(w1[-N_CANDLES:]),
         },
     }
-
 
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("--prev=")]
