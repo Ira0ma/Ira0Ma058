@@ -745,9 +745,9 @@ body {
     silver: { label: "SILVER", small: "(XAG/USD)", sub: "銀／米ドル", name: "シルバー", dp: 3, tail: 1, demo: 57.83, badge: BADGE.silver, unit: "usd", spot: "XAG" },
     usoil: { label: "USOIL", small: "(WTI)", sub: "WTI原油／米ドル", name: "USオイル", dp: 2, tail: 0, demo: 97.5, badge: BADGE.oil, unit: "usd" },
     btc: { label: "BTC/USD", sub: "ビットコイン／米ドル", name: "BTC/USD", pickName: "ビットコイン", dp: 2, tail: 0, demo: 82640, badge: BADGE.txt("₿", "btc"), unit: "usd" },
-    dxy: { label: "DXY", sub: "米ドル指数", name: "ドル指数", pickName: "ドル指数", dp: 3, tail: 1, demo: 98.6, badge: BADGE.txt("$"), unit: "pt" },
+    dxy: { label: "DXY", sub: "米ドル指数", name: "ドル指数", pickName: "ドル指数", dp: 3, tail: 1, demo: 101.86, badge: BADGE.txt("$"), unit: "pt" },
     jxy: { label: "JXY", small: "(独自計算)", sub: "円指数（対6通貨）", name: "円指数", pickName: "円指数", dp: 3, tail: 1, demo: 67.8, badge: BADGE.txt("¥"), unit: "pt" },
-    vix: { label: "VIX", sub: "恐怖指数（S&P500）", name: "VIX", pickName: "恐怖指数", dp: 2, tail: 0, demo: 17.3, badge: BADGE.txt("VIX", "small vix"), unit: "pt" }
+    vix: { label: "VIX", sub: "恐怖指数（S&P500）", name: "VIX", pickName: "恐怖指数", dp: 2, tail: 0, demo: 19.99, badge: BADGE.txt("VIX", "small vix"), unit: "pt" }
   };
   var PICK_KEY = "mkt-v1", picks = ["usdjpy", "gold"];
   try { var sp = JSON.parse(localStorage.getItem(PICK_KEY)); if (sp && INST[sp[0]] && INST[sp[1]]) picks = sp; } catch (e) {}
