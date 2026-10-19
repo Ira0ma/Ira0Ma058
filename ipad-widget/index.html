@@ -75,6 +75,7 @@ body {
 .mkt .head:hover .chev, .mkt .head:focus-visible .chev { color: var(--gold); }
 .badge-txt { width: 100%; height: 100%; display: grid; place-items: center; font-family: var(--display); font-weight: 700; font-size: 17px; color: #1a1408; background: radial-gradient(circle at 50% 35%, #f6d48f, #c99540); }
 .badge-txt.small { font-size: 12px; }
+.badge-txt.oil { background: radial-gradient(circle at 50% 35%, #5b5f68, #24262b); }
 .badge-txt.btc { background: radial-gradient(circle at 50% 35%, #ffb54d, #e07f12); color: #fff; font-size: 20px; }
 .picker { position: absolute; inset: 6px; z-index: 3; background: rgba(14,16,22,.98); border: 1px solid var(--glass-line); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 .picker-h { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; }
@@ -594,6 +595,7 @@ body {
   /* Selectable instruments. demo is the offline sample price; spot is the gold-api.com symbol for minute updates. */
   var BADGE = {
     us: "FLAG", gold: "GOLD", silver: "SILVER",
+    oil: '<span class="badge-txt oil"><svg width="18" height="22" viewBox="0 0 18 22"><path d="M9 1.5C9 1.5 2 9.5 2 14a7 7 0 0 0 14 0C16 9.5 9 1.5 9 1.5z" fill="#14100a"/><path d="M5.6 14.5a3.4 3.4 0 0 0 3 3" stroke="#e3b867" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg></span>',
     txt: function (t, cls) { return '<span class="badge-txt ' + (cls || "") + '">' + t + "</span>"; }
   };
   var INST = {
@@ -609,7 +611,8 @@ body {
     usdcad: { label: "USD/CAD", sub: "米ドル／カナダドル", name: "ドルカナダ", dp: 5, tail: 1, demo: 1.4120, badge: BADGE.us, unit: "pips" },
     gold: { label: "GOLD", small: "(XAU/USD)", sub: "金／米ドル", name: "ゴールド", dp: 2, tail: 0, demo: 4180, badge: BADGE.gold, unit: "usd", spot: "XAU" },
     silver: { label: "SILVER", small: "(XAG/USD)", sub: "銀／米ドル", name: "シルバー", dp: 3, tail: 1, demo: 57.83, badge: BADGE.silver, unit: "usd", spot: "XAG" },
-    btc: { label: "BTC/USD", sub: "ビットコイン／米ドル", name: "ビットコイン", dp: 2, tail: 0, demo: 82640, badge: BADGE.txt("₿", "btc"), unit: "usd" }
+    usoil: { label: "USOIL", small: "(WTI)", sub: "WTI原油／米ドル", name: "USオイル", dp: 2, tail: 0, demo: 61.5, badge: BADGE.oil, unit: "usd" },
+    btc: { label: "BTCUSD", sub: "ビットコイン／米ドル", name: "BTCUSD", pickName: "ビットコイン", dp: 2, tail: 0, demo: 82640, badge: BADGE.txt("₿", "btc"), unit: "usd" }
   };
   var PICK_KEY = "mkt-v1", picks = ["usdjpy", "gold"];
   try { var sp = JSON.parse(localStorage.getItem(PICK_KEY)); if (sp && INST[sp[0]] && INST[sp[1]]) picks = sp; } catch (e) {}
@@ -641,7 +644,7 @@ body {
     Object.keys(INST).forEach(function (k) {
       var b = document.createElement("button");
       b.type = "button"; b.dataset.key = k;
-      b.innerHTML = INST[k].label + "<small>" + INST[k].name + "</small>";
+      b.innerHTML = INST[k].label + "<small>" + (INST[k].pickName || INST[k].name) + "</small>";
       b.addEventListener("click", function () {
         picks[i] = k; try { localStorage.setItem(PICK_KEY, JSON.stringify(picks)); } catch (e) {}
         picker.hidden = true; mk.setInst(k); refreshPoints(); loadPrices();

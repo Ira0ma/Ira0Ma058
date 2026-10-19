@@ -25,7 +25,8 @@ INSTRUMENTS = {
     "usdcad": ("CAD=X", "ドルカナダ", 0.0005, 4, None),
     "gold": ("GC=F", "ゴールド", 5.0, 0, "XAU"),
     "silver": ("SI=F", "シルバー", 0.05, 2, "XAG"),
-    "btc": ("BTC-USD", "ビットコイン", 100.0, 0, None),
+    "usoil": ("CL=F", "USオイル", 0.05, 2, None),
+    "btc": ("BTC-USD", "BTCUSD", 100.0, 0, None),
 }
 N_CANDLES = 38
 
