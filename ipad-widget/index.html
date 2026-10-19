@@ -123,8 +123,11 @@ body {
 .pt-list li.off .ck { background: transparent; box-shadow: inset 0 0 0 1.5px rgba(227,184,103,.6); }
 .pt-list li.off .ck svg { opacity: 0; }
 .pt-list li.off h3, .pt-list li.off p { opacity: .55; }
-.reset { display: none; position: absolute; left: 20px; bottom: 10px; background: none; border: 0; padding: 0; font: inherit; font-size: 11.5px; color: var(--ink-3); text-decoration: underline; cursor: pointer; }
-.editing .reset { display: inline-block; }
+.edit-bar { display: none; position: absolute; left: 16px; right: 16px; bottom: 10px; align-items: center; justify-content: space-between; gap: 8px; }
+.editing .edit-bar { display: flex; }
+.editing .pt-list { gap: 8px; }
+.editing .pt-list li { padding-bottom: 8px; }
+.reset { background: none; border: 0; padding: 0; font: inherit; font-size: 11.5px; color: var(--ink-3); text-decoration: underline; cursor: pointer; }
 .pt-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
 .pt-list li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--glass-line); }
 .pt-list li:last-child { border-bottom: 0; padding-bottom: 0; }
@@ -191,8 +194,7 @@ body {
 .app span { font-size: 11.5px; color: var(--ink-2); }
 .app:active .ic { transform: scale(.94); }
 .no-dock .dock, .no-dock .dots { display: none; }
-.dock-toggle { display: none; position: absolute; z-index: 5; left: 50%; top: 5px; transform: translateX(-50%); font: inherit; font-size: 12px; font-weight: 600; color: #14100a; background: var(--gold); border: 0; border-radius: 999px; padding: 5px 14px; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,.4); }
-.editing .dock-toggle { display: block; }
+.dock-toggle { font: inherit; font-size: 11.5px; font-weight: 600; color: #14100a; background: var(--gold); border: 0; border-radius: 999px; padding: 5px 12px; cursor: pointer; white-space: nowrap; }
 .dock .div { width: 1px; height: 64px; background: rgba(255,255,255,.18); margin-top: -18px; }
 
 @media (prefers-reduced-motion: reduce) { .mkt .price { transition: none; } }
@@ -201,8 +203,6 @@ body {
 <canvas id="bg" aria-hidden="true"></canvas>
 <div id="fit">
 <div id="stage">
-
-  <button class="dock-toggle" type="button"></button>
 
   <div class="status num">
     <div class="l"><span data-clock="hm">9:41</span><span data-clock="md">5月27日(火)</span></div>
@@ -280,7 +280,7 @@ body {
         <div><h3 data-edit="p3h">本日のトレード戦略</h3><p data-edit="p3p">重要指標前はポジションを軽く、
 値動きに応じて柔軟に対応する。</p></div></li>
     </ul>
-    <button class="reset" type="button">書き換えた内容を消して最初の文章に戻す</button>
+    <div class="edit-bar"><button class="reset" type="button">最初の文章に戻す</button><button class="dock-toggle" type="button"></button></div>
   </section>
 
   <!-- weather -->
@@ -757,7 +757,7 @@ body {
     }
     var rs = e.target.closest(".reset");
     if (rs) {
-      if (!rs.dataset.armed) { rs.dataset.armed = "1"; rs.textContent = "本当に戻す場合は、もう一度タップ"; return; }
+      if (!rs.dataset.armed) { rs.dataset.armed = "1"; rs.textContent = "もう一度タップで戻す"; return; }
       delete rs.dataset.armed; rs.textContent = RESET_LABEL;
       notes = notes.dockHidden ? { dockHidden: true } : {}; saveNotes(); applyNotes(); setEditing(true);
     }
@@ -776,9 +776,24 @@ body {
   });
   applyDock();
 
+  /* ---------- auto-update (home-screen app) ---------- */
+  var buildMeta = document.querySelector('meta[name="build"]');
+  function checkUpdate() {
+    if (!buildMeta || !window.fetch || editing) return;
+    fetch(location.pathname + "?v=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.text() : Promise.reject(); })
+      .then(function (t) {
+        var m = t.match(/<meta name="build" content="([^"]+)"/);
+        if (m && m[1] !== buildMeta.content) location.replace(location.pathname + "?v=" + m[1]);
+      })
+      .catch(function () {});
+  }
+
   /* ---------- boot ---------- */
   tickClock(); renderCal(); bg.start(); layout(); loadWeather(); loadPrices();
   setInterval(loadPrices, 60000);
+  checkUpdate(); setInterval(checkUpdate, 10 * 60000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); } });
   setInterval(loadWeather, 30 * 60000);
   var lastDay = new Date().getDate();
   setInterval(function () {
