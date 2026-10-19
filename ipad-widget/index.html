@@ -673,6 +673,16 @@ body {
   var HOL = "2026-01-01 2026-01-12 2026-02-11 2026-02-23 2026-03-20 2026-04-29 2026-05-03 2026-05-04 2026-05-05 2026-05-06 2026-07-20 2026-08-11 2026-09-21 2026-09-22 2026-09-23 2026-10-12 2026-11-03 2026-11-23 " +
             "2027-01-01 2027-01-11 2027-02-11 2027-02-23 2027-03-21 2027-03-22 2027-04-29 2027-05-03 2027-05-04 2027-05-05 2027-07-19 2027-08-11 2027-09-20 2027-09-23 2027-10-11 2027-11-03 2027-11-23";
   var calBase = new Date(); calBase.setDate(1);
+  var HOL_NAMES = {};
+  /* holidays.json (Japanese public holidays, last year to next year) is refreshed by the Pages workflow;
+     the list above is the fallback. */
+  function loadHolidays() {
+    if (!window.fetch) return;
+    fetch("holidays.json?v=" + new Date().toDateString().replace(/ /g, ""), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (j) { HOL_NAMES = j; HOL += " " + Object.keys(j).join(" "); renderCal(); })
+      .catch(function () {});
+  }
   function key(y, m, d) { return y + "-" + String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0"); }
   function renderCal() {
     var now = new Date();
@@ -688,9 +698,10 @@ body {
       for (var d = 1; d <= days; d++) {
         var wd = (first + d - 1) % 7, cls = "d";
         if (wd === 0) cls += " sun"; if (wd === 6) cls += " sat";
-        if (HOL.indexOf(key(y, m, d)) >= 0) cls += " hol";
+        var k = key(y, m, d), title = HOL_NAMES[k] ? ' title="' + HOL_NAMES[k] + '"' : "";
+        if (HOL.indexOf(k) >= 0) cls += " hol";
         if (y === now.getFullYear() && m === now.getMonth() && d === now.getDate()) cls += " today";
-        html += '<div class="' + cls + '">' + d + "</div>";
+        html += '<div class="' + cls + '"' + title + ">" + d + "</div>";
       }
       box.innerHTML = html + "</div>";
     });
@@ -939,13 +950,21 @@ body {
   setInterval(loadPrices, 60000);
   checkUpdate(); setInterval(checkUpdate, 10 * 60000);
   loadCalendar(); setInterval(loadCalendar, 30 * 60000);
-  loadMarket(); setInterval(loadMarket, 15 * 60000); setInterval(renderIndicators, 60000);
+  loadMarket(); setInterval(loadMarket, 15 * 60000);
+  loadHolidays(); setInterval(renderIndicators, 60000);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); loadCalendar(); loadMarket(); } });
   setInterval(loadWeather, 30 * 60000);
-  var lastDay = new Date().getDate();
+  var lastDay = new Date().getDate(), lastMonth = new Date().getMonth();
   setInterval(function () {
     tickClock();
-    if (new Date().getDate() !== lastDay) { lastDay = new Date().getDate(); renderCal(); }
+    var nowD = new Date();
+    if (nowD.getDate() !== lastDay) {
+      lastDay = nowD.getDate();
+      if (nowD.getMonth() !== lastMonth) { // a new month: show it, even if the calendar was paged elsewhere
+        lastMonth = nowD.getMonth(); calBase = new Date(nowD.getFullYear(), nowD.getMonth(), 1); loadHolidays();
+      }
+      renderCal();
+    }
   }, 1000);
   setInterval(function () { markets.forEach(function (m) { m.tick(); }); }, 2500);
   window.addEventListener("resize", layout);
