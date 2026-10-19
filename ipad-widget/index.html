@@ -190,6 +190,9 @@ body {
 .app .ic svg { width: 100%; height: 100%; display: block; }
 .app span { font-size: 11.5px; color: var(--ink-2); }
 .app:active .ic { transform: scale(.94); }
+.no-dock .dock, .no-dock .dots { display: none; }
+.dock-toggle { display: none; position: absolute; z-index: 5; left: 50%; top: 5px; transform: translateX(-50%); font: inherit; font-size: 12px; font-weight: 600; color: #14100a; background: var(--gold); border: 0; border-radius: 999px; padding: 5px 14px; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+.editing .dock-toggle { display: block; }
 .dock .div { width: 1px; height: 64px; background: rgba(255,255,255,.18); margin-top: -18px; }
 
 @media (prefers-reduced-motion: reduce) { .mkt .price { transition: none; } }
@@ -198,6 +201,8 @@ body {
 <canvas id="bg" aria-hidden="true"></canvas>
 <div id="fit">
 <div id="stage">
+
+  <button class="dock-toggle" type="button"></button>
 
   <div class="status num">
     <div class="l"><span data-clock="hm">9:41</span><span data-clock="md">5月27日(火)</span></div>
@@ -334,7 +339,7 @@ body {
   "use strict";
   var stage = document.getElementById("stage");
   var fit = document.getElementById("fit");
-  var W = 1210, H = 860, scale = 1;
+  var W = 1210, H = 860, scale = 1, dockHidden = false;
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   var WD = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -360,6 +365,7 @@ body {
     var cs = getComputedStyle(fit);
     var aw = fit.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     var ah = fit.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    H = dockHidden ? 748 : 860; stage.style.height = H + "px";
     scale = Math.min(aw / W, ah / H);
     stage.style.transform = "scale(" + scale + ")";
     stage.style.margin = ((H * scale - H) / 2) + "px " + ((W * scale - W) / 2) + "px";
@@ -753,10 +759,22 @@ body {
     if (rs) {
       if (!rs.dataset.armed) { rs.dataset.armed = "1"; rs.textContent = "本当に戻す場合は、もう一度タップ"; return; }
       delete rs.dataset.armed; rs.textContent = RESET_LABEL;
-      notes = {}; saveNotes(); applyNotes(); setEditing(true);
+      notes = notes.dockHidden ? { dockHidden: true } : {}; saveNotes(); applyNotes(); setEditing(true);
     }
   });
   applyNotes();
+
+  /* Dock (the row of app icons) can be hidden; the widgets then grow into the freed space. */
+  var dockBtn = document.querySelector(".dock-toggle");
+  function applyDock() {
+    dockHidden = notes.dockHidden === true;
+    stage.classList.toggle("no-dock", dockHidden);
+    dockBtn.textContent = dockHidden ? "下のアイコンを表示する" : "下のアイコンを隠す";
+  }
+  dockBtn.addEventListener("click", function () {
+    notes.dockHidden = !dockHidden; saveNotes(); applyDock(); layout();
+  });
+  applyDock();
 
   /* ---------- boot ---------- */
   tickClock(); renderCal(); bg.start(); layout(); loadWeather(); loadPrices();
