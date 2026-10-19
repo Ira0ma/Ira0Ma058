@@ -7,6 +7,11 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "*/5 * * * *"  # every 5 minutes (GitHub's minimum): refresh charts, analysis, calendar
+    # Morning check at 7:00 JST: extra runs from 6:40 to 7:20 JST (21:40-22:20 UTC), around the
+    # New York close (17:00 NY = 6:00 JST in summer, 7:00 JST in winter), so the day's previous close,
+    # pivots and notes are fresh even when GitHub delays or skips the 5-minute runs.
+    - cron: "40,47,53,58 21 * * *"
+    - cron: "3,8,14,20 22 * * *"
 
 permissions:
   contents: read
