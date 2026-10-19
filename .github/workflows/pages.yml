@@ -6,7 +6,7 @@ on:
     paths: ["ipad-widget/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
   schedule:
-    - cron: "4,19,34,49 * * * *"  # every 15 minutes: refresh charts, analysis, calendar
+    - cron: "*/5 * * * *"  # every 5 minutes (GitHub's minimum): refresh charts, analysis, calendar
 
 permissions:
   contents: read

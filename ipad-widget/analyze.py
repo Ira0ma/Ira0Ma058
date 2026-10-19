@@ -9,7 +9,8 @@ import json
 import sys
 import time
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 UA = {"User-Agent": "Mozilla/5.0 (TradeDeskWidget)"}
 # key: (Yahoo symbol, Japanese name, level step, decimals, gold-api spot symbol for futures)
@@ -36,7 +37,28 @@ KIND = {"dxy": "index", "jxy": "index", "vix": "vix"}  # wording of the automati
 # JXY: a yen strength index, the geometric mean of the yen against six currencies,
 # scaled to 100 at early-2020 rates. It is our own calculation, not TradingView's TVC:JXY.
 JXY_BASKET = {"JPY=X": 108.6, "EURJPY=X": 121.6, "GBPJPY=X": 143.8, "AUDJPY=X": 76.2, "CADJPY=X": 83.6, "CHFJPY=X": 112.0}
-TF_FETCH = [("1m", "1m", "5d"), ("5m", "5m", "5d"), ("15m", "15m", "5d"), ("1h", "60m", "3mo"), ("1d", "1d", "1y"), ("1w", "1wk", "5y")]
+TF_FETCH = [("1m", "1m", "5d"), ("5m", "5m", "5d"), ("15m", "15m", "5d"), ("1h", "60m", "1y"), ("1d", "1d", "1y"), ("1w", "1wk", "5y")]
+# Markets that trade nearly 24 hours roll their day at 17:00 New York (the FX convention MT4/TradingView use).
+# Their daily candles, previous close and pivots are rebuilt from hourly data on that boundary.
+# Bitcoin keeps the UTC day; VIX keeps its exchange close.
+NY = ZoneInfo("America/New_York")
+UTC_DAY = {"btc", "vix"}
+
+
+def ny_day(t):
+    return (datetime.fromtimestamp(t, NY) + timedelta(hours=7)).date()  # 17:00 NY -> next calendar day
+
+
+def ny_daily(h1):
+    out, key = [], None
+    for t, o, h, l, c in h1:
+        k = ny_day(t)
+        if k == key:
+            r = out[-1]
+            r[2], r[3], r[4] = max(r[2], h), min(r[3], l), c
+        else:
+            out.append([t, o, h, l, c]); key = k
+    return out
 N_CANDLES = 150  # per timeframe; the widget shows ~38 and lets you scroll back through the rest
 
 
@@ -242,15 +264,21 @@ def one(key, sym, spot_sym, fixture):
         for rows in (m1, m5, m15, h1, d1, w1):
             for r in rows:
                 r[1:] = [v + shift for v in r[1:]]
-    price = (m1 or m15 or h1)[-1][4]  # the freshest close
-    today = datetime.now(timezone.utc).date()
-    last_day = datetime.fromtimestamp(d1[-1][0], timezone.utc).date()
-    done = d1[:-1] if last_day >= today else d1  # drop today's unfinished candle
+    last = (m1 or m15 or h1)[-1]
+    price, as_of = last[4], last[0]  # the freshest close and when it traded
+    if key not in UTC_DAY and len(h1) > 24 * 60:
+        d1 = ny_daily(h1)
+        current = ny_day(time.time())
+        done = d1[:-1] if ny_day(d1[-1][0]) >= current else d1
+    else:
+        today = datetime.now(timezone.utc).date()
+        last_day = datetime.fromtimestamp(d1[-1][0], timezone.utc).date()
+        done = d1[:-1] if last_day >= today else d1  # drop today's unfinished candle
     a = analyze(key, done, price)
     prev_close = done[-1][4]
     print(key, round(price, 5), a["trend"], a["title"])
     return {
-        "price": price, "prevClose": prev_close, "analysis": a,
+        "price": price, "asOf": as_of, "prevClose": prev_close, "analysis": a,
         "candles": {
             "1m": r6(m1[-N_CANDLES:]),
             "5m": r6(m5[-N_CANDLES:]),
