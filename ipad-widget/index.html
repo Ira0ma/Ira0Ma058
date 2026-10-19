@@ -98,7 +98,7 @@ body {
 .tabs { display: flex; gap: 6px; margin-top: 6px; }
 .tabs button { flex: 1; font: inherit; font-size: 11.5px; color: var(--ink-2); background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 4px 0; cursor: pointer; }
 .tabs button[aria-pressed="true"] { color: var(--gold); border-color: rgba(227,184,103,.55); background: rgba(227,184,103,.10); }
-.tabs button:focus-visible, .mkt .head:focus-visible, .picker-list button:focus-visible, .cal-nav button:focus-visible, a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.tabs button:focus-visible, .pt-pick:focus-visible, .mkt .head:focus-visible, .picker-list button:focus-visible, .cal-nav button:focus-visible, a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
 /* indicators */
 #ind { left: 856px; top: 35px; width: 328px; height: 276px; padding: 18px 20px; display: flex; flex-direction: column; }
@@ -133,6 +133,11 @@ body {
 .pt-list li:last-child { border-bottom: 0; padding-bottom: 0; }
 .pt-list .ck { width: 24px; height: 24px; border-radius: 50%; background: var(--gold); display: grid; place-items: center; box-shadow: 0 0 12px rgba(227,184,103,.35); }
 .pt-list h3 { margin: 1px 0 6px; font-size: 14.5px; font-weight: 600; }
+.pt-pick { font: inherit; color: inherit; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border-radius: 6px; }
+.pt-pick .chev { color: var(--ink-3); flex: none; }
+.pt-pick:hover .chev, .pt-pick:focus-visible .chev { color: var(--gold); }
+.pt-picker { inset: 10px; }
+.picker-list .follow { grid-column: 1 / -1; }
 .pt-list p { margin: 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* weather */
@@ -269,15 +274,16 @@ body {
     </div>
     <ul class="pt-list">
       <li data-check="p1"><button class="ck" type="button" aria-label="チェックを切り替え"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <div><h3 data-pt="1h">ドル円：押し目買い目線</h3><p data-pt="1p">156.00付近のサポートに注目。
+        <div><h3><button class="pt-pick" type="button" data-slot="0" aria-label="この注目ポイントの銘柄を変える"><span data-pt="1h">ドル円：押し目買い目線</span><svg class="chev" width="9" height="6" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></h3><p data-pt="1p">156.00付近のサポートに注目。
 上抜けで156.80を目指す。</p></div></li>
       <li data-check="p2"><button class="ck" type="button" aria-label="チェックを切り替え"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <div><h3 data-pt="2h">ゴールド：重要ラインを確認</h3><p data-pt="2p">2,350の攻防。上抜けで2,370、
+        <div><h3><button class="pt-pick" type="button" data-slot="1" aria-label="この注目ポイントの銘柄を変える"><span data-pt="2h">ゴールド：重要ラインを確認</span><svg class="chev" width="9" height="6" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></h3><p data-pt="2p">2,350の攻防。上抜けで2,370、
 下抜けで2,330を意識。</p></div></li>
       <li data-check="p3"><button class="ck" type="button" aria-label="チェックを切り替え"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <div><h3 data-pt="3h">本日のトレード戦略</h3><p data-pt="3p">重要指標前はポジションを軽く、
 値動きに応じて柔軟に対応する。</p></div></li>
     </ul>
+    <div class="picker pt-picker" hidden><div class="picker-h"><span>注目ポイントの銘柄</span><button type="button" class="picker-close">閉じる</button></div><div class="picker-list"></div></div>
     <div class="pt-foot" id="pt-foot">サンプル表示（自動分析の読み込み前）</div>
   </section>
 
@@ -969,14 +975,40 @@ body {
     document.querySelector('[data-pt="' + i + 'h"]').textContent = title;
     document.querySelector('[data-pt="' + i + 'p"]').textContent = body;
   }
-  function refreshPoints() {
-    if (!market) return;
-    var all = market.instruments || market;
-    markets.forEach(function (mk, i) {
-      var a = all[mk.key] && all[mk.key].analysis;
-      if (a) setPoint(i + 1, a.title, a.body);
-      else setPoint(i + 1, INST[mk.key].name, "この銘柄の分析データはまだありません。\n次の更新（1時間ごと）をお待ちください。");
+  /* Points 1 and 2 follow the chart panels unless an instrument was picked for them (saved per device). */
+  var PT_KEY = "pt-v1", ptPicks = [null, null];
+  try { var pp = JSON.parse(localStorage.getItem(PT_KEY)); if (Array.isArray(pp)) ptPicks = pp.map(function (k) { return INST[k] ? k : null; }); } catch (e) {}
+  function pointKey(i) { return ptPicks[i] || markets[i].key; }
+  (function () {
+    var card = document.getElementById("points"), picker = card.querySelector(".pt-picker"), list = picker.querySelector(".picker-list"), slot = 0;
+    var mark = function () {
+      list.querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-pressed", (b.dataset.key || null) === ptPicks[slot] || (!b.dataset.key && !ptPicks[slot])); });
+    };
+    var add = function (key, html, cls) {
+      var b = document.createElement("button");
+      b.type = "button"; b.innerHTML = html; if (key) b.dataset.key = key; if (cls) b.className = cls;
+      b.addEventListener("click", function () {
+        ptPicks[slot] = key; try { localStorage.setItem(PT_KEY, JSON.stringify(ptPicks)); } catch (e) {}
+        picker.hidden = true; refreshPoints();
+      });
+      list.appendChild(b);
+    };
+    add(null, "チャートと連動<small>上の相場の枠と同じ銘柄</small>", "follow");
+    Object.keys(INST).forEach(function (k) { add(k, INST[k].label + "<small>" + (INST[k].pickName || INST[k].name) + "</small>"); });
+    card.querySelectorAll(".pt-pick").forEach(function (b) {
+      b.addEventListener("click", function () { slot = +b.dataset.slot; mark(); picker.hidden = false; });
     });
+    picker.querySelector(".picker-close").addEventListener("click", function () { picker.hidden = true; });
+  })();
+  function refreshPoints() {
+    var all = market && (market.instruments || market);
+    [0, 1].forEach(function (i) {
+      var key = pointKey(i), a = all && all[key] && all[key].analysis;
+      if (a) setPoint(i + 1, a.title, a.body);
+      else if (all) setPoint(i + 1, INST[key].name, "この銘柄の分析データはまだありません。\n次の更新（1時間ごと）をお待ちください。");
+      else if (ptPicks[i]) setPoint(i + 1, INST[key].name, "分析データを読み込んでいます。");
+    });
+    if (!market) return;
     var u = new Date(market.updated);
     document.getElementById("pt-foot").textContent = "チャートから自動分析・" + u.getHours() + ":" + String(u.getMinutes()).padStart(2, "0") + "更新（参考情報）";
     renderStrategy();
@@ -991,7 +1023,7 @@ body {
       if (next) line1 = next.t.getHours() + ":" + String(next.t.getMinutes()).padStart(2, "0") + " " + jaTitle(next) + "に注意。";
     }
     var all = market.instruments || market, notes2 = [];
-    var sel = markets.map(function (mk) { return [all[mk.key] && all[mk.key].analysis, INST[mk.key].name, mk.key]; });
+    var sel = [0, 1].map(function (i) { var k = pointKey(i); return [all[k] && all[k].analysis, INST[k].name, k]; });
     sel.forEach(function (x) {
       if (!x[0] || x[0].rsi == null) return;
       if (x[0].rsi >= 70) notes2.push(x[1] + "はRSI" + Math.round(x[0].rsi) + "で過熱、高値追いは慎重に。");
