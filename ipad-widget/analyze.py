@@ -29,7 +29,7 @@ INSTRUMENTS = {
     "usoil": ("CL=F", "USオイル", 0.05, 2, None),
     "btc": ("BTC-USD", "BTC/USD", 100.0, 0, None),
 }
-N_CANDLES = 38
+N_CANDLES = 150  # per timeframe; the widget shows ~38 and lets you scroll back through the rest
 
 
 def get_json(url):
@@ -175,9 +175,10 @@ def build(fixture=None, prev=None):
 
 
 def one(key, sym, spot_sym, fixture):
-    h1 = yahoo(sym, "60m", "1mo", fixture)
-    d1 = yahoo(sym, "1d", "6mo", fixture)
-    w1 = yahoo(sym, "1wk", "2y", fixture)
+    m15 = yahoo(sym, "15m", "5d", fixture)
+    h1 = yahoo(sym, "60m", "3mo", fixture)
+    d1 = yahoo(sym, "1d", "1y", fixture)
+    w1 = yahoo(sym, "1wk", "5y", fixture)
     spot = None
     if spot_sym and fixture is None:
         try:
@@ -186,11 +187,11 @@ def one(key, sym, spot_sym, fixture):
             print(key, "spot unavailable:", e)
     if spot and h1:
         # futures contract; move it onto the spot price shown in the widget
-        shift = spot - h1[-1][4]
-        for rows in (h1, d1, w1):
+        shift = spot - (m15 or h1)[-1][4]
+        for rows in (m15, h1, d1, w1):
             for r in rows:
                 r[1:] = [v + shift for v in r[1:]]
-    price = h1[-1][4]
+    price = (m15 or h1)[-1][4]  # the freshest close
     today = datetime.now(timezone.utc).date()
     last_day = datetime.fromtimestamp(d1[-1][0], timezone.utc).date()
     done = d1[:-1] if last_day >= today else d1  # drop today's unfinished candle
@@ -200,6 +201,7 @@ def one(key, sym, spot_sym, fixture):
     return {
         "price": price, "prevClose": prev_close, "analysis": a,
         "candles": {
+            "15m": r6(m15[-N_CANDLES:]),
             "1h": r6(h1[-N_CANDLES:]),
             "4h": r6(aggregate(h1, 4 * 3600)[-N_CANDLES:]),
             "1d": r6(d1[-N_CANDLES:]),

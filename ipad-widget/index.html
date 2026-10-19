@@ -94,9 +94,10 @@ body {
 .mkt .price.flash-up { color: #ffe6b0; }
 .mkt .price.flash-down { color: #c9d4ff; }
 .mkt .chg { font-size: 14px; font-weight: 500; margin-top: 4px; }
-.mkt canvas.chart { width: 100%; height: 108px; display: block; margin-top: 8px; }
+.mkt canvas.chart { width: 100%; height: 108px; display: block; margin-top: 8px; touch-action: none; cursor: grab; }
+.chart-reset { position: absolute; left: 20px; top: 132px; z-index: 2; font: inherit; font-size: 11px; font-weight: 600; color: #14100a; background: var(--gold); border: 0; border-radius: 999px; padding: 3px 10px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
 .tabs { display: flex; gap: 6px; margin-top: 6px; }
-.tabs button { flex: 1; font: inherit; font-size: 11.5px; color: var(--ink-2); background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 4px 0; cursor: pointer; }
+.tabs button { flex: 1; font: inherit; font-size: 11px; color: var(--ink-2); background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 4px 0; cursor: pointer; }
 .tabs button[aria-pressed="true"] { color: var(--gold); border-color: rgba(227,184,103,.55); background: rgba(227,184,103,.10); }
 .tabs button:focus-visible, .pt-pick:focus-visible, .mkt .head:focus-visible, .picker-list button:focus-visible, .cal-nav button:focus-visible, a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
@@ -493,9 +494,10 @@ body {
   function drawScenes() { document.querySelectorAll("canvas.scene").forEach(drawScene); }
 
   /* ---------- markets ---------- */
-  var TF = [{ k: "1時間", v: 0.25 }, { k: "4時間", v: 0.5 }, { k: "1日", v: 1 }, { k: "1週", v: 2.2 }];
+  var TF = [{ k: "15分", v: 0.12 }, { k: "1時間", v: 0.25 }, { k: "4時間", v: 0.5 }, { k: "1日", v: 1 }, { k: "1週", v: 2.2 }];
+  var VIEW_N = 38, MIN_N = 12;  // candles shown by default / at the closest zoom
   function Market(el, key) {
-    this.el = el; this.tf = 2;
+    this.el = el; this.tf = 3; this.resetView();
     this.cv = el.querySelector("canvas.chart");
     this.priceEl = el.querySelector('[data-f="price"]');
     this.chgEl = el.querySelector('[data-f="chg"]');
@@ -505,22 +507,76 @@ body {
       b.type = "button"; b.textContent = t.k; b.setAttribute("aria-pressed", i === self.tf);
       b.addEventListener("click", function () {
         self.tf = i; tabs.querySelectorAll("button").forEach(function (x, j) { x.setAttribute("aria-pressed", j === i); });
-        self.gen(); self.draw();
+        self.resetView(); self.gen(); self.draw();
       });
       tabs.appendChild(b);
     });
+    this.bindGestures();
     this.setInst(key);
   }
-  var TFKEY = ["1h", "4h", "1d", "1w"];
+  /* Chart view: how many candles are visible, how far back from the latest one, and a vertical shift. */
+  Market.prototype.resetView = function () {
+    this.view = { n: VIEW_N, back: 0, shift: 0 };
+    if (this.resetBtn) this.resetBtn.hidden = true;
+  };
+  Market.prototype.bindGestures = function () {
+    var self = this, cv = this.cv, pts = {}, start = null;
+    var btn = this.resetBtn = document.createElement("button");
+    btn.type = "button"; btn.className = "chart-reset"; btn.textContent = "最新に戻す"; btn.hidden = true;
+    btn.addEventListener("click", function () { self.resetView(); self.draw(); });
+    this.el.appendChild(btn);
+    var k = function () { var r = cv.getBoundingClientRect(); return cv.offsetWidth / Math.max(r.width, 1); };  // screen px -> chart px (stage is scaled)
+    var snapshot = function () {
+      var ids = Object.keys(pts), a = pts[ids[0]], b = pts[ids[1]];
+      start = { x: a.x, y: a.y, n: self.view.n, back: self.view.back, shift: self.view.shift,
+                dist: b ? Math.hypot(a.x - b.x, a.y - b.y) : 0 };
+    };
+    cv.addEventListener("pointerdown", function (e) {
+      if (!self.c || self.c.length < 3) return;
+      cv.setPointerCapture(e.pointerId); pts[e.pointerId] = { x: e.clientX, y: e.clientY }; snapshot();
+    });
+    cv.addEventListener("pointermove", function (e) {
+      if (!pts[e.pointerId] || !start) return;
+      pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+      var ids = Object.keys(pts), v = self.view, total = self.c.length, sc = k();
+      var plotW = cv.offsetWidth - (self.axisW || 40), plotH = cv.offsetHeight - 18;
+      if (ids.length >= 2) {  // pinch: zoom the number of candles
+        var a = pts[ids[0]], b = pts[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y);
+        v.n = Math.round(Math.min(total, Math.max(MIN_N, start.n * start.dist / Math.max(d, 1))));
+      } else {  // drag: move through time and up/down in price
+        var dx = (e.clientX - start.x) * sc, dy = (e.clientY - start.y) * sc;
+        v.back = Math.round(start.back + dx / (plotW / v.n));
+        v.shift = start.shift + dy / plotH;
+      }
+      v.back = Math.max(0, Math.min(total - v.n, v.back));
+      self.resetBtn.hidden = !(v.back || Math.abs(v.shift) > 0.02 || v.n !== Math.min(VIEW_N, total));
+      self.draw();
+    });
+    var up = function (e) { delete pts[e.pointerId]; if (Object.keys(pts).length) snapshot(); else start = null; };
+    cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+    cv.addEventListener("dblclick", function () { self.resetView(); self.draw(); });
+    cv.addEventListener("wheel", function (e) {  // trackpad / mouse
+      if (!self.c || self.c.length < 3) return;
+      e.preventDefault();
+      var v = self.view, total = self.c.length;
+      if (e.ctrlKey) v.n = Math.round(Math.min(total, Math.max(MIN_N, v.n * (1 + e.deltaY / 200))));
+      else if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) v.back = Math.round(v.back - e.deltaX / 8);
+      else v.shift += e.deltaY / 400;
+      v.back = Math.max(0, Math.min(total - v.n, v.back));
+      self.resetBtn.hidden = !(v.back || Math.abs(v.shift) > 0.02 || v.n !== Math.min(VIEW_N, total));
+      self.draw();
+    }, { passive: false });
+  };
+  var TFKEY = ["15m", "1h", "4h", "1d", "1w"];
   Market.prototype.gen = function () {
     var real = this.series && this.series[TFKEY[this.tf]];
     if (real && real.length > 2) {
-      this.c = real.map(function (k) { return { o: k[1], h: k[2], l: k[3], c: k[4] }; });
+      this.c = real.map(function (k) { return { t: k[0], o: k[1], h: k[2], l: k[3], c: k[4] }; });
       var last = this.c[this.c.length - 1], p = this.price;
       last.c = p; last.h = Math.max(last.h, p); last.l = Math.min(last.l, p);
       return;
     }
-    var o = this.o, r = rng(o.seed + this.tf * 97), n = 38, f = TF[this.tf].v;
+    var o = this.o, r = rng(o.seed + this.tf * 97), n = 120, f = TF[this.tf].v;
     var span = (o.hi - o.lo) * 0.75 * f, start = this.price - span * 0.82, path = [];
     for (var i = 0; i < n; i++) {
       var t = i / (n - 1);
@@ -536,17 +592,21 @@ body {
     this.c = cs;
   };
   Market.prototype.draw = function () {
-    var p = prep(this.cv), c = p.c, w = p.w, h = p.h, o = this.o, cs = this.c;
+    var p = prep(this.cv), c = p.c, w = p.w, h = p.h, o = this.o;
     if (!this.live && !PREVIEW) return;  // no candles until real data has arrived
+    var v = this.view, total = this.c.length, n = Math.min(v.n, total);
+    v.back = Math.max(0, Math.min(total - n, v.back));
+    var cs = this.c.slice(total - v.back - n, total - v.back);
     var mn = Infinity, mx = -Infinity;
     cs.forEach(function (k) { mn = Math.min(mn, k.l); mx = Math.max(mx, k.h); });
+    var span0 = (mx - mn) || mx * 0.001; mn += v.shift * span0; mx += v.shift * span0;  // vertical scroll
     var raw = (mx - mn) / 3.5, mag = Math.pow(10, Math.floor(Math.log10(raw))), step = mag;
     [1, 2, 2.5, 5, 10].some(function (m) { step = m * mag; return step >= raw; });
     var lo = Math.floor(mn / step) * step, hi = Math.ceil(mx / step) * step;
     if (hi - lo < step * 3) { hi = lo + step * 3; }
     c.font = "500 10.5px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif";
     var lab = function (v) { return step < 1 ? v.toFixed(step < 0.01 ? 3 : step < 0.1 ? 2 : 1) : v.toLocaleString("en-US", { maximumFractionDigits: 0 }); };
-    var axisW = Math.max(30, c.measureText(lab(hi)).width + 6), cw = w - axisW, top = 6, bot = h - 6;
+    var hasT = cs[0] && cs[0].t, axisW = this.axisW = Math.max(30, c.measureText(lab(hi)).width + 6), cw = w - axisW, top = 6, bot = h - (hasT ? 16 : 6);
     var Y = function (v) { return bot - (v - lo) / (hi - lo) * (bot - top); };
     c.font = "500 10.5px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif";
     c.textBaseline = "middle"; c.textAlign = "left";
@@ -558,6 +618,24 @@ body {
       c.fillText(lab(v), cw + 2, y);
     }
     var bw = cw / cs.length, body = Math.max(2, bw * 0.55);
+    if (hasT) {  // a few time labels so a scrolled chart stays readable
+      var tf = TFKEY[this.tf], z = function (x) { return String(x).padStart(2, "0"); };
+      var tl = function (t) {
+        var d = new Date(t * 1000);
+        if (tf === "1w") return d.getFullYear() + "/" + (d.getMonth() + 1);
+        if (tf === "1d") return (d.getMonth() + 1) + "/" + d.getDate();
+        if (tf === "4h") return (d.getMonth() + 1) + "/" + d.getDate() + " " + d.getHours() + "時";
+        return (d.getMonth() + 1) + "/" + d.getDate() + " " + d.getHours() + ":" + z(d.getMinutes());
+      };
+      c.save(); c.font = "500 9.5px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif"; c.fillStyle = "rgba(244,241,234,.42)"; c.textBaseline = "bottom";
+      [0.08, 0.5, 0.92].forEach(function (f, j) {
+        var i = Math.min(cs.length - 1, Math.round(f * (cs.length - 1)));
+        c.textAlign = j === 0 ? "left" : j === 2 ? "right" : "center";
+        c.fillText(tl(cs[i].t), j === 0 ? 0 : j === 2 ? cw - 2 : i * bw + bw / 2, h);
+      });
+      c.restore();
+    }
+    c.save(); c.beginPath(); c.rect(0, 0, cw, bot + 2); c.clip();  // candles stay inside the plot when scrolled
     c.shadowColor = "rgba(227,184,103,.45)"; c.shadowBlur = 6;
     cs.forEach(function (k, i) {
       var x = i * bw + bw / 2, up = k.c >= k.o;
@@ -567,7 +645,7 @@ body {
       var y1 = Y(Math.max(k.o, k.c)), y2 = Y(Math.min(k.o, k.c));
       c.fillRect(x - body / 2, y1, body, Math.max(1.2, y2 - y1));
     });
-    c.shadowBlur = 0;
+    c.restore();
   };
   Market.prototype.render = function (dir) {
     var o = this.o, s = o.fmt(this.price);
@@ -655,7 +733,7 @@ body {
   }
   Market.prototype.setInst = function (key) {
     var i = INST[key], p = i.demo;
-    this.key = key; this.live = false; this.series = null; this.prevClose = null;
+    this.key = key; this.live = false; this.series = null; this.prevClose = null; this.resetView();
     this.o = { price: p, prev: p * 0.9975, lo: p * 0.995, hi: p * 1.005, seed: key.length * 7, vol: p * 0.00009,
                fmt: nf(i.dp), tailDigits: i.tail, chgFmt: nf(i.dp), upColor: "var(--up-green)", downColor: "var(--up-red)" };
     this.price = p;
