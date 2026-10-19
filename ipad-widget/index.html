@@ -93,10 +93,13 @@ body {
 .ind-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; }
 .ind-list li { display: grid; grid-template-columns: 54px 1fr auto; gap: 0 4px; align-items: start; padding: 9px 0; border-bottom: 1px solid var(--glass-line); }
 .ind-list .t { font-size: 15px; font-weight: 600; }
-.ind-list .n { font-size: 14px; font-weight: 500; }
+.ind-list li > div:nth-child(2) { min-width: 0; }
+.ind-list .n { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ind-list .s { font-size: 11.5px; color: var(--ink-3); margin-top: 3px; }
 .ind-list .stars { color: var(--star); font-size: 13px; letter-spacing: 1px; padding-top: 2px; }
 .ind-list .stars span { color: rgba(255,255,255,.18); }
+.ind-list li.past { opacity: .45; }
+.ind-list li.empty { display: block; color: var(--ink-2); font-size: 13px; line-height: 1.7; border-bottom: 0; }
 .more { margin-top: auto; font-size: 13px; color: var(--ink-2); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
 .more:hover { color: var(--gold); }
 
@@ -236,12 +239,12 @@ body {
   <section class="card" id="ind" aria-label="今日の重要指標">
     <div class="card-title">
       <svg class="ico" viewBox="0 0 26 26" fill="none" stroke="#f4f1ea" stroke-width="1.6"><rect x="3.5" y="5" width="19" height="17" rx="3"/><path d="M3.5 10h19M8.5 2.8v4M17.5 2.8v4"/><path d="M8 14.5h2M12 14.5h2M16 14.5h2M8 18h2M12 18h2" stroke-linecap="round"/></svg>
-      今日の重要指標<span class="aside num" data-clock="md">5月27日(火)</span><button class="icon-btn edit" type="button" aria-pressed="false"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M8.5 1.5l2 2L4 10l-2.6.6L2 8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg><span>編集</span></button>
+      今日の重要指標<span class="aside num" data-clock="md">5月27日(火)</span>
     </div>
-    <ul class="ind-list">
-      <li><div class="t num" data-edit="i1t">21:30</div><div><div class="n" data-edit="i1n">米・耐久財受注 (前月比)</div><div class="s" data-edit="i1s">4月</div></div><div class="stars" data-stars="i1" data-v="3"></div></li>
-      <li><div class="t num" data-edit="i2t">23:00</div><div><div class="n" data-edit="i2n">米・消費者信頼感指数</div><div class="s" data-edit="i2s">5月</div></div><div class="stars" data-stars="i2" data-v="3"></div></li>
-      <li><div class="t num" data-edit="i3t">23:00</div><div><div class="n" data-edit="i3n">米・新築住宅販売件数</div><div class="s" data-edit="i3s">4月</div></div><div class="stars" data-stars="i3" data-v="2"></div></li>
+    <ul class="ind-list" id="ind-list">
+      <li><div class="t num">21:30</div><div><div class="n">米・耐久財受注 (前月比)</div><div class="s">4月</div></div><div class="stars" data-v="3"></div></li>
+      <li><div class="t num">23:00</div><div><div class="n">米・消費者信頼感指数</div><div class="s">5月</div></div><div class="stars" data-v="3"></div></li>
+      <li><div class="t num">23:00</div><div><div class="n">米・新築住宅販売件数</div><div class="s">4月</div></div><div class="stars" data-v="2"></div></li>
     </ul>
     <a class="more" href="https://jp.investing.com/economic-calendar/" target="_blank" rel="noopener">経済カレンダーを表示 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></a>
   </section>
@@ -747,6 +750,7 @@ body {
     }
   });
   applyNotes();
+  document.querySelectorAll("#ind-list .stars").forEach(paintStars);
 
   /* Dock (the row of app icons) can be hidden; the widgets then grow into the freed space. */
   var dockBtn = document.querySelector(".dock-toggle");
@@ -759,6 +763,83 @@ body {
     notes.dockHidden = !dockHidden; saveNotes(); applyDock(); layout();
   });
   applyDock();
+
+  /* ---------- economic calendar ---------- */
+  /* calendar.json is refreshed hourly by the Pages workflow (Forex Factory weekly feed). */
+  var JA = {
+    "CPI m/m": "消費者物価指数 (前月比)", "CPI y/y": "消費者物価指数 (前年比)", "Core CPI m/m": "コアCPI (前月比)", "Core CPI y/y": "コアCPI (前年比)",
+    "PPI m/m": "生産者物価指数 (前月比)", "Core PPI m/m": "コアPPI (前月比)",
+    "Non-Farm Employment Change": "非農業部門雇用者数", "Unemployment Rate": "失業率", "Average Hourly Earnings m/m": "平均時給 (前月比)",
+    "ADP Non-Farm Employment Change": "ADP雇用統計", "Unemployment Claims": "新規失業保険申請件数", "JOLTS Job Openings": "JOLTS求人件数",
+    "Federal Funds Rate": "FF金利 (FOMC)", "FOMC Statement": "FOMC声明", "FOMC Press Conference": "FOMC記者会見", "FOMC Meeting Minutes": "FOMC議事録",
+    "Advance GDP q/q": "GDP速報値 (前期比)", "Prelim GDP q/q": "GDP改定値 (前期比)", "Final GDP q/q": "GDP確報値 (前期比)",
+    "Core PCE Price Index m/m": "コアPCE価格指数 (前月比)", "PCE Price Index m/m": "PCE価格指数 (前月比)",
+    "Retail Sales m/m": "小売売上高 (前月比)", "Core Retail Sales m/m": "コア小売売上高 (前月比)",
+    "ISM Manufacturing PMI": "ISM製造業景況指数", "ISM Services PMI": "ISM非製造業景況指数",
+    "Flash Manufacturing PMI": "製造業PMI (速報)", "Flash Services PMI": "サービス業PMI (速報)",
+    "CB Consumer Confidence": "消費者信頼感指数", "Prelim UoM Consumer Sentiment": "ミシガン大消費者信頼感 (速報)", "Revised UoM Consumer Sentiment": "ミシガン大消費者信頼感 (確報)",
+    "Prelim UoM Inflation Expectations": "ミシガン大期待インフレ率 (速報)",
+    "Durable Goods Orders m/m": "耐久財受注 (前月比)", "Core Durable Goods Orders m/m": "コア耐久財受注 (前月比)",
+    "New Home Sales": "新築住宅販売件数", "Existing Home Sales": "中古住宅販売件数", "Pending Home Sales m/m": "中古住宅販売保留 (前月比)",
+    "Building Permits": "住宅建築許可件数", "Housing Starts": "住宅着工件数",
+    "Empire State Manufacturing Index": "NY連銀製造業景況指数", "Philly Fed Manufacturing Index": "フィラデルフィア連銀景況指数",
+    "Industrial Production m/m": "鉱工業生産 (前月比)", "Trade Balance": "貿易収支", "Crude Oil Inventories": "原油在庫",
+    "Treasury Currency Report": "為替報告書",
+    "BOJ Policy Rate": "日銀政策金利", "Monetary Policy Statement": "日銀金融政策決定", "BOJ Press Conference": "日銀総裁会見", "BOJ Outlook Report": "日銀展望レポート",
+    "Tokyo Core CPI y/y": "東京都区部コアCPI (前年比)", "National Core CPI y/y": "全国コアCPI (前年比)",
+    "Tankan Manufacturing Index": "日銀短観 大企業製造業", "Tankan Non-Manufacturing Index": "日銀短観 大企業非製造業"
+  };
+  var CC = { USD: "米", JPY: "日", EUR: "欧", GBP: "英", CNY: "中", AUD: "豪" };
+  var calEvents = null;
+  function jaTitle(e) {
+    var t = JA[e.title] || e.title.replace(/ Speaks$/, " 発言");
+    return (CC[e.country] ? CC[e.country] + "・" : "") + t;
+  }
+  function renderIndicators() {
+    if (!calEvents) return;
+    var now = new Date(), y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+    var today = calEvents.filter(function (e) {
+      return e.t.getFullYear() === y && e.t.getMonth() === m && e.t.getDate() === d;
+    }).sort(function (a, b) { return a.t - b.t || b.stars - a.stars; });
+    var upcoming = today.filter(function (e) { return e.t > now - 60 * 60000; });
+    var list = (upcoming.length ? upcoming : today);
+    if (list.length > 3) { // keep the most important ones, then show them in time order
+      list = list.slice().sort(function (a, b) { return b.stars - a.stars || a.t - b.t; }).slice(0, 3)
+        .sort(function (a, b) { return a.t - b.t; });
+    }
+    var ul = document.getElementById("ind-list");
+    if (!list.length) { ul.innerHTML = '<li class="empty">今日は米国・日本の重要指標の発表はありません。</li>'; return; }
+    ul.innerHTML = "";
+    list.forEach(function (e) {
+      var li = document.createElement("li");
+      if (e.t < now) li.classList.add("past");
+      var hm = e.t.getHours() + ":" + String(e.t.getMinutes()).padStart(2, "0");
+      var sub = [e.forecast ? "予想 " + e.forecast : "", e.previous ? "前回 " + e.previous : ""].filter(Boolean).join(" / ");
+      li.innerHTML = '<div class="t num"></div><div><div class="n"></div><div class="s num"></div></div><div class="stars"></div>';
+      li.children[0].textContent = hm;
+      li.querySelector(".n").textContent = jaTitle(e);
+      li.querySelector(".s").textContent = sub || "　";
+      var st = li.querySelector(".stars"); st.setAttribute("data-v", e.stars); paintStars(st);
+      ul.appendChild(li);
+    });
+  }
+  function loadCalendar() {
+    if (!window.fetch) return;
+    fetch("calendar.json?v=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (rows) {
+        if (!Array.isArray(rows)) return;
+        var IMP = { High: 3, Medium: 2 };
+        calEvents = rows.filter(function (r) {
+          return (r.country === "USD" || r.country === "JPY") && IMP[r.impact];
+        }).map(function (r) {
+          var t = new Date(r.date);
+          return { t: t, title: r.title, country: r.country, stars: IMP[r.impact], forecast: r.forecast, previous: r.previous };
+        }).filter(function (e) { return !isNaN(e.t); });
+        renderIndicators();
+      })
+      .catch(function () {});
+  }
 
   /* ---------- auto-update (home-screen app) ---------- */
   var buildMeta = document.querySelector('meta[name="build"]');
@@ -777,7 +858,8 @@ body {
   tickClock(); renderCal(); bg.start(); layout(); loadWeather(); loadPrices();
   setInterval(loadPrices, 60000);
   checkUpdate(); setInterval(checkUpdate, 10 * 60000);
-  document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); } });
+  loadCalendar(); setInterval(loadCalendar, 30 * 60000); setInterval(renderIndicators, 60000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); loadCalendar(); } });
   setInterval(loadWeather, 30 * 60000);
   var lastDay = new Date().getDate();
   setInterval(function () {

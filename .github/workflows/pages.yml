@@ -5,6 +5,8 @@ on:
     branches: [claude/amazon-affiliate-articles]
     paths: ["ipad-widget/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
+  schedule:
+    - cron: "7 * * * *"  # hourly: refresh the economic calendar
 
 permissions:
   contents: read
@@ -32,6 +34,13 @@ jobs:
           mkdir -p _site
           cp ipad-widget/ipad.html _site/index.html
           cp ipad-widget/icon.png _site/icon.png
+      - name: Fetch economic calendar
+        continue-on-error: true
+        run: |
+          curl -fsSL --retry 3 -A "Mozilla/5.0 (TradeDeskWidget)" \
+            https://nfs.faireconomy.media/ff_calendar_thisweek.json -o calendar.json
+          python3 -c "import json;d=json.load(open('calendar.json'));assert isinstance(d,list);print(len(d),'events')"
+          mv calendar.json _site/calendar.json
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
