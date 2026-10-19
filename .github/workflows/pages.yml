@@ -12,6 +12,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: write  # keep-alive below
 
 concurrency:
   group: pages
@@ -72,3 +73,11 @@ jobs:
           path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
+      - name: Keep the hourly schedule alive
+        # GitHub turns off scheduled workflows after 60 days without repository activity;
+        # re-enabling this workflow each run resets that timer.
+        if: github.event_name != 'push'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/pages.yml/enable" 

@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Trade Desk">
 <meta name="theme-color" content="#06070b">
 <link rel="apple-touch-icon" href="icon.png">
-<meta name="build" content="bc60dd2284">
+<meta name="build" content="791f40fda8">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -120,7 +120,8 @@ body {
 .card-title .aside { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--ink-2); }
 .ind-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; }
 .ind-list li { display: grid; grid-template-columns: 54px 1fr auto; gap: 0 4px; align-items: start; padding: 9px 0; border-bottom: 1px solid var(--glass-line); }
-.ind-list .t { font-size: 15px; font-weight: 600; }
+.ind-list .t { font-size: 15px; font-weight: 600; white-space: nowrap; }
+.ind-list .t .next { font-size: 10px; font-weight: 600; color: var(--gold); margin-right: 1px; }
 .ind-list li > div:nth-child(2) { min-width: 0; }
 .ind-list .n { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ind-list .s { font-size: 11.5px; color: var(--ink-3); margin-top: 3px; }
@@ -280,7 +281,7 @@ body {
   <section class="card" id="ind" aria-label="今日の重要指標">
     <div class="card-title">
       <svg class="ico" viewBox="0 0 26 26" fill="none" stroke="#f4f1ea" stroke-width="1.6"><rect x="3.5" y="5" width="19" height="17" rx="3"/><path d="M3.5 10h19M8.5 2.8v4M17.5 2.8v4"/><path d="M8 14.5h2M12 14.5h2M16 14.5h2M8 18h2M12 18h2" stroke-linecap="round"/></svg>
-      今日の重要指標<span class="aside num" data-clock="md">5月27日(火)</span>
+      今日の重要指標<span class="aside num" id="ind-day">5月27日(火)</span>
     </div>
     <ul class="ind-list" id="ind-list">
       <li><div class="t num">21:30</div><div><div class="n">米・耐久財受注 (前月比)</div><div class="s">4月</div></div><div class="stars" data-v="3"></div></li>
@@ -968,11 +969,21 @@ body {
       .replace(/ Speaks$/, " 発言");
     return (CC[e.country] ? CC[e.country] + "・" : "") + t;
   }
+  /* A trader's "today" runs from 6:00 to 6:00 the next morning (around the New York close),
+     so late-night US releases such as an FOMC decision at 3:00 belong to the evening before. */
+  var DAY_START_H = 6;
+  function tradingDay(now) {
+    var start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), DAY_START_H);
+    if (now < start) start.setDate(start.getDate() - 1);
+    var end = new Date(start); end.setDate(end.getDate() + 1);
+    return { start: start, end: end };
+  }
   function renderIndicators() {
     if (!calEvents) return;
-    var now = new Date(), y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+    var now = new Date(), day = tradingDay(now);
+    document.getElementById("ind-day").textContent = (day.start.getMonth() + 1) + "月" + day.start.getDate() + "日(" + WD[day.start.getDay()] + ")";
     var today = calEvents.filter(function (e) {
-      return e.t.getFullYear() === y && e.t.getMonth() === m && e.t.getDate() === d;
+      return e.t >= day.start && e.t < day.end;
     }).sort(function (a, b) { return a.t - b.t || b.stars - a.stars; });
     var upcoming = today.filter(function (e) { return e.t > now - 60 * 60000; });
     var list = (upcoming.length ? upcoming : today);
@@ -987,9 +998,10 @@ body {
       var li = document.createElement("li");
       if (e.t < now) li.classList.add("past");
       var hm = e.t.getHours() + ":" + String(e.t.getMinutes()).padStart(2, "0");
+      var nextDay = e.t.getDate() !== day.start.getDate();
       var sub = [e.forecast ? "予想 " + e.forecast : "", e.previous ? "前回 " + e.previous : ""].filter(Boolean).join(" / ");
       li.innerHTML = '<div class="t num"></div><div><div class="n"></div><div class="s num"></div></div><div class="stars"></div>';
-      li.children[0].textContent = hm;
+      li.children[0].innerHTML = (nextDay ? '<small class="next">翌</small>' : "") + hm;
       li.querySelector(".n").textContent = jaTitle(e);
       li.querySelector(".s").textContent = sub || "　";
       var st = li.querySelector(".stars"); st.setAttribute("data-v", e.stars); paintStars(st);
@@ -1067,9 +1079,9 @@ body {
     var now = new Date(), line1 = "本日は米国・日本の重要指標なし。\nテクニカル主導の値動きを想定。";
     if (calEvents) {
       var next = calEvents.filter(function (e) {
-        return e.stars === 3 && e.t > now && e.t.toDateString() === now.toDateString();
+        return e.stars === 3 && e.t > now && e.t < tradingDay(now).end;
       }).sort(function (a, b) { return a.t - b.t; })[0];
-      if (next) line1 = next.t.getHours() + ":" + String(next.t.getMinutes()).padStart(2, "0") + " " + jaTitle(next) + "に注意。";
+      if (next) line1 = (next.t.getDate() !== tradingDay(now).start.getDate() ? "翌" : "") + next.t.getHours() + ":" + String(next.t.getMinutes()).padStart(2, "0") + " " + jaTitle(next) + "に注意。";
     }
     var all = market.instruments || market, notes2 = [];
     var sel = [0, 1].map(function (i) { var k = pointKey(i); return [all[k] && all[k].analysis, INST[k].name, k]; });
