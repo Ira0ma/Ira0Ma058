@@ -50,6 +50,16 @@ jobs:
           if curl -fsSL --retry 3 -A "Mozilla/5.0 (TradeDeskWidget)" \
                https://nfs.faireconomy.media/ff_calendar_thisweek.json -o calendar.json \
              && python3 -c "import json;d=json.load(open('calendar.json'));assert isinstance(d,list);print(len(d),'events')"; then
+            python3 - <<'PY'
+          import json, datetime
+          jst = datetime.timezone(datetime.timedelta(hours=9))
+          rows = json.load(open("calendar.json"))
+          print("range:", min(r["date"] for r in rows), "->", max(r["date"] for r in rows))
+          for r in rows:
+              if r.get("country") in ("USD", "JPY") and r.get("impact") in ("High", "Medium"):
+                  t = datetime.datetime.fromisoformat(r["date"]).astimezone(jst)
+                  print(t.strftime("%m/%d %H:%M JST"), r["country"], r["impact"], r["title"])
+          PY
             mv calendar.json _site/calendar.json
           else
             echo "calendar fetch failed; keeping the published copy"; cp prev/calendar.json _site/calendar.json
