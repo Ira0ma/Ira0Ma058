@@ -1,7 +1,8 @@
 """Builds market.json for the widget: real candles for each selectable instrument plus an automatic
 technical read (trend from moving averages, levels from daily pivots, RSI, ATR).
 
-Usage: python3 analyze.py OUT.json            (fetches from Yahoo Finance / gold-api.com)
+Usage: python3 analyze.py OUT.json [--prev=OLD.json]   (fetches from Yahoo Finance / gold-api.com;
+                                                         OLD.json fills in instruments that fail)
        python3 analyze.py OUT.json FIXTURE    (FIXTURE: JSON {symbol: yahoo-chart-json} for tests)
 """
 import json
@@ -26,7 +27,7 @@ INSTRUMENTS = {
     "gold": ("GC=F", "ゴールド", 5.0, 0, "XAU"),
     "silver": ("SI=F", "シルバー", 0.05, 2, "XAG"),
     "usoil": ("CL=F", "USオイル", 0.05, 2, None),
-    "btc": ("BTC-USD", "BTCUSD", 100.0, 0, None),
+    "btc": ("BTC-USD", "BTC/USD", 100.0, 0, None),
 }
 N_CANDLES = 38
 
@@ -99,19 +100,23 @@ def fmt(key, v):
     return f"{v:,.{dec}f}"
 
 
-def analyze(key, daily, price):
-    closes = [r[4] for r in daily]
+def analyze(key, done, price):
+    """done: completed daily candles only (today's unfinished candle excluded)."""
+    closes = [r[4] for r in done]
     s20, s50 = sma(closes, 20), sma(closes, 50)
-    # previous completed day for pivots
-    _, _, h, l, c = daily[-2]
+    a = atr(done) or (done[-1][2] - done[-1][3])
+    # classic pivots from the last completed day
+    _, _, h, l, c = done[-1]
     p = (h + l + c) / 3
-    levels = sorted({p - (h - l), 2 * p - h, p, 2 * p - l, p + (h - l)})  # S2,S1,P,R1,R2
-    below = [x for x in levels if x < price]
-    above = [x for x in levels if x > price]
-    sup = below[-1] if below else price - (h - l) / 2
-    sup2 = below[-2] if len(below) > 1 else sup - (h - l) / 2
-    res = above[0] if above else price + (h - l) / 2
-    res2 = above[1] if len(above) > 1 else res + (h - l) / 2
+    s1, r1, s2, r2 = 2 * p - h, 2 * p - l, p - (h - l), p + (h - l)
+    levels = sorted({s2, s1, p, r1, r2})
+    gap = 0.15 * a  # ignore levels practically at the current price
+    below = [x for x in levels if x <= price - gap]
+    above = [x for x in levels if x >= price + gap]
+    sup = below[-1] if below else price - a / 2
+    sup2 = below[-2] if len(below) > 1 else sup - a / 2
+    res = above[0] if above else price + a / 2
+    res2 = above[1] if len(above) > 1 else res + a / 2
 
     if s20 and s50 and s20 > s50 and price > s20:
         trend = "up"
@@ -129,11 +134,12 @@ def analyze(key, daily, price):
         title = f"{name}：戻り売り目線"
         body = f"{f(res)}付近の戻りに注目。\n{f(sup)}を割り込めば{f(sup2)}が視野。"
     else:
+        lo, hi = (s1, r1) if s1 < price < r1 else (sup, res)
         title = f"{name}：レンジ内の攻防"
-        body = f"{f(sup)}〜{f(res)}のレンジを想定。\n抜けた方向へついていく。"
+        body = f"{f(lo)}〜{f(hi)}のレンジを想定。\n抜けた方向へついていく。"
     return {
         "title": title, "body": body, "trend": trend,
-        "rsi": rsi(closes), "atr": atr(daily),
+        "rsi": rsi(closes), "atr": a,
         "support": sup, "resistance": res,
     }
 
@@ -142,19 +148,29 @@ def r6(rows):
     return [[t] + [float(f"{v:.6g}") for v in r] for t, *r in rows]
 
 
-def build(fixture=None):
-    out = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"), "instruments": {}}
+def build(fixture=None, prev=None):
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    out = {"updated": now, "instruments": {}}
+    old = (prev or {}).get("instruments", {})
+    fresh = 0
     for key, (sym, name, _, _, spot_sym) in INSTRUMENTS.items():
-        try:
-            out["instruments"][key] = one(key, sym, spot_sym, fixture)
-        except Exception as e:  # one failing symbol must not drop the others
-            print(key, "failed:", e)
+        for attempt in range(2):
+            try:
+                out["instruments"][key] = dict(one(key, sym, spot_sym, fixture), updated=now)
+                fresh += 1
+                break
+            except Exception as e:  # one failing symbol must not drop the others
+                print(key, "failed:", e)
+                if fixture is None:
+                    time.sleep(2)
+        else:
+            if key in old:  # keep the last good data; the page shows its own timestamp
+                out["instruments"][key] = old[key]
+                print(key, "kept previous data from", old[key].get("updated"))
         if fixture is None:
             time.sleep(0.4)  # stay gentle with the data source
-    # keep the old top-level keys for pages that have not reloaded yet
-    for key in ("usdjpy", "gold"):
-        if key in out["instruments"]:
-            out[key] = out["instruments"][key]
+    if fresh == 0 and prev:
+        return prev  # nothing new at all: republish the previous file unchanged
     return out
 
 
@@ -175,10 +191,11 @@ def one(key, sym, spot_sym, fixture):
             for r in rows:
                 r[1:] = [v + shift for v in r[1:]]
     price = h1[-1][4]
-    a = analyze(key, d1, price)
     today = datetime.now(timezone.utc).date()
     last_day = datetime.fromtimestamp(d1[-1][0], timezone.utc).date()
-    prev_close = d1[-2][4] if last_day >= today else d1[-1][4]
+    done = d1[:-1] if last_day >= today else d1  # drop today's unfinished candle
+    a = analyze(key, done, price)
+    prev_close = done[-1][4]
     print(key, round(price, 5), a["trend"], a["title"])
     return {
         "price": price, "prevClose": prev_close, "analysis": a,
@@ -192,5 +209,13 @@ def one(key, sym, spot_sym, fixture):
 
 
 if __name__ == "__main__":
-    fixture = json.load(open(sys.argv[2])) if len(sys.argv) > 2 else None
-    json.dump(build(fixture), open(sys.argv[1], "w"), ensure_ascii=False, separators=(",", ":"))
+    args = [a for a in sys.argv[1:] if not a.startswith("--prev=")]
+    prev_path = next((a[7:] for a in sys.argv[1:] if a.startswith("--prev=")), None)
+    prev = None
+    if prev_path:
+        try:
+            prev = json.load(open(prev_path))
+        except Exception as e:
+            print("no previous market.json:", e)
+    fixture = json.load(open(args[1])) if len(args) > 1 else None
+    json.dump(build(fixture, prev), open(args[0], "w"), ensure_ascii=False, separators=(",", ":"))

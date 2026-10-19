@@ -26,8 +26,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+        id: pages
         with:
           enablement: true
+      - name: Download the currently published data (fallback if a source fails this hour)
+        continue-on-error: true
+        run: |
+          mkdir -p prev
+          for f in market.json calendar.json holidays.json; do
+            curl -fsSL --retry 2 "${{ steps.pages.outputs.base_url }}/$f" -o "prev/$f" || rm -f "prev/$f"
+          done
+          ls -la prev
       - name: Build site
         run: |
           python3 ipad-widget/build.py
@@ -37,19 +46,27 @@ jobs:
       - name: Fetch economic calendar
         continue-on-error: true
         run: |
-          curl -fsSL --retry 3 -A "Mozilla/5.0 (TradeDeskWidget)" \
-            https://nfs.faireconomy.media/ff_calendar_thisweek.json -o calendar.json
-          python3 -c "import json;d=json.load(open('calendar.json'));assert isinstance(d,list);print(len(d),'events')"
-          mv calendar.json _site/calendar.json
+          if curl -fsSL --retry 3 -A "Mozilla/5.0 (TradeDeskWidget)" \
+               https://nfs.faireconomy.media/ff_calendar_thisweek.json -o calendar.json \
+             && python3 -c "import json;d=json.load(open('calendar.json'));assert isinstance(d,list);print(len(d),'events')"; then
+            mv calendar.json _site/calendar.json
+          else
+            echo "calendar fetch failed; keeping the published copy"; cp prev/calendar.json _site/calendar.json
+          fi
       - name: Fetch Japanese public holidays
         continue-on-error: true
         run: |
-          curl -fsSL --retry 3 https://holidays-jp.github.io/api/v1/date.json -o holidays.json
-          python3 -c "import json;d=json.load(open('holidays.json'));assert isinstance(d,dict) and d;print(len(d),'holidays')"
-          mv holidays.json _site/holidays.json
+          if curl -fsSL --retry 3 https://holidays-jp.github.io/api/v1/date.json -o holidays.json \
+             && python3 -c "import json;d=json.load(open('holidays.json'));assert isinstance(d,dict) and d;print(len(d),'holidays')"; then
+            mv holidays.json _site/holidays.json
+          else
+            echo "holiday fetch failed; keeping the published copy"; cp prev/holidays.json _site/holidays.json
+          fi
       - name: Fetch prices and build chart analysis
         continue-on-error: true
-        run: python3 ipad-widget/analyze.py _site/market.json
+        run: |
+          python3 ipad-widget/analyze.py _site/market.json --prev=prev/market.json \
+            || cp prev/market.json _site/market.json
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

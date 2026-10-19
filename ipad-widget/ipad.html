@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Trade Desk">
 <meta name="theme-color" content="#06070b">
 <link rel="apple-touch-icon" href="icon.png">
-<meta name="build" content="2f61db50d6">
+<meta name="build" content="bc60dd2284">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -370,6 +370,9 @@ body {
   var W = 1210, H = 841, scale = 1;
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   var WD = ["日", "月", "火", "水", "木", "金", "土"];
+  /* Outside the real site (e.g. a design preview with no network) the built-in sample content stays, labelled as such.
+     On the real site nothing made-up is shown: until data arrives the widgets say they are loading. */
+  var PREVIEW = !/(github\.io|localhost|127\.0\.0\.1)$/.test(location.hostname);
 
   function rng(seed) { // mulberry32
     return function () {
@@ -546,6 +549,7 @@ body {
   };
   Market.prototype.draw = function () {
     var p = prep(this.cv), c = p.c, w = p.w, h = p.h, o = this.o, cs = this.c;
+    if (!this.live && !PREVIEW) return;  // no candles until real data has arrived
     var mn = Infinity, mx = -Infinity;
     cs.forEach(function (k) { mn = Math.min(mn, k.l); mx = Math.max(mx, k.h); });
     var raw = (mx - mn) / 3.5, mag = Math.pow(10, Math.floor(Math.log10(raw))), step = mag;
@@ -582,6 +586,11 @@ body {
     if (o.tailDigits) {
       this.priceEl.innerHTML = s.slice(0, -o.tailDigits) + '<span class="tail">' + s.slice(-o.tailDigits) + "</span>";
     } else { this.priceEl.textContent = s; }
+    if (!this.live) {
+      if (!PREVIEW) this.priceEl.textContent = "—";  // never show a made-up price on the real site
+      this.chgEl.textContent = this.failed ? "価格を取得できませんでした" : PREVIEW ? "サンプル表示" : "読み込み中…";
+      this.chgEl.style.color = "var(--ink-3)"; return;
+    }
     var d = this.price - o.prev, pct = d / o.prev * 100, sign = d >= 0 ? "+" : "−";
     this.chgEl.textContent = sign + o.chgFmt(Math.abs(d)) + " (" + sign + Math.abs(pct).toFixed(2) + "%)";
     this.chgEl.style.color = d >= 0 ? o.upColor : o.downColor;
@@ -589,15 +598,6 @@ body {
       var pe = this.priceEl; pe.classList.add(dir > 0 ? "flash-up" : "flash-down");
       setTimeout(function () { pe.classList.remove("flash-up", "flash-down"); }, 500);
     }
-  };
-  Market.prototype.tick = function () {
-    if (this.live) return;
-    var o = this.o, last = this.c[this.c.length - 1];
-    var np = this.price + (Math.random() - 0.5) * o.vol;
-    np = Math.max(o.lo + (o.hi - o.lo) * 0.1, Math.min(o.hi - (o.hi - o.lo) * 0.05, np));
-    var dir = Math.sign(np - this.price); this.price = np;
-    last.c = np; last.h = Math.max(last.h, np); last.l = Math.min(last.l, np);
-    this.render(dir); this.draw();
   };
   /* Real quote from the network. The change is measured against the last price seen on an earlier day (kept on this device). */
   Market.prototype.applyLive = function (p) {
@@ -655,7 +655,7 @@ body {
     gold: { label: "GOLD", small: "(XAU/USD)", sub: "金／米ドル", name: "ゴールド", dp: 2, tail: 0, demo: 4180, badge: BADGE.gold, unit: "usd", spot: "XAU" },
     silver: { label: "SILVER", small: "(XAG/USD)", sub: "銀／米ドル", name: "シルバー", dp: 3, tail: 1, demo: 57.83, badge: BADGE.silver, unit: "usd", spot: "XAG" },
     usoil: { label: "USOIL", small: "(WTI)", sub: "WTI原油／米ドル", name: "USオイル", dp: 2, tail: 0, demo: 97.5, badge: BADGE.oil, unit: "usd" },
-    btc: { label: "BTCUSD", sub: "ビットコイン／米ドル", name: "BTCUSD", pickName: "ビットコイン", dp: 2, tail: 0, demo: 82640, badge: BADGE.txt("₿", "btc"), unit: "usd" }
+    btc: { label: "BTC/USD", sub: "ビットコイン／米ドル", name: "BTC/USD", pickName: "ビットコイン", dp: 2, tail: 0, demo: 82640, badge: BADGE.txt("₿", "btc"), unit: "usd" }
   };
   var PICK_KEY = "mkt-v1", picks = ["usdjpy", "gold"];
   try { var sp = JSON.parse(localStorage.getItem(PICK_KEY)); if (sp && INST[sp[0]] && INST[sp[1]]) picks = sp; } catch (e) {}
@@ -775,6 +775,7 @@ body {
         .catch(function () { finish(); });
     }, fail, { timeout: 15000, maximumAge: 30 * 60000 });
   }
+  var wxLoaded = false;
   function loadWeather() {
     if (!window.fetch) return;
     showCity();
@@ -784,13 +785,19 @@ body {
         var q = function (k) { return document.querySelector('[data-wx="' + k + '"]'); };
         q("temp").textContent = Math.round(j.current.temperature_2m);
         q("desc").textContent = DESC(j.current.weather_code);
+        var main = document.querySelector("[data-wx-main]");  // the big icon follows the current weather too
+        main.setAttribute("viewBox", "0 0 26 22");
+        main.innerHTML = ICON[codeIcon(j.current.weather_code, j.current.time ? +j.current.time.slice(11, 13) : new Date().getHours())];  // local hour at that place
         q("hi").textContent = Math.round(j.daily.temperature_2m_max[0]);
         q("lo").textContent = Math.round(j.daily.temperature_2m_min[0]);
         renderHours([10, 13, 16, 19, 22].map(function (hr) {
           return [hr, codeIcon(j.hourly.weather_code[hr], hr), Math.round(j.hourly.temperature_2m[hr])];
         }));
+        wxLoaded = true;
       })
-      .catch(function () {});
+      .catch(function () {
+        if (!wxLoaded && !PREVIEW) document.querySelector('[data-wx="desc"]').textContent = "天気を取得できませんでした";
+      });
   }
 
   /* ---------- calendar ---------- */
@@ -1004,13 +1011,16 @@ body {
         }).filter(function (e) { return !isNaN(e.t); });
         renderIndicators(); renderStrategy();
       })
-      .catch(function () {});
+      .catch(function () {
+        if (!calEvents && !PREVIEW) document.getElementById("ind-list").innerHTML = '<li class="empty">経済指標を取得できませんでした。下の「経済カレンダーを表示」から確認してください。</li>';
+      });
   }
 
   /* ---------- automatic analysis (market.json, refreshed hourly by the Pages workflow) ---------- */
   function setPoint(i, title, body) {
     document.querySelector('[data-pt="' + i + 'h"]').textContent = title;
     document.querySelector('[data-pt="' + i + 'p"]').textContent = body;
+    document.querySelector('[data-pt="' + i + 'h"]').closest("li").hidden = !title;  // empty slot: hide the row and its check
   }
   /* Points 1 and 2 follow the chart panels unless an instrument was picked for them (saved per device). */
   var PT_KEY = "pt-v1", ptPicks = [null, null];
@@ -1046,8 +1056,10 @@ body {
       else if (ptPicks[i]) setPoint(i + 1, INST[key].name, "分析データを読み込んでいます。");
     });
     if (!market) return;
-    var u = new Date(market.updated);
-    document.getElementById("pt-foot").textContent = "チャートから自動分析・" + u.getHours() + ":" + String(u.getMinutes()).padStart(2, "0") + "更新（参考情報）";
+    var u = new Date(market.updated), foot = document.getElementById("pt-foot");
+    var stale = Date.now() - u > 3 * 3600000;
+    foot.textContent = "チャートから自動分析・" + (stale ? (u.getMonth() + 1) + "/" + u.getDate() + " " : "") + u.getHours() + ":" + String(u.getMinutes()).padStart(2, "0") + "更新" + (stale ? "（更新が止まっています）" : "（参考情報）");
+    foot.style.color = stale ? "var(--up-red)" : "";
     renderStrategy();
   }
   function renderStrategy() {
@@ -1088,7 +1100,13 @@ body {
         });
         refreshPoints();
       })
-      .catch(function () {});
+      .catch(function () {
+        if (market || PREVIEW) return;
+        setPoint(1, "分析データを取得できませんでした", "通信状態を確認してください。\n次の更新で自動的に再取得します。");
+        setPoint(2, "", ""); setPoint(3, "", "");
+        document.getElementById("pt-foot").textContent = "";
+        markets.forEach(function (mk) { if (!mk.live) { mk.failed = true; mk.render(); } });
+      });
   }
 
   /* ---------- X feed: official embed when the device allows it, otherwise a note and the open-in-X link ---------- */
@@ -1127,6 +1145,17 @@ body {
   }
 
   /* ---------- boot ---------- */
+  if (!PREVIEW) {
+    document.getElementById("ind-list").innerHTML = '<li class="empty">今日の経済指標を読み込んでいます…</li>';
+    [1, 2, 3].forEach(function (i) { setPoint(i, i === 1 ? "分析データを読み込んでいます…" : "", ""); });
+    document.getElementById("pt-foot").textContent = "";
+    document.querySelector('[data-wx="temp"]').textContent = "--";
+    document.querySelector('[data-wx="hi"]').textContent = "--";
+    document.querySelector('[data-wx="lo"]').textContent = "--";
+    document.querySelector('[data-wx="desc"]').textContent = "読み込み中…";
+    document.querySelector('[data-wx="hours"]').innerHTML = "";
+    document.querySelector("[data-wx-main]").innerHTML = "";
+  }
   if (phone) buildPager();
   tickClock(); renderCal(); bg.start(); layout(); loadWeather(); loadPrices();
   if (loc.gps) locate(loadWeather, function () {});
@@ -1135,7 +1164,8 @@ body {
   loadCalendar(); setInterval(loadCalendar, 30 * 60000);
   loadMarket(); setInterval(loadMarket, 15 * 60000);
   loadHolidays(); setInterval(renderIndicators, 60000);
-  loadX();
+  // X's script is slow and third-party: start it only after the page itself has finished loading
+  if (document.readyState === "complete") loadX(); else window.addEventListener("load", loadX);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); loadCalendar(); loadMarket(); } });
   setInterval(loadWeather, 30 * 60000);
   var lastDay = new Date().getDate(), lastMonth = new Date().getMonth();
@@ -1150,7 +1180,6 @@ body {
       renderCal();
     }
   }, 1000);
-  setInterval(function () { markets.forEach(function (m) { m.tick(); }); }, 2500);
   window.addEventListener("resize", layout);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
 })();
