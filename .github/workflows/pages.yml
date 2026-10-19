@@ -56,7 +56,7 @@ jobs:
           rows = json.load(open("calendar.json"))
           print("range:", min(r["date"] for r in rows), "->", max(r["date"] for r in rows))
           for r in rows:
-              if r.get("country") in ("USD", "JPY") and r.get("impact") in ("High", "Medium"):
+              if r.get("country") in ("USD", "JPY"):
                   t = datetime.datetime.fromisoformat(r["date"]).astimezone(jst)
                   print(t.strftime("%m/%d %H:%M JST"), r["country"], r["impact"], r["title"])
           PY
