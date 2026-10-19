@@ -598,18 +598,18 @@ body {
   };
   var INST = {
     usdjpy: { label: "USD/JPY", sub: "米ドル／円", name: "ドル円", dp: 3, tail: 1, demo: 158.1, badge: BADGE.us, unit: "yen" },
-    eurjpy: { label: "EUR/JPY", sub: "ユーロ／円", name: "ユーロ円", dp: 3, tail: 1, demo: 183.6, badge: BADGE.txt("€"), unit: "yen" },
-    gbpjpy: { label: "GBP/JPY", sub: "英ポンド／円", name: "ポンド円", dp: 3, tail: 1, demo: 211.9, badge: BADGE.txt("£"), unit: "yen" },
-    audjpy: { label: "AUD/JPY", sub: "豪ドル／円", name: "豪ドル円", dp: 3, tail: 1, demo: 103.2, badge: BADGE.txt("A$", "small"), unit: "yen" },
-    eurusd: { label: "EUR/USD", sub: "ユーロ／米ドル", name: "ユーロドル", dp: 5, tail: 1, demo: 1.1612, badge: BADGE.txt("€"), unit: "pips" },
-    gbpusd: { label: "GBP/USD", sub: "英ポンド／米ドル", name: "ポンドドル", dp: 5, tail: 1, demo: 1.3403, badge: BADGE.txt("£"), unit: "pips" },
-    audusd: { label: "AUD/USD", sub: "豪ドル／米ドル", name: "豪ドル米ドル", dp: 5, tail: 1, demo: 0.6528, badge: BADGE.txt("A$", "small"), unit: "pips" },
-    nzdusd: { label: "NZD/USD", sub: "NZドル／米ドル", name: "NZドル米ドル", dp: 5, tail: 1, demo: 0.5781, badge: BADGE.txt("NZ$", "small"), unit: "pips" },
-    usdchf: { label: "USD/CHF", sub: "米ドル／スイスフラン", name: "ドルスイス", dp: 5, tail: 1, demo: 0.8012, badge: BADGE.us, unit: "pips" },
-    usdcad: { label: "USD/CAD", sub: "米ドル／カナダドル", name: "ドルカナダ", dp: 5, tail: 1, demo: 1.3934, badge: BADGE.us, unit: "pips" },
+    eurjpy: { label: "EUR/JPY", sub: "ユーロ／円", name: "ユーロ円", dp: 3, tail: 1, demo: 177.6, badge: BADGE.txt("€"), unit: "yen" },
+    gbpjpy: { label: "GBP/JPY", sub: "英ポンド／円", name: "ポンド円", dp: 3, tail: 1, demo: 210.7, badge: BADGE.txt("£"), unit: "yen" },
+    audjpy: { label: "AUD/JPY", sub: "豪ドル／円", name: "豪ドル円", dp: 3, tail: 1, demo: 110.2, badge: BADGE.txt("A$", "small"), unit: "yen" },
+    eurusd: { label: "EUR/USD", sub: "ユーロ／米ドル", name: "ユーロドル", dp: 5, tail: 1, demo: 1.1237, badge: BADGE.txt("€"), unit: "pips" },
+    gbpusd: { label: "GBP/USD", sub: "英ポンド／米ドル", name: "ポンドドル", dp: 5, tail: 1, demo: 1.3330, badge: BADGE.txt("£"), unit: "pips" },
+    audusd: { label: "AUD/USD", sub: "豪ドル／米ドル", name: "豪ドル米ドル", dp: 5, tail: 1, demo: 0.6976, badge: BADGE.txt("A$", "small"), unit: "pips" },
+    nzdusd: { label: "NZD/USD", sub: "NZドル／米ドル", name: "NZドル米ドル", dp: 5, tail: 1, demo: 0.5655, badge: BADGE.txt("NZ$", "small"), unit: "pips" },
+    usdchf: { label: "USD/CHF", sub: "米ドル／スイスフラン", name: "ドルスイス", dp: 5, tail: 1, demo: 0.8241, badge: BADGE.us, unit: "pips" },
+    usdcad: { label: "USD/CAD", sub: "米ドル／カナダドル", name: "ドルカナダ", dp: 5, tail: 1, demo: 1.4120, badge: BADGE.us, unit: "pips" },
     gold: { label: "GOLD", small: "(XAU/USD)", sub: "金／米ドル", name: "ゴールド", dp: 2, tail: 0, demo: 4180, badge: BADGE.gold, unit: "usd", spot: "XAU" },
-    silver: { label: "SILVER", small: "(XAG/USD)", sub: "銀／米ドル", name: "シルバー", dp: 3, tail: 1, demo: 50.4, badge: BADGE.silver, unit: "usd", spot: "XAG" },
-    btc: { label: "BTC/USD", sub: "ビットコイン／米ドル", name: "ビットコイン", dp: 2, tail: 0, demo: 110250, badge: BADGE.txt("₿", "btc"), unit: "usd" }
+    silver: { label: "SILVER", small: "(XAG/USD)", sub: "銀／米ドル", name: "シルバー", dp: 3, tail: 1, demo: 57.83, badge: BADGE.silver, unit: "usd", spot: "XAG" },
+    btc: { label: "BTC/USD", sub: "ビットコイン／米ドル", name: "ビットコイン", dp: 2, tail: 0, demo: 82640, badge: BADGE.txt("₿", "btc"), unit: "usd" }
   };
   var PICK_KEY = "mkt-v1", picks = ["usdjpy", "gold"];
   try { var sp = JSON.parse(localStorage.getItem(PICK_KEY)); if (sp && INST[sp[0]] && INST[sp[1]]) picks = sp; } catch (e) {}
