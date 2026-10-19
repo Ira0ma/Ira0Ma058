@@ -486,6 +486,7 @@ body {
     }
   };
   Market.prototype.tick = function () {
+    if (this.live) return;
     var o = this.o, last = this.c[this.c.length - 1];
     var np = this.price + (Math.random() - 0.5) * o.vol;
     np = Math.max(o.lo + (o.hi - o.lo) * 0.1, Math.min(o.hi - (o.hi - o.lo) * 0.05, np));
@@ -493,6 +494,31 @@ body {
     last.c = np; last.h = Math.max(last.h, np); last.l = Math.min(last.l, np);
     this.render(dir); this.draw();
   };
+  /* Real quote from the network. The change is measured against the last price seen on an earlier day (kept on this device). */
+  Market.prototype.applyLive = function (p) {
+    var k = "quote-" + this.el.id, today = new Date().toDateString(), st = null;
+    try { st = JSON.parse(localStorage.getItem(k)); } catch (e) {}
+    if (!st || st.day !== today) st = { day: today, prev: st && st.last != null ? st.last : p };
+    st.last = p;
+    try { localStorage.setItem(k, JSON.stringify(st)); } catch (e) {}
+    var first = !this.live, dir = Math.sign(p - this.price);
+    this.live = true; this.o.prev = st.prev; this.price = p;
+    if (first) { this.gen(); } else {
+      var last = this.c[this.c.length - 1];
+      last.c = p; last.h = Math.max(last.h, p); last.l = Math.min(last.l, p);
+    }
+    this.render(dir); this.draw();
+  };
+  function loadPrices() {
+    if (!window.fetch) return;
+    var get = function (u) { return fetch(u, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }); };
+    get("https://open.er-api.com/v6/latest/USD").then(function (j) {
+      if (j && j.rates && j.rates.JPY) markets[0].applyLive(j.rates.JPY);
+    }).catch(function () {});
+    get("https://api.gold-api.com/price/XAU").then(function (j) {
+      if (j && j.price) markets[1].applyLive(+j.price);
+    }).catch(function () {});
+  }
   var nf = function (dec) { return function (v) { return v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec }); }; };
   /* Change colors follow the reference design: USD/JPY's rise in red (Japanese chart convention), gold's in green. */
   var markets = [
@@ -638,7 +664,9 @@ body {
   })();
 
   /* ---------- boot ---------- */
-  tickClock(); renderCal(); bg.start(); layout(); loadWeather();
+  tickClock(); renderCal(); bg.start(); layout(); loadWeather(); loadPrices();
+  setInterval(loadPrices, 60000);
+  setInterval(loadWeather, 30 * 60000);
   var lastDay = new Date().getDate();
   setInterval(function () {
     tickClock();
