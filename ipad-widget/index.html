@@ -112,6 +112,7 @@ body {
 .ind-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; }
 .ind-list li { display: grid; grid-template-columns: 54px 1fr auto; gap: 0 4px; align-items: start; padding: 9px 0; border-bottom: 1px solid var(--glass-line); }
 .ind-list .t { font-size: 15px; font-weight: 600; white-space: nowrap; }
+.ind-list .t .date { display: block; font-size: 10px; font-weight: 600; color: var(--gold); margin-bottom: 1px; }
 .ind-list .t .next { font-size: 10px; font-weight: 600; color: var(--gold); margin-right: 1px; }
 .ind-list li > div:nth-child(2) { min-width: 0; }
 .ind-list .n { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1052,7 +1053,16 @@ body {
     "Prelim UoM Inflation Expectations": "ミシガン大期待インフレ率 (速報)",
     "Durable Goods Orders m/m": "耐久財受注 (前月比)", "Core Durable Goods Orders m/m": "コア耐久財受注 (前月比)",
     "New Home Sales": "新築住宅販売件数", "Existing Home Sales": "中古住宅販売件数", "Pending Home Sales m/m": "中古住宅販売保留 (前月比)",
-    "Building Permits": "住宅建築許可件数", "NAHB Housing Market Index": "NAHB住宅市場指数", "Housing Starts": "住宅着工件数",
+    "Building Permits": "住宅建築許可件数", "ADP Weekly Employment Change": "ADP週次雇用者数", "API Weekly Statistical Bulletin": "API原油在庫",
+    "Natural Gas Storage": "天然ガス在庫", "CB Leading Index m/m": "景気先行指数 (前月比)", "Tertiary Industry Activity m/m": "第3次産業活動指数 (前月比)",
+    "Revised UoM Inflation Expectations": "ミシガン大期待インフレ率 (確報)", "Prelim GDP Price Index q/q": "GDP物価指数 (改定値)",
+    "Import Prices m/m": "輸入物価指数 (前月比)", "Employment Cost Index q/q": "雇用コスト指数 (前期比)", "Factory Orders m/m": "製造業受注 (前月比)",
+    "Current Account": "経常収支", "Household Spending y/y": "家計支出 (前年比)", "Average Cash Earnings y/y": "現金給与総額 (前年比)",
+    "Prelim Industrial Production m/m": "鉱工業生産 (速報)", "Retail Sales y/y": "小売業販売額 (前年比)", "BOJ Core CPI y/y": "日銀版コアCPI (前年比)",
+    "Prelim Machine Tool Orders y/y": "工作機械受注 (速報)", "Core Machinery Orders m/m": "コア機械受注 (前月比)", "10-y Bond Auction": "10年債入札",
+    "30-y Bond Auction": "30年債入札", "Wholesale Inventories m/m": "卸売在庫 (前月比)", "Business Inventories m/m": "企業在庫 (前月比)",
+    "Richmond Manufacturing Index": "リッチモンド連銀製造業指数", "Chicago PMI": "シカゴPMI", "Final Manufacturing PMI": "製造業PMI (確報)",
+    "Final Services PMI": "サービス業PMI (確報)", "Construction Spending m/m": "建設支出 (前月比)", "Prelim Unit Labor Costs q/q": "単位労働コスト (速報)", "NAHB Housing Market Index": "NAHB住宅市場指数", "Housing Starts": "住宅着工件数",
     "Empire State Manufacturing Index": "NY連銀製造業景況指数", "Philly Fed Manufacturing Index": "フィラデルフィア連銀景況指数",
     "Industrial Production m/m": "鉱工業生産 (前月比)", "Trade Balance": "貿易収支", "Crude Oil Inventories": "原油在庫",
     "Treasury Currency Report": "為替報告書",
@@ -1095,8 +1105,13 @@ body {
       list = list.slice().sort(function (a, b) { return b.stars - a.stars || a.t - b.t; }).slice(0, 3)
         .sort(function (a, b) { return a.t - b.t; });
     }
+    // a quiet day: fill the card with this week's next important releases (★2 and up), dated
+    var later = calEvents.filter(function (e) { return e.t >= day.end && e.stars >= 2; })
+      .sort(function (a, b) { return a.t - b.t; }).slice(0, Math.max(0, 3 - list.length));
+    later.forEach(function (e) { e.later = true; });
+    list = list.concat(later);
     var ul = document.getElementById("ind-list");
-    if (!list.length) { ul.innerHTML = '<li class="empty">今日は米国・日本の重要指標の発表はありません。</li>'; return; }
+    if (!list.length) { ul.innerHTML = '<li class="empty">今週これからの米国・日本の指標発表はありません。</li>'; return; }
     ul.innerHTML = "";
     list.forEach(function (e) {
       var li = document.createElement("li");
@@ -1105,7 +1120,10 @@ body {
       var nextDay = e.t.getDate() !== day.start.getDate();
       var sub = [e.forecast ? "予想 " + e.forecast : "", e.previous ? "前回 " + e.previous : ""].filter(Boolean).join(" / ");
       li.innerHTML = '<div class="t num"></div><div><div class="n"></div><div class="s num"></div></div><div class="stars"></div>';
-      li.children[0].innerHTML = (nextDay ? '<small class="next">翌</small>' : "") + hm;
+      li.children[0].innerHTML = e.later
+        ? '<small class="date">' + (e.t.getMonth() + 1) + "/" + e.t.getDate() + "(" + WD[e.t.getDay()] + ")</small>" + hm
+        : (nextDay ? '<small class="next">翌</small>' : "") + hm;
+      if (e.later) li.classList.add("later");
       li.querySelector(".n").textContent = jaTitle(e);
       li.querySelector(".s").textContent = sub || "　";
       var st = li.querySelector(".stars"); st.setAttribute("data-v", e.stars); paintStars(st);
@@ -1118,7 +1136,7 @@ body {
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (rows) {
         if (!Array.isArray(rows)) return;
-        var IMP = { High: 3, Medium: 2 };
+        var IMP = { High: 3, Medium: 2, Low: 1 };
         calEvents = rows.filter(function (r) {
           return (r.country === "USD" || r.country === "JPY") && IMP[r.impact];
         }).map(function (r) {
@@ -1186,6 +1204,8 @@ body {
         return e.stars === 3 && e.t > now && e.t < tradingDay(now).end;
       }).sort(function (a, b) { return a.t - b.t; })[0];
       if (next) line1 = (next.t.getDate() !== tradingDay(now).start.getDate() ? "翌" : "") + next.t.getHours() + ":" + String(next.t.getMinutes()).padStart(2, "0") + " " + jaTitle(next) + "に注意。";
+      else if (calEvents.some(function (e) { return e.t > now && e.t < tradingDay(now).end; }))
+        line1 = "本日は大型指標なし（小型指標のみ）。\nテクニカル主導の値動きを想定。";
     }
     var all = market.instruments || market, notes2 = [];
     var sel = [0, 1].map(function (i) { var k = pointKey(i); return [all[k] && all[k].analysis, INST[k].name, k]; });
