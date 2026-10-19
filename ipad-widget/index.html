@@ -96,8 +96,8 @@ body {
 .mkt .chg { font-size: 14px; font-weight: 500; margin-top: 4px; }
 .mkt canvas.chart { width: 100%; height: 108px; display: block; margin-top: 8px; touch-action: none; cursor: grab; }
 .chart-reset { position: absolute; left: 20px; top: 132px; z-index: 2; font: inherit; font-size: 11px; font-weight: 600; color: #14100a; background: var(--gold); border: 0; border-radius: 999px; padding: 3px 10px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
-.tabs { display: flex; gap: 6px; margin-top: 6px; }
-.tabs button { flex: 1; font: inherit; font-size: 11px; color: var(--ink-2); background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 4px 0; cursor: pointer; }
+.tabs { display: flex; gap: 2px; margin-top: 6px; }
+.tabs button { flex: 1 1 0; min-width: 0; white-space: nowrap; letter-spacing: -.03em; font: inherit; font-size: 10.5px; color: var(--ink-2); background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 4px 0; cursor: pointer; }
 .tabs button[aria-pressed="true"] { color: var(--gold); border-color: rgba(227,184,103,.55); background: rgba(227,184,103,.10); }
 .tabs button:focus-visible, .pt-pick:focus-visible, .mkt .head:focus-visible, .picker-list button:focus-visible, .cal-nav button:focus-visible, a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
@@ -494,10 +494,12 @@ body {
   function drawScenes() { document.querySelectorAll("canvas.scene").forEach(drawScene); }
 
   /* ---------- markets ---------- */
-  var TF = [{ k: "15分", v: 0.12 }, { k: "1時間", v: 0.25 }, { k: "4時間", v: 0.5 }, { k: "1日", v: 1 }, { k: "1週", v: 2.2 }];
+  var TF = [{ k: "1分", v: 0.03 }, { k: "5分", v: 0.06 }, { k: "15分", v: 0.12 }, { k: "30分", v: 0.18 },
+            { k: "1時間", v: 0.25 }, { k: "4時間", v: 0.5 }, { k: "1日", v: 1 }, { k: "1週", v: 2.2 }];
+  var TF_DEFAULT = 6;  // 1日
   var VIEW_N = 38, MIN_N = 12;  // candles shown by default / at the closest zoom
   function Market(el, key) {
-    this.el = el; this.tf = 3; this.resetView();
+    this.el = el; this.tf = TF_DEFAULT; this.resetView();
     this.cv = el.querySelector("canvas.chart");
     this.priceEl = el.querySelector('[data-f="price"]');
     this.chgEl = el.querySelector('[data-f="chg"]');
@@ -567,7 +569,7 @@ body {
       self.draw();
     }, { passive: false });
   };
-  var TFKEY = ["15m", "1h", "4h", "1d", "1w"];
+  var TFKEY = ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"];
   Market.prototype.gen = function () {
     var real = this.series && this.series[TFKEY[this.tf]];
     if (real && real.length > 2) {
@@ -625,6 +627,7 @@ body {
         if (tf === "1w") return d.getFullYear() + "/" + (d.getMonth() + 1);
         if (tf === "1d") return (d.getMonth() + 1) + "/" + d.getDate();
         if (tf === "4h") return (d.getMonth() + 1) + "/" + d.getDate() + " " + d.getHours() + "時";
+        if (tf === "1m" || tf === "5m") return d.getHours() + ":" + z(d.getMinutes());
         return (d.getMonth() + 1) + "/" + d.getDate() + " " + d.getHours() + ":" + z(d.getMinutes());
       };
       c.save(); c.font = "500 9.5px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif"; c.fillStyle = "rgba(244,241,234,.42)"; c.textBaseline = "bottom";
@@ -1075,7 +1078,7 @@ body {
   }
   function loadCalendar() {
     if (!window.fetch) return;
-    fetch("calendar.json?v=" + Date.now(), { cache: "no-store" })
+    fetch("calendar.json", { cache: "no-cache" })
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (rows) {
         if (!Array.isArray(rows)) return;
@@ -1129,7 +1132,7 @@ body {
     [0, 1].forEach(function (i) {
       var key = pointKey(i), a = all && all[key] && all[key].analysis;
       if (a) setPoint(i + 1, a.title, a.body);
-      else if (all) setPoint(i + 1, INST[key].name, "この銘柄の分析データはまだありません。\n次の更新（1時間ごと）をお待ちください。");
+      else if (all) setPoint(i + 1, INST[key].name, "この銘柄の分析データはまだありません。\n次の更新（15分ごと）をお待ちください。");
       else if (ptPicks[i]) setPoint(i + 1, INST[key].name, "分析データを読み込んでいます。");
     });
     if (!market) return;
@@ -1162,7 +1165,7 @@ body {
   }
   function loadMarket() {
     if (!window.fetch) return;
-    fetch("market.json?v=" + Date.now(), { cache: "no-store" })
+    fetch("market.json", { cache: "no-cache" })  // revalidates (304 when unchanged)
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (d) {
         market = d;
@@ -1239,7 +1242,7 @@ body {
   setInterval(loadPrices, 60000);
   checkUpdate(); setInterval(checkUpdate, 10 * 60000);
   loadCalendar(); setInterval(loadCalendar, 30 * 60000);
-  loadMarket(); setInterval(loadMarket, 15 * 60000);
+  loadMarket(); setInterval(loadMarket, 5 * 60000);
   loadHolidays(); setInterval(renderIndicators, 60000);
   // X's script is slow and third-party: start it only after the page itself has finished loading
   if (document.readyState === "complete") loadX(); else window.addEventListener("load", loadX);

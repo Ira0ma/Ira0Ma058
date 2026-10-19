@@ -175,6 +175,8 @@ def build(fixture=None, prev=None):
 
 
 def one(key, sym, spot_sym, fixture):
+    m1 = yahoo(sym, "1m", "5d", fixture)
+    m5 = yahoo(sym, "5m", "5d", fixture)
     m15 = yahoo(sym, "15m", "5d", fixture)
     h1 = yahoo(sym, "60m", "3mo", fixture)
     d1 = yahoo(sym, "1d", "1y", fixture)
@@ -187,11 +189,11 @@ def one(key, sym, spot_sym, fixture):
             print(key, "spot unavailable:", e)
     if spot and h1:
         # futures contract; move it onto the spot price shown in the widget
-        shift = spot - (m15 or h1)[-1][4]
-        for rows in (m15, h1, d1, w1):
+        shift = spot - (m1 or m15 or h1)[-1][4]
+        for rows in (m1, m5, m15, h1, d1, w1):
             for r in rows:
                 r[1:] = [v + shift for v in r[1:]]
-    price = (m15 or h1)[-1][4]  # the freshest close
+    price = (m1 or m15 or h1)[-1][4]  # the freshest close
     today = datetime.now(timezone.utc).date()
     last_day = datetime.fromtimestamp(d1[-1][0], timezone.utc).date()
     done = d1[:-1] if last_day >= today else d1  # drop today's unfinished candle
@@ -201,7 +203,10 @@ def one(key, sym, spot_sym, fixture):
     return {
         "price": price, "prevClose": prev_close, "analysis": a,
         "candles": {
+            "1m": r6(m1[-N_CANDLES:]),
+            "5m": r6(m5[-N_CANDLES:]),
             "15m": r6(m15[-N_CANDLES:]),
+            "30m": r6(aggregate(m15, 1800)[-N_CANDLES:]),
             "1h": r6(h1[-N_CANDLES:]),
             "4h": r6(aggregate(h1, 4 * 3600)[-N_CANDLES:]),
             "1d": r6(d1[-N_CANDLES:]),
