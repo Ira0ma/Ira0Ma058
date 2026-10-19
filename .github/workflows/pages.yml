@@ -43,7 +43,7 @@ jobs:
           python3 ipad-widget/build.py
           mkdir -p _site
           cp ipad-widget/ipad.html _site/index.html
-          cp ipad-widget/icon.png _site/icon.png
+          cp ipad-widget/icon-cup.png _site/icon-cup.png
       - name: Fetch economic calendar
         continue-on-error: true
         run: |
