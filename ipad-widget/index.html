@@ -155,6 +155,21 @@ body {
 .grid7 .d.hol::after { content: ""; position: absolute; left: 50%; bottom: -1px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--gold); }
 
 
+/* iPhone: the widgets split into three swipeable pages, each scaled to fit the landscape screen */
+.phone #fit { display: none; }
+#pager { position: fixed; inset: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; overscroll-behavior: contain; }
+#pager::-webkit-scrollbar { display: none; }
+.page { flex: 0 0 100%; height: 100%; scroll-snap-align: start; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  padding: max(8px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 20px) max(12px, env(safe-area-inset-left, 0px)); }
+.pstage { display: flex; gap: 14px; align-items: flex-start; flex: none; transform-origin: center center; }
+.pcol { display: flex; flex-direction: column; gap: 14px; }
+.phone .card { position: relative !important; left: auto !important; top: auto !important; flex: none; }  /* beats the per-card #id positions */
+#pdots { position: fixed; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7px); display: flex; justify-content: center; gap: 8px; z-index: 3; pointer-events: none; }
+#pdots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.3); }
+#pdots i.on { background: rgba(255,255,255,.9); }
+#rotate { display: none; position: fixed; inset: 0; z-index: 20; background: var(--night); flex-direction: column; align-items: center; justify-content: center; gap: 14px; font-size: 16px; color: var(--ink-2); text-align: center; padding: 24px; }
+@media (orientation: portrait) { .phone #rotate { display: flex; } }
+
 @media (prefers-reduced-motion: reduce) { .mkt .price { transition: none; } }
 </style>
 
@@ -290,7 +305,49 @@ body {
   }
 
   /* ---------- fit stage ---------- */
+  /* ---------- iPhone pager ---------- */
+  var phone = Math.min(screen.width, screen.height) < 600, pages = [], pageIdx = 0;
+  function buildPager() {
+    document.documentElement.classList.add("phone");
+    var $ = function (id) { return document.getElementById(id); };
+    var pager = document.createElement("div"); pager.id = "pager";
+    var layoutSpec = [[["clock"], ["markets"]], [["ind"], ["points"]], [["weather", "quote"], ["cal"]]];
+    layoutSpec.forEach(function (cols) {
+      var pg = document.createElement("section"); pg.className = "page";
+      var ps = document.createElement("div"); ps.className = "pstage";
+      cols.forEach(function (ids) {
+        var col = document.createElement("div"); col.className = "pcol";
+        ids.forEach(function (id) { col.appendChild($(id)); });
+        ps.appendChild(col);
+      });
+      pg.appendChild(ps); pager.appendChild(pg); pages.push(pg);
+    });
+    var dots = document.createElement("div"); dots.id = "pdots";
+    dots.innerHTML = "<i></i><i></i><i></i>";
+    var rot = document.createElement("div"); rot.id = "rotate";
+    rot.innerHTML = '<svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="#e3b867" stroke-width="2"><rect x="12" y="4" width="20" height="36" rx="4"/><path d="M38 26a14 14 0 0 1-10 12" stroke-linecap="round"/><path d="M27 34l1 4 4-1" stroke-linecap="round" stroke-linejoin="round"/></svg><div>iPhoneを横向きにしてください</div>';
+    document.body.appendChild(pager); document.body.appendChild(dots); document.body.appendChild(rot);
+    var paint = function () {
+      pageIdx = Math.round(pager.scrollLeft / Math.max(pager.clientWidth, 1));
+      dots.querySelectorAll("i").forEach(function (d, i) { d.classList.toggle("on", i === pageIdx); });
+    };
+    pager.addEventListener("scroll", paint, { passive: true }); paint();
+  }
+  function layoutPhone() {
+    var maxK = 0;
+    pages.forEach(function (pg) {
+      var ps = pg.firstChild, cs = getComputedStyle(pg);
+      var aw = pg.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      var ah = pg.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      var k = Math.min(aw / ps.offsetWidth, ah / ps.offsetHeight);
+      ps.style.transform = "scale(" + k + ")"; maxK = Math.max(maxK, k);
+    });
+    scale = maxK;
+    var pager = document.getElementById("pager");
+    pager.scrollLeft = pageIdx * pager.clientWidth;
+  }
   function layout() {
+    if (phone) { layoutPhone(); drawScenes(); markets.forEach(function (m) { m.draw(); }); bg.resize(); return; }
     var cs = getComputedStyle(fit);
     var aw = fit.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     var ah = fit.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
@@ -798,6 +855,7 @@ body {
   }
 
   /* ---------- boot ---------- */
+  if (phone) buildPager();
   tickClock(); renderCal(); bg.start(); layout(); loadWeather(); loadPrices();
   setInterval(loadPrices, 60000);
   checkUpdate(); setInterval(checkUpdate, 10 * 60000);
