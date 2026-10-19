@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Trade Desk">
 <meta name="theme-color" content="#06070b">
 <link rel="apple-touch-icon" href="icon.png">
-<meta name="build" content="4a79cc41ba">
+<meta name="build" content="9a8c982544">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -818,7 +818,7 @@ body {
     "Prelim UoM Inflation Expectations": "ミシガン大期待インフレ率 (速報)",
     "Durable Goods Orders m/m": "耐久財受注 (前月比)", "Core Durable Goods Orders m/m": "コア耐久財受注 (前月比)",
     "New Home Sales": "新築住宅販売件数", "Existing Home Sales": "中古住宅販売件数", "Pending Home Sales m/m": "中古住宅販売保留 (前月比)",
-    "Building Permits": "住宅建築許可件数", "Housing Starts": "住宅着工件数",
+    "Building Permits": "住宅建築許可件数", "NAHB Housing Market Index": "NAHB住宅市場指数", "Housing Starts": "住宅着工件数",
     "Empire State Manufacturing Index": "NY連銀製造業景況指数", "Philly Fed Manufacturing Index": "フィラデルフィア連銀景況指数",
     "Industrial Production m/m": "鉱工業生産 (前月比)", "Trade Balance": "貿易収支", "Crude Oil Inventories": "原油在庫",
     "Treasury Currency Report": "為替報告書",
@@ -829,7 +829,14 @@ body {
   var CC = { USD: "米", JPY: "日", EUR: "欧", GBP: "英", CNY: "中", AUD: "豪" };
   var calEvents = null;
   function jaTitle(e) {
-    var t = JA[e.title] || e.title.replace(/ Speaks$/, " 発言");
+    var t = JA[e.title] || e.title
+      .replace(/^Fed Chair \S+ Speaks$/, "FRB議長発言")
+      .replace(/^Fed (?:Governor|Vice Chair(?: for Supervision)?) \S+ Speaks$/, "FRB理事発言")
+      .replace(/^FOMC Member \S+ Speaks$/, "FOMCメンバー発言")
+      .replace(/^BOJ Gov(?:ernor)? \S+ Speaks$/, "日銀総裁発言")
+      .replace(/^Treasury Sec(?:retary)? \S+ Speaks$/, "米財務長官発言")
+      .replace(/^President \S+ Speaks$/, "米大統領発言")
+      .replace(/ Speaks$/, " 発言");
     return (CC[e.country] ? CC[e.country] + "・" : "") + t;
   }
   function renderIndicators() {
