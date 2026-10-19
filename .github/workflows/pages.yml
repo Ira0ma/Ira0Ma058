@@ -6,7 +6,7 @@ on:
     paths: ["ipad-widget/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
   schedule:
-    - cron: "7 * * * *"  # hourly: refresh the economic calendar
+    - cron: "7 * * * *"  # hourly: refresh the economic calendar and chart analysis
 
 permissions:
   contents: read
@@ -41,6 +41,9 @@ jobs:
             https://nfs.faireconomy.media/ff_calendar_thisweek.json -o calendar.json
           python3 -c "import json;d=json.load(open('calendar.json'));assert isinstance(d,list);print(len(d),'events')"
           mv calendar.json _site/calendar.json
+      - name: Fetch prices and build chart analysis
+        continue-on-error: true
+        run: python3 ipad-widget/analyze.py _site/market.json
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

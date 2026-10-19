@@ -109,26 +109,24 @@ body {
 .icon-btn:hover { color: var(--gold); }
 .editing .icon-btn.edit { color: #14100a; background: var(--gold); }
 .card-title .aside + .icon-btn { margin-left: 2px; padding: 4px 8px; }
-[data-edit] { white-space: pre-line; border-radius: 5px; }
-.editing [data-edit] { -webkit-user-select: text; user-select: text; outline: 1px dashed rgba(227,184,103,.55); outline-offset: 2px; background: rgba(227,184,103,.06); cursor: text; }
-.editing [data-edit]:focus { outline: 1.5px solid var(--gold); background: rgba(227,184,103,.12); }
-.editing .stars, .pt-list .ck { cursor: pointer; }
-.editing .stars { outline: 1px dashed rgba(227,184,103,.55); outline-offset: 2px; border-radius: 5px; }
+.pt-list .ck { cursor: pointer; }
 .pt-list .ck { border: 0; padding: 0; }
 .pt-list li.off .ck { background: transparent; box-shadow: inset 0 0 0 1.5px rgba(227,184,103,.6); }
 .pt-list li.off .ck svg { opacity: 0; }
 .pt-list li.off h3, .pt-list li.off p { opacity: .55; }
 .edit-bar { display: none; position: absolute; left: 16px; right: 16px; bottom: 10px; align-items: center; justify-content: space-between; gap: 8px; }
 .editing .edit-bar { display: flex; }
+.pt-foot { position: absolute; left: 20px; bottom: 12px; font-size: 10.5px; color: var(--ink-3); }
+.editing .pt-foot { display: none; }
+[data-pt] { white-space: pre-line; }
 .editing .pt-list { gap: 8px; }
 .editing .pt-list li { padding-bottom: 8px; }
-.reset { background: none; border: 0; padding: 0; font: inherit; font-size: 11.5px; color: var(--ink-3); text-decoration: underline; cursor: pointer; }
-.pt-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.pt-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .pt-list li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--glass-line); }
 .pt-list li:last-child { border-bottom: 0; padding-bottom: 0; }
 .pt-list .ck { width: 24px; height: 24px; border-radius: 50%; background: var(--gold); display: grid; place-items: center; box-shadow: 0 0 12px rgba(227,184,103,.35); }
 .pt-list h3 { margin: 1px 0 6px; font-size: 14.5px; font-weight: 600; }
-.pt-list p { margin: 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-2); }
+.pt-list p { margin: 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* weather */
 #weather { left: 352px; top: 329px; width: 305px; height: 194px; padding: 16px 20px; }
@@ -254,20 +252,21 @@ body {
     <div class="card-title">
       <svg class="ico" viewBox="0 0 26 26"><rect x="4" y="3" width="18" height="21" rx="3" fill="#e3b867"/><rect x="4" y="3" width="18" height="5" rx="2" fill="#c8963f"/><path d="M8 12h10M8 16h10M8 20h6" stroke="#1a1408" stroke-width="1.6" stroke-linecap="round"/></svg>
       今日の注目ポイント
-      <button class="icon-btn edit" type="button" aria-pressed="false"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M8.5 1.5l2 2L4 10l-2.6.6L2 8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg><span>編集</span></button>
+      <button class="icon-btn edit" type="button" aria-pressed="false"><svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6 .8v1.6M6 9.6v1.6M.8 6h1.6M9.6 6h1.6M2.3 2.3l1.1 1.1M8.6 8.6l1.1 1.1M2.3 9.7l1.1-1.1M8.6 3.4l1.1-1.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><span>設定</span></button>
     </div>
     <ul class="pt-list">
       <li data-check="p1"><button class="ck" type="button" aria-label="チェックを切り替え"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <div><h3 data-edit="p1h">ドル円：押し目買い目線</h3><p data-edit="p1p">156.00付近のサポートに注目。
+        <div><h3 data-pt="1h">ドル円：押し目買い目線</h3><p data-pt="1p">156.00付近のサポートに注目。
 上抜けで156.80を目指す。</p></div></li>
       <li data-check="p2"><button class="ck" type="button" aria-label="チェックを切り替え"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <div><h3 data-edit="p2h">ゴールド：重要ラインを確認</h3><p data-edit="p2p">2,350の攻防。上抜けで2,370、
+        <div><h3 data-pt="2h">ゴールド：重要ラインを確認</h3><p data-pt="2p">2,350の攻防。上抜けで2,370、
 下抜けで2,330を意識。</p></div></li>
       <li data-check="p3"><button class="ck" type="button" aria-label="チェックを切り替え"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <div><h3 data-edit="p3h">本日のトレード戦略</h3><p data-edit="p3p">重要指標前はポジションを軽く、
+        <div><h3 data-pt="3h">本日のトレード戦略</h3><p data-pt="3p">重要指標前はポジションを軽く、
 値動きに応じて柔軟に対応する。</p></div></li>
     </ul>
-    <div class="edit-bar"><button class="reset" type="button">最初の文章に戻す</button><button class="dock-toggle" type="button"></button></div>
+    <div class="pt-foot" id="pt-foot">サンプル表示（自動分析の読み込み前）</div>
+    <div class="edit-bar"><span></span><button class="dock-toggle" type="button"></button></div>
   </section>
 
   <!-- weather -->
@@ -438,7 +437,15 @@ body {
     });
     this.price = o.price; this.gen(); this.render();
   }
+  var TFKEY = ["1h", "4h", "1d", "1w"];
   Market.prototype.gen = function () {
+    var real = this.series && this.series[TFKEY[this.tf]];
+    if (real && real.length > 2) {
+      this.c = real.map(function (k) { return { o: k[1], h: k[2], l: k[3], c: k[4] }; });
+      var last = this.c[this.c.length - 1], p = this.price;
+      last.c = p; last.h = Math.max(last.h, p); last.l = Math.min(last.l, p);
+      return;
+    }
     var o = this.o, r = rng(o.seed + this.tf * 97), n = 38, f = TF[this.tf].v;
     var span = (o.hi - o.lo) * 0.75 * f, start = this.price - span * 0.82, path = [];
     for (var i = 0; i < n; i++) {
@@ -458,7 +465,8 @@ body {
     var p = prep(this.cv), c = p.c, w = p.w, h = p.h, o = this.o, cs = this.c;
     var mn = Infinity, mx = -Infinity;
     cs.forEach(function (k) { mn = Math.min(mn, k.l); mx = Math.max(mx, k.h); });
-    var step = o.step * (this.tf === 3 ? 2 : this.tf === 0 ? 0.5 : 1);
+    var raw = (mx - mn) / 3.5, mag = Math.pow(10, Math.floor(Math.log10(raw))), step = mag;
+    [1, 2, 2.5, 5, 10].some(function (m) { step = m * mag; return step >= raw; });
     var lo = Math.floor(mn / step) * step, hi = Math.ceil(mx / step) * step;
     if (hi - lo < step * 3) { hi = lo + step * 3; }
     var axisW = 38, cw = w - axisW, top = 6, bot = h - 6;
@@ -470,7 +478,7 @@ body {
       c.strokeStyle = "rgba(255,236,200,.07)"; c.lineWidth = 1; c.setLineDash([2, 3]);
       c.beginPath(); c.moveTo(0, Math.round(y) + .5); c.lineTo(cw - 4, Math.round(y) + .5); c.stroke();
       c.setLineDash([]); c.fillStyle = "rgba(244,241,234,.5)";
-      c.fillText(o.axisFmt(v), cw + 2, y);
+      c.fillText(step < 1 ? v.toFixed(step < 0.1 ? 2 : 1) : v.toLocaleString("en-US", { maximumFractionDigits: 0 }), cw + 2, y);
     }
     var bw = cw / cs.length, body = Math.max(2, bw * 0.55);
     c.shadowColor = "rgba(227,184,103,.45)"; c.shadowBlur = 6;
@@ -508,6 +516,15 @@ body {
   };
   /* Real quote from the network. The change is measured against the last price seen on an earlier day (kept on this device). */
   Market.prototype.applyLive = function (p) {
+    if (this.prevClose) { // real previous close from market.json
+      var first0 = !this.live, dir0 = Math.sign(p - this.price);
+      this.live = true; this.o.prev = this.prevClose; this.price = p;
+      if (first0) { this.gen(); } else {
+        var last0 = this.c[this.c.length - 1];
+        last0.c = p; last0.h = Math.max(last0.h, p); last0.l = Math.min(last0.l, p);
+      }
+      this.render(dir0); this.draw(); return;
+    }
     var k = "quote-" + this.el.id, today = new Date().toDateString(), st = null;
     try { st = JSON.parse(localStorage.getItem(k)); } catch (e) {}
     if (!st || st.day !== today) st = { day: today, prev: st && st.last != null ? st.last : p };
@@ -675,78 +692,36 @@ body {
     return { resize: resize, start: function () { resize(); if (!reduce) requestAnimationFrame(frame); } };
   })();
 
-  /* ---------- editable notes (saved on this device) ---------- */
+  /* ---------- per-device settings: checkmarks and dock ---------- */
   var NOTES = "notes-v1", notes = {};
   try { notes = JSON.parse(localStorage.getItem(NOTES)) || {}; } catch (e) {}
   function saveNotes() { try { localStorage.setItem(NOTES, JSON.stringify(notes)); } catch (e) {} }
-  var defaults = {};
   function paintStars(el) {
     var v = +el.getAttribute("data-v");
     el.innerHTML = "★".repeat(v) + "<span>" + "★".repeat(3 - v) + "</span>";
     el.setAttribute("aria-label", "重要度 " + v);
   }
+  function checkKey(li) { return "off-" + new Date().toDateString() + "-" + li.getAttribute("data-check"); }
   function applyNotes() {
-    document.querySelectorAll("[data-edit]").forEach(function (el) {
-      var k = el.getAttribute("data-edit");
-      if (!(k in defaults)) defaults[k] = el.textContent;
-      el.textContent = k in notes ? notes[k] : defaults[k];
-    });
-    document.querySelectorAll("[data-stars]").forEach(function (el) {
-      var k = "stars-" + el.getAttribute("data-stars");
-      if (!(k in defaults)) defaults[k] = el.getAttribute("data-v");
-      el.setAttribute("data-v", k in notes ? notes[k] : defaults[k]); paintStars(el);
-    });
     document.querySelectorAll("[data-check]").forEach(function (li) {
-      li.classList.toggle("off", notes["off-" + li.getAttribute("data-check")] === true);
+      li.classList.toggle("off", notes[checkKey(li)] === true);
     });
   }
-  var RESET_LABEL = document.querySelector(".reset").textContent;
   var editing = false;
   function setEditing(on) {
     editing = on; stage.classList.toggle("editing", on);
-    document.querySelectorAll("[data-edit]").forEach(function (el) {
-      if (on) { el.setAttribute("contenteditable", "plaintext-only"); if (el.contentEditable !== "plaintext-only") el.setAttribute("contenteditable", "true"); }
-      else el.removeAttribute("contenteditable");
-    });
     document.querySelectorAll(".icon-btn.edit").forEach(function (b) {
-      b.setAttribute("aria-pressed", on); b.querySelector("span").textContent = on ? "完了" : "編集";
+      b.setAttribute("aria-pressed", on); b.querySelector("span").textContent = on ? "閉じる" : "設定";
     });
-    var rs = document.querySelector(".reset"); delete rs.dataset.armed; rs.textContent = RESET_LABEL;
-    if (!on && document.activeElement) document.activeElement.blur();
   }
   document.querySelectorAll(".icon-btn.edit").forEach(function (b) {
     b.addEventListener("click", function () { setEditing(!editing); });
   });
-  stage.addEventListener("input", function (e) {
-    var el = e.target.closest && e.target.closest("[data-edit]"); if (!el) return;
-    notes[el.getAttribute("data-edit")] = el.innerText.replace(/\n+$/, ""); saveNotes();
-  });
-  stage.addEventListener("keydown", function (e) {
-    var el = e.target.closest && e.target.closest("[data-edit]");
-    if (el && e.key === "Enter" && el.tagName !== "P") { e.preventDefault(); el.blur(); }
-  });
-  stage.addEventListener("paste", function (e) {
-    var el = e.target.closest && e.target.closest("[data-edit]"); if (!el) return;
-    e.preventDefault();
-    document.execCommand("insertText", false, (e.clipboardData || window.clipboardData).getData("text/plain"));
-  });
   stage.addEventListener("click", function (e) {
-    var st = e.target.closest("[data-stars]");
-    if (st && editing) {
-      var v = +st.getAttribute("data-v") % 3 + 1;
-      st.setAttribute("data-v", v); paintStars(st);
-      notes["stars-" + st.getAttribute("data-stars")] = String(v); saveNotes(); return;
-    }
     var ckb = e.target.closest(".ck");
     if (ckb) {
       var li = ckb.closest("[data-check]"), off = !li.classList.contains("off");
-      li.classList.toggle("off", off); notes["off-" + li.getAttribute("data-check")] = off; saveNotes(); return;
-    }
-    var rs = e.target.closest(".reset");
-    if (rs) {
-      if (!rs.dataset.armed) { rs.dataset.armed = "1"; rs.textContent = "もう一度タップで戻す"; return; }
-      delete rs.dataset.armed; rs.textContent = RESET_LABEL;
-      notes = notes.dockHidden ? { dockHidden: true } : {}; saveNotes(); applyNotes(); setEditing(true);
+      li.classList.toggle("off", off); notes[checkKey(li)] = off; saveNotes(); return;
     }
   });
   applyNotes();
@@ -836,7 +811,54 @@ body {
           var t = new Date(r.date);
           return { t: t, title: r.title, country: r.country, stars: IMP[r.impact], forecast: r.forecast, previous: r.previous };
         }).filter(function (e) { return !isNaN(e.t); });
-        renderIndicators();
+        renderIndicators(); renderStrategy();
+      })
+      .catch(function () {});
+  }
+
+  /* ---------- automatic analysis (market.json, refreshed hourly by the Pages workflow) ---------- */
+  var market = null;
+  function setPoint(i, title, body) {
+    document.querySelector('[data-pt="' + i + 'h"]').textContent = title;
+    document.querySelector('[data-pt="' + i + 'p"]').textContent = body;
+  }
+  function renderStrategy() {
+    if (!market) return;
+    var now = new Date(), line1 = "本日は米国・日本の重要指標なし。\nテクニカル主導の値動きを想定。";
+    if (calEvents) {
+      var next = calEvents.filter(function (e) {
+        return e.stars === 3 && e.t > now && e.t.toDateString() === now.toDateString();
+      }).sort(function (a, b) { return a.t - b.t; })[0];
+      if (next) line1 = next.t.getHours() + ":" + String(next.t.getMinutes()).padStart(2, "0") + " " + jaTitle(next) + "に注意。";
+    }
+    var notes2 = [], j = market.usdjpy && market.usdjpy.analysis, g = market.gold && market.gold.analysis;
+    [[j, "ドル円"], [g, "ゴールド"]].forEach(function (x) {
+      if (!x[0] || x[0].rsi == null) return;
+      if (x[0].rsi >= 70) notes2.push(x[1] + "はRSI" + Math.round(x[0].rsi) + "で過熱、高値追いは慎重に。");
+      else if (x[0].rsi <= 30) notes2.push(x[1] + "はRSI" + Math.round(x[0].rsi) + "で売られ過ぎ。");
+    });
+    var body = line1;
+    if (notes2.length) body = line1.split("\n")[0] + "\n" + notes2[0];
+    else if (j && j.atr) body = line1.split("\n")[0] + "\nドル円の1日の値幅目安は約" + j.atr.toFixed(2) + "円。";
+    setPoint(3, "本日のトレード戦略", body);
+  }
+  function loadMarket() {
+    if (!window.fetch) return;
+    fetch("market.json?v=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (d) {
+        market = d;
+        [["usdjpy", 0], ["gold", 1]].forEach(function (x) {
+          var m = d[x[0]], mk = markets[x[1]];
+          if (!m) return;
+          if (m.analysis) setPoint(x[1] + 1, m.analysis.title, m.analysis.body);
+          mk.series = m.candles; mk.prevClose = m.prevClose;
+          mk.applyLive(mk.live ? mk.price : m.price);
+          mk.gen(); mk.draw();
+        });
+        var u = new Date(d.updated);
+        document.getElementById("pt-foot").textContent = "チャートから自動分析・" + u.getHours() + ":" + String(u.getMinutes()).padStart(2, "0") + "更新（参考情報）";
+        renderStrategy();
       })
       .catch(function () {});
   }
@@ -858,8 +880,9 @@ body {
   tickClock(); renderCal(); bg.start(); layout(); loadWeather(); loadPrices();
   setInterval(loadPrices, 60000);
   checkUpdate(); setInterval(checkUpdate, 10 * 60000);
-  loadCalendar(); setInterval(loadCalendar, 30 * 60000); setInterval(renderIndicators, 60000);
-  document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); loadCalendar(); } });
+  loadCalendar(); setInterval(loadCalendar, 30 * 60000);
+  loadMarket(); setInterval(loadMarket, 15 * 60000); setInterval(renderIndicators, 60000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); loadCalendar(); loadMarket(); } });
   setInterval(loadWeather, 30 * 60000);
   var lastDay = new Date().getDate();
   setInterval(function () {
