@@ -1,7 +1,7 @@
 """Builds market.json for the widget: real candles for each selectable instrument plus an automatic
 technical read (trend from moving averages, levels from daily pivots, RSI, ATR).
 
-Usage: python3 analyze.py OUT.json [--prev=OLD.json]   (fetches from Yahoo Finance / gold-api.com;
+Usage: python3 analyze.py OUT.json [--prev=OLD.json]   (fetches from Yahoo Finance / gold-api.com / Swissquote;
                                                          OLD.json fills in instruments that fail)
        python3 analyze.py OUT.json FIXTURE    (FIXTURE: JSON {symbol: yahoo-chart-json} for tests)
 """
@@ -68,6 +68,25 @@ def get_json(url):
     req = urllib.request.Request(url, headers=UA)
     with urllib.request.urlopen(req, timeout=20) as r:
         return json.load(r)
+
+
+def spot_price(spot_sym):
+    """Spot price of a metal (XAU/XAG in USD): gold-api.com, then Swissquote's public quote feed."""
+    errs = []
+    try:
+        return float(get_json(f"https://api.gold-api.com/price/{spot_sym}")["price"]), "gold-api"
+    except Exception as e:
+        errs.append(f"gold-api: {e}")
+    try:
+        feed = get_json(f"https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/{spot_sym}/USD")
+        mids = [(p["bid"] + p["ask"]) / 2 for q in feed for p in q.get("spreadProfilePrices", [])[:1]]
+        if mids:
+            mids.sort()
+            return mids[len(mids) // 2], "swissquote"  # median across Swissquote's platforms
+        errs.append("swissquote: no prices")
+    except Exception as e:
+        errs.append(f"swissquote: {e}")
+    raise RuntimeError("; ".join(errs))
 
 
 def yahoo(symbol, interval, rng, fixture=None):
@@ -202,7 +221,7 @@ def build(fixture=None, prev=None):
     for key, (sym, name, _, _, spot_sym) in INSTRUMENTS.items():
         for attempt in range(2):
             try:
-                out["instruments"][key] = dict(one(key, sym, spot_sym, fixture), updated=now)
+                out["instruments"][key] = dict(one(key, sym, spot_sym, fixture, old.get(key)), updated=now)
                 fresh += 1
                 break
             except Exception as e:  # one failing symbol must not drop the others
@@ -251,21 +270,31 @@ def jxy_series(fixture):
     return out
 
 
-def one(key, sym, spot_sym, fixture):
+BASIS_MAX_AGE = 3 * 86400  # how long the last futures-to-spot gap may stand in when no spot source answers
+
+
+def one(key, sym, spot_sym, fixture, prev=None):
     ser = jxy_series(fixture) if key == "jxy" else fetch_series(sym, fixture)
     m1, m5, m15, h1, d1, w1 = (ser[tf] for tf in ("1m", "5m", "15m", "1h", "1d", "1w"))
-    spot = None
-    if spot_sym and fixture is None:
+    # Futures trade above spot (XM/XS quote spot), so metals are moved onto the spot price by the
+    # futures-to-spot gap. Without a spot quote this hour, the last known gap is reused for a while.
+    spot, shift, adjusted = None, None, None
+    if spot_sym and fixture is None and h1:
         try:
-            spot = float(get_json(f"https://api.gold-api.com/price/{spot_sym}")["price"])
-        except Exception as e:  # futures prices are still usable on their own
+            spot, src = spot_price(spot_sym)
+            shift = spot - (m1 or m15 or h1)[-1][4]
+            print(key, f"spot {spot} from {src}, futures gap {shift:+.2f}")
+        except Exception as e:
             print(key, "spot unavailable:", e)
-    if spot and h1:
-        # futures contract; move it onto the spot price shown in the widget
-        shift = spot - (m1 or m15 or h1)[-1][4]
-        for rows in (m1, m5, m15, h1, d1, w1):
-            for r in rows:
-                r[1:] = [v + shift for v in r[1:]]
+            pb, pt = (prev or {}).get("basis"), (prev or {}).get("basisAt", 0)
+            if pb is not None and time.time() - pt < BASIS_MAX_AGE:
+                shift = pb
+                print(key, f"reusing futures gap {pb:+.2f} from", datetime.fromtimestamp(pt, timezone.utc).isoformat())
+        if shift is not None:
+            for rows in (m1, m5, m15, h1, d1, w1):
+                for r in rows:
+                    r[1:] = [v + shift for v in r[1:]]
+        adjusted = shift is not None
     last = (m1 or m15 or h1)[-1]
     price, as_of = last[4], last[0]  # the freshest close and when it traded
     if key not in UTC_DAY and len(h1) > 24 * 60:
@@ -281,6 +310,12 @@ def one(key, sym, spot_sym, fixture):
     print(key, round(price, 5), a["trend"], a["title"])
     return {
         "price": price, "asOf": as_of, "prevClose": prev_close, "analysis": a,
+        **({} if adjusted is None else {
+            "spotAdjusted": adjusted,
+            "basis": shift if adjusted else None,
+            # when the gap was measured: a reused gap keeps its original time so it ages out
+            "basisAt": (prev or {}).get("basisAt") if adjusted and spot is None else int(time.time()),
+        }),
         "candles": {
             "1m": r6(m1[-N_CANDLES:]),
             "5m": r6(m5[-N_CANDLES:]),

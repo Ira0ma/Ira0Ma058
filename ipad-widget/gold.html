@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="103da637b5">
+<meta name="build" content="0af8e76c85">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -471,6 +471,7 @@ const URLS = {
   fx1:'https://api.frankfurter.dev/v1/latest?base=USD&symbols=JPY',
   xausSpot:'https://xaus.com/api/v1/spot?currency=JPY&unit=oz&compact=1',
   goldApi:'https://api.gold-api.com/price/XAU',
+  sqSpot:'https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/XAU/USD',
   fx:'https://api.frankfurter.dev/v2/rate/usd/jpy',
   h1:'https://xaus.com/api/v1/chart?symbol=xau&range=1mo&interval=1h',
   h1alt:'https://xaus.com/api/v1/chart?symbol=xau&range=1mo&interval=60m',
@@ -584,6 +585,16 @@ async function getSite(){
 }
 function siteBars(rows){return (rows||[]).map(r=>({t:toMs(r[0]),o:n(r[1]),h:n(r[2]),l:n(r[3]),c:n(r[4])})).filter(b=>b.t&&b.c)}
 // 最新価格を直近の足に反映（チャートと判定をリアルタイムに保つ）
+// 先物のままのローソク足を、先物とスポットの差だけ平行移動する（XM・XSの価格はスポット）
+function alignSiteBars(spot){
+  if(!state.siteUnadjusted||!spot)return;
+  const last=(state.m15.at(-1)||state.h1.at(-1));
+  if(!last||Date.now()-last.t>3*3600000)return;  // 古い足とは比べない
+  const gap=spot-last.c;
+  if(Math.abs(gap)>Math.max(80,spot*.03))return;  // 差が大きすぎるときは別の原因なので触らない
+  for(const bars of [state.h1,state.m15])for(const b of bars){b.o+=gap;b.h+=gap;b.l+=gap;b.c+=gap}
+  state.siteUnadjusted=false;
+}
 function mergeSpot(bars,minutes,price,t){
   if(!bars.length||!price)return;
   const ms=minutes*60000,last=bars.at(-1);
@@ -704,6 +715,11 @@ async function refreshSpot(){
     let usd=0,jpyOz=0,fx=0,asof=Date.now(),freshness='fresh',src='';
     // 1) gold-api.com（ブラウザから直接・最も新しい）
     try{const g=await getJSON(URLS.goldApi,8000);usd=n(g.price);asof=toMs(g.updatedAt)||Date.now();src='Gold API'}catch{}
+    // 1b) Swissquote の公開レート（スポットの売値・買値の中値）
+    if(!usd){try{
+      const q=await getJSON(URLS.sqSpot,8000),p=q?.[0]?.spreadProfilePrices?.[0];
+      if(p&&n(p.bid)&&n(p.ask)){usd=(n(p.bid)+n(p.ask))/2;asof=toMs(q[0].ts)||Date.now();src='Swissquote'}
+    }catch{}}
     // 2) XAUS
     let xaus=null;
     if(!usd){try{xaus=await getJSON(URLS.xausSpot+'&fresh='+Math.floor(Date.now()/30000))}catch{}}
@@ -729,6 +745,7 @@ async function refreshSpot(){
     state.spot={price:usd,asof,freshness,age:0};
     if(fx){state.fx=fx;state.health.fx=true}
     state.goldJpy=jpyOz||(fx?usd*fx:state.goldJpy);
+    if(!src.startsWith('サイト'))alignSiteBars(usd);
     updateRolling(usd);
     mergeSpot(state.m15,15,usd,asof);mergeSpot(state.h1,60,usd,asof);
     state.health.spot=true;
@@ -746,10 +763,13 @@ async function refreshCharts(){
   let changed=false;
   // サイトのmarket.json（H1・M15とも150本）を優先し、だめならXAUSを試す
   try{
-    const g=(await getSite()).instruments[INSTR.site].candles;
+    const inst=(await getSite()).instruments[INSTR.site],g=inst.candles;
     const hb=siteBars(g['1h']),mb=siteBars(g['15m']);
     if(hb.length>=120&&mb.length>=20){
       state.h1=hb;state.m15=mb;state.health.h1=state.health.m15=true;changed=true;state.src.chart='サイト';
+      // サイトの金のローソク足は先物（GC=F）をスポット価格に合わせたもの。合わせられなかった回は、ここでライブのスポット価格に合わせる
+      state.siteUnadjusted=IS_GOLD&&inst.spotAdjusted===false;
+      if(state.spot&&!String(state.src.spot||'').startsWith('サイト'))alignSiteBars(state.spot.price);
       if(state.spot){mergeSpot(state.m15,15,state.spot.price,state.spot.asof);mergeSpot(state.h1,60,state.spot.price,state.spot.asof)}
     }
   }catch{}
