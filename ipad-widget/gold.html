@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="cad80eaa33">
+<meta name="build" content="418cdc3ea7">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -133,6 +133,8 @@ canvas.dragging{cursor:grabbing}
 .charthint{font-size:10px;color:var(--muted);margin-top:4px}
 .chartinfo{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted);margin-top:8px;min-height:16px}
 .chartinfo b{color:var(--text);font-weight:700}
+.levelinfo{margin-top:4px}
+.levelinfo .r b{color:var(--red)}.levelinfo .s b{color:var(--green)}
 .legend{display:inline-flex;align-items:center;gap:5px}
 .legend i{display:inline-block;width:14px;height:3px;border-radius:2px}
 
@@ -295,10 +297,11 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
   <section id="secChart" class="panel s8">
     <div class="cardhead">
       <div><div class="title">GOLDチャート</div><div id="chartMeta" class="sub">取得中...</div></div>
-      <div class="segmented"><button id="h1Btn" class="seg active">H1</button><button id="m15Btn" class="seg">M15</button></div>
+      <div class="segmented"><button id="h1Btn" class="seg active">H1</button><button id="m15Btn" class="seg">M15</button><button id="lvBtn" class="seg active" aria-pressed="true">水平線</button></div>
     </div>
     <div class="chartwrap"><canvas id="chart"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
     <div id="chartInfo" class="chartinfo">--</div>
+    <div id="levelInfo" class="chartinfo levelinfo"></div>
     <div class="charthint">ドラッグで左右（過去へ・右側に空白）・上下に移動／ピンチ・ホイールで拡大縮小／右端の価格目盛りを上下ドラッグで縦の拡大縮小／ダブルタップでリセット</div>
   </section>
 
@@ -571,13 +574,14 @@ function loadPrefs(){
   state.dir=lsGet('gold_dir','auto');
   state.evFilter=lsGet('gold_ev_filter','all');
   state.tf=lsGet('gold_tf','h1');
+  state.showLevels=lsGet('gold_levels','1')==='1';
   state.broker=BROKERS[lsGet('gold_broker','xm')]?lsGet('gold_broker','xm'):'xm';
   loadBroker();
 }
 function savePrefs(){
   Object.entries(PREFS).forEach(([id,[k]])=>lsSet(k,$(id).value));
   lsSet('gold_auto_risk',$('autoRisk').checked?'1':'0');
-  lsSet('gold_dir',state.dir);lsSet('gold_ev_filter',state.evFilter);lsSet('gold_tf',state.tf);
+  lsSet('gold_dir',state.dir);lsSet('gold_ev_filter',state.evFilter);lsSet('gold_tf',state.tf);lsSet('gold_levels',state.showLevels?'1':'0');
   lsSet('gold_broker',state.broker);lsSet(brokerKey('contract'),$('contract').value);lsSet(brokerKey('lev'),$('leverage').value);
   updateBrokerLabels();
 }
@@ -767,6 +771,34 @@ async function refreshCalendar(){
 }
 
 /* ---------- calc ---------- */
+// H1の強い水平線：H1の山・谷（前後3本より高い／低い足）を集め、ATRの0.35倍以内に重なるものを1本にまとめる。
+// 2回以上反応した価格帯だけを残し、現在値より上を抵抗、下を支持として強い順に最大3本ずつ選ぶ。
+function h1Levels(){
+  const bars=state.h1;if(bars.length<30)return [];
+  const k=3,a=atr(bars,14)||1,tol=Math.max(.5,a*.35),n=bars.length,piv=[];
+  for(let i=k;i<n-k;i++){
+    let isH=true,isL=true;
+    for(let j=i-k;j<=i+k;j++){if(j===i)continue;if(bars[j].h>bars[i].h)isH=false;if(bars[j].l<bars[i].l)isL=false}
+    if(isH)piv.push({p:bars[i].h,i});
+    if(isL)piv.push({p:bars[i].l,i});
+  }
+  piv.sort((x,y)=>x.p-y.p);
+  const groups=[];
+  piv.forEach(pt=>{
+    const g=groups.at(-1);
+    if(g&&pt.p-g.ps.at(-1)<=tol){g.ps.push(pt.p);g.last=Math.max(g.last,pt.i)}else groups.push({ps:[pt.p],last:pt.i});
+  });
+  const price=state.spot?.price??bars.at(-1).c;
+  const lv=groups.filter(g=>g.ps.length>=2).map(g=>{
+    const level=g.ps.reduce((s,v)=>s+v,0)/g.ps.length;
+    return {price:level,touches:g.ps.length,score:g.ps.length+(g.last>=n-48?.5:0),kind:level>=price?'r':'s'};
+  });
+  const pick=kind=>lv.filter(l=>l.kind===kind).sort((x,y)=>y.score-x.score||Math.abs(x.price-price)-Math.abs(y.price-price)).slice(0,3);
+  const r=pick('r').sort((x,y)=>x.price-y.price),s=pick('s').sort((x,y)=>y.price-x.price);
+  r.forEach((l,i)=>l.name='R'+(i+1));s.forEach((l,i)=>l.name='S'+(i+1));
+  return r.concat(s);
+}
+
 function smaSeries(bars,len){
   const out=[];let sum=0;
   for(let i=0;i<bars.length;i++){
@@ -1009,6 +1041,14 @@ function drawChart(){
   for(let i=every-1;i<bars.length;i+=every)ctx.fillText(barLabel(bars[i].t,isH1),x(i),H-P.b+13);
 
   ctx.save();ctx.beginPath();ctx.rect(P.l,P.t,W-P.l-P.r,H-P.t-P.b);ctx.clip();
+  // H1の強い水平線（H1・M15どちらの表示にも引く）
+  const levels=state.showLevels?h1Levels():[];
+  levels.forEach(l=>{
+    if(l.price<min||l.price>max)return;
+    const yy=Math.round(y(l.price))+.5,col=l.kind==='r'?'255,105,105':'66,213,156';
+    ctx.strokeStyle=`rgba(${col},${l.touches>=3?.95:.7})`;ctx.lineWidth=l.touches>=3?2:1.2;ctx.setLineDash([8,4]);
+    ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();ctx.setLineDash([]);
+  });
   const cw=Math.max(1,step*.62);
   bars.forEach((b,i)=>{
     const up=b.c>=b.o,col=up?'#42d59c':'#ff6969',xx=x(i);
@@ -1019,6 +1059,17 @@ function drawChart(){
 
   ctx.strokeStyle='#68b9ff';ctx.lineWidth=2;ctx.beginPath();let begun=false;
   sm.forEach((sv,i)=>{if(sv==null)return;if(!begun){ctx.moveTo(x(i),y(sv));begun=true}else ctx.lineTo(x(i),y(sv))});ctx.stroke();
+  // 水平線のラベルはローソク足の上に重ねて読めるようにする
+  levels.forEach(l=>{
+    if(l.price<min||l.price>max)return;
+    const yy=Math.round(y(l.price))+.5,col=l.kind==='r'?'255,105,105':'66,213,156';
+    const label=`${l.name} ${fmt(l.price)}  ${l.touches}回`;
+    ctx.font='bold 10.5px -apple-system,BlinkMacSystemFont,sans-serif';ctx.textAlign='left';ctx.textBaseline='bottom';
+    const tw=ctx.measureText(label).width;
+    ctx.fillStyle='rgba(12,17,22,.88)';ctx.fillRect(P.l+4,yy-15,tw+8,14);
+    ctx.fillStyle=`rgb(${col})`;ctx.fillText(label,P.l+8,yy-2.5);
+  });
+  ctx.textBaseline='middle';
   ctx.restore();
 
   if(state.spot&&state.spot.price>=min&&state.spot.price<=max){
@@ -1039,6 +1090,8 @@ function drawChart(){
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
   $('chartMeta').textContent=(isH1?'H1 ローソク足 / 120SMA':'M15 ローソク足 / 20SMA')+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
   $('chartReset').hidden=!(v.off||v.count||v.yOff||v.yZoom!==1);
+  $('levelInfo').innerHTML=!state.showLevels?'<span>水平線：非表示</span>':levels.length?
+    '<span>H1水平線</span>'+levels.map(l=>`<span class="${l.kind}">${l.kind==='r'?'抵抗':'支持'}${l.name.slice(1)} <b>${fmt(l.price)}</b>（${l.touches}回）</span>`).join(''):'<span>H1水平線：2回以上反応した価格帯はまだありません</span>';
   state.chartGeo={P,step,n:bars.length,W,H,priceSpan:max-min,plotH:H-P.t-P.b};
 }
 
@@ -1180,6 +1233,7 @@ $('autoBtn').onclick=()=>{
   scheduler();
 };
 $('h1Btn').onclick=()=>setTf('h1');
+$('lvBtn').onclick=()=>{state.showLevels=!state.showLevels;$('lvBtn').classList.toggle('active',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);savePrefs();drawChart()};
 $('m15Btn').onclick=()=>setTf('m15');
 document.querySelectorAll('#dirSeg .seg').forEach(b=>b.onclick=()=>{
   state.dir=b.dataset.dir;setSegActive('#dirSeg .seg','dir',state.dir);savePrefs();renderAll();
@@ -1293,6 +1347,7 @@ loadPrefs();
 setSegActive('#dirSeg .seg','dir',state.dir);
 setSegActive('[data-ev]','ev',state.evFilter);
 $('h1Btn').classList.toggle('active',state.tf==='h1');$('m15Btn').classList.toggle('active',state.tf==='m15');
+$('lvBtn').classList.toggle('active',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);
 loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(scheduler,1000);
 </script>
 </body>
