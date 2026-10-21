@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="163f1313c2">
+<meta name="build" content="9cd63f8606">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -236,7 +236,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 <body>
 
 <div id="mini" class="mini" aria-hidden="true">
-  <span>XAU <b id="miniPrice">--</b> <span id="miniChange">--</span></span>
+  <span><span id="miniSym">XAU</span> <b id="miniPrice">--</b> <span id="miniChange">--</span></span>
   <span id="miniSignal" class="chip">WAIT</span>
   <span id="miniNext" class="sub">--</span>
 </div>
@@ -245,8 +245,8 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 <header>
   <div class="brand">
     <div class="logo">Au</div>
-    <div><h1>GOLD Trade <em>Dashboard</em></h1>
-      <div class="subtitle">XAU/USD専用｜自動更新｜iPad・iPhone・Android対応</div>
+    <div><h1><span id="h1Sym">GOLD</span> Trade <em>Dashboard</em></h1>
+      <div class="subtitle" id="subTitle">XAU/USD専用｜自動更新｜iPad・iPhone・Android対応</div>
     </div>
   </div>
   <div class="head-actions">
@@ -277,15 +277,15 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
   <!-- ===== 概要：価格・判定・次の指標 ===== -->
   <section id="secOverview" class="panel s12 hero">
     <div class="hero-price">
-      <div class="cardhead"><div><div class="title">XAU / USD</div><div id="goldFresh" class="sub">取得中...</div></div><span class="tag">SPOT</span></div>
+      <div class="cardhead"><div><div class="title" id="instrLabel">XAU / USD</div><div id="goldFresh" class="sub">取得中...</div></div><span class="tag">SPOT</span></div>
       <div id="goldPrice" class="price">--</div>
       <div id="goldChange" class="change">--</div>
       <div class="stats">
         <div class="stat"><span>当日高値</span><b id="dayHigh">--</b></div>
         <div class="stat"><span>当日安値</span><b id="dayLow">--</b></div>
         <div class="stat"><span>本日レンジ</span><b id="dayRange">--</b></div>
-        <div class="stat"><span>USD/JPY</span><b id="usdjpy">--</b></div>
-        <div class="stat"><span>円換算 / oz</span><b id="goldJpy">--</b></div>
+        <div class="stat"><span id="stat4Label">USD/JPY</span><b id="usdjpy">--</b></div>
+        <div class="stat"><span id="stat5Label">円換算 / oz</span><b id="goldJpy">--</b></div>
         <div class="stat"><span>H1 120SMA</span><b id="sma120">--</b></div>
       </div>
     </div>
@@ -305,16 +305,16 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     </div>
 
     <div class="hero-next">
-      <div class="cardhead"><div><div class="title">次の重要指標</div><div class="sub">ゴールドに影響する米国指標｜端末の時刻で表示</div></div><span class="tag">NEXT</span></div>
+      <div class="cardhead"><div><div class="title">次の重要指標</div><div class="sub" id="nextSub">ゴールドに影響する米国指標｜端末の時刻で表示</div></div><span class="tag">NEXT</span></div>
       <div id="nextEv" class="nextev"><div class="sub">取得中...</div></div>
-      <div class="sub" style="margin-top:8px">米国の物価・雇用・景気・FRB関連の指標が対象です。High指標は30分前〜15分後、Mediumは15分前〜5分後をCAUTIONとし、判定を自動でWAITにします。</div>
+      <div class="sub" style="margin-top:8px"><span id="nextScope">米国の物価・雇用・景気・FRB関連の指標が対象です。</span>High指標は30分前〜15分後、Mediumは15分前〜5分後をCAUTIONとし、判定を自動でWAITにします。</div>
     </div>
   </section>
 
   <!-- ===== チャート ===== -->
   <section id="secChart" class="panel s8">
     <div class="cardhead">
-      <div><div class="title">GOLDチャート</div><div id="chartMeta" class="sub">取得中...</div></div>
+      <div><div class="title" id="chartTitle">GOLDチャート</div><div id="chartMeta" class="sub">取得中...</div></div>
       <div class="segmented"><button id="h1Btn" class="seg active">H1</button><button id="m15Btn" class="seg">M15</button><button id="lvBtn" class="seg active" aria-pressed="true">水平線</button><button id="tlBtn" class="seg active" aria-pressed="true">トレンドライン</button></div>
     </div>
     <div id="maToggles" class="matoggles" role="group" aria-label="移動平均線の表示"></div>
@@ -360,12 +360,12 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div class="form two">
         <label>口座資金（円）<input id="capital" type="number" inputmode="numeric" value="100000"></label>
         <label>許容リスク（%）<input id="riskPct" type="number" step="0.1" inputmode="decimal" value="1.0"></label>
-        <label>1lot契約量(oz)<input id="contract" type="number" inputmode="numeric" value="100"></label>
+        <label><span id="contractLabel">1lot契約量(oz)</span><input id="contract" type="number" inputmode="numeric" value="100"></label>
         <label>レバレッジ（倍）<input id="leverage" type="number" inputmode="numeric" value="1000"></label>
         <label>SL = ATR ×<input id="slMult" type="number" step="0.1" inputmode="decimal" value="1.2"></label>
         <label>目標RR<input id="rrTarget" type="number" step="0.1" inputmode="decimal" value="2.0"></label>
       </div>
-      <div class="autonote">契約量とレバレッジは、選んだ口座（XM／XS）ごとに保存されます。XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。口座残高が増えると上限レバレッジが下がる業者もあるため、その場合はレバレッジ欄を変更してください。</div>
+      <div class="autonote">契約量とレバレッジは、選んだ口座（XM／XS）ごとに保存されます。<span id="brokerNote">XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。</span>口座残高が増えると上限レバレッジが下がる業者もあるため、その場合はレバレッジ欄を変更してください。</div>
     </details>
     <div id="atrNote" class="autonote">--</div>
   </section>
@@ -374,7 +374,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
   <section id="secNews" class="panel s7">
     <div class="cardhead">
       <div><div class="title">経済指標</div><div class="sub">USD / JPYのHigh・Mediumを自動取得</div></div>
-      <div class="segmented"><button class="seg" data-ev="gold">ゴールド関連</button><button class="seg" data-ev="all">★★以上</button><button class="seg" data-ev="high">★★★のみ</button></div>
+      <div class="segmented"><button class="seg" data-ev="gold" id="relBtn">ゴールド関連</button><button class="seg" data-ev="all">★★以上</button><button class="seg" data-ev="high">★★★のみ</button></div>
     </div>
     <div id="eventList" class="events"><div class="sub">取得中...</div></div>
     <div id="calendarStatus" class="autonote">カレンダー接続中...</div>
@@ -404,12 +404,42 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 
 <footer>
 <div id="srcLine" style="margin-bottom:4px">データ接続状況：--</div>
-データ: Gold API・XAUS（GOLD価格）／GitHub Actionsで定期取得したYahoo Finance足（チャート）・Forex Factory（経済指標）／Frankfurter（USD/JPY補助）。表示値は参考情報で、取引可能価格や投資助言ではありません。ブローカーの実勢値・スプレッド・契約サイズを必ず確認してください。
+<span id="footerSrc">データ: Gold API・XAUS（GOLD価格）／GitHub Actionsで定期取得したYahoo Finance足（チャート）・Forex Factory（経済指標）／Frankfurter（USD/JPY補助）。</span>表示値は参考情報で、取引可能価格や投資助言ではありません。ブローカーの実勢値・スプレッド・契約サイズを必ず確認してください。
 </footer>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
+/* 銘柄ごとの設定。同じページを usdjpy.html として配信すると USD/JPY 版になる（build.py が生成） */
+const INSTRUMENTS={
+  gold:{key:'gold',site:'gold',title:'GOLD',label:'XAU / USD',short:'XAU',name:'ゴールド',sub:'XAU/USD専用｜自動更新｜iPad・iPhone・Android対応',
+    dp:2,pip:0.1,pipNote:'1pips＝$0.10',momTh:0.8,slMin:2,tolMin:.5,unit:'oz',contract:'100',
+    brokerNote:'XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。',
+    dist:v=>'$'+fmt(v,2),
+    footer:'データ: Gold API・XAUS（GOLD価格）／GitHub Actionsで定期取得したYahoo Finance足（チャート）・Forex Factory（経済指標）／Frankfurter（USD/JPY補助）。'},
+  usdjpy:{key:'usdjpy',site:'usdjpy',title:'USDJPY',label:'USD / JPY',short:'USDJPY',name:'ドル円',sub:'USD/JPY専用｜自動更新｜iPad・iPhone・Android対応',
+    dp:3,pip:0.01,pipNote:'1pips＝0.01円',momTh:0.03,slMin:0.05,tolMin:.02,unit:'通貨',contract:'100000',
+    brokerNote:'ドル円の1lotは多くの業者で10万通貨です。ご自身の口座の取引条件で確認してください。',
+    dist:v=>(v/0.01).toFixed(1)+'pips',
+    footer:'データ: Coinbase（ドル円の最新レート）／GitHub Actionsで定期取得したYahoo Finance足（チャート・価格）・Forex Factory（経済指標）。'}
+};
+const INSTR=INSTRUMENTS[window.INSTR_KEY||(/usdjpy/i.test(location.pathname)?'usdjpy':'gold')];
+const IS_GOLD=INSTR.key==='gold';
+const LSP=IS_GOLD?'gold_':'usdjpy_';  // 端末に保存する設定は銘柄ごとに分ける
+// 画面の銘柄名・単位などの文言を設定に合わせる
+(function applyInstrText(){
+  const t=(id,v)=>{const el=$(id);if(el)el.textContent=v};
+  document.title=INSTR.title+' Trade Dashboard';
+  t('h1Sym',INSTR.title);t('subTitle',INSTR.sub);t('miniSym',INSTR.short);t('instrLabel',INSTR.label);
+  t('chartTitle',INSTR.title+'チャート');t('contractLabel','1lot契約量('+INSTR.unit+')');t('brokerNote',INSTR.brokerNote);
+  t('relBtn',INSTR.name+'関連');t('footerSrc',INSTR.footer);
+  if(!IS_GOLD){
+    const logo=document.querySelector('.logo');if(logo){logo.textContent='$¥';logo.style.fontSize='15px'}
+    t('stat4Label','ドル指数 DXY');t('stat5Label','円指数 JXY');
+    t('nextSub','ドル円に影響する米国・日本の指標｜端末の時刻で表示');
+    t('nextScope','米国の物価・雇用・景気・FRB関連と、日本の日銀・物価・賃金・景気の指標が対象です。');
+  }
+})();
 try{if(window.self!==window.top)document.documentElement.classList.add('embedded')}catch{document.documentElement.classList.add('embedded')}
 
 const state = {
@@ -428,6 +458,7 @@ const state = {
 // サイト（GitHub Pages）のデータ：GitHub Actionsが定期取得した金のH1/M15足・ドル円・経済指標
 const SITE = location.protocol.startsWith('http') && location.hostname.endsWith('github.io') ? '' : 'https://ira0ma.github.io/Ira0Ma058/';
 const URLS = {
+  coinbase:'https://api.coinbase.com/v2/exchange-rates?currency=USD',
   siteMarket:SITE+'market.json',
   siteCalendar:SITE+'calendar.json',
   fx1:'https://api.frankfurter.dev/v1/latest?base=USD&symbols=JPY',
@@ -445,7 +476,7 @@ const INTERVALS = {spot:30000, chart:300000, calendar:300000, calendarHot:60000}
 
 /* ---------- utils ---------- */
 function n(v){const x=Number(v);return Number.isFinite(x)?x:0}
-function fmt(v,d=2){return n(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function fmt(v,d=INSTR.dp){return n(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d})}
 function yen(v){return '¥'+Math.round(n(v)).toLocaleString('ja-JP')}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function lsGet(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch{return d}}
@@ -541,7 +572,7 @@ let siteCache={t:0,d:null};
 async function getSite(){
   if(siteCache.d&&Date.now()-siteCache.t<60000)return siteCache.d;
   const d=await getJSON(URLS.siteMarket+'?t='+Math.floor(Date.now()/60000));
-  if(!d?.instruments?.gold)throw new Error('gold missing');
+  if(!d?.instruments?.[INSTR.site])throw new Error(INSTR.site+' missing');
   siteCache={t:Date.now(),d};return d;
 }
 function siteBars(rows){return (rows||[]).map(r=>({t:toMs(r[0]),o:n(r[1]),h:n(r[2]),l:n(r[3]),c:n(r[4])})).filter(b=>b.t&&b.c)}
@@ -556,25 +587,25 @@ function mergeSpot(bars,minutes,price,t){
 
 /* ---------- cache / prefs ---------- */
 function saveCache(){
-  lsSet('gold_auto_cache_final',JSON.stringify({
+  lsSet(LSP+'auto_cache_final',JSON.stringify({
     spot:state.spot,fx:state.fx,goldJpy:state.goldJpy,h1:state.h1,m15:state.m15,
     events:state.events,lastOk:state.lastOk,rolling:state.rolling
   }));
 }
 function loadCache(){
   try{
-    const c=JSON.parse(lsGet('gold_auto_cache_final','null'));
+    const c=JSON.parse(lsGet(LSP+'auto_cache_final','null'));
     if(c){Object.assign(state,c);renderAll()}
   }catch{}
 }
-const PREFS={capital:['gold_capital','100000'],riskPct:['gold_risk_pct','1.0'],
-  slMult:['gold_sl_mult','1.2'],rrTarget:['gold_rr','2.0']};
+const PREFS={capital:[LSP+'capital','100000'],riskPct:[LSP+'risk_pct','1.0'],
+  slMult:[LSP+'sl_mult','1.2'],rrTarget:[LSP+'rr','2.0']};
 // 口座ごとの初期値（契約量oz・レバレッジ）。変更した値は口座ごとに保存
-const BROKERS={xm:{name:'XM',contract:'100',lev:'1000'},xs:{name:'XS',contract:'100',lev:'2000'}};
-function brokerKey(k){return 'gold_'+state.broker+'_'+k}
+const BROKERS={xm:{name:'XM',contract:INSTR.contract,lev:'1000'},xs:{name:'XS',contract:INSTR.contract,lev:'2000'}};
+function brokerKey(k){return LSP+state.broker+'_'+k}
 function loadBroker(){
   const b=BROKERS[state.broker];
-  $('contract').value=lsGet(brokerKey('contract'),state.broker==='xm'?lsGet('gold_contract',b.contract):b.contract);
+  $('contract').value=lsGet(brokerKey('contract'),state.broker==='xm'?lsGet(LSP+'contract',b.contract):b.contract);
   $('leverage').value=lsGet(brokerKey('lev'),b.lev);
   setSegActive('#brokerSeg .seg','broker',state.broker);
   updateBrokerLabels();
@@ -582,27 +613,27 @@ function loadBroker(){
 function updateBrokerLabels(){
   document.querySelectorAll('#brokerSeg .seg').forEach(btn=>{
     const k=btn.dataset.broker,b=BROKERS[k];
-    const lev=k===state.broker?$('leverage').value:lsGet('gold_'+k+'_lev',b.lev);
+    const lev=k===state.broker?$('leverage').value:lsGet(LSP+k+'_lev',b.lev);
     btn.textContent=b.name+' '+(n(lev)||b.lev)+'倍';
   });
 }
 function loadPrefs(){
   Object.entries(PREFS).forEach(([id,[k,d]])=>$(id).value=lsGet(k,d));
-  $('autoRisk').checked=lsGet('gold_auto_risk','1')==='1';
-  state.dir=lsGet('gold_dir','auto');
-  state.evFilter=lsGet('gold_ev_filter','all');
-  state.tf=lsGet('gold_tf','h1');
-  state.showLevels=lsGet('gold_levels','1')==='1';
-  state.showTrend=lsGet('gold_trend','1')==='1';
+  $('autoRisk').checked=lsGet(LSP+'auto_risk','1')==='1';
+  state.dir=lsGet(LSP+'dir','auto');
+  state.evFilter=lsGet(LSP+'ev_filter','all');
+  state.tf=lsGet(LSP+'tf','h1');
+  state.showLevels=lsGet(LSP+'levels','1')==='1';
+  state.showTrend=lsGet(LSP+'trend','1')==='1';
   loadMaOn();
-  state.broker=BROKERS[lsGet('gold_broker','xm')]?lsGet('gold_broker','xm'):'xm';
+  state.broker=BROKERS[lsGet(LSP+'broker','xm')]?lsGet(LSP+'broker','xm'):'xm';
   loadBroker();
 }
 function savePrefs(){
   Object.entries(PREFS).forEach(([id,[k]])=>lsSet(k,$(id).value));
-  lsSet('gold_auto_risk',$('autoRisk').checked?'1':'0');
-  lsSet('gold_dir',state.dir);lsSet('gold_ev_filter',state.evFilter);lsSet('gold_tf',state.tf);lsSet('gold_levels',state.showLevels?'1':'0');lsSet('gold_trend',state.showTrend?'1':'0');
-  lsSet('gold_broker',state.broker);lsSet(brokerKey('contract'),$('contract').value);lsSet(brokerKey('lev'),$('leverage').value);
+  lsSet(LSP+'auto_risk',$('autoRisk').checked?'1':'0');
+  lsSet(LSP+'dir',state.dir);lsSet(LSP+'ev_filter',state.evFilter);lsSet(LSP+'tf',state.tf);lsSet(LSP+'levels',state.showLevels?'1':'0');lsSet(LSP+'trend',state.showTrend?'1':'0');
+  lsSet(LSP+'broker',state.broker);lsSet(brokerKey('contract'),$('contract').value);lsSet(brokerKey('lev'),$('leverage').value);
   updateBrokerLabels();
 }
 
@@ -632,7 +663,36 @@ async function refreshFx(){
   }
 }
 
+// ドル円：Coinbaseの最新レート（ブラウザから直接）→ サイトのmarket.json（定期取得）
+async function refreshSpotFx(){
+  let px=0,asof=Date.now(),src='';
+  try{const d=await getJSON(URLS.coinbase,8000);px=n(d?.data?.rates?.JPY);if(px)src='Coinbase'}catch{}
+  if(!px){const g=(await getSite()).instruments.usdjpy;px=n(g.price);asof=toMs(g.asOf)||Date.now();src='サイト（定期取得）'}
+  if(!px)throw new Error('USDJPY price missing');
+  return {px,asof,src};
+}
 async function refreshSpot(){
+  if(!IS_GOLD){
+    try{
+      const {px,asof,src}=await refreshSpotFx();
+      state.src.spot=src;state.src.fx='価格と同じ';
+      state.prevPrice=state.spot?.price??null;
+      state.spot={price:px,asof,freshness:Date.now()-asof>10*60000?'stale':'fresh',age:0};
+      state.fx=px;state.health.fx=true;
+      try{const all=(await getSite()).instruments;state.extra={dxy:all.dxy?.price,jxy:all.jxy?.price,gold:all.gold?.price}}catch{}
+      updateRolling(px);
+      mergeSpot(state.m15,15,px,asof);mergeSpot(state.h1,60,px,asof);
+      state.health.spot=true;
+      state.lastOk=Date.now(); state.nextSpot=Date.now()+INTERVALS.spot;
+      saveCache(); setStatus('live','LIVE'); showError(''); renderAll(); flashPrice();
+    }catch(e){
+      state.health.spot=false;
+      setStatus(state.lastOk?'live':'error',state.lastOk?'キャッシュ表示中':'接続再試行中');
+      showError(INSTR.name+'の価格を再接続しています（15秒後に自動再試行）。');
+      state.nextSpot=Date.now()+15000;
+    }
+    return;
+  }
   try{
     let usd=0,jpyOz=0,fx=0,asof=Date.now(),freshness='fresh',src='';
     // 1) gold-api.com（ブラウザから直接・最も新しい）
@@ -679,14 +739,14 @@ async function refreshCharts(){
   let changed=false;
   // サイトのmarket.json（H1・M15とも150本）を優先し、だめならXAUSを試す
   try{
-    const g=(await getSite()).instruments.gold.candles;
+    const g=(await getSite()).instruments[INSTR.site].candles;
     const hb=siteBars(g['1h']),mb=siteBars(g['15m']);
     if(hb.length>=120&&mb.length>=20){
       state.h1=hb;state.m15=mb;state.health.h1=state.health.m15=true;changed=true;state.src.chart='サイト';
       if(state.spot){mergeSpot(state.m15,15,state.spot.price,state.spot.asof);mergeSpot(state.h1,60,state.spot.price,state.spot.asof)}
     }
   }catch{}
-  if(!changed){
+  if(!changed&&IS_GOLD){
   try{
     const h1d=await firstSuccess([()=>getJSON(URLS.h1),()=>getJSON(URLS.h1alt)]);
     const hb=normalizeChart(h1d);
@@ -797,7 +857,7 @@ async function refreshCalendar(){
 const TL_UP='#38e0d0', TL_DOWN='#c56bff';
 function trendLines(src){
   const N=src.length,from=Math.max(0,N-150);if(N-from<30)return [];
-  const k=3,tol=Math.max(.3,(atr(src.slice(from),14)||1)*.25),lows=[],highs=[];
+  const k=3,tol=Math.max(INSTR.tolMin*.6,(atr(src.slice(from),14)||INSTR.tolMin)*.25),lows=[],highs=[];
   for(let i=from+k;i<N-k;i++){
     let isH=true,isL=true;
     for(let j=i-k;j<=i+k;j++){if(j===i)continue;if(src[j].h>src[i].h)isH=false;if(src[j].l<src[i].l)isL=false}
@@ -829,7 +889,7 @@ function trendLines(src){
 // 2回以上反応した価格帯だけを残し、現在値より上を抵抗、下を支持として強い順に最大3本ずつ選ぶ。
 function h1Levels(){
   const bars=state.h1;if(bars.length<30)return [];
-  const k=3,a=atr(bars,14)||1,tol=Math.max(.5,a*.35),n=bars.length,piv=[];
+  const k=3,a=atr(bars,14)||1,tol=Math.max(INSTR.tolMin,a*.35),n=bars.length,piv=[];
   for(let i=k;i<n-k;i++){
     let isH=true,isL=true;
     for(let j=i-k;j<=i+k;j++){if(j===i)continue;if(bars[j].h>bars[i].h)isH=false;if(bars[j].l<bars[i].l)isL=false}
@@ -866,7 +926,7 @@ const SMA_COLOR='#f4f6f8';  // 120SMA（H1）・20SMA（M15）
 const EMAS=[{key:'e10',len:10,color:'#ff8fd1',w:1.4},{key:'e20',len:20,color:'#ff8c2e',w:1.4},{key:'e200',len:200,color:'#3d8bff',w:2}];
 // 各移動平均の表示・非表示（端末ごとに保存）
 const MA_BTNS=[{key:'sma',color:SMA_COLOR,label:()=>state.tf==='h1'?'120SMA':'20SMA'}].concat(EMAS.map(m=>({key:m.key,color:m.color,label:()=>m.len+'EMA'})));
-function loadMaOn(){let o={};try{o=JSON.parse(lsGet('gold_ma','{}'))||{}}catch{}
+function loadMaOn(){let o={};try{o=JSON.parse(lsGet(LSP+'ma','{}'))||{}}catch{}
   state.maOn=Object.fromEntries(MA_BTNS.map(b=>[b.key,o[b.key]!==false]))}
 function renderMaToggles(){
   $('maToggles').innerHTML=MA_BTNS.map(b=>`<button type="button" class="seg${state.maOn[b.key]?' on':''}" data-ma="${b.key}" aria-pressed="${state.maOn[b.key]}"><i style="background:${b.color}"></i>${b.label()}</button>`).join('');
@@ -913,7 +973,7 @@ function calcSignal(){
   const {hi,lo}=dayHL(), mid=(hi+lo)/2;
   let score=0;
   score+=state.spot.price>=sma?1:-1;
-  score+=mom>0.8?1:mom<-0.8?-1:0;
+  score+=mom>INSTR.momTh?1:mom<-INSTR.momTh?-1:0;
   score+=state.spot.price>=mid?1:-1;
   let sig=score>=2?'BUY':score<=-2?'SELL':'WAIT', forced=false;
   if(isCautionActive()&&sig!=='WAIT'){sig='WAIT';forced=true}
@@ -924,14 +984,14 @@ function calcSignal(){
   return {sig,entry,aligned,plan,score,sma,mom,mid,hi,lo,forced,ready:true};
 }
 // ゴールドの1pips＝0.1ドル（XMなど国内向け業者の一般的な表記。1lot＝100ozで1pips＝10ドル）
-const PIP=0.1, MIN_TP_PIPS=50;
+const PIP=INSTR.pip, MIN_TP_PIPS=50;
 // 売買プラン：エントリー＝現在値。損切り＝M15 ATR×倍率（最低2ドル）。
 // 利確＝進む方向でいちばん近いH1水平線（5pips以上先）。線がなければ損切り幅×目標RR。
 function tradePlan(dir){
   if(!state.spot)return null;
   const entry=state.spot.price;
-  const a=currentAtr()||Math.max(entry*0.0012,3);
-  const slDist=Math.max(a*(n($('slMult').value)||1.2),2);
+  const a=currentAtr()||Math.max(entry*0.0012,INSTR.slMin*1.5);
+  const slDist=Math.max(a*(n($('slMult').value)||1.2),INSTR.slMin);
   const lv=h1Levels().filter(l=>dir>0?l.price>entry+5*PIP:l.price<entry-5*PIP)
     .sort((x,y)=>Math.abs(x.price-entry)-Math.abs(y.price-entry))[0];
   const tp=lv?lv.price:entry+dir*slDist*(n($('rrTarget').value)||2);
@@ -975,11 +1035,12 @@ function autoRisk(){
 function calcRisk(){
   autoRisk();
   const capital=n($('capital').value),rp=n($('riskPct').value),entry=n($('entry').value),stop=n($('stop').value),target=n($('target').value);
-  const contract=n($('contract').value)||100, fx=state.fx||0;
+  // fx＝値動き1あたりの円換算（ゴールドはドル建てなのでドル円、ドル円は円建てなので1）
+  const contract=n($('contract').value)||n(INSTR.contract), fx=IS_GOLD?(state.fx||0):1;
   const maxLoss=capital*rp/100,sl=Math.abs(entry-stop),tp=Math.abs(target-entry);
   const lot=fx&&sl?((maxLoss/fx)/(sl*contract)):0;
   const riskStep=Math.floor(lot*100)/100;
-  // 証拠金：1lotあたり＝契約量×価格×為替÷レバレッジ
+  // 証拠金：1lotあたり＝契約量×価格（円換算）÷レバレッジ
   const lev=n($('leverage').value)||1,price=entry||state.spot?.price||0;
   const marginPerLot=fx&&price?contract*price*fx/lev:0;
   const maxLot=marginPerLot?Math.floor(capital/marginPerLot*100)/100:0;
@@ -1000,18 +1061,18 @@ function calcRisk(){
   $('marginLevel').className=level&&level<300?'warn':'';
   $('maxLot').textContent=marginPerLot?maxLot.toFixed(2)+' lot':'--';
   $('maxLotSub').textContent=marginPerLot?'1lot '+yen(marginPerLot):'--';
-  $('slDist').textContent=sl?'$'+sl.toFixed(2):'--';
-  $('tpDist').textContent=tp?'$'+tp.toFixed(2):'--';
+  $('slDist').textContent=sl?INSTR.dist(sl):'--';
+  $('tpDist').textContent=tp?INSTR.dist(tp):'--';
   $('profitYen').textContent=profit?yen(profit):'--';
   $('rr').textContent='RR '+(sl?(tp/sl).toFixed(2):'--');
-  $('atrVal').textContent=state.m15.length?'$'+fmt(currentAtr()):'--';
+  $('atrVal').textContent=state.m15.length?INSTR.dist(currentAtr()):'--';
 
   const dirTxt=isBuy?'<b class="up">買い（BUY）</b>':'<b class="down">売り（SELL）</b>';
   const why=state.dir==='auto'?(state.signal==='WAIT'?'シグナルWAIT中のため買い想定':'シグナル連動'):'手動指定';
   $('dirLabel').innerHTML='想定方向：'+dirTxt+' <span class="sub">｜'+why+'</span>';
-  $('settingsSum').textContent='口座設定（'+BROKERS[state.broker].name+' '+lev+'倍・'+yen(capital)+'・リスク'+rp+'%・'+contract+'oz/lot）';
+  $('settingsSum').textContent='口座設定（'+BROKERS[state.broker].name+' '+lev+'倍・'+yen(capital)+'・リスク'+rp+'%・'+contract.toLocaleString('ja-JP')+INSTR.unit+'/lot）';
   $('atrNote').textContent=$('autoRisk').checked
-    ?'自動SL = ATR×'+(n($('slMult').value)||1.2)+'（最低$2）／TP = SL×'+(n($('rrTarget').value)||2)+(state.m15.length?'':'｜M15データ待ちのため価格の0.12%で代用')
+    ?'自動SL = ATR×'+(n($('slMult').value)||1.2)+'（最低'+INSTR.dist(INSTR.slMin)+'）／TP = SL×'+(n($('rrTarget').value)||2)+(state.m15.length?'':'｜M15データ待ちのため価格の0.12%で代用')
     :'手入力モード：エントリー・SL・TPを自由に入力できます。';
   return {lot,lotStep,sl};
 }
@@ -1022,10 +1083,14 @@ function cautionWindow(e){return e.impact==='High'?[30,15]:[15,5]}
 const GOLD_KEYS=['cpi','pce','ppi','non-farm','nonfarm','unemployment rate','unemployment claims','average hourly earnings',
   'jolts','adp','gdp','retail sales','ism','flash manufacturing pmi','flash services pmi','consumer sentiment','inflation expectations',
   'fomc','federal funds rate','fed chair','powell','monetary policy'];
-function goldRelevant(e){
-  if(e.currency!=='USD')return false;
+// ドル円に影響する日本の指標：日銀の金融政策・物価・賃金・景気
+const JPY_KEYS=['boj','monetary policy','policy rate','outlook report','press conference','ueda','cpi','gdp','tankan',
+  'average cash earnings','household spending','unemployment rate','retail sales','trade balance','pmi'];
+function goldRelevant(e){  // 表示中の銘柄に影響する指標か（ゴールド＝米国指標、ドル円＝米国＋日本の指標）
   const t=String(e.title).toLowerCase();
-  return GOLD_KEYS.some(k=>t.includes(k));
+  if(e.currency==='USD')return GOLD_KEYS.some(k=>t.includes(k));
+  if(e.currency==='JPY'&&!IS_GOLD)return JPY_KEYS.some(k=>t.includes(k));
+  return false;
 }
 function matchesFilter(e){
   return state.evFilter==='gold'?goldRelevant(e):state.evFilter==='high'?e.impact==='High':true;
@@ -1072,16 +1137,23 @@ function renderSnapshot(){
   $('goldChange').textContent=chg;
   $('goldChange').className='change '+(pct>=0?'up':'down');
   $('goldFresh').textContent=(state.spot.freshness==='stale'?'⚠ 遅延データ':'LIVE')+'｜'+localTime(state.spot.asof)+(state.src.spot?'｜'+state.src.spot:'');
-  $('dayHigh').textContent=d.hi?fmt(d.hi):'--';$('dayLow').textContent=d.lo?fmt(d.lo):'--';$('dayRange').textContent=d.hi&&d.lo?'$'+fmt(d.hi-d.lo):'--';
-  $('usdjpy').textContent=state.fx?fmt(state.fx,3):'--';
-  $('goldJpy').textContent=state.goldJpy?yen(state.goldJpy):(state.fx?yen(state.spot.price*state.fx):'--');
+  $('dayHigh').textContent=d.hi?fmt(d.hi):'--';$('dayLow').textContent=d.lo?fmt(d.lo):'--';$('dayRange').textContent=d.hi&&d.lo?INSTR.dist(d.hi-d.lo):'--';
+  if(IS_GOLD){
+    $('usdjpy').textContent=state.fx?fmt(state.fx,3):'--';
+    $('goldJpy').textContent=state.goldJpy?yen(state.goldJpy):(state.fx?yen(state.spot.price*state.fx):'--');
+  }else{  // ドル円版：ドル指数と円指数を表示
+    const x=state.extra||{};
+    $('usdjpy').textContent=x.dxy?fmt(x.dxy,2):'--';
+    $('goldJpy').textContent=x.jxy?fmt(x.jxy,2):'--';
+  }
   $('sma120').textContent=s.sma?fmt(s.sma)+(state.spot.price>=s.sma?' ▲':' ▼'):'接続待ち';
   $('sma120').className=s.sma?(state.spot.price>=s.sma?'up':'down'):'';
 
   const setReason=(id,txt,dirv)=>{$(id).textContent=txt;$(id).className=dirv>0?'up':dirv<0?'down':''};
   if(s.ready){
     setReason('reasonSma',state.spot.price>=s.sma?'上（買い +1）':'下（売り −1）',state.spot.price>=s.sma?1:-1);
-    setReason('reasonMom',s.mom>0.8?'上昇 +$'+fmt(s.mom)+'（+1）':s.mom<-0.8?'下降 −$'+fmt(-s.mom)+'（−1）':'横ばい（0）',s.mom>0.8?1:s.mom<-0.8?-1:0);
+    const th=INSTR.momTh;
+    setReason('reasonMom',s.mom>th?'上昇 +'+INSTR.dist(s.mom)+'（+1）':s.mom<-th?'下降 −'+INSTR.dist(-s.mom)+'（−1）':'横ばい（0）',s.mom>th?1:s.mom<-th?-1:0);
   }else{setReason('reasonSma','H1待ち',0);setReason('reasonMom','H1待ち',0)}
   if(d.hi&&d.lo){const mid=(d.hi+d.lo)/2;setReason('reasonRange',state.spot.price>=mid?'上半分（+1）':'下半分（−1）',state.spot.price>=mid?1:-1)}
   else setReason('reasonRange','取得中',0);
@@ -1106,13 +1178,13 @@ function renderPlan(s){
     row('エントリーポイント',fmt(pl.entry),'現在値（成行）')+
     row('利確目安',fmt(pl.tp),'+'+Math.round(pl.tpPips)+'pips｜'+pl.tpSrc,'tp')+
     row('損切り目安',fmt(pl.sl),'−'+Math.round(pl.slPips)+'pips｜M15 ATR×'+(n($('slMult').value)||1.2),'sl')+
-    `<div class="plfoot">RR ${pl.rr.toFixed(2)}｜1pips＝$0.10</div>`;
+    `<div class="plfoot">RR ${pl.rr.toFixed(2)}｜${INSTR.pipNote}</div>`;
 }
 function renderRebound(){
   const r=rebound();
   if(!r.touch){['touchTime','touchPrice','reboundUp','reboundDown'].forEach(id=>$(id).textContent='--');$('reboundNote').textContent='H1/M15データ接続後に自動計算';return r}
   $('touchTime').textContent=localTime(r.touch.t);$('touchPrice').textContent=fmt(r.touch.p);
-  $('reboundUp').textContent='$'+fmt(Math.max(0,r.up));$('reboundDown').textContent='$'+fmt(Math.max(0,r.down));
+  $('reboundUp').textContent=INSTR.dist(Math.max(0,r.up));$('reboundDown').textContent=INSTR.dist(Math.max(0,r.down));
   $('reboundNote').textContent=r.count?`タッチ後M15 ${r.count}本（最大12時間）を集計`:'M15データの範囲外';
   return r;
 }
@@ -1238,7 +1310,7 @@ function renderNext(){
   let miniTxt='次の指標 --';
   if(!e){
     box.className='nextev';
-    box.innerHTML='<div class="sub">'+(state.events.length?'今週これからのゴールド関連指標はありません。':'取得中...')+'</div>';
+    box.innerHTML='<div class="sub">'+(state.events.length?'今週これからの'+INSTR.name+'関連指標はありません。':'取得中...')+'</div>';
   }else{
     const caution=isCautionActive(),diff=e.ts-now;
     box.className='nextev'+(caution?' alert':'');
@@ -1278,21 +1350,21 @@ const CHECKS=[
   {id:'rebound',t:'120SMAタッチ後の反発幅を確認'}
 ];
 function loadTicks(){
-  try{const c=JSON.parse(lsGet('gold_checks','null'));if(c&&c.date===todayKey())return c.ticks||{}}catch{}
+  try{const c=JSON.parse(lsGet(LSP+'checks','null'));if(c&&c.date===todayKey())return c.ticks||{}}catch{}
   return {};
 }
 let ticks=loadTicks();
-function saveTicks(){lsSet('gold_checks',JSON.stringify({date:todayKey(),ticks}))}
+function saveTicks(){lsSet(LSP+'checks',JSON.stringify({date:todayKey(),ticks}))}
 function renderChecks(risk,reb){
   if(!risk)risk=calcRisk();
   if(!reb)reb=rebound();
   const s=calcSignal(),caution=nextCautionEvent(),nx=upcomingEvent(),a=currentAtr();
   const live={
     trend:s.ready?[s.sig==='WAIT'?'wn':'ok',s.entry?'エントリー':s.sig,`価格は120SMAの${state.spot.price>=s.sma?'上 → 買い目線':'下 → 売り目線'}（SMA ${fmt(s.sma)}）`]:['na','待機','H1データ接続待ち'],
-    atr:a?['ok','$'+fmt(a),`SL幅 $${fmt(risk.sl)}（ATR×${n($('slMult').value)||1.2}）`]:['na','待機','M15データ接続待ち'],
+    atr:a?['ok',INSTR.dist(a),`SL幅 ${INSTR.dist(risk.sl)}（ATR×${n($('slMult').value)||1.2}）`]:['na','待機','M15データ接続待ち'],
     news:caution?['ng','CAUTION',`${caution.currency} ${caution.title} の前後です`]:nx?['ok','OK',`次は ${hhmm(nx.ts)} ${nx.currency} ${nx.title}`]:['ok','OK','直近の重要指標なし'],
     lot:risk.lot?[risk.lotStep>=0.01?'ok':'wn',risk.lotStep>=0.01?risk.lotStep.toFixed(2)+' lot':'最小未満',`最大損失 ${$('riskYen').textContent}／計算値 ${risk.lot.toFixed(3)} lot`]:['na','待機','価格・為替の取得待ち'],
-    rebound:reb.touch?['ok','反発',`上 $${fmt(Math.max(0,reb.up))} / 下 $${fmt(Math.max(0,reb.down))}（${hhmm(reb.touch.t)}タッチ）`]:['na','なし','直近の120SMAタッチなし']
+    rebound:reb.touch?['ok','反発',`上 ${INSTR.dist(Math.max(0,reb.up))} / 下 ${INSTR.dist(Math.max(0,reb.down))}（${hhmm(reb.touch.t)}タッチ）`]:['na','なし','直近の120SMAタッチなし']
   };
   $('checks').innerHTML=CHECKS.map((c,i)=>{
     const [k,label,desc]=live[c.id],done=!!ticks[c.id];
@@ -1311,7 +1383,7 @@ function renderAll(){
   renderChecks(risk,reb);updateCaution();
   $('lastUpdate').textContent=state.lastOk?localTime(state.lastOk):'--';
   const S=state.src,ok=(k,v)=>v?`${k} ✓ ${v}`:`${k} ✕ 未接続`;
-  $('srcLine').textContent='データ接続状況：'+[ok('価格',S.spot),ok('チャート',S.chart),ok('ドル円',S.fx),ok('経済指標',S.calendar)].join('　');
+  $('srcLine').textContent='データ接続状況：'+[ok('価格',S.spot),ok('チャート',S.chart)].concat(IS_GOLD?[ok('ドル円',S.fx)]:[],[ok('経済指標',S.calendar)]).join('　');
   updateNotice();
 }
 
@@ -1357,7 +1429,7 @@ $('autoBtn').onclick=()=>{
 $('h1Btn').onclick=()=>setTf('h1');
 $('maToggles').addEventListener('click',e=>{
   const btn=e.target.closest('[data-ma]');if(!btn)return;
-  const k=btn.dataset.ma;state.maOn[k]=!state.maOn[k];lsSet('gold_ma',JSON.stringify(state.maOn));renderMaToggles();drawChart();
+  const k=btn.dataset.ma;state.maOn[k]=!state.maOn[k];lsSet(LSP+'ma',JSON.stringify(state.maOn));renderMaToggles();drawChart();
 });
 $('tlBtn').onclick=()=>{state.showTrend=!state.showTrend;$('tlBtn').classList.toggle('active',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);savePrefs();drawChart()};
 $('lvBtn').onclick=()=>{state.showLevels=!state.showLevels;$('lvBtn').classList.toggle('active',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);savePrefs();drawChart()};

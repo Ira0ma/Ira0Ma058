@@ -13,6 +13,15 @@ gold_build = hashlib.sha1(gold.encode()).hexdigest()[:10]
 gold = gold.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name="build" content="%s">\n' % gold_build, 1)
 gold_path.write_text(gold, encoding="utf-8")
 
+# usdjpy.html: the same page; it switches to USD/JPY by its file name (INSTR_KEY makes that explicit)
+fx = re.sub(r'<meta name="build" content="[^"]*">\n', "", gold)
+fx = fx.replace("<title>GOLD Trade Dashboard</title>", "<title>USDJPY Trade Dashboard</title>", 1)
+fx = fx.replace('<meta name="apple-mobile-web-app-title" content="GOLD">', '<meta name="apple-mobile-web-app-title" content="USDJPY">', 1)
+fx = fx.replace("<script>\nconst $ = id =>", "<script>window.INSTR_KEY='usdjpy';</script>\n<script>\nconst $ = id =>", 1)
+fx_build = hashlib.sha1(fx.encode()).hexdigest()[:10]
+fx = fx.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name="build" content="%s">\n' % fx_build, 1)
+here.joinpath("usdjpy.html").write_text(fx, encoding="utf-8")
+
 body = here.joinpath("index.html").read_text(encoding="utf-8").split("\n", 2)[2]  # drop <title> and claude meta
 body = body.replace('src="gold.html"', 'src="gold.html?v=%s"' % gold_build)  # the sheet always opens the current GOLD page
 build = hashlib.sha1((body + gold_build).encode()).hexdigest()[:10]  # a new GOLD page also refreshes the desk
