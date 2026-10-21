@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="4b98cbecaa">
+<meta name="build" content="d7c5729c66">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -348,7 +348,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     </div>
     <label class="inlinecheck"><input id="autoRisk" type="checkbox" checked> 価格・SL・TPを自動入力（OFFで手入力）</label>
     <div class="form lotrow">
-      <label>ロット（自分で入力）<input id="lotManual" type="number" step="0.01" min="0" inputmode="decimal" placeholder="空欄で自動計算"></label>
+      <label>ロット（自分で入力）<input id="lotManual" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="空欄で自動計算（0.01刻み）"></label>
       <button type="button" id="lotClear" class="seg">自動に戻す</button>
     </div>
     <div class="results">
@@ -1055,7 +1055,7 @@ function calcRisk(){
   const lotStep=limited?maxLot:riskStep;
   const isBuy=stop&&entry?stop<entry:riskDirection()>0;
   // ロットを自分で入力したときは、そのロットで損失・利益・証拠金を計算する
-  const manual=n($('lotManual').value);
+  const manual=Math.round(n($('lotManual').value)*100)/100;  // 0.01lot刻みに丸める
   let useLot,profit;
   if(manual>0){
     useLot=manual;
@@ -1064,15 +1064,18 @@ function calcRisk(){
     $('riskSub').textContent=loss&&capital?'資金の'+(loss/capital*100).toFixed(2)+'%（SL到達時）':'SL到達時';
     $('riskSub').className=capital&&loss/capital*100>rp?'warn':'';
     $('lotSize').textContent=manual.toFixed(2);
-    $('lotRound').textContent=marginPerLot&&manual>maxLot?'証拠金が不足します（最大'+maxLot.toFixed(2)+' lot）':'手入力｜自動なら '+(lot?(lotStep>=0.01?lotStep.toFixed(2):lot.toFixed(3)):'--')+' lot';
+    $('lotRound').textContent=marginPerLot&&manual>maxLot?'証拠金が不足します（最大'+maxLot.toFixed(2)+' lot）':'手入力｜自動なら '+(lot?Math.max(lotStep,0.01).toFixed(2):'--')+' lot';
     $('lotRound').className=marginPerLot&&manual>maxLot?'warn':'';
     $('lotLabel').textContent='入力ロット';$('lossLabel').textContent='想定損失';
   }else{
-    useLot=Math.max(lotStep,0.01);profit=fx?tp*contract*lot*fx:0;
+    // XM・XSとも注文は0.01lot刻み：目安ロットは許容リスク以内に収まる0.01刻みの値（最小0.01lot）
+    useLot=Math.max(lotStep,0.01);profit=fx?tp*contract*useLot*fx:0;
+    const minLoss=fx?sl*contract*0.01*fx:0;
     $('riskYen').textContent=yen(maxLoss);
     $('riskSub').textContent='資金の'+rp+'%';$('riskSub').className='';
-    $('lotSize').textContent=lot?lot.toFixed(3):'--';
-    $('lotRound').textContent=!lot?'--':limited?'証拠金の上限 → '+lotStep.toFixed(2)+' lot':lotStep>=0.01?'0.01刻み → '+lotStep.toFixed(2)+' lot':'最小0.01lot未満';
+    $('lotSize').textContent=lot?useLot.toFixed(2):'--';
+    $('lotRound').textContent=!lot?'--':limited?'証拠金の上限に合わせた値':lotStep>=0.01?'0.01刻み・リスク'+yen(maxLoss)+'以内':
+      '最小ロット。損失'+yen(minLoss)+'（資金の'+(capital?(minLoss/capital*100).toFixed(2):'--')+'%）';
     $('lotRound').className=lot&&(lotStep<0.01||limited)?'warn':'';
     $('lotLabel').textContent='目安ロット';$('lossLabel').textContent='最大損失';
   }
@@ -1394,7 +1397,7 @@ function renderChecks(risk,reb){
     trend:s.ready?[s.sig==='WAIT'?'wn':'ok',s.entry?'エントリー':s.sig,`価格は120SMAの${state.spot.price>=s.sma?'上 → 買い目線':'下 → 売り目線'}（SMA ${fmt(s.sma)}）`]:['na','待機','H1データ接続待ち'],
     atr:a?['ok',INSTR.dist(a),`SL幅 ${INSTR.dist(risk.sl)}（ATR×${n($('slMult').value)||1.2}）`]:['na','待機','M15データ接続待ち'],
     news:caution?['ng','CAUTION',`${caution.currency} ${caution.title} の前後です`]:nx?['ok','OK',`次は ${hhmm(nx.ts)} ${nx.currency} ${nx.title}`]:['ok','OK','直近の重要指標なし'],
-    lot:risk.lot?[risk.lotStep>=0.01?'ok':'wn',risk.lotStep>=0.01?risk.lotStep.toFixed(2)+' lot':'最小未満',`最大損失 ${$('riskYen').textContent}／計算値 ${risk.lot.toFixed(3)} lot`]:['na','待機','価格・為替の取得待ち'],
+    lot:risk.lot?[risk.lotStep>=0.01?'ok':'wn',risk.lotStep>=0.01?risk.lotStep.toFixed(2)+' lot':'最小未満',`最大損失 ${$('riskYen').textContent}／0.01lot刻み`]:['na','待機','価格・為替の取得待ち'],
     rebound:reb.touch?['ok','反発',`上 ${INSTR.dist(Math.max(0,reb.up))} / 下 ${INSTR.dist(Math.max(0,reb.down))}（${hhmm(reb.touch.t)}タッチ）`]:['na','なし','直近の120SMAタッチなし']
   };
   $('checks').innerHTML=CHECKS.map((c,i)=>{
