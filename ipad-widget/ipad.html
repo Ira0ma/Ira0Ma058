@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#06070b">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="69a76d7398">
+<meta name="build" content="9398337503">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -244,8 +244,20 @@ body {
 #pdots { position: fixed; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7px); display: flex; justify-content: center; gap: 8px; z-index: 3; pointer-events: none; }
 #pdots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.3); }
 #pdots i.on { background: rgba(255,255,255,.9); }
-#rotate { display: none; position: fixed; inset: 0; z-index: 20; background: var(--night); flex-direction: column; align-items: center; justify-content: center; gap: 14px; font-size: 16px; color: var(--ink-2); text-align: center; padding: 24px; }
-@media (orientation: portrait) { .phone #rotate { display: flex; } }
+html:not(.phone) #pager, html:not(.phone) #pdots { display: none; }
+
+/* Portrait and narrow screens (iPhone upright, iPad upright, small PC windows): the cards flow down
+   one or two 340px columns, scaled to the screen width and scrolled vertically */
+.flow #fit { display: none; }
+html:not(.flow) #flow { display: none; }
+#flow { position: fixed; inset: 0; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  padding: max(10px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 16px) max(12px, env(safe-area-inset-left, 0px)); }
+.fsizer { position: relative; margin: 0 auto; }
+.fstage { position: absolute; left: 0; top: 0; display: flex; gap: 14px; align-items: flex-start; transform-origin: 0 0; }
+.flow .card { position: relative !important; left: auto !important; top: auto !important; width: 340px !important; flex: none; }
+.flow #markets { height: auto; grid-template-columns: 1fr; grid-template-rows: auto 1px auto; }
+.flow #markets .sep { margin: 0 22px; }
+.flow #cal { height: auto; grid-template-columns: 1fr; grid-template-rows: auto 1px auto; }
 
 @media (prefers-reduced-motion: reduce) { .mkt .price { transition: none; } }
 </style>
@@ -416,29 +428,35 @@ body {
     return { c: c, w: w, h: h };
   }
 
-  /* ---------- fit stage ---------- */
-  /* ---------- iPhone pager ---------- */
-  var phone = Math.min(screen.width, screen.height) < 600, pages = [], pageIdx = 0;
+  /* ---------- layout modes ----------
+     stage: the 1210×841 iPad-landscape board scaled to fit (iPad and PC held wide)
+     pager: three swipeable pages (iPhone held sideways)
+     flow:  one or two columns scrolled vertically (any upright or narrow screen) */
+  var isPhone = Math.min(screen.width, screen.height) < 600, mode = "", pages = [], pageIdx = 0;
+  var cards = Array.prototype.slice.call(stage.querySelectorAll(":scope > .card"));
+  var byId = function (id) { return document.getElementById(id); };
+  function pickMode() {
+    var w = innerWidth, h = innerHeight;
+    if (isPhone && w > h) return "pager";
+    if (w >= h * 1.15 && w >= 700) return "stage";
+    return "flow";
+  }
+  var pager, pcols = [];
   function buildPager() {
-    document.documentElement.classList.add("phone");
-    var $ = function (id) { return document.getElementById(id); };
-    var pager = document.createElement("div"); pager.id = "pager";
+    pager = document.createElement("div"); pager.id = "pager";
     var layoutSpec = [[["clock"], ["markets"]], [["ind"], ["points"]], [["weather", "quote"], ["cal", "xfeed"]]];
     layoutSpec.forEach(function (cols) {
       var pg = document.createElement("section"); pg.className = "page";
       var ps = document.createElement("div"); ps.className = "pstage";
       cols.forEach(function (ids) {
         var col = document.createElement("div"); col.className = "pcol";
-        ids.forEach(function (id) { col.appendChild($(id)); });
-        ps.appendChild(col);
+        pcols.push([col, ids]); ps.appendChild(col);
       });
       pg.appendChild(ps); pager.appendChild(pg); pages.push(pg);
     });
     var dots = document.createElement("div"); dots.id = "pdots";
     dots.innerHTML = "<i></i><i></i><i></i>";
-    var rot = document.createElement("div"); rot.id = "rotate";
-    rot.innerHTML = '<svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="#e3b867" stroke-width="2"><rect x="12" y="4" width="20" height="36" rx="4"/><path d="M38 26a14 14 0 0 1-10 12" stroke-linecap="round"/><path d="M27 34l1 4 4-1" stroke-linecap="round" stroke-linejoin="round"/></svg><div>iPhoneを横向きにしてください</div>';
-    document.body.appendChild(pager); document.body.appendChild(dots); document.body.appendChild(rot);
+    document.body.appendChild(pager); document.body.appendChild(dots);
     var paint = function () {
       pageIdx = Math.round(pager.scrollLeft / Math.max(pager.clientWidth, 1));
       dots.querySelectorAll("i").forEach(function (d, i) { d.classList.toggle("on", i === pageIdx); });
@@ -455,17 +473,65 @@ body {
       ps.style.transform = "scale(" + k + ")"; maxK = Math.max(maxK, k);
     });
     scale = maxK;
-    var pager = document.getElementById("pager");
     pager.scrollLeft = pageIdx * pager.clientWidth;
   }
+  var flow, fsizer, fstage, flowCols = 0;
+  var FLOW_1 = [["clock", "markets", "ind", "points", "cal", "weather", "quote", "xfeed"]];
+  var FLOW_2 = [["clock", "markets", "weather", "quote"], ["ind", "points", "cal", "xfeed"]];
+  function buildFlow() {
+    flow = document.createElement("div"); flow.id = "flow";
+    fsizer = document.createElement("div"); fsizer.className = "fsizer";
+    fstage = document.createElement("div"); fstage.className = "fstage";
+    fsizer.appendChild(fstage); flow.appendChild(fsizer); document.body.appendChild(flow);
+  }
+  function fillFlow(n) {
+    fstage.innerHTML = "";
+    (n === 2 ? FLOW_2 : FLOW_1).forEach(function (ids) {
+      var col = document.createElement("div"); col.className = "pcol";
+      ids.forEach(function (id) { col.appendChild(byId(id)); });
+      fstage.appendChild(col);
+    });
+    flowCols = n;
+  }
+  function layoutFlow() {
+    var cs = getComputedStyle(flow);
+    var aw = flow.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    var n = aw >= 700 ? 2 : 1;
+    if (n !== flowCols) fillFlow(n);
+    var k = Math.min(aw / fstage.offsetWidth, 1.5);
+    fstage.style.transform = "scale(" + k + ")";
+    fsizer.style.width = fstage.offsetWidth * k + "px";
+    fsizer.style.height = fstage.offsetHeight * k + "px";
+    scale = k;
+  }
+  function enterMode(m) {
+    var root = document.documentElement;
+    root.classList.toggle("phone", m === "pager");
+    root.classList.toggle("flow", m === "flow");
+    if (m === "pager") {
+      if (!pager) buildPager();
+      pcols.forEach(function (c) { c[1].forEach(function (id) { c[0].appendChild(byId(id)); }); });
+    } else if (m === "flow") {
+      if (!flow) buildFlow();
+      flowCols = 0;
+    } else {
+      cards.forEach(function (el) { stage.appendChild(el); });
+    }
+    mode = m;
+  }
   function layout() {
-    if (phone) { layoutPhone(); drawScenes(); markets.forEach(function (m) { m.draw(); }); bg.resize(); return; }
-    var cs = getComputedStyle(fit);
-    var aw = fit.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-    var ah = fit.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
-    scale = Math.min(aw / W, ah / H);
-    stage.style.transform = "scale(" + scale + ")";
-    stage.style.margin = ((H * scale - H) / 2) + "px " + ((W * scale - W) / 2) + "px";
+    var m = pickMode();
+    if (m !== mode) enterMode(m);
+    if (mode === "pager") layoutPhone();
+    else if (mode === "flow") layoutFlow();
+    else {
+      var cs = getComputedStyle(fit);
+      var aw = fit.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      var ah = fit.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      scale = Math.min(aw / W, ah / H);
+      stage.style.transform = "scale(" + scale + ")";
+      stage.style.margin = ((H * scale - H) / 2) + "px " + ((W * scale - W) / 2) + "px";
+    }
     drawScenes(); markets.forEach(function (m) { m.draw(); }); bg.resize();
   }
 
@@ -1332,7 +1398,6 @@ body {
     document.querySelector('[data-wx="hours"]').innerHTML = "";
     document.querySelector("[data-wx-main]").innerHTML = "";
   }
-  if (phone) buildPager();
   tickClock(); renderCal(); bg.start(); layout(); loadWeather(); loadPrices();
   if (loc.gps) locate(loadWeather, function () {});
   setInterval(loadPrices, 60000);
