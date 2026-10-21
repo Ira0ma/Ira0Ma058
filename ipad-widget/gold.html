@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="a4d9d4577f">
+<meta name="build" content="cad80eaa33">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -117,6 +117,10 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .nextev.alert{border-color:#6c4f16;background:#22190c}
 .nextev .count{font-size:26px;font-weight:950;margin:6px 0 2px}
 .nextev .evtitle{font-size:13px;font-weight:800;line-height:1.4}
+.result-line{margin-top:8px;padding:8px 10px;border-radius:10px;background:#16130b;border:1px solid #5d4a20;font-size:13px}
+.result-line b{font-size:16px;color:var(--gold2)}
+.result-line.wait{color:var(--amber);border-style:dashed}
+.livedot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(66,213,156,.8);margin-right:6px;vertical-align:middle}
 
 /* ===== chart ===== */
 .segmented{display:flex;gap:5px;flex:none}
@@ -416,7 +420,7 @@ const URLS = {
   calendar:'https://www.financecalendar.com/wp-json/fc/v1/week?tz=Asia/Tokyo'
 };
 
-const INTERVALS = {spot:30000, chart:300000, calendar:3600000};
+const INTERVALS = {spot:30000, chart:300000, calendar:300000, calendarHot:60000};
 
 /* ---------- utils ---------- */
 function n(v){const x=Number(v);return Number.isFinite(x)?x:0}
@@ -709,22 +713,55 @@ function normalizeCalendarPayload(d){
     .sort((a,b)=>a.ts-b.ts);
 }
 
+// 経済指標：通常5分ごと、重要指標の5分前〜30分後は1分ごとに取り直す（結果の反映を早くするため）
+function evKey(e){return e.currency+'|'+Math.round(e.ts/60000)}
+const TITLE_NOISE=new Set(['us','usa','u','s','united','states','jp','japan','japanese','the','of']);
+function titleWords(t){return new Set(String(t).toLowerCase().replace(/[^a-z0-9%]+/g,' ').trim().split(' ').filter(w=>w&&!TITLE_NOISE.has(w)))}
+function titleScore(a,b){
+  const A=titleWords(a),B=titleWords(b);if(!A.size||!B.size)return 0;
+  let hit=0;A.forEach(w=>{if(B.has(w))hit++});
+  return hit/Math.max(A.size,B.size);
+}
+// 別の取得元（Finance Calendar）にある結果を、同じ通貨・ほぼ同時刻・似た名前の指標に書き込む
+function mergeActuals(target,extra){
+  extra.forEach(x=>{
+    if(!x.actual)return;
+    // 同時刻に似た指標（CPIとコアCPIなど）が並ぶため、いちばん名前が近いものを選ぶ
+    let best=null,bestScore=.5;
+    target.forEach(e=>{
+      if(e.actual||e.currency!==x.currency||Math.abs(e.ts-x.ts)>3*60000)return;
+      const sc=titleScore(e.title,x.title);if(sc>=bestScore&&(!best||sc>bestScore)){best=e;bestScore=sc}
+    });
+    if(best){best.actual=x.actual;best.actualAt=best.actualAt||Date.now()}
+  });
+}
+function calendarHot(){
+  const now=Date.now();
+  return state.events.some(e=>now>=e.ts-5*60000&&now<=e.ts+30*60000&&!e.actual);
+}
 async function refreshCalendar(){
   try{
-    let ev=[];
-    try{ev=normalizeCalendarPayload(await getJSON(URLS.siteCalendar+'?t='+Math.floor(Date.now()/600000)));state.src.calendar='サイト（Forex Factory）'}catch{}
-    if(!ev.length){ev=normalizeCalendarPayload(await getJSON(URLS.calendar,15000));state.src.calendar='Finance Calendar'}
+    let ev=[],fc=null;
+    try{ev=normalizeCalendarPayload(await getJSON(URLS.siteCalendar+'?t='+Math.floor(Date.now()/60000)));state.src.calendar='サイト（Forex Factory）'}catch{}
+    try{fc=normalizeCalendarPayload(await getJSON(URLS.calendar+'&t='+Math.floor(Date.now()/60000),10000))}catch{}
+    if(!ev.length&&fc&&fc.length){ev=fc;fc=null;state.src.calendar='Finance Calendar'}
     if(!ev.length) throw new Error('calendar empty');
+    // 前回までに分かった結果は引き継ぐ
+    const known=new Map(state.events.filter(e=>e.actual).map(e=>[evKey(e)+'|'+e.title,e]));
+    ev.forEach(e=>{const k=known.get(evKey(e)+'|'+e.title);if(k&&!e.actual){e.actual=k.actual;e.actualAt=k.actualAt}});
+    if(fc&&fc.length){mergeActuals(ev,fc);state.src.calendar='サイト（Forex Factory）＋Finance Calendar（結果）'}
     state.events=ev;
     state.health.calendar=true;
-    state.nextCalendar=Date.now()+INTERVALS.calendar;
+    state.calendarAt=Date.now();
+    const hot=calendarHot();
+    state.nextCalendar=Date.now()+(hot?INTERVALS.calendarHot:INTERVALS.calendar);
     state.lastOk=Date.now();
     saveCache();renderAll();
-    $('calendarStatus').textContent='自動取得済み（'+hhmm(Date.now())+'）｜次回 約60分後';
+    $('calendarStatus').textContent='自動取得済み（'+new Date().toLocaleTimeString('ja-JP')+'）｜'+(hot?'発表前後のため1分ごとに更新中':'次回 約5分後');
   }catch(e){
     state.health.calendar=state.events.length>0;
-    state.nextCalendar=Date.now()+300000;
-    $('calendarStatus').textContent=state.events.length?'前回取得データを表示中｜5分後に再試行':'カレンダー再接続待ち｜5分後に再試行';
+    state.nextCalendar=Date.now()+60000;
+    $('calendarStatus').textContent=state.events.length?'前回取得データを表示中｜1分後に再試行':'カレンダー再接続待ち｜1分後に再試行';
   }
   updateNotice();
 }
@@ -1033,10 +1070,21 @@ function renderNext(){
     box.innerHTML=`<div class="sub">${esc(new Date(e.ts).toLocaleString('ja-JP',{month:'numeric',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'}))}　<span class="star ${e.impact==='High'?'high':'medium'}">${stars(e)}</span></div>`+
       `<div class="count ${caution?'warn':''}">${diff>=0?'あと '+esc(dur(diff)):'発表後 '+esc(dur(-diff))}</div>`+
       `<div class="evtitle">${esc(e.currency)}｜${esc(e.title)}</div>`+
-      `<div class="sub" style="margin-top:4px">予想 ${esc(e.forecast||'--')} / 前回 ${esc(e.previous||'--')}</div>`;
+      `<div class="sub" style="margin-top:4px">予想 ${esc(e.forecast||'--')} / 前回 ${esc(e.previous||'--')}</div>`+
+      resultLine(e,diff)+
+      `<div class="sub" style="margin-top:6px"><span class="livedot"></span>指標データ ${state.calendarAt?esc(new Date(state.calendarAt).toLocaleTimeString('ja-JP'))+' 更新':'取得中'}｜${calendarHot()?'1分ごと':'5分ごと'}に自動更新</div>`;
     miniTxt=(caution?'⚠ ':'')+e.currency+' '+(diff>=0?'あと'+dur(diff):'発表後');
   }
   $('miniNext').textContent=miniTxt;
+}
+// 結果の表示：発表前は何も出さず、発表後は結果か「結果待ち」を出す
+function num(v){const m=String(v??'').replace(/,/g,'').match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):null}
+function resultLine(e,diff){
+  if(diff>0)return '';
+  if(!e.actual)return '<div class="result-line wait">発表済み｜結果を取得しています…</div>';
+  const a=num(e.actual),f=num(e.forecast);
+  const cmp=a!=null&&f!=null?(a>f?'<span class="up">予想より上</span>':a<f?'<span class="down">予想より下</span>':'予想どおり'):'';
+  return `<div class="result-line">結果 <b>${esc(e.actual)}</b>　${cmp}</div>`;
 }
 function updateCaution(){
   const e=nextCautionEvent(),box=$('caution');
@@ -1110,7 +1158,9 @@ function scheduler(){
   }else{
     $('nextInfo').innerHTML='<b class="warn">自動更新 停止中</b>';
   }
+  if(state.auto&&calendarHot()&&state.nextCalendar-now>INTERVALS.calendarHot)state.nextCalendar=now+INTERVALS.calendarHot;
   updateCaution();renderNext();
+  if(now-(state.evRenderedAt||0)>=30000){state.evRenderedAt=now;renderEvents()}
   // CAUTIONの開始・終了で判定とチェックを即時反映
   const c=isCautionActive();
   if(c!==lastCautionState){lastCautionState=c;renderAll()}
