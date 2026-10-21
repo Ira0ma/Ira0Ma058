@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="249dff6e2b">
+<meta name="build" content="f69cdb01cd">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -113,6 +113,18 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .reasons{display:grid;gap:5px;margin-top:8px}
 .reason{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#0d1217;border:1px solid #222b35;border-radius:10px;padding:7px 9px}
 .reason span{font-size:11px;color:var(--muted)}.reason b{font-size:12px;text-align:right}
+.planbox{margin-top:8px;border:1px solid #2b3540;border-radius:12px;padding:9px 11px;background:#0c1116;opacity:.8}
+.planbox.go{opacity:1;border-width:2px}
+.planbox.go.buy{border-color:#2f8a66;background:#0b1f18}
+.planbox.go.sell{border-color:#8a3a40;background:#22100f}
+.plhead{font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px}
+.planbox.go .plhead{color:var(--text)}
+.plrow{display:grid;grid-template-columns:auto 1fr;gap:0 10px;align-items:baseline;padding:4px 0;border-top:1px solid #1d252e}
+.plrow span{font-size:11px;color:var(--muted)}
+.plrow b{font-size:15px;text-align:right}
+.plrow em{grid-column:1/-1;font-style:normal;font-size:10px;color:var(--muted);text-align:right}
+.plrow.tp b{color:var(--green)}.plrow.sl b{color:var(--red)}
+.plfoot{font-size:10px;color:var(--muted);text-align:right;margin-top:4px}
 .nextev{background:#0d1217;border:1px solid #232d37;border-radius:13px;padding:12px}
 .nextev.alert{border-color:#6c4f16;background:#22190c}
 .nextev .count{font-size:26px;font-weight:950;margin:6px 0 2px}
@@ -287,7 +299,9 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
         <div class="reason"><span>① H1 120SMA</span><b id="reasonSma">--</b></div>
         <div class="reason"><span>② H1モメンタム(3本)</span><b id="reasonMom">--</b></div>
         <div class="reason"><span>③ 当日レンジ位置</span><b id="reasonRange">--</b></div>
+        <div class="reason"><span>④ 利確余地（50pips以上）</span><b id="reasonTp">--</b></div>
       </div>
+      <div id="planBox" class="planbox" hidden></div>
     </div>
 
     <div class="hero-next">
@@ -868,9 +882,27 @@ function calcSignal(){
   score+=state.spot.price>=mid?1:-1;
   let sig=score>=2?'BUY':score<=-2?'SELL':'WAIT', forced=false;
   if(isCautionActive()&&sig!=='WAIT'){sig='WAIT';forced=true}
-  // 3条件すべてが同じ方向（スコア±3）で、重要指標のCAUTION中でなければエントリー
-  const entry=sig!=='WAIT'&&Math.abs(score)===3;
-  return {sig,entry,score,sma,mom,mid,hi,lo,forced,ready:true};
+  // 3条件すべてが同じ方向（スコア±3）で、重要指標のCAUTION中でなく、利確目安まで50pips以上あればエントリー
+  const plan=sig!=='WAIT'?tradePlan(sig==='BUY'?1:-1):null;
+  const aligned=sig!=='WAIT'&&Math.abs(score)===3;
+  const entry=aligned&&!!plan&&plan.tpPips>=MIN_TP_PIPS;
+  return {sig,entry,aligned,plan,score,sma,mom,mid,hi,lo,forced,ready:true};
+}
+// ゴールドの1pips＝0.1ドル（XMなど国内向け業者の一般的な表記。1lot＝100ozで1pips＝10ドル）
+const PIP=0.1, MIN_TP_PIPS=50;
+// 売買プラン：エントリー＝現在値。損切り＝M15 ATR×倍率（最低2ドル）。
+// 利確＝進む方向でいちばん近いH1水平線（5pips以上先）。線がなければ損切り幅×目標RR。
+function tradePlan(dir){
+  if(!state.spot)return null;
+  const entry=state.spot.price;
+  const a=currentAtr()||Math.max(entry*0.0012,3);
+  const slDist=Math.max(a*(n($('slMult').value)||1.2),2);
+  const lv=h1Levels().filter(l=>dir>0?l.price>entry+5*PIP:l.price<entry-5*PIP)
+    .sort((x,y)=>Math.abs(x.price-entry)-Math.abs(y.price-entry))[0];
+  const tp=lv?lv.price:entry+dir*slDist*(n($('rrTarget').value)||2);
+  const sl=entry-dir*slDist;
+  const tpPips=Math.abs(tp-entry)/PIP, slPips=slDist/PIP;
+  return {dir,entry,tp,sl,tpPips,slPips,rr:tpPips/slPips,tpSrc:lv?'H1水平線':'損切り幅×目標RR'};
 }
 function detectTouch(){
   if(state.h1.length<120)return null;
@@ -899,11 +931,11 @@ function autoRisk(){
   if(!on||!state.spot)return;
   const a=currentAtr()||Math.max(state.spot.price*0.0012,3);
   const direction=riskDirection();
-  const mult=n($('slMult').value)||1.2, rrT=n($('rrTarget').value)||2;
-  const entry=state.spot.price, sl=Math.max(a*mult,2), tp=sl*rrT;
-  $('entry').value=entry.toFixed(2);
-  $('stop').value=(entry-direction*sl).toFixed(2);
-  $('target').value=(entry+direction*tp).toFixed(2);
+  // セットアップ判定と同じ売買プラン（利確はH1水平線、なければ損切り幅×目標RR）
+  const plan=tradePlan(direction);
+  $('entry').value=plan.entry.toFixed(2);
+  $('stop').value=plan.sl.toFixed(2);
+  $('target').value=plan.tp.toFixed(2);
 }
 function calcRisk(){
   autoRisk();
@@ -976,7 +1008,8 @@ function renderSnapshot(){
   state.signal=s.sig;
   const el=$('signal');
   const sub=!s.ready?'データ取得中':s.forced?'重要指標前後のため待機':s.sig==='WAIT'?'条件がそろうまで待機':
-    s.entry?'3条件すべて一致':'3条件中2つが一致｜エントリー待ち';
+    s.entry?'3条件一致・利確目安まで'+Math.round(s.plan.tpPips)+'pips':
+    s.aligned?'3条件一致｜利確余地が'+MIN_TP_PIPS+'pips未満のため見送り':'3条件中2つが一致｜エントリー待ち';
   const label=s.entry?(s.sig==='BUY'?'買いエントリー':'売りエントリー'):s.sig;
   el.innerHTML=esc(label)+'<small>'+esc(sub)+'</small>';
   el.className='signal '+(s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait')+(s.entry?' entry':'');
@@ -1004,12 +1037,28 @@ function renderSnapshot(){
   }else{setReason('reasonSma','H1待ち',0);setReason('reasonMom','H1待ち',0)}
   if(d.hi&&d.lo){const mid=(d.hi+d.lo)/2;setReason('reasonRange',state.spot.price>=mid?'上半分（+1）':'下半分（−1）',state.spot.price>=mid?1:-1)}
   else setReason('reasonRange','取得中',0);
+  if(s.plan)setReason('reasonTp',Math.round(s.plan.tpPips)+'pips'+(s.plan.tpPips>=MIN_TP_PIPS?'（OK）':'（不足）'),s.plan.tpPips>=MIN_TP_PIPS?(s.sig==='BUY'?1:-1):0);
+  else setReason('reasonTp',s.ready?'方向が決まると計算':'取得中',0);
+  renderPlan(s);
 
   $('miniPrice').textContent=fmt(state.spot.price);
   $('miniChange').textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%';
   $('miniChange').className=pct>=0?'up':'down';
   $('miniSignal').textContent=s.entry?(s.sig==='BUY'?'買いエントリー':'売りエントリー'):s.sig;
   $('miniSignal').className='chip signal '+(s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait')+(s.entry?' entry':'');
+}
+// エントリーポイント・利確目安・損切り目安（BUY/SELLのとき表示。エントリー条件を満たすと強調）
+function renderPlan(s){
+  const box=$('planBox'),pl=s.plan;
+  if(!pl||s.sig==='WAIT'){box.hidden=true;return}
+  box.hidden=false;
+  box.className='planbox'+(s.entry?' go '+(pl.dir>0?'buy':'sell'):'');
+  const row=(k,v,sub,cls='')=>`<div class="plrow ${cls}"><span>${k}</span><b>${v}</b><em>${sub}</em></div>`;
+  box.innerHTML=`<div class="plhead">${s.entry?(pl.dir>0?'買い':'売り')+'エントリー プラン':'参考プラン（エントリー条件未達）'}</div>`+
+    row('エントリーポイント',fmt(pl.entry),'現在値（成行）')+
+    row('利確目安',fmt(pl.tp),'+'+Math.round(pl.tpPips)+'pips｜'+pl.tpSrc,'tp')+
+    row('損切り目安',fmt(pl.sl),'−'+Math.round(pl.slPips)+'pips｜M15 ATR×'+(n($('slMult').value)||1.2),'sl')+
+    `<div class="plfoot">RR ${pl.rr.toFixed(2)}｜1pips＝$0.10</div>`;
 }
 function renderRebound(){
   const r=rebound();
