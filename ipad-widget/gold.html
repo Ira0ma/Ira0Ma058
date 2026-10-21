@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="c2f1d58749">
+<meta name="build" content="f0c1164411">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -305,9 +305,9 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     </div>
 
     <div class="hero-next">
-      <div class="cardhead"><div><div class="title">次の重要指標</div><div class="sub">USD・JPY｜端末の時刻で表示</div></div><span class="tag">NEXT</span></div>
+      <div class="cardhead"><div><div class="title">次の重要指標</div><div class="sub">ゴールドに影響する米国指標｜端末の時刻で表示</div></div><span class="tag">NEXT</span></div>
       <div id="nextEv" class="nextev"><div class="sub">取得中...</div></div>
-      <div class="sub" style="margin-top:8px">High指標は30分前〜15分後、Mediumは15分前〜5分後をCAUTIONとし、判定を自動でWAITにします。</div>
+      <div class="sub" style="margin-top:8px">米国の物価・雇用・景気・FRB関連の指標が対象です。High指標は30分前〜15分後、Mediumは15分前〜5分後をCAUTIONとし、判定を自動でWAITにします。</div>
     </div>
   </section>
 
@@ -374,7 +374,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
   <section id="secNews" class="panel s7">
     <div class="cardhead">
       <div><div class="title">経済指標</div><div class="sub">USD / JPYのHigh・Mediumを自動取得</div></div>
-      <div class="segmented"><button class="seg" data-ev="all">★★以上</button><button class="seg" data-ev="high">★★★のみ</button></div>
+      <div class="segmented"><button class="seg" data-ev="gold">ゴールド関連</button><button class="seg" data-ev="all">★★以上</button><button class="seg" data-ev="high">★★★のみ</button></div>
     </div>
     <div id="eventList" class="events"><div class="sub">取得中...</div></div>
     <div id="calendarStatus" class="autonote">カレンダー接続中...</div>
@@ -1018,9 +1018,22 @@ function calcRisk(){
 
 /* ---------- caution / events ---------- */
 function cautionWindow(e){return e.impact==='High'?[30,15]:[15,5]}
+// ゴールドに影響する指標：米国の物価・雇用・景気・金融政策（FRB/FOMC）。日本の指標や米国の小型指標は対象外
+const GOLD_KEYS=['cpi','pce','ppi','non-farm','nonfarm','unemployment rate','unemployment claims','average hourly earnings',
+  'jolts','adp','gdp','retail sales','ism','flash manufacturing pmi','flash services pmi','consumer sentiment','inflation expectations',
+  'fomc','federal funds rate','fed chair','powell','monetary policy'];
+function goldRelevant(e){
+  if(e.currency!=='USD')return false;
+  const t=String(e.title).toLowerCase();
+  return GOLD_KEYS.some(k=>t.includes(k));
+}
+function matchesFilter(e){
+  return state.evFilter==='gold'?goldRelevant(e):state.evFilter==='high'?e.impact==='High':true;
+}
 function nextCautionEvent(){
   const now=Date.now();
   return state.events.find(e=>{
+    if(!goldRelevant(e))return false;
     const [before,after]=cautionWindow(e);
     return now>=e.ts-before*60000&&now<=e.ts+after*60000
   })||null
@@ -1028,7 +1041,7 @@ function nextCautionEvent(){
 function isCautionActive(){return !!nextCautionEvent()}
 function upcomingEvent(){
   const now=Date.now();
-  return state.events.find(e=>e.ts+cautionWindow(e)[1]*60000>=now&&(state.evFilter==='all'||e.impact==='High'))||null;
+  return state.events.find(e=>goldRelevant(e)&&e.ts+cautionWindow(e)[1]*60000>=now&&(state.evFilter!=='high'||e.impact==='High'))||null;
 }
 function stars(e){return e.impact==='High'?'★★★':'★★'}
 
@@ -1206,7 +1219,7 @@ function drawChart(){
 
 function renderEvents(){
   const box=$('eventList'),now=Date.now(),nx=upcomingEvent();
-  const list=state.events.filter(e=>e.ts>now-60*60000&&(state.evFilter==='all'||e.impact==='High')).slice(0,10);
+  const list=state.events.filter(e=>e.ts>now-60*60000&&matchesFilter(e)).slice(0,10);
   if(!list.length){box.innerHTML='<div class="sub">表示できる重要指標はありません（接続中、または直近に予定なし）。</div>';return}
   let day='',html='';
   list.forEach(e=>{
@@ -1225,7 +1238,7 @@ function renderNext(){
   let miniTxt='次の指標 --';
   if(!e){
     box.className='nextev';
-    box.innerHTML='<div class="sub">'+(state.events.length?'直近の重要指標はありません。':'取得中...')+'</div>';
+    box.innerHTML='<div class="sub">'+(state.events.length?'今週これからのゴールド関連指標はありません。':'取得中...')+'</div>';
   }else{
     const caution=isCautionActive(),diff=e.ts-now;
     box.className='nextev'+(caution?' alert':'');
