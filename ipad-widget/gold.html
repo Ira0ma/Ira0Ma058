@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="2dcde9cb4d">
+<meta name="build" content="a4d9d4577f">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1158,12 +1158,19 @@ function barIndexAt(clientX){
 function setHover(i){if(i!==state.hover){state.hover=i;drawChart()}}
 // ドラッグ：左右=時間（過去へ）、上下=価格。右端の目盛り上で上下ドラッグ=縦の拡大縮小。2本指=横の拡大縮小
 const ptrs=new Map();let drag=null,pinch=null,lastTap=0;
-function curCount(){return state.chartGeo?state.chartGeo.n:(state.view.count||60)}
+function curCount(){const g=state.chartGeo;return g?g.n+Math.max(0,-state.view.off):(state.view.count||60)}
+// 拡大縮小：右側の空白も同じ割合で伸び縮みさせ、ローソク足が数本だけにならないようにする
+function zoomTo(n,base){
+  const from=base||{count:curCount(),off:state.view.off};
+  const count=Math.round(Math.max(12,n));
+  state.view.count=count;
+  if(from.off<0)state.view.off=Math.round(from.off*count/from.count);
+}
 chart.addEventListener('pointerdown',e=>{
   chart.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
   const g=state.chartGeo;if(!g)return;
   if(ptrs.size===2){
-    const [a,b]=[...ptrs.values()];pinch={d:Math.max(20,Math.abs(a.x-b.x)),count:curCount()};drag=null;return;
+    const [a,b]=[...ptrs.values()];pinch={d:Math.max(20,Math.abs(a.x-b.x)),count:curCount(),off:state.view.off};drag=null;return;
   }
   const r=chart.getBoundingClientRect();
   drag={x:e.clientX,y:e.clientY,off:state.view.off,yOff:state.view.yOff,yZoom:state.view.yZoom,
@@ -1174,7 +1181,7 @@ chart.addEventListener('pointermove',e=>{
   if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(pinch&&ptrs.size===2){
     const [a,b]=[...ptrs.values()],d=Math.max(20,Math.abs(a.x-b.x));
-    state.view.count=Math.round(Math.max(12,pinch.count*pinch.d/d));drawChart();return;
+    zoomTo(pinch.count*pinch.d/d,pinch);drawChart();return;
   }
   if(!drag){if(e.pointerType==='mouse')setHover(barIndexAt(e.clientX));return}
   const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
@@ -1202,7 +1209,7 @@ chart.addEventListener('wheel',e=>{
   const r=chart.getBoundingClientRect(),g=state.chartGeo;
   if(g&&e.clientX-r.left>g.W-g.P.r)state.view.yZoom=Math.max(.2,Math.min(8,state.view.yZoom*Math.exp(e.deltaY/300)));
   else if(Math.abs(e.deltaX)>Math.abs(e.deltaY)&&g)state.view.off=state.view.off+Math.round(e.deltaX/g.step);
-  else state.view.count=Math.round(Math.max(12,curCount()*Math.exp(e.deltaY/400)));
+  else zoomTo(curCount()*Math.exp(e.deltaY/400));
   drawChart();
 },{passive:false});
 // iOS: keep the page from scrolling while a finger moves the chart
