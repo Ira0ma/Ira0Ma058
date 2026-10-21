@@ -270,6 +270,27 @@ def jxy_series(fixture):
     return out
 
 
+CHECK = {"gold": "XAU/USD", "usdjpy": "USD/JPY"}  # dashboard instruments: log a sanity check each run
+
+
+def check(key, price, h1, m15):
+    """Log today's range, outsized candles and the gap to Swissquote's quote, for checking the dashboards."""
+    day = [r for r in h1 if ny_day(r[0]) == ny_day(h1[-1][0])]
+    hi, lo = max(r[2] for r in day), min(r[3] for r in day)
+    rng = sorted(r[2] - r[3] for r in h1[-200:])
+    med = rng[len(rng) // 2] or 1e-9
+    odd = [(datetime.fromtimestamp(r[0], timezone.utc).strftime("%m-%d %H:%M"), round(r[2] - r[3], 5))
+           for r in h1[-48:] + m15[-96:] if r[2] - r[3] > 8 * med]
+    msg = f"{key} check: today high {hi:.3f} low {lo:.3f} ({len(day)} H1 bars), last {price:.3f}"
+    try:
+        feed = get_json(f"https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/{CHECK[key]}")
+        mids = sorted((p["bid"] + p["ask"]) / 2 for q in feed for p in q.get("spreadProfilePrices", [])[:1])
+        msg += f", swissquote {mids[len(mids) // 2]:.3f}"
+    except Exception as e:
+        msg += f", swissquote unavailable ({e})"
+    print(msg + (f"; outsized candles (>8x median range): {odd}" if odd else "; no outsized candles"))
+
+
 BASIS_MAX_AGE = 3 * 86400  # how long the last futures-to-spot gap may stand in when no spot source answers
 
 
@@ -297,6 +318,11 @@ def one(key, sym, spot_sym, fixture, prev=None):
         adjusted = shift is not None
     last = (m1 or m15 or h1)[-1]
     price, as_of = last[4], last[0]  # the freshest close and when it traded
+    if key in CHECK and fixture is None:
+        try:
+            check(key, price, h1, m15)
+        except Exception as e:  # a log line must never cost the data
+            print(key, "check failed:", e)
     if key not in UTC_DAY and len(h1) > 24 * 60:
         d1 = ny_daily(h1)
         current = ny_day(time.time())
