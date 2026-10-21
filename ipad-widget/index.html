@@ -60,6 +60,13 @@ body {
 /* clock */
 #clock { left: 27px; top: 35px; width: 241px; height: 276px; }
 #clock .content { position: relative; padding: 22px 22px; }
+.sound-btn { position: absolute; right: 12px; top: 12px; z-index: 2; display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 11px; font-weight: 700; color: var(--ink); background: rgba(0,0,0,.35); border: 1px solid var(--glass-line); border-radius: 999px; padding: 4px 9px; cursor: pointer; }
+.sound-btn .mute { display: none; }
+.sound-btn[data-level="off"] { color: var(--ink-3); }
+.sound-btn[data-level="off"] .w1, .sound-btn[data-level="off"] .w2 { display: none; }
+.sound-btn[data-level="off"] .mute { display: inline; }
+.sound-btn[data-level="low"] .w2 { display: none; }
+.sound-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 #clock .time { font-family: var(--display); font-size: 70px; font-weight: 300; letter-spacing: -.02em; line-height: 1; }
 #clock .date { font-size: 21px; font-weight: 500; margin-top: 8px; }
 #clock .note { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); margin-top: 16px; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
@@ -282,6 +289,7 @@ html:not(.flow) #flow { display: none; }
   <!-- clock -->
   <section class="card" id="clock" aria-label="時計">
     <canvas class="scene" data-scene="sunrise"></canvas>
+    <button class="sound-btn" id="sound-btn" type="button" title="エントリー通知音（タップで 大→中→小→オフ）"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M2.5 6h2.5l3.5-3v10L5 10H2.5z" fill="currentColor"/><path class="w1" d="M11 5.5a3.5 3.5 0 0 1 0 5" stroke-linecap="round"/><path class="w2" d="M12.8 3.5a6.3 6.3 0 0 1 0 9" stroke-linecap="round"/><path class="mute" d="M11 6l4 4M15 6l-4 4" stroke-linecap="round"/></svg><span></span></button>
     <div class="content">
       <div class="time num" data-clock="hm">9:41</div>
       <div class="date" data-clock="md">5月27日(火)</div>
@@ -595,7 +603,9 @@ html:not(.flow) #flow { display: none; }
     var d = e.data;
     if (!d || d.type !== "dash-signal" || !SHEETS[d.key] || !SHEETS[d.key].el) return;
     if (e.source !== SHEETS[d.key].el.querySelector("iframe").contentWindow) return;  // only our own dashboards
+    var was = entryState[d.key] && entryState[d.key].entry;
     entryState[d.key] = d; paintEntries();
+    if (d.entry && !was) chime(d.sig === "BUY");  // a new entry call: sound once
   });
   function paintEntries() {
     if (!markets) return;
@@ -624,6 +634,46 @@ html:not(.flow) #flow { display: none; }
     });
   }
   setInterval(paintEntries, 2000);  // follows a panel switched to or from GOLD / USD/JPY
+
+  /* Entry sound: a short chime (rising for buy, falling for sell). The speaker button on the clock card
+     cycles the volume 大 → 中 → 小 → オフ and plays a sample; browsers only allow sound after a tap. */
+  var SOUND = [{ k: "high", label: "大", g: 0.35 }, { k: "mid", label: "中", g: 0.16 }, { k: "low", label: "小", g: 0.05 }, { k: "off", label: "オフ", g: 0 }];
+  var soundIdx = 1, actx = null;
+  try { var sv = localStorage.getItem("desk_sound"); SOUND.forEach(function (o, i) { if (o.k === sv) soundIdx = i; }); } catch (e) {}
+  function audio() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    if (!actx) actx = new AC();
+    if (actx.state === "suspended") actx.resume();
+    return actx;
+  }
+  function chime(up) {
+    var g = SOUND[soundIdx].g, ac = g && audio();
+    if (!ac) return;
+    var notes = up ? [523.25, 659.25, 783.99] : [783.99, 659.25, 523.25], t0 = ac.currentTime + 0.02;
+    notes.forEach(function (f, i) {
+      var o = ac.createOscillator(), v = ac.createGain(), t = t0 + i * 0.16;
+      o.type = "sine"; o.frequency.value = f;
+      v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(g, t + 0.02); v.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+      o.connect(v); v.connect(ac.destination); o.start(t); o.stop(t + 0.5);
+    });
+  }
+  var soundBtn = document.getElementById("sound-btn");
+  function paintSound() {
+    var o = SOUND[soundIdx];
+    soundBtn.setAttribute("data-level", o.k);
+    soundBtn.querySelector("span").textContent = o.label;
+    soundBtn.setAttribute("aria-label", "エントリー通知音：" + o.label);
+  }
+  soundBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    soundIdx = (soundIdx + 1) % SOUND.length;
+    try { localStorage.setItem("desk_sound", SOUND[soundIdx].k); } catch (er) {}
+    paintSound(); chime(true);
+  });
+  paintSound();
+  // the first tap anywhere unlocks sound for the rest of the visit
+  document.addEventListener("pointerdown", function unlock() { if (SOUND[soundIdx].g) audio(); document.removeEventListener("pointerdown", unlock); });
 
   /* ---------- clock ---------- */
   function tickClock() {
