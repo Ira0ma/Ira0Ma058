@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#06070b">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="ddd18e0d32">
+<meta name="build" content="1bfe95b54b">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -129,13 +129,19 @@ body {
 .ind-list .t .next { font-size: 10px; font-weight: 600; color: var(--gold); margin-right: 1px; }
 .ind-list li > div:nth-child(2) { min-width: 0; }
 .ind-list .n { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ind-list .s { font-size: 11.5px; color: var(--ink-3); margin-top: 3px; }
+.ind-list .s { font-size: 11.5px; color: var(--ink-3); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ind-list .stars { color: var(--star); font-size: 13px; letter-spacing: 1px; padding-top: 2px; }
 .ind-list .stars span { color: rgba(255,255,255,.18); }
 .ind-list li.past { opacity: .45; }
 .ind-list li.empty { display: block; color: var(--ink-2); font-size: 13px; line-height: 1.7; border-bottom: 0; }
 .more { margin-top: auto; font-size: 13px; color: var(--ink-2); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
 .more:hover { color: var(--gold); }
+.ind-foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ind-foot .more { margin-top: 0; }
+.ind-upd { font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
+.ind-upd i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--up-green); box-shadow: 0 0 8px rgba(67,210,127,.8); margin-right: 5px; vertical-align: 1px; }
+.ind-list .s .res { color: var(--gold); font-weight: 600; }
+.ind-list .s .soon { color: var(--gold); font-weight: 600; }
 
 /* points */
 #points { left: 27px; top: 329px; width: 308px; height: 477px; padding: 18px 20px; }
@@ -327,7 +333,10 @@ html:not(.flow) #flow { display: none; }
       <li><div class="t num">23:00</div><div><div class="n">米・消費者信頼感指数</div><div class="s">5月</div></div><div class="stars" data-v="3"></div></li>
       <li><div class="t num">23:00</div><div><div class="n">米・新築住宅販売件数</div><div class="s">4月</div></div><div class="stars" data-v="2"></div></li>
     </ul>
-    <a class="more" href="https://jp.investing.com/economic-calendar/" target="_blank" rel="noopener">経済カレンダーを表示 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></a>
+    <div class="ind-foot">
+      <a class="more" href="https://jp.investing.com/economic-calendar/" target="_blank" rel="noopener">経済カレンダーを表示 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></a>
+      <span class="ind-upd num" id="ind-upd"></span>
+    </div>
   </section>
 
   <!-- points -->
@@ -1225,7 +1234,8 @@ html:not(.flow) #flow { display: none; }
     ul.innerHTML = "";
     list.forEach(function (e) {
       var li = document.createElement("li");
-      if (e.t < now) li.classList.add("past");
+      var mins = (e.t - now) / 60000;
+      if (mins < -30) li.classList.add("past");  // just released: stay bright while the result comes in
       var hm = e.t.getHours() + ":" + String(e.t.getMinutes()).padStart(2, "0");
       var nextDay = e.t.getDate() !== day.start.getDate();
       var sub = [e.forecast ? "予想 " + e.forecast : "", e.previous ? "前回 " + e.previous : ""].filter(Boolean).join(" / ");
@@ -1235,29 +1245,110 @@ html:not(.flow) #flow { display: none; }
         : (nextDay ? '<small class="next">翌</small>' : "") + hm;
       if (e.later) li.classList.add("later");
       li.querySelector(".n").textContent = jaTitle(e);
-      li.querySelector(".s").textContent = sub || "　";
+      var s = li.querySelector(".s");
+      if (mins <= 0 && e.actual) {
+        var a = numOf(e.actual), f = numOf(e.forecast);
+        var cmp = a != null && f != null ? (a > f ? "（予想より上）" : a < f ? "（予想より下）" : "（予想どおり）") : "";
+        s.innerHTML = '<span class="res"></span>';
+        s.firstChild.textContent = "結果 " + e.actual + cmp;
+      } else if (mins <= 0 && mins > -30) {
+        s.innerHTML = '<span class="soon">発表済み・結果を取得中…</span>';
+      } else if (mins > 0 && mins <= 60) {
+        s.innerHTML = '<span class="soon"></span>';
+        s.firstChild.textContent = "あと" + Math.ceil(mins) + "分" + (sub ? "｜" + sub : "");
+      } else s.textContent = sub || "　";
       var st = li.querySelector(".stars"); st.setAttribute("data-v", e.stars); paintStars(st);
       ul.appendChild(li);
     });
   }
+  /* Indicators refresh every 5 minutes, and every minute from 5 minutes before to 30 minutes after
+     a release that has no result yet. Forex Factory's feed carries no results, so they are taken from
+     Finance Calendar when it answers and matched by currency, time and the closest title. */
+  var calUpdatedAt = 0, calTimer = 0;
+  var NOISE = { us: 1, usa: 1, u: 1, s: 1, united: 1, states: 1, jp: 1, japan: 1, japanese: 1, the: 1, of: 1 };
+  function numOf(v) { var m = String(v == null ? "" : v).replace(/,/g, "").match(/-?\d+(\.\d+)?/); return m ? parseFloat(m[0]) : null; }
+  function words(t) {
+    var out = {}; String(t).toLowerCase().replace(/[^a-z0-9%]+/g, " ").trim().split(" ").forEach(function (w) { if (w && !NOISE[w]) out[w] = 1; });
+    return out;
+  }
+  function titleScore(a, b) {
+    var A = words(a), B = words(b), ka = Object.keys(A), kb = Object.keys(B), hit = 0;
+    if (!ka.length || !kb.length) return 0;
+    ka.forEach(function (w) { if (B[w]) hit++; });
+    return hit / Math.max(ka.length, kb.length);
+  }
+  function fcRows(d) {
+    var arr = Array.isArray(d) ? d : (d && (d.data || d.events || d.items)) || [];
+    return arr.map(function (e) {
+      var c = String(e.currency || e.country || e.ccy || "").toUpperCase();
+      if (c === "US" || c === "USA" || c === "UNITED STATES") c = "USD";
+      if (c === "JP" || c === "JAPAN") c = "JPY";
+      var raw = e.time_utc || e.time_local || e.scheduledAt || e.datetime || e.date;
+      var t = typeof raw === "number" ? new Date(raw < 1e12 ? raw * 1000 : raw) : new Date(raw);
+      return { t: t, title: e.title || e.name || e.event || "", country: c, actual: e.actual };
+    }).filter(function (e) { return e.actual !== undefined && e.actual !== null && e.actual !== "" && !isNaN(e.t); });
+  }
+  function mergeActuals(target, extra) {
+    extra.forEach(function (x) {
+      var best = null, bestScore = 0.5;
+      target.forEach(function (e) {
+        if (e.actual || e.country !== x.country || Math.abs(e.t - x.t) > 3 * 60000) return;
+        var sc = titleScore(e.title, x.title);
+        if (sc >= bestScore && (!best || sc > bestScore)) { best = e; bestScore = sc; }
+      });
+      if (best) best.actual = String(x.actual);
+    });
+  }
+  function calendarHot() {
+    if (!calEvents) return false;
+    var now = Date.now();
+    return calEvents.some(function (e) { return e.stars >= 2 && !e.actual && now >= e.t - 5 * 60000 && now <= +e.t + 30 * 60000; });
+  }
+  var calNextAt = 0;
+  function scheduleCalendar(ms) {
+    if (ms === undefined) ms = calendarHot() ? 60000 : 5 * 60000;
+    clearTimeout(calTimer); calNextAt = Date.now() + ms;
+    calTimer = setTimeout(loadCalendar, ms);
+  }
+  function scheduleSoon() {  // a release window just opened: don't wait out a 5-minute timer
+    if (calNextAt - Date.now() > 60000) scheduleCalendar(60000);
+  }
+  function paintUpdated() {
+    var el = document.getElementById("ind-upd");
+    if (!calUpdatedAt) { el.textContent = ""; return; }
+    var d = new Date(calUpdatedAt);
+    el.innerHTML = "<i></i>" + d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0") + " 更新";
+    el.title = calendarHot() ? "発表前後のため1分ごとに更新中" : "5分ごとに自動更新";
+  }
   function loadCalendar() {
     if (!window.fetch) return;
-    fetch("calendar.json", { cache: "no-cache" })
+    var minute = Math.floor(Date.now() / 60000);
+    var fc = fetch("https://www.financecalendar.com/wp-json/fc/v1/week?tz=Asia/Tokyo&t=" + minute, { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; }).then(fcRows).catch(function () { return []; });
+    fetch("calendar.json?t=" + minute, { cache: "no-store" })
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (rows) {
         if (!Array.isArray(rows)) return;
         var IMP = { High: 3, Medium: 2, Low: 1 };
-        calEvents = rows.filter(function (r) {
+        var known = {};
+        (calEvents || []).forEach(function (e) { if (e.actual) known[e.country + "|" + (+e.t) + "|" + e.title] = e.actual; });
+        var evs = rows.filter(function (r) {
           return (r.country === "USD" || r.country === "JPY") && IMP[r.impact];
         }).map(function (r) {
           var t = new Date(r.date);
-          return { t: t, title: r.title, country: r.country, stars: IMP[r.impact], forecast: r.forecast, previous: r.previous };
+          return { t: t, title: r.title, country: r.country, stars: IMP[r.impact], forecast: r.forecast, previous: r.previous,
+                   actual: r.actual || known[r.country + "|" + (+t) + "|" + r.title] || "" };
         }).filter(function (e) { return !isNaN(e.t); });
-        renderIndicators(); renderStrategy();
+        return fc.then(function (extra) {
+          mergeActuals(evs, extra);
+          calEvents = evs; calUpdatedAt = Date.now();
+          renderIndicators(); renderStrategy(); paintUpdated();
+        });
       })
       .catch(function () {
         if (!calEvents && !PREVIEW) document.getElementById("ind-list").innerHTML = '<li class="empty">経済指標を取得できませんでした。下の「経済カレンダーを表示」から確認してください。</li>';
-      });
+      })
+      .then(function () { scheduleCalendar(); });
   }
 
   /* ---------- automatic analysis (market.json, refreshed hourly by the Pages workflow) ---------- */
@@ -1432,9 +1523,9 @@ html:not(.flow) #flow { display: none; }
   if (loc.gps) locate(loadWeather, function () {});
   setInterval(loadPrices, 60000);
   checkUpdate(); setInterval(checkUpdate, 10 * 60000);
-  loadCalendar(); setInterval(loadCalendar, 30 * 60000);
+  loadCalendar();
   loadMarket(); setInterval(loadMarket, 5 * 60000);
-  loadHolidays(); setInterval(renderIndicators, 60000);
+  loadHolidays(); setInterval(function () { renderIndicators(); paintUpdated(); if (calendarHot()) scheduleSoon(); }, 30000);
   // X's script is slow and third-party: start it only after the page itself has finished loading
   if (document.readyState === "complete") loadX(); else window.addEventListener("load", loadX);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); loadCalendar(); loadMarket(); } });
