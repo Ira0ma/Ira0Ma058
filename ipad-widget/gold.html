@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="f0c1164411">
+<meta name="build" content="163f1313c2">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -458,7 +458,7 @@ function localTime(ms){
 function hhmm(ms){return new Date(ms).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}
 function dur(ms){
   const s=Math.max(0,Math.round(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),sec=s%60;
-  if(h>=24)return Math.floor(h/24)+'日'+(h%24)+'時間';
+  if(h>=24)return Math.floor(h/24)+'日'+(h%24)+'時間'+m+'分';
   if(h)return h+'時間'+m+'分';
   if(m>=10)return m+'分';
   return m+'分'+String(sec).padStart(2,'0')+'秒';
