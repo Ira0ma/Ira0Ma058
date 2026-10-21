@@ -6,6 +6,7 @@ Usage: python3 analyze.py OUT.json [--prev=OLD.json]   (fetches from Yahoo Finan
        python3 analyze.py OUT.json FIXTURE    (FIXTURE: JSON {symbol: yahoo-chart-json} for tests)
 """
 import json
+import os
 import lzma
 import struct
 import sys
@@ -78,6 +79,9 @@ def get_json(url):
 # ticks (time ms, ask, bid, ask volume, bid volume). Prices are integers in points.
 DUKA = {"XAU": "XAUUSD", "XAG": "XAGUSD"}
 DUKA_DAYS = 16  # enough finished days to cover the 300 hourly candles (about 12.5 trading days)
+# Finished days and hours never change, so their files are kept between runs (the workflow restores this
+# folder from the Actions cache); each 5-minute run then downloads only the hour that just finished.
+DUKA_CACHE = os.environ.get("DUKA_CACHE")
 
 
 def get_bytes(url):
@@ -87,14 +91,37 @@ def get_bytes(url):
 
 
 def _bi5(url):
-    """Decompressed contents of one datafeed file; b"" for an hour or day without trading."""
-    try:
-        raw = get_bytes(url)
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            return b""
-        raise
+    """Decompressed contents of one datafeed file; b"" for an hour or day without trading (or not out yet)."""
+    cached = os.path.join(DUKA_CACHE, url.split("/datafeed/")[1].replace("/", "_")) if DUKA_CACHE else None
+    if cached and os.path.exists(cached):
+        with open(cached, "rb") as f:
+            return lzma.decompress(f.read())
+    for attempt in range(3):
+        try:
+            raw = get_bytes(url)
+            break
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return b""
+            if e.code < 500 or attempt == 2:
+                raise
+        except OSError:  # timeouts and dropped connections: the feed throttles bursts
+            if attempt == 2:
+                raise
+        time.sleep(2 + 3 * attempt)
+    if cached and raw:
+        os.makedirs(DUKA_CACHE, exist_ok=True)
+        with open(cached, "wb") as f:
+            f.write(raw)
     return lzma.decompress(raw) if raw else b""
+
+
+def prune_duka_cache(days=DUKA_DAYS + 3):
+    if DUKA_CACHE and os.path.isdir(DUKA_CACHE):
+        for name in os.listdir(DUKA_CACHE):
+            path = os.path.join(DUKA_CACHE, name)
+            if time.time() - os.path.getmtime(path) > days * 86400:
+                os.remove(path)
 
 
 def duka_minutes(spot_sym, now=None):
@@ -110,7 +137,11 @@ def duka_minutes(spot_sym, now=None):
         """Minutes folded from the tick files of the given hours of one day."""
         rows = []
         for hour in range(hours):
-            data = _bi5(f"{path(day)}{hour:02d}h_ticks.bi5")
+            try:
+                data = _bi5(f"{path(day)}{hour:02d}h_ticks.bi5")
+            except Exception as e:  # keep the hours read so far; futures moved by the gap fill the rest
+                print(spot_sym, f"dukascopy stops at {day.date()} {hour:02d}h:", e)
+                break
             t0 = int((day + timedelta(hours=hour)).timestamp())
             for off in range(0, len(data) - 19, 20):
                 ms, _ask, bid, _av, _bv = struct.unpack(">iiiff", data[off:off + 20])
@@ -327,6 +358,7 @@ def build(fixture=None, prev=None):
     out = {"updated": now, "instruments": {}}
     old = (prev or {}).get("instruments", {})
     fresh = 0
+    prune_duka_cache()
     for key, (sym, name, _, _, spot_sym) in INSTRUMENTS.items():
         for attempt in range(2):
             try:
