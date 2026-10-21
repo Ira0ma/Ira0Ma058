@@ -115,7 +115,10 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .seg{background:#121820;color:#d5dde5;border:1px solid #34404c;border-radius:999px;padding:7px 12px;font-size:12px}
 .seg.active{background:linear-gradient(180deg,#e6c973,#b5872d);border-color:#b5872d;color:#101114}
 .chartwrap{position:relative}
-canvas{display:block;width:100%;height:340px;background:linear-gradient(180deg,#0c1116,#0e151c);border:1px solid #222c36;border-radius:13px;touch-action:pan-y}
+canvas{display:block;width:100%;height:340px;background:linear-gradient(180deg,#0c1116,#0e151c);border:1px solid #222c36;border-radius:13px;touch-action:none;cursor:grab}
+canvas.dragging{cursor:grabbing}
+.chartreset{position:absolute;left:10px;top:10px;z-index:1;font-size:11px;font-weight:800;color:#101114;background:var(--gold);border-radius:999px;padding:5px 11px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.charthint{font-size:10px;color:var(--muted);margin-top:4px}
 .chartinfo{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted);margin-top:8px;min-height:16px}
 .chartinfo b{color:var(--text);font-weight:700}
 .legend{display:inline-flex;align-items:center;gap:5px}
@@ -281,8 +284,9 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div><div class="title">GOLDチャート</div><div id="chartMeta" class="sub">取得中...</div></div>
       <div class="segmented"><button id="h1Btn" class="seg active">H1</button><button id="m15Btn" class="seg">M15</button></div>
     </div>
-    <div class="chartwrap"><canvas id="chart"></canvas></div>
+    <div class="chartwrap"><canvas id="chart"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
     <div id="chartInfo" class="chartinfo">--</div>
+    <div class="charthint">ドラッグで左右（過去へ）・上下に移動／ピンチ・ホイールで拡大縮小／右端の価格目盛りを上下ドラッグで縦の拡大縮小／ダブルタップでリセット</div>
   </section>
 
   <!-- ===== リスク・ロット ===== -->
@@ -370,6 +374,7 @@ const state = {
   signal:'WAIT', lastOk:null, prevPrice:null,
   nextSpot:0, nextChart:0, nextCalendar:0,
   loading:false, errMsg:'', hover:null, chartGeo:null,
+  view:{off:0,count:0,yOff:0,yZoom:1},
   src:{spot:'',chart:'',fx:'',calendar:''},
   health:{spot:false,fx:false,h1:false,m15:false,calendar:false},
   rolling:{date:'',high:null,low:null,open:null}
@@ -880,16 +885,21 @@ function drawChart(){
   const c=$('chart'),{ctx,W,H}=sizeCanvas(c);
   ctx.clearRect(0,0,W,H);
   const isH1=state.tf==='h1',source=isH1?state.h1:state.m15;
-  const count=W<520?(isH1?40:48):(isH1?72:96);
-  const bars=source.slice(-count);
+  // view: off = 最新から何本さかのぼるか, count = 表示本数, yOff/yZoom = 縦方向の移動・拡大
+  const v=state.view,defCount=W<520?(isH1?40:48):(isH1?72:96);
+  const count=Math.max(12,Math.min(v.count||defCount,source.length||12));
+  v.off=Math.max(0,Math.min(v.off,Math.max(0,source.length-count)));
+  const endIdx=source.length-v.off,startIdx=Math.max(0,endIdx-count);
+  const bars=source.slice(startIdx,endIdx);
   if(!bars.length||!W){
     ctx.fillStyle='#93a0ad';ctx.font='14px sans-serif';ctx.fillText('チャートデータ接続中...',20,34);
     $('chartInfo').textContent='--';state.chartGeo=null;return;
   }
-  const len=isH1?120:20,sm=smaSeries(source,len).slice(source.length-bars.length);
+  const len=isH1?120:20,sm=smaSeries(source,len).slice(startIdx,endIdx);
   const vals=bars.flatMap((b,i)=>sm[i]==null?[b.h,b.l]:[b.h,b.l,sm[i]]);
-  if(state.spot)vals.push(state.spot.price);
+  if(state.spot&&v.off===0)vals.push(state.spot.price);
   let min=Math.min(...vals),max=Math.max(...vals);const span=max-min||1;min-=span*.07;max+=span*.07;
+  {const mid=(max+min)/2+v.yOff,half=(max-min)/2*v.yZoom;min=mid-half;max=mid+half}
   const P={l:8,r:66,t:12,b:24},step=(W-P.l-P.r)/bars.length;
   const x=i=>P.l+step*(i+.5),y=v=>P.t+(max-v)*(H-P.t-P.b)/(max-min);
 
@@ -903,6 +913,7 @@ function drawChart(){
   ctx.textAlign='center';ctx.fillStyle='#6f7c88';
   for(let i=every-1;i<bars.length;i+=every)ctx.fillText(barLabel(bars[i].t,isH1),x(i),H-P.b+13);
 
+  ctx.save();ctx.beginPath();ctx.rect(P.l,P.t,W-P.l-P.r,H-P.t-P.b);ctx.clip();
   const cw=Math.max(1,step*.62);
   bars.forEach((b,i)=>{
     const up=b.c>=b.o,col=up?'#42d59c':'#ff6969',xx=x(i);
@@ -912,9 +923,10 @@ function drawChart(){
   });
 
   ctx.strokeStyle='#68b9ff';ctx.lineWidth=2;ctx.beginPath();let begun=false;
-  sm.forEach((v,i)=>{if(v==null)return;if(!begun){ctx.moveTo(x(i),y(v));begun=true}else ctx.lineTo(x(i),y(v))});ctx.stroke();
+  sm.forEach((sv,i)=>{if(sv==null)return;if(!begun){ctx.moveTo(x(i),y(sv));begun=true}else ctx.lineTo(x(i),y(sv))});ctx.stroke();
+  ctx.restore();
 
-  if(state.spot){
+  if(state.spot&&state.spot.price>=min&&state.spot.price<=max){
     const yy=y(state.spot.price);
     ctx.setLineDash([5,5]);ctx.strokeStyle='#d9b458';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();ctx.setLineDash([]);
     ctx.fillStyle='#d9b458';ctx.fillRect(W-P.r+2,yy-9,P.r-4,18);
@@ -930,8 +942,9 @@ function drawChart(){
     `<span>始 <b>${fmt(b.o)}</b></span><span>高 <b>${fmt(b.h)}</b></span><span>安 <b>${fmt(b.l)}</b></span><span>終 <b class="${b.c>=b.o?'up':'down'}">${fmt(b.c)}</b></span>`+
     `<span class="legend"><i style="background:#68b9ff"></i>${isH1?'120':'20'}SMA <b>${sv==null?'--':fmt(sv)}</b></span>`+
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
-  $('chartMeta').textContent=(isH1?'H1 ローソク足 / 120SMA':'M15 ローソク足 / 20SMA')+'｜'+bars.length+'本｜タップで足の詳細';
-  state.chartGeo={P,step,n:bars.length};
+  $('chartMeta').textContent=(isH1?'H1 ローソク足 / 120SMA':'M15 ローソク足 / 20SMA')+'｜'+bars.length+'本'+(v.off?'｜'+v.off+'本前まで表示中':'｜最新');
+  $('chartReset').hidden=!(v.off||v.count||v.yOff||v.yZoom!==1);
+  state.chartGeo={P,step,n:bars.length,W,H,priceSpan:max-min,plotH:H-P.t-P.b};
 }
 
 function renderEvents(){
@@ -1046,7 +1059,7 @@ function scheduler(){
 }
 function setSegActive(sel,attr,val){document.querySelectorAll(sel).forEach(b=>b.classList.toggle('active',b.dataset[attr]===val))}
 function setTf(tf){
-  state.tf=tf;state.hover=null;
+  state.tf=tf;state.hover=null;resetView();
   $('h1Btn').classList.toggle('active',tf==='h1');$('m15Btn').classList.toggle('active',tf==='m15');
   savePrefs();drawChart();
 }
@@ -1075,15 +1088,64 @@ $('checks').addEventListener('change',e=>{
 $('resetChecks').onclick=()=>{ticks={};saveTicks();renderChecks()};
 
 const chart=$('chart');
-function hoverAt(clientX){
-  const g=state.chartGeo;if(!g)return;
+function resetView(){state.view={off:0,count:0,yOff:0,yZoom:1}}
+function barIndexAt(clientX){
+  const g=state.chartGeo;if(!g)return null;
   const r=chart.getBoundingClientRect(),i=Math.floor((clientX-r.left-g.P.l)/g.step);
-  const v=i>=0&&i<g.n?i:null;
-  if(v!==state.hover){state.hover=v;drawChart()}
+  return i>=0&&i<g.n?i:null;
 }
-chart.addEventListener('pointermove',e=>hoverAt(e.clientX));
-chart.addEventListener('pointerdown',e=>hoverAt(e.clientX));
-chart.addEventListener('pointerleave',()=>{if(state.hover!=null){state.hover=null;drawChart()}});
+function setHover(i){if(i!==state.hover){state.hover=i;drawChart()}}
+// ドラッグ：左右=時間（過去へ）、上下=価格。右端の目盛り上で上下ドラッグ=縦の拡大縮小。2本指=横の拡大縮小
+const ptrs=new Map();let drag=null,pinch=null,lastTap=0;
+function curCount(){return state.chartGeo?state.chartGeo.n:(state.view.count||60)}
+chart.addEventListener('pointerdown',e=>{
+  chart.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const g=state.chartGeo;if(!g)return;
+  if(ptrs.size===2){
+    const [a,b]=[...ptrs.values()];pinch={d:Math.max(20,Math.abs(a.x-b.x)),count:curCount()};drag=null;return;
+  }
+  const r=chart.getBoundingClientRect();
+  drag={x:e.clientX,y:e.clientY,off:state.view.off,yOff:state.view.yOff,yZoom:state.view.yZoom,
+    axis:e.clientX-r.left>g.W-g.P.r,moved:false,step:g.step,ppx:g.priceSpan/g.plotH};
+  chart.classList.add('dragging');
+});
+chart.addEventListener('pointermove',e=>{
+  if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pinch&&ptrs.size===2){
+    const [a,b]=[...ptrs.values()],d=Math.max(20,Math.abs(a.x-b.x));
+    state.view.count=Math.round(Math.max(12,pinch.count*pinch.d/d));drawChart();return;
+  }
+  if(!drag){if(e.pointerType==='mouse')setHover(barIndexAt(e.clientX));return}
+  const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+  if(!drag.moved&&Math.abs(dx)+Math.abs(dy)<6)return;
+  drag.moved=true;
+  if(drag.axis){state.view.yZoom=Math.max(.2,Math.min(8,drag.yZoom*Math.exp(dy/150)))}
+  else{state.view.off=Math.max(0,drag.off+Math.round(dx/drag.step));state.view.yOff=drag.yOff+dy*drag.ppx}
+  drawChart();
+});
+function endPtr(e){
+  ptrs.delete(e.pointerId);
+  if(pinch){if(ptrs.size<2)pinch=null;drag=null;chart.classList.remove('dragging');return}
+  if(drag&&!drag.moved){
+    const now=Date.now();
+    if(now-lastTap<300){resetView();state.hover=null;drawChart()}else setHover(barIndexAt(e.clientX));
+    lastTap=now;
+  }
+  drag=null;chart.classList.remove('dragging');
+}
+chart.addEventListener('pointerup',endPtr);
+chart.addEventListener('pointercancel',endPtr);
+chart.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!drag&&state.hover!=null){state.hover=null;drawChart()}});
+chart.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const r=chart.getBoundingClientRect(),g=state.chartGeo;
+  if(g&&e.clientX-r.left>g.W-g.P.r)state.view.yZoom=Math.max(.2,Math.min(8,state.view.yZoom*Math.exp(e.deltaY/300)));
+  else if(Math.abs(e.deltaX)>Math.abs(e.deltaY)&&g)state.view.off=Math.max(0,state.view.off+Math.round(e.deltaX/g.step));
+  else state.view.count=Math.round(Math.max(12,curCount()*Math.exp(e.deltaY/400)));
+  drawChart();
+},{passive:false});
+chart.addEventListener('dblclick',()=>{resetView();state.hover=null;drawChart()});
+$('chartReset').onclick=()=>{resetView();state.hover=null;drawChart()};
 
 let rz=0;
 window.addEventListener('resize',()=>{cancelAnimationFrame(rz);rz=requestAnimationFrame(drawChart)});
