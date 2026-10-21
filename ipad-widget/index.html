@@ -643,7 +643,9 @@ html:not(.flow) #flow { display: none; }
     this.bindGestures();
     this.setInst(key);
   }
-  /* Chart view: how many candles are visible, how far back from the latest one, and a vertical shift. */
+  /* Chart view: how many candle slots are visible, how far back from the latest one (negative = empty
+     slots to the right of it, up to 80% of the view), and a vertical shift. */
+  function clampBack(v, total) { return Math.max(-Math.floor(v.n * 0.8), Math.min(total - v.n, v.back)); }
   Market.prototype.resetView = function () {
     this.view = { n: VIEW_N, back: 0, shift: 0 };
     if (this.resetBtn) this.resetBtn.hidden = true;
@@ -672,12 +674,13 @@ html:not(.flow) #flow { display: none; }
       if (ids.length >= 2) {  // pinch: zoom the number of candles
         var a = pts[ids[0]], b = pts[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y);
         v.n = Math.round(Math.min(total, Math.max(MIN_N, start.n * start.dist / Math.max(d, 1))));
+        if (start.back < 0) v.back = Math.round(start.back * v.n / start.n);  // empty space scales with the zoom
       } else {  // drag: move through time and up/down in price
         var dx = (e.clientX - start.x) * sc, dy = (e.clientY - start.y) * sc;
         v.back = Math.round(start.back + dx / (plotW / v.n));
         v.shift = start.shift + dy / plotH;
       }
-      v.back = Math.max(0, Math.min(total - v.n, v.back));
+      v.back = clampBack(v, total);
       self.resetBtn.hidden = !(v.back || Math.abs(v.shift) > 0.02 || v.n !== Math.min(VIEW_N, total));
       self.draw();
     });
@@ -688,10 +691,13 @@ html:not(.flow) #flow { display: none; }
       if (!self.c || self.c.length < 3) return;
       e.preventDefault();
       var v = self.view, total = self.c.length;
-      if (e.ctrlKey) v.n = Math.round(Math.min(total, Math.max(MIN_N, v.n * (1 + e.deltaY / 200))));
+      if (e.ctrlKey) {
+        var n0 = v.n; v.n = Math.round(Math.min(total, Math.max(MIN_N, v.n * (1 + e.deltaY / 200))));
+        if (v.back < 0) v.back = Math.round(v.back * v.n / n0);
+      }
       else if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) v.back = Math.round(v.back - e.deltaX / 8);
       else v.shift += e.deltaY / 400;
-      v.back = Math.max(0, Math.min(total - v.n, v.back));
+      v.back = clampBack(v, total);
       self.resetBtn.hidden = !(v.back || Math.abs(v.shift) > 0.02 || v.n !== Math.min(VIEW_N, total));
       self.draw();
     }, { passive: false });
@@ -724,8 +730,9 @@ html:not(.flow) #flow { display: none; }
     var p = prep(this.cv), c = p.c, w = p.w, h = p.h, o = this.o;
     if (!this.live && !PREVIEW) return;  // no candles until real data has arrived
     var v = this.view, total = this.c.length, n = Math.min(v.n, total);
-    v.back = Math.max(0, Math.min(total - n, v.back));
-    var cs = this.c.slice(total - v.back - n, total - v.back);
+    v.back = Math.max(-Math.floor(n * 0.8), Math.min(total - n, v.back));
+    var blank = Math.max(0, -v.back), back = Math.max(0, v.back);
+    var cs = this.c.slice(total - back - (n - blank), total - back);
     var mn = Infinity, mx = -Infinity;
     cs.forEach(function (k) { mn = Math.min(mn, k.l); mx = Math.max(mx, k.h); });
     var span0 = (mx - mn) || mx * 0.001; mn += v.shift * span0; mx += v.shift * span0;  // vertical scroll
@@ -746,7 +753,7 @@ html:not(.flow) #flow { display: none; }
       c.setLineDash([]); c.fillStyle = "rgba(244,241,234,.5)";
       c.fillText(lab(v), cw + 2, y);
     }
-    var bw = cw / cs.length, body = Math.max(2, bw * 0.55);
+    var bw = cw / (cs.length + blank), body = Math.max(2, bw * 0.55);
     if (hasT) {  // a few time labels so a scrolled chart stays readable
       var tf = TFKEY[this.tf], z = function (x) { return String(x).padStart(2, "0"); };
       var tl = function (t) {
@@ -760,6 +767,11 @@ html:not(.flow) #flow { display: none; }
       c.save(); c.font = "500 9.5px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif"; c.fillStyle = "rgba(244,241,234,.42)"; c.textBaseline = "bottom";
       [0.08, 0.5, 0.92].forEach(function (f, j) {
         var i = Math.min(cs.length - 1, Math.round(f * (cs.length - 1)));
+        if (blank && j > 0) {  // empty space on the right: label the middle and the newest candle where they are
+          i = j === 1 ? Math.round((cs.length - 1) / 2) : cs.length - 1;
+          var x = i * bw + bw / 2, tw = c.measureText(tl(cs[i].t)).width;
+          c.textAlign = "center"; c.fillText(tl(cs[i].t), Math.max(tw / 2, Math.min(cw - tw / 2, x)), h); return;
+        }
         c.textAlign = j === 0 ? "left" : j === 2 ? "right" : "center";
         c.fillText(tl(cs[i].t), j === 0 ? 0 : j === 2 ? cw - 2 : i * bw + bw / 2, h);
       });
