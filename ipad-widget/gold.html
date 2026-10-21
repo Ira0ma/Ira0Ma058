@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="18fa1d0a46">
+<meta name="build" content="ffde4e72ad">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -134,6 +134,10 @@ canvas.dragging{cursor:grabbing}
 .chartinfo{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted);margin-top:8px;min-height:16px}
 .chartinfo b{color:var(--text);font-weight:700}
 .levelinfo{margin-top:4px}
+.matoggles{display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 8px}
+.matoggles .seg{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;font-size:11px;opacity:.55}
+.matoggles .seg i{width:12px;height:3px;border-radius:2px;display:inline-block}
+.matoggles .seg.on{opacity:1;background:#18212b;border-color:#5a6775;color:var(--text)}
 .levelinfo .r b{color:var(--red)}.levelinfo .s b{color:var(--green)}
 .legend{display:inline-flex;align-items:center;gap:5px}
 .legend i{display:inline-block;width:14px;height:3px;border-radius:2px}
@@ -299,6 +303,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div><div class="title">GOLDチャート</div><div id="chartMeta" class="sub">取得中...</div></div>
       <div class="segmented"><button id="h1Btn" class="seg active">H1</button><button id="m15Btn" class="seg">M15</button><button id="lvBtn" class="seg active" aria-pressed="true">水平線</button></div>
     </div>
+    <div id="maToggles" class="matoggles" role="group" aria-label="移動平均線の表示"></div>
     <div class="chartwrap"><canvas id="chart"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
     <div id="chartInfo" class="chartinfo">--</div>
     <div class="charthint">ドラッグで左右（過去へ・右側に空白）・上下に移動／ピンチ・ホイールで拡大縮小／右端の価格目盛りを上下ドラッグで縦の拡大縮小／ダブルタップでリセット</div>
@@ -574,6 +579,7 @@ function loadPrefs(){
   state.evFilter=lsGet('gold_ev_filter','all');
   state.tf=lsGet('gold_tf','h1');
   state.showLevels=lsGet('gold_levels','1')==='1';
+  loadMaOn();
   state.broker=BROKERS[lsGet('gold_broker','xm')]?lsGet('gold_broker','xm'):'xm';
   loadBroker();
 }
@@ -807,7 +813,14 @@ function emaSeries(bars,len){
   }return out
 }
 // チャートに重ねる移動平均（H1・M15共通のEMAと、時間足ごとのSMA）
-const EMAS=[{len:10,color:'#ff8fd1',w:1.4},{len:20,color:'#b48cff',w:1.4},{len:200,color:'#f4f6f8',w:2}];
+const EMAS=[{key:'e10',len:10,color:'#ff8fd1',w:1.4},{key:'e20',len:20,color:'#b48cff',w:1.4},{key:'e200',len:200,color:'#f4f6f8',w:2}];
+// 各移動平均の表示・非表示（端末ごとに保存）
+const MA_BTNS=[{key:'sma',color:'#68b9ff',label:()=>state.tf==='h1'?'120SMA':'20SMA'}].concat(EMAS.map(m=>({key:m.key,color:m.color,label:()=>m.len+'EMA'})));
+function loadMaOn(){let o={};try{o=JSON.parse(lsGet('gold_ma','{}'))||{}}catch{}
+  state.maOn=Object.fromEntries(MA_BTNS.map(b=>[b.key,o[b.key]!==false]))}
+function renderMaToggles(){
+  $('maToggles').innerHTML=MA_BTNS.map(b=>`<button type="button" class="seg${state.maOn[b.key]?' on':''}" data-ma="${b.key}" aria-pressed="${state.maOn[b.key]}"><i style="background:${b.color}"></i>${b.label()}</button>`).join('');
+}
 function smaSeries(bars,len){
   const out=[];let sum=0;
   for(let i=0;i<bars.length;i++){
@@ -1070,8 +1083,8 @@ function drawChart(){
     ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();let begun=false;
     vals.forEach((val,i)=>{if(val==null)return;if(!begun){ctx.moveTo(x(i),y(val));begun=true}else ctx.lineTo(x(i),y(val))});ctx.stroke();
   };
-  drawLine(sm,'#68b9ff',2);
-  const emas=EMAS.map(m=>({...m,vals:emaSeries(source,m.len).slice(startIdx,endIdx)}));
+  if(state.maOn.sma)drawLine(sm,'#68b9ff',2);
+  const emas=EMAS.filter(m=>state.maOn[m.key]).map(m=>({...m,vals:emaSeries(source,m.len).slice(startIdx,endIdx)}));
   emas.forEach(m=>drawLine(m.vals,m.color,m.w));
   ctx.textBaseline='middle';
   ctx.restore();
@@ -1090,7 +1103,7 @@ function drawChart(){
   const b=bars[hi??bars.length-1],sv=sm[hi??bars.length-1];
   $('chartInfo').innerHTML=`<span>${hi==null?'最新足':'選択足'} <b>${esc(barLabel(b.t,isH1))}</b></span>`+
     `<span>始 <b>${fmt(b.o)}</b></span><span>高 <b>${fmt(b.h)}</b></span><span>安 <b>${fmt(b.l)}</b></span><span>終 <b class="${b.c>=b.o?'up':'down'}">${fmt(b.c)}</b></span>`+
-    `<span class="legend"><i style="background:#68b9ff"></i>${isH1?'120':'20'}SMA <b>${sv==null?'--':fmt(sv)}</b></span>`+
+    (state.maOn.sma?`<span class="legend"><i style="background:#68b9ff"></i>${isH1?'120':'20'}SMA <b>${sv==null?'--':fmt(sv)}</b></span>`:'')+
     emas.map(m=>{const ev=m.vals[hi??bars.length-1];return `<span class="legend"><i style="background:${m.color}"></i>${m.len}EMA <b>${ev==null?'--':fmt(ev)}</b></span>`}).join('')+
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
   $('chartMeta').textContent=(isH1?'H1 ローソク足 / 120SMA':'M15 ローソク足 / 20SMA')+' / 10・20・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
@@ -1223,7 +1236,7 @@ function scheduler(){
 }
 function setSegActive(sel,attr,val){document.querySelectorAll(sel).forEach(b=>b.classList.toggle('active',b.dataset[attr]===val))}
 function setTf(tf){
-  state.tf=tf;state.hover=null;resetView();
+  state.tf=tf;state.hover=null;resetView();renderMaToggles();
   $('h1Btn').classList.toggle('active',tf==='h1');$('m15Btn').classList.toggle('active',tf==='m15');
   savePrefs();drawChart();
 }
@@ -1236,6 +1249,10 @@ $('autoBtn').onclick=()=>{
   scheduler();
 };
 $('h1Btn').onclick=()=>setTf('h1');
+$('maToggles').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-ma]');if(!btn)return;
+  const k=btn.dataset.ma;state.maOn[k]=!state.maOn[k];lsSet('gold_ma',JSON.stringify(state.maOn));renderMaToggles();drawChart();
+});
 $('lvBtn').onclick=()=>{state.showLevels=!state.showLevels;$('lvBtn').classList.toggle('active',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);savePrefs();drawChart()};
 $('m15Btn').onclick=()=>setTf('m15');
 document.querySelectorAll('#dirSeg .seg').forEach(b=>b.onclick=()=>{
@@ -1350,6 +1367,7 @@ loadPrefs();
 setSegActive('#dirSeg .seg','dir',state.dir);
 setSegActive('[data-ev]','ev',state.evFilter);
 $('h1Btn').classList.toggle('active',state.tf==='h1');$('m15Btn').classList.toggle('active',state.tf==='m15');
+renderMaToggles();
 $('lvBtn').classList.toggle('active',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);
 loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(scheduler,1000);
 </script>
