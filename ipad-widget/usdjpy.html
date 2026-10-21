@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="b600d1d05d">
+<meta name="build" content="93aec94129">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -299,7 +299,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
         <div class="reason"><span>① H1 120SMA</span><b id="reasonSma">--</b></div>
         <div class="reason"><span>② H1モメンタム(3本)</span><b id="reasonMom">--</b></div>
         <div class="reason"><span>③ 当日レンジ位置</span><b id="reasonRange">--</b></div>
-        <div class="reason"><span>④ 利確余地（50pips以上）</span><b id="reasonTp">--</b></div>
+        <div class="reason"><span>④ 利確余地（<span id="minTpLabel">50</span>pips以上）</span><b id="reasonTp">--</b></div>
       </div>
       <div id="planBox" class="planbox" hidden></div>
     </div>
@@ -414,12 +414,12 @@ const $ = id => document.getElementById(id);
 /* 銘柄ごとの設定。同じページを usdjpy.html として配信すると USD/JPY 版になる（build.py が生成） */
 const INSTRUMENTS={
   gold:{key:'gold',site:'gold',title:'GOLD',label:'XAU / USD',short:'XAU',name:'ゴールド',sub:'XAU/USD専用｜自動更新｜iPad・iPhone・Android対応',
-    dp:2,pip:0.1,pipNote:'1pips＝$0.10',momTh:0.8,slMin:2,tolMin:.5,unit:'oz',contract:'100',
+    dp:2,pip:0.1,minTp:50,pipNote:'1pips＝$0.10',momTh:0.8,slMin:2,tolMin:.5,unit:'oz',contract:'100',
     brokerNote:'XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,2),
     footer:'データ: Gold API・XAUS（GOLD価格）／GitHub Actionsで定期取得したYahoo Finance足（チャート）・Forex Factory（経済指標）／Frankfurter（USD/JPY補助）。'},
   usdjpy:{key:'usdjpy',site:'usdjpy',title:'USDJPY',label:'USD / JPY',short:'USDJPY',name:'ドル円',sub:'USD/JPY専用｜自動更新｜iPad・iPhone・Android対応',
-    dp:3,pip:0.01,pipNote:'1pips＝0.01円',momTh:0.03,slMin:0.05,tolMin:.02,unit:'通貨',contract:'100000',
+    dp:3,pip:0.01,minTp:30,pipNote:'1pips＝0.01円',momTh:0.03,slMin:0.05,tolMin:.02,unit:'通貨',contract:'100000',
     brokerNote:'ドル円の1lotは多くの業者で10万通貨です。ご自身の口座の取引条件で確認してください。',
     dist:v=>(v/0.01).toFixed(1)+'pips',
     footer:'データ: Coinbase（ドル円の最新レート）／GitHub Actionsで定期取得したYahoo Finance足（チャート・価格）・Forex Factory（経済指標）。'}
@@ -433,7 +433,7 @@ const LSP=IS_GOLD?'gold_':'usdjpy_';  // 端末に保存する設定は銘柄ご
   document.title=INSTR.title+' Trade Dashboard';
   t('h1Sym',INSTR.title);t('subTitle',INSTR.sub);t('miniSym',INSTR.short);t('instrLabel',INSTR.label);
   t('chartTitle',INSTR.title+'チャート');t('contractLabel','1lot契約量('+INSTR.unit+')');t('brokerNote',INSTR.brokerNote);
-  t('relBtn',INSTR.name+'関連');t('footerSrc',INSTR.footer);
+  t('relBtn',INSTR.name+'関連');t('minTpLabel',INSTR.minTp);t('footerSrc',INSTR.footer);
   if(!IS_GOLD){
     const logo=document.querySelector('.logo');if(logo){logo.textContent='$¥';logo.style.fontSize='15px'}
     t('stat4Label','ドル指数 DXY');t('stat5Label','円指数 JXY');
@@ -978,14 +978,14 @@ function calcSignal(){
   score+=state.spot.price>=mid?1:-1;
   let sig=score>=2?'BUY':score<=-2?'SELL':'WAIT', forced=false;
   if(isCautionActive()&&sig!=='WAIT'){sig='WAIT';forced=true}
-  // 3条件すべてが同じ方向（スコア±3）で、重要指標のCAUTION中でなく、利確目安まで50pips以上あればエントリー
+  // 3条件すべてが同じ方向（スコア±3）で、重要指標のCAUTION中でなく、利確目安まで基準（ゴールド50pips・ドル円30pips）以上あればエントリー
   const plan=sig!=='WAIT'?tradePlan(sig==='BUY'?1:-1):null;
   const aligned=sig!=='WAIT'&&Math.abs(score)===3;
   const entry=aligned&&!!plan&&plan.tpPips>=MIN_TP_PIPS;
   return {sig,entry,aligned,plan,score,sma,mom,mid,hi,lo,forced,ready:true};
 }
 // ゴールドの1pips＝0.1ドル（XMなど国内向け業者の一般的な表記。1lot＝100ozで1pips＝10ドル）
-const PIP=INSTR.pip, MIN_TP_PIPS=50;
+const PIP=INSTR.pip, MIN_TP_PIPS=INSTR.minTp;
 // 売買プラン：エントリー＝現在値。損切り＝M15 ATR×倍率（最低2ドル）。
 // 利確＝進む方向でいちばん近いH1水平線（5pips以上先）。線がなければ損切り幅×目標RR。
 function tradePlan(dir){
