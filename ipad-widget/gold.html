@@ -133,6 +133,7 @@ canvas.dragging{cursor:grabbing}
 
 /* ===== risk ===== */
 .dirlabel{font-size:12px;margin:8px 0 0;color:var(--muted)}
+.brokerrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .dirlabel b{font-size:14px}
 .form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
 .form.two{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -299,6 +300,12 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
   <!-- ===== リスク・ロット ===== -->
   <section id="secRisk" class="panel s4">
     <div class="cardhead"><div><div class="title">リスク・ロット計算</div><div class="sub">ライブ価格とM15 ATRからSL/TPを算出</div></div><span class="tag">RISK</span></div>
+    <div class="brokerrow"><span class="sub">口座</span>
+      <div class="segmented" id="brokerSeg">
+        <button class="seg" data-broker="xm">XM 1000倍</button>
+        <button class="seg" data-broker="xs">XS 2000倍</button>
+      </div>
+    </div>
     <div class="segmented" id="dirSeg">
       <button class="seg" data-dir="auto">シグナル連動</button>
       <button class="seg" data-dir="buy">買い</button>
@@ -318,6 +325,9 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div class="result"><span>SL幅</span><strong id="slDist">--</strong></div>
       <div class="result"><span>TP幅</span><strong id="tpDist">--</strong></div>
       <div class="result"><span>M15 ATR14</span><strong id="atrVal">--</strong></div>
+      <div class="result"><span>必要証拠金</span><strong id="marginYen">--</strong><em id="marginSub">--</em></div>
+      <div class="result"><span>証拠金維持率</span><strong id="marginLevel">--</strong><em>口座資金 ÷ 必要証拠金</em></div>
+      <div class="result"><span>証拠金での最大</span><strong id="maxLot">--</strong><em id="maxLotSub">--</em></div>
     </div>
     <details id="settings">
       <summary id="settingsSum">口座設定</summary>
@@ -325,9 +335,11 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
         <label>口座資金（円）<input id="capital" type="number" inputmode="numeric" value="100000"></label>
         <label>許容リスク（%）<input id="riskPct" type="number" step="0.1" inputmode="decimal" value="1.0"></label>
         <label>1lot契約量(oz)<input id="contract" type="number" inputmode="numeric" value="100"></label>
+        <label>レバレッジ（倍）<input id="leverage" type="number" inputmode="numeric" value="1000"></label>
         <label>SL = ATR ×<input id="slMult" type="number" step="0.1" inputmode="decimal" value="1.2"></label>
         <label>目標RR<input id="rrTarget" type="number" step="0.1" inputmode="decimal" value="2.0"></label>
       </div>
+      <div class="autonote">契約量とレバレッジは、選んだ口座（XM／XS）ごとに保存されます。XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。口座残高が増えると上限レバレッジが下がる業者もあるため、その場合はレバレッジ欄を変更してください。</div>
     </details>
     <div id="atrNote" class="autonote">--</div>
   </section>
@@ -375,7 +387,7 @@ const $ = id => document.getElementById(id);
 try{if(window.self!==window.top)document.documentElement.classList.add('embedded')}catch{document.documentElement.classList.add('embedded')}
 
 const state = {
-  auto:true, tf:'h1', dir:'auto', evFilter:'all',
+  auto:true, tf:'h1', dir:'auto', evFilter:'all', broker:'xm',
   spot:null, fx:null, goldJpy:null,
   h1:[], m15:[], events:[],
   signal:'WAIT', lastOk:null, prevPrice:null,
@@ -529,19 +541,40 @@ function loadCache(){
     if(c){Object.assign(state,c);renderAll()}
   }catch{}
 }
-const PREFS={capital:['gold_capital','100000'],riskPct:['gold_risk_pct','1.0'],contract:['gold_contract','100'],
+const PREFS={capital:['gold_capital','100000'],riskPct:['gold_risk_pct','1.0'],
   slMult:['gold_sl_mult','1.2'],rrTarget:['gold_rr','2.0']};
+// 口座ごとの初期値（契約量oz・レバレッジ）。変更した値は口座ごとに保存
+const BROKERS={xm:{name:'XM',contract:'100',lev:'1000'},xs:{name:'XS',contract:'100',lev:'2000'}};
+function brokerKey(k){return 'gold_'+state.broker+'_'+k}
+function loadBroker(){
+  const b=BROKERS[state.broker];
+  $('contract').value=lsGet(brokerKey('contract'),state.broker==='xm'?lsGet('gold_contract',b.contract):b.contract);
+  $('leverage').value=lsGet(brokerKey('lev'),b.lev);
+  setSegActive('#brokerSeg .seg','broker',state.broker);
+  updateBrokerLabels();
+}
+function updateBrokerLabels(){
+  document.querySelectorAll('#brokerSeg .seg').forEach(btn=>{
+    const k=btn.dataset.broker,b=BROKERS[k];
+    const lev=k===state.broker?$('leverage').value:lsGet('gold_'+k+'_lev',b.lev);
+    btn.textContent=b.name+' '+(n(lev)||b.lev)+'倍';
+  });
+}
 function loadPrefs(){
   Object.entries(PREFS).forEach(([id,[k,d]])=>$(id).value=lsGet(k,d));
   $('autoRisk').checked=lsGet('gold_auto_risk','1')==='1';
   state.dir=lsGet('gold_dir','auto');
   state.evFilter=lsGet('gold_ev_filter','all');
   state.tf=lsGet('gold_tf','h1');
+  state.broker=BROKERS[lsGet('gold_broker','xm')]?lsGet('gold_broker','xm'):'xm';
+  loadBroker();
 }
 function savePrefs(){
   Object.entries(PREFS).forEach(([id,[k]])=>lsSet(k,$(id).value));
   lsSet('gold_auto_risk',$('autoRisk').checked?'1':'0');
   lsSet('gold_dir',state.dir);lsSet('gold_ev_filter',state.evFilter);lsSet('gold_tf',state.tf);
+  lsSet('gold_broker',state.broker);lsSet(brokerKey('contract'),$('contract').value);lsSet(brokerKey('lev'),$('leverage').value);
+  updateBrokerLabels();
 }
 
 function updateRolling(price){
@@ -785,15 +818,28 @@ function calcRisk(){
   const contract=n($('contract').value)||100, fx=state.fx||0;
   const maxLoss=capital*rp/100,sl=Math.abs(entry-stop),tp=Math.abs(target-entry);
   const lot=fx&&sl?((maxLoss/fx)/(sl*contract)):0;
-  const lotStep=Math.floor(lot*100)/100;
+  const riskStep=Math.floor(lot*100)/100;
+  // 証拠金：1lotあたり＝契約量×価格×為替÷レバレッジ
+  const lev=n($('leverage').value)||1,price=entry||state.spot?.price||0;
+  const marginPerLot=fx&&price?contract*price*fx/lev:0;
+  const maxLot=marginPerLot?Math.floor(capital/marginPerLot*100)/100:0;
+  const limited=marginPerLot&&riskStep>maxLot;
+  const lotStep=limited?maxLot:riskStep;
   const profit=fx?tp*contract*lot*fx:0;
   const isBuy=stop&&entry?stop<entry:riskDirection()>0;
 
   $('riskYen').textContent=yen(maxLoss);
   $('riskSub').textContent='資金の'+rp+'%';
   $('lotSize').textContent=lot?lot.toFixed(3):'--';
-  $('lotRound').textContent=lot?(lotStep>=0.01?'0.01刻み → '+lotStep.toFixed(2)+' lot':'最小0.01lot未満'):'--';
-  $('lotRound').className=lot&&lotStep<0.01?'warn':'';
+  $('lotRound').textContent=!lot?'--':limited?'証拠金の上限 → '+lotStep.toFixed(2)+' lot':lotStep>=0.01?'0.01刻み → '+lotStep.toFixed(2)+' lot':'最小0.01lot未満';
+  $('lotRound').className=lot&&(lotStep<0.01||limited)?'warn':'';
+  const useLot=Math.max(lotStep,0.01),margin=marginPerLot*useLot,level=margin?capital/margin*100:0;
+  $('marginYen').textContent=marginPerLot?yen(margin):'--';
+  $('marginSub').textContent=marginPerLot?useLot.toFixed(2)+' lot・'+BROKERS[state.broker].name+' '+lev+'倍':'--';
+  $('marginLevel').textContent=level?Math.round(level).toLocaleString('ja-JP')+'%':'--';
+  $('marginLevel').className=level&&level<300?'warn':'';
+  $('maxLot').textContent=marginPerLot?maxLot.toFixed(2)+' lot':'--';
+  $('maxLotSub').textContent=marginPerLot?'1lot '+yen(marginPerLot):'--';
   $('slDist').textContent=sl?'$'+sl.toFixed(2):'--';
   $('tpDist').textContent=tp?'$'+tp.toFixed(2):'--';
   $('profitYen').textContent=profit?yen(profit):'--';
@@ -803,7 +849,7 @@ function calcRisk(){
   const dirTxt=isBuy?'<b class="up">買い（BUY）</b>':'<b class="down">売り（SELL）</b>';
   const why=state.dir==='auto'?(state.signal==='WAIT'?'シグナルWAIT中のため買い想定':'シグナル連動'):'手動指定';
   $('dirLabel').innerHTML='想定方向：'+dirTxt+' <span class="sub">｜'+why+'</span>';
-  $('settingsSum').textContent='口座設定（'+yen(capital)+'・リスク'+rp+'%・'+contract+'oz/lot）';
+  $('settingsSum').textContent='口座設定（'+BROKERS[state.broker].name+' '+lev+'倍・'+yen(capital)+'・リスク'+rp+'%・'+contract+'oz/lot）';
   $('atrNote').textContent=$('autoRisk').checked
     ?'自動SL = ATR×'+(n($('slMult').value)||1.2)+'（最低$2）／TP = SL×'+(n($('rrTarget').value)||2)+(state.m15.length?'':'｜M15データ待ちのため価格の0.12%で代用')
     :'手入力モード：エントリー・SL・TPを自由に入力できます。';
@@ -1090,7 +1136,10 @@ document.querySelectorAll('#dirSeg .seg').forEach(b=>b.onclick=()=>{
 document.querySelectorAll('[data-ev]').forEach(b=>b.onclick=()=>{
   state.evFilter=b.dataset.ev;setSegActive('[data-ev]','ev',state.evFilter);savePrefs();renderEvents();renderNext();
 });
-['capital','riskPct','contract','slMult','rrTarget','entry','stop','target'].forEach(id=>$(id).addEventListener('input',()=>{savePrefs();const r=calcRisk();renderChecks(r)}));
+document.querySelectorAll('#brokerSeg .seg').forEach(b=>b.onclick=()=>{
+  savePrefs();state.broker=b.dataset.broker;loadBroker();savePrefs();renderAll();
+});
+['capital','riskPct','contract','leverage','slMult','rrTarget','entry','stop','target'].forEach(id=>$(id).addEventListener('input',()=>{savePrefs();const r=calcRisk();renderChecks(r)}));
 $('autoRisk').addEventListener('change',()=>{savePrefs();const r=calcRisk();renderChecks(r)});
 $('checks').addEventListener('change',e=>{
   const id=e.target.dataset.check;if(!id)return;
