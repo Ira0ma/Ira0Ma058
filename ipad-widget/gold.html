@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="418cdc3ea7">
+<meta name="build" content="1de462bad5">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -301,7 +301,6 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     </div>
     <div class="chartwrap"><canvas id="chart"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
     <div id="chartInfo" class="chartinfo">--</div>
-    <div id="levelInfo" class="chartinfo levelinfo"></div>
     <div class="charthint">ドラッグで左右（過去へ・右側に空白）・上下に移動／ピンチ・ホイールで拡大縮小／右端の価格目盛りを上下ドラッグで縦の拡大縮小／ダブルタップでリセット</div>
   </section>
 
@@ -1046,8 +1045,8 @@ function drawChart(){
   levels.forEach(l=>{
     if(l.price<min||l.price>max)return;
     const yy=Math.round(y(l.price))+.5,col=l.kind==='r'?'255,105,105':'66,213,156';
-    ctx.strokeStyle=`rgba(${col},${l.touches>=3?.95:.7})`;ctx.lineWidth=l.touches>=3?2:1.2;ctx.setLineDash([8,4]);
-    ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();ctx.setLineDash([]);
+    ctx.strokeStyle=`rgba(${col},${l.touches>=3?.95:.7})`;ctx.lineWidth=l.touches>=3?2:1.2;
+    ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();
   });
   const cw=Math.max(1,step*.62);
   bars.forEach((b,i)=>{
@@ -1059,16 +1058,6 @@ function drawChart(){
 
   ctx.strokeStyle='#68b9ff';ctx.lineWidth=2;ctx.beginPath();let begun=false;
   sm.forEach((sv,i)=>{if(sv==null)return;if(!begun){ctx.moveTo(x(i),y(sv));begun=true}else ctx.lineTo(x(i),y(sv))});ctx.stroke();
-  // 水平線のラベルはローソク足の上に重ねて読めるようにする
-  levels.forEach(l=>{
-    if(l.price<min||l.price>max)return;
-    const yy=Math.round(y(l.price))+.5,col=l.kind==='r'?'255,105,105':'66,213,156';
-    const label=`${l.name} ${fmt(l.price)}  ${l.touches}回`;
-    ctx.font='bold 10.5px -apple-system,BlinkMacSystemFont,sans-serif';ctx.textAlign='left';ctx.textBaseline='bottom';
-    const tw=ctx.measureText(label).width;
-    ctx.fillStyle='rgba(12,17,22,.88)';ctx.fillRect(P.l+4,yy-15,tw+8,14);
-    ctx.fillStyle=`rgb(${col})`;ctx.fillText(label,P.l+8,yy-2.5);
-  });
   ctx.textBaseline='middle';
   ctx.restore();
 
@@ -1090,8 +1079,6 @@ function drawChart(){
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
   $('chartMeta').textContent=(isH1?'H1 ローソク足 / 120SMA':'M15 ローソク足 / 20SMA')+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
   $('chartReset').hidden=!(v.off||v.count||v.yOff||v.yZoom!==1);
-  $('levelInfo').innerHTML=!state.showLevels?'<span>水平線：非表示</span>':levels.length?
-    '<span>H1水平線</span>'+levels.map(l=>`<span class="${l.kind}">${l.kind==='r'?'抵抗':'支持'}${l.name.slice(1)} <b>${fmt(l.price)}</b>（${l.touches}回）</span>`).join(''):'<span>H1水平線：2回以上反応した価格帯はまだありません</span>';
   state.chartGeo={P,step,n:bars.length,W,H,priceSpan:max-min,plotH:H-P.t-P.b};
 }
 
