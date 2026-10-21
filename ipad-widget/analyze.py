@@ -1,11 +1,13 @@
 """Builds market.json for the widget: real candles for each selectable instrument plus an automatic
 technical read (trend from moving averages, levels from daily pivots, RSI, ATR).
 
-Usage: python3 analyze.py OUT.json [--prev=OLD.json]   (fetches from Yahoo Finance / gold-api.com / Swissquote;
+Usage: python3 analyze.py OUT.json [--prev=OLD.json]   (fetches from Yahoo Finance / Dukascopy / gold-api.com / Swissquote;
                                                          OLD.json fills in instruments that fail)
        python3 analyze.py OUT.json FIXTURE    (FIXTURE: JSON {symbol: yahoo-chart-json} for tests)
 """
 import json
+import lzma
+import struct
 import sys
 import time
 import urllib.request
@@ -68,6 +70,113 @@ def get_json(url):
     req = urllib.request.Request(url, headers=UA)
     with urllib.request.urlopen(req, timeout=20) as r:
         return json.load(r)
+
+
+# Spot candles for metals: Dukascopy's public datafeed (bid prices, the side MT4/MT5 charts at XM/XS
+# draw). Finished days come as one file of 1-minute candles, today's finished hours as tick files.
+# Paths use a 0-based month. Records are big-endian: candles (time s, open, close, low, high, volume),
+# ticks (time ms, ask, bid, ask volume, bid volume). Prices are integers in points.
+DUKA = {"XAU": "XAUUSD", "XAG": "XAGUSD"}
+DUKA_DAYS = 16  # enough finished days to cover the 300 hourly candles (about 12.5 trading days)
+
+
+def get_bytes(url):
+    req = urllib.request.Request(url, headers=UA)
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return r.read()
+
+
+def _bi5(url):
+    """Decompressed contents of one datafeed file; b"" for an hour or day without trading."""
+    try:
+        raw = get_bytes(url)
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return b""
+        raise
+    return lzma.decompress(raw) if raw else b""
+
+
+def duka_minutes(spot_sym, now=None):
+    """1-minute bid candles [t, o, h, l, c] in raw points, from the newest finished hour back to the
+    first day of an unbroken run of files (a file that fails ends the run)."""
+    inst = DUKA[spot_sym]
+    now = now or datetime.now(timezone.utc)
+    today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    base = "https://datafeed.dukascopy.com/datafeed/"
+    path = lambda d: f"{base}{inst}/{d.year}/{d.month - 1:02d}/{d.day:02d}/"
+
+    def from_ticks(day, hours):
+        """Minutes folded from the tick files of the given hours of one day."""
+        rows = []
+        for hour in range(hours):
+            data = _bi5(f"{path(day)}{hour:02d}h_ticks.bi5")
+            t0 = int((day + timedelta(hours=hour)).timestamp())
+            for off in range(0, len(data) - 19, 20):
+                ms, _ask, bid, _av, _bv = struct.unpack(">iiiff", data[off:off + 20])
+                m = t0 + ms // 60000 * 60
+                if rows and rows[-1][0] == m:
+                    r = rows[-1]
+                    r[2], r[3], r[4] = max(r[2], bid), min(r[3], bid), bid
+                else:
+                    rows.append([m, bid, bid, bid, bid])
+        return rows
+
+    days = [from_ticks(today, now.hour)]  # today: one tick file per finished hour
+    for back in range(1, DUKA_DAYS + 1):
+        d = today - timedelta(days=back)
+        try:
+            data = _bi5(f"{path(d)}BID_candles_min_1.bi5")
+            t0 = int(d.timestamp())
+            rows = []
+            for off in range(0, len(data) - 23, 24):
+                sec, o, c, lo, hi, vol = struct.unpack(">iiiiif", data[off:off + 24])
+                if vol > 0 or o != c:  # skip flat filler minutes with no trading
+                    rows.append([t0 + sec, o, hi, lo, c])
+            if not rows and back <= 2 and d.weekday() != 5:
+                rows = from_ticks(d, 24)  # a just-finished day whose minute file is not out yet
+        except Exception as e:
+            print(spot_sym, "dukascopy stops at", d.date(), e)
+            break
+        days.append(rows)
+    return [r for rows in reversed(days) for r in rows]
+
+
+def splice_spot(key, spot_sym, ser):
+    """Replace the futures candles with spot candles where Dukascopy has them; the futures candles before and
+    after are moved by the futures-to-spot gap measured on the minutes both sources share.
+    Returns that gap, or None when spot candles are unavailable (the caller then falls back)."""
+    try:
+        mins = duka_minutes(spot_sym)
+    except Exception as e:
+        print(key, "dukascopy unavailable:", e)
+        return None
+    if len(mins) < 500:
+        print(key, f"dukascopy: only {len(mins)} minutes")
+        return None
+    fut1 = {r[0]: r[4] for r in ser["1m"]}
+    ref = (ser["1m"] or ser["15m"])[-1][4]
+    # points to price: the scale that lands nearest the futures price (XAU uses 0.001)
+    scale = min((1000, 100, 10000), key=lambda k: abs(mins[-1][4] / k - ref))
+    mins = [[r[0]] + [v / scale for v in r[1:]] for r in mins]
+    pairs = [m[4] - fut1[m[0]] for m in mins[-600:] if m[0] in fut1]
+    if len(pairs) < 20:
+        print(key, f"dukascopy: only {len(pairs)} minutes overlap the futures")
+        return None
+    pairs.sort()
+    gap = pairs[len(pairs) // 2]
+    first, last = mins[0][0], mins[-1][0]
+    for tf, sec in (("1m", 60), ("5m", 300), ("15m", 900), ("1h", 3600)):
+        spot = aggregate(mins, sec)
+        lo_t, hi_t = spot[0][0], spot[-1][0]
+        before = [[r[0]] + [v + gap for v in r[1:]] for r in ser[tf] if r[0] < lo_t]
+        after = [[r[0]] + [v + gap for v in r[1:]] for r in ser[tf] if r[0] > hi_t]
+        ser[tf] = before + spot + after
+    for tf in ("1d", "1w"):
+        ser[tf] = [[r[0]] + [v + gap for v in r[1:]] for r in ser[tf]]
+    span = lambda t: datetime.fromtimestamp(t, timezone.utc).strftime("%m-%d %H:%M")
+    print(key, f"spot candles from dukascopy {span(first)}..{span(last)} UTC ({len(mins)} min), futures gap {gap:+.2f}")
+    return gap
 
 
 def spot_price(spot_sym):
@@ -300,7 +409,11 @@ def one(key, sym, spot_sym, fixture, prev=None):
     # Futures trade above spot (XM/XS quote spot), so metals are moved onto the spot price by the
     # futures-to-spot gap. Without a spot quote this hour, the last known gap is reused for a while.
     spot, shift, adjusted = None, None, None
-    if spot_sym and fixture is None and h1:
+    gap = splice_spot(key, spot_sym, ser) if spot_sym and fixture is None and h1 else None
+    if gap is not None:
+        m1, m5, m15, h1, d1, w1 = (ser[tf] for tf in ("1m", "5m", "15m", "1h", "1d", "1w"))
+        spot, shift, adjusted = (m1 or m15)[-1][4], gap, True
+    elif spot_sym and fixture is None and h1:
         try:
             spot, src = spot_price(spot_sym)
             shift = spot - (m1 or m15 or h1)[-1][4]
