@@ -23,8 +23,9 @@ fx = fx.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name=
 here.joinpath("usdjpy.html").write_text(fx, encoding="utf-8")
 
 body = here.joinpath("index.html").read_text(encoding="utf-8").split("\n", 2)[2]  # drop <title> and claude meta
-body = body.replace('src="gold.html"', 'src="gold.html?v=%s"' % gold_build)  # the sheet always opens the current GOLD page
-build = hashlib.sha1((body + gold_build).encode()).hexdigest()[:10]  # a new GOLD page also refreshes the desk
+# the sheets always open the current GOLD / USDJPY pages, and a new one also refreshes the desk
+body = body.replace('src: "gold.html"', 'src: "gold.html?v=%s"' % gold_build).replace('src: "usdjpy.html"', 'src: "usdjpy.html?v=%s"' % fx_build)
+build = hashlib.sha1((body + gold_build + fx_build).encode()).hexdigest()[:10]
 head = """<!doctype html>
 <html lang="ja">
 <head>
