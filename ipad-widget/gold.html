@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="9cd63f8606">
+<meta name="build" content="a898e3cfbb">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1228,7 +1228,7 @@ function drawChart(){
     ctx.strokeStyle='#1f2831';ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();
     ctx.fillStyle='#83909c';ctx.textAlign='left';ctx.fillText(fmt(v),W-P.r+6,yy);
   }
-  const every=Math.max(1,Math.ceil(bars.length/(W<520?3:6)));
+  const every=Math.max(1,Math.ceil(Math.max(isH1?90:50,(W-P.l-P.r)/7)/step));  // 時刻ラベルが重ならない間隔（広い画面では7つ程度）
   ctx.textAlign='center';ctx.fillStyle='#6f7c88';
   for(let i=every-1;i<bars.length;i+=every)ctx.fillText(barLabel(bars[i].t,isH1),x(i),H-P.b+13);
 
