@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
+<meta name="build" content="ecbeb17616">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1204,8 +1205,21 @@ chart.addEventListener('wheel',e=>{
   else state.view.count=Math.round(Math.max(12,curCount()*Math.exp(e.deltaY/400)));
   drawChart();
 },{passive:false});
+// iOS: keep the page from scrolling while a finger moves the chart
+chart.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 chart.addEventListener('dblclick',()=>{resetView();state.hover=null;drawChart()});
 $('chartReset').onclick=()=>{resetView();state.hover=null;drawChart()};
+
+// 新しい版が公開されたら自動で読み込み直す（ホーム画面アプリやキャッシュで古い版が残らないように）
+function checkUpdate(){
+  const cur=document.querySelector('meta[name="build"]');
+  if(!cur||!location.protocol.startsWith('http'))return;
+  fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():Promise.reject())
+    .then(t=>{const m=t.match(/<meta name="build" content="([^"]+)"/);if(m&&m[1]!==cur.content)location.replace(location.pathname+'?v='+m[1])})
+    .catch(()=>{});
+}
+checkUpdate();setInterval(checkUpdate,10*60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
 
 let rz=0;
 window.addEventListener('resize',()=>{cancelAnimationFrame(rz);rz=requestAnimationFrame(drawChart)});

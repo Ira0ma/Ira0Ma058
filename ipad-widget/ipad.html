@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#06070b">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="de44178ba8">
+<meta name="build" content="f42aae826e">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -550,7 +550,7 @@ html:not(.flow) #flow { display: none; }
     if (!goldSheet) {
       goldSheet = document.createElement("div"); goldSheet.id = "gold-sheet";
       goldSheet.setAttribute("role", "dialog"); goldSheet.setAttribute("aria-label", "GOLD分析");
-      goldSheet.innerHTML = '<iframe src="gold.html" title="GOLD Trade Dashboard"></iframe>' +
+      goldSheet.innerHTML = '<iframe src="gold.html?v=ecbeb17616" title="GOLD Trade Dashboard"></iframe>' +
         '<button id="gold-close" type="button">✕ 閉じる</button>';
       document.body.appendChild(goldSheet);
       document.getElementById("gold-close").addEventListener("click", closeGold);
