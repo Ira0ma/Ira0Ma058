@@ -1,0 +1,1053 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090b0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>GOLD Trade Dashboard</title>
+<style>
+:root{
+  --bg:#090b0e;--panel:#11161c;--panel2:#0d1217;--line:#26303a;
+  --gold:#d9b458;--gold2:#f5d77e;--text:#f4f6f8;--muted:#93a0ad;
+  --green:#42d59c;--red:#ff6969;--amber:#ffca65;--blue:#68b9ff;
+  --shadow:0 12px 34px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0;background:radial-gradient(circle at top,#18130b 0,#0b0e12 30%,#07090b 100%);color:var(--text);
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP",sans-serif;-webkit-tap-highlight-color:transparent}
+body{min-height:100vh;font-variant-numeric:tabular-nums}
+button,input,select{font:inherit}
+button{border:0;border-radius:11px;padding:10px 13px;font-weight:800;cursor:pointer;color:inherit}
+button:disabled{opacity:.6;cursor:default}
+button.primary{background:linear-gradient(180deg,#eed382,#b9892d);color:#101114}
+button.ghost{background:#171d24;color:var(--gold2);border:1px solid #34404c}
+input,select{width:100%;background:#0d1217;border:1px solid #2b3540;color:var(--text);border-radius:10px;padding:10px;outline:none;margin-top:4px}
+input:focus,select:focus{border-color:#8a6f32;box-shadow:0 0 0 3px rgba(217,180,88,.12)}
+input[readonly]{color:#c9d2db;background:#0a0e12;border-style:dashed}
+.shell{max-width:1500px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 14px 28px}
+
+/* ===== header ===== */
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;gap:11px;align-items:center}
+.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(145deg,#f2d67d,#90691f);
+display:grid;place-items:center;color:#0e1012;font-size:19px;font-weight:950;box-shadow:0 0 28px rgba(217,180,88,.2)}
+h1{margin:0;font-size:clamp(20px,2.6vw,30px);line-height:1.05}
+h1 em{font-style:normal;color:var(--gold2)}
+.subtitle{margin-top:4px;color:var(--muted);font-size:12px}
+.head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:7px;background:#10161c;border:1px solid #2c3742;border-radius:999px;padding:8px 11px;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
+.dot.live{background:var(--green);box-shadow:0 0 10px rgba(66,213,156,.8)}
+.dot.error{background:var(--red)}
+.toggle{display:inline-flex;align-items:center;gap:8px;background:#171d24;border:1px solid #34404c;border-radius:999px;padding:7px 12px 7px 7px;font-size:12px}
+.toggle .knob{width:30px;height:18px;border-radius:999px;background:#2a333d;position:relative;transition:.2s}
+.toggle .knob::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#93a0ad;transition:.2s}
+.toggle.on .knob{background:#1f5c45}.toggle.on .knob::after{left:14px;background:var(--green)}
+.metaline{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--muted);font-size:11px;margin:10px 2px}
+.metaline b{color:var(--text);font-weight:700}
+.quicknav{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.quicknav::-webkit-scrollbar{display:none}
+.quicknav a{flex:none;text-decoration:none;color:#d5dde5;background:#121820;border:1px solid #2c3742;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700}
+
+/* ===== notices ===== */
+.notice{display:none;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:12px;line-height:1.6;background:#151b22;border:1px solid #31404d;color:#cbd6e0}
+.notice.show{display:block}
+.notice.err{background:#35181b;border-color:#71343a;color:#ffd1d1}
+.caution{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid #6c4f16;
+background:linear-gradient(180deg,#39280e,#1f170d);border-radius:17px;padding:13px 15px;margin-bottom:12px;animation:pulse 2s ease-in-out infinite}
+.caution.hidden{display:none}
+@keyframes pulse{50%{box-shadow:0 0 0 4px rgba(255,202,101,.12)}}
+.caution-title{font-size:20px;font-weight:950;color:#ffd57a;letter-spacing:.06em}
+.caution-sub{font-size:12px;color:#ffe0a4;margin-top:3px}
+.caution-count{font-size:22px;font-weight:950;white-space:nowrap}
+
+/* ===== sticky mini bar ===== */
+.mini{position:fixed;left:0;right:0;top:0;z-index:20;display:flex;align-items:center;justify-content:center;gap:14px;
+padding:calc(8px + env(safe-area-inset-top)) 14px 8px;background:rgba(9,11,14,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+border-bottom:1px solid #232c35;font-size:13px;transform:translateY(-110%);transition:transform .25s}
+.mini.show{transform:none}
+.mini b{font-size:16px}
+.mini .chip{padding:3px 9px;border-radius:999px;font-weight:900;font-size:12px}
+
+/* ===== layout ===== */
+.panel{background:linear-gradient(180deg,rgba(20,26,33,.97),rgba(14,18,23,.97));
+border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow);scroll-margin-top:60px;min-width:0}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
+.s4{grid-column:span 4}.s5{grid-column:span 5}.s7{grid-column:span 7}.s8{grid-column:span 8}.s12{grid-column:span 12}
+.cardhead{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+.title{font-size:14px;font-weight:850}
+.sub{font-size:11px;color:var(--muted);line-height:1.5}
+.tag{font-size:10px;color:#ced6df;background:#111820;border:1px solid #37424e;border-radius:999px;padding:5px 8px;white-space:nowrap}
+.up{color:var(--green)}.down{color:var(--red)}.warn{color:var(--amber)}
+
+/* ===== hero ===== */
+.hero{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:16px}
+.hero>div{min-width:0}
+.hero>div+div{border-left:1px solid #222b35;padding-left:16px}
+.price{font-size:clamp(34px,4vw,52px);font-weight:950;line-height:1;transition:color .6s}
+.price.flash-up{color:var(--green)}.price.flash-down{color:var(--red)}
+.change{margin-top:7px;font-size:13px;font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:11px}
+.stat{background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:9px 10px;min-width:0}
+.stat span{display:block;color:var(--muted);font-size:10px}.stat b{display:block;font-size:14px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.signal{padding:12px;text-align:center;border-radius:14px;font-size:30px;font-weight:950;letter-spacing:.08em}
+.signal.buy{background:#0e2d23;border:1px solid #275e49;color:var(--green)}
+.signal.sell{background:#35181b;border:1px solid #71343a;color:var(--red)}
+.signal.wait{background:#2c2414;border:1px solid #654f1f;color:var(--amber)}
+.signal small{display:block;font-size:11px;letter-spacing:0;font-weight:700;margin-top:3px;opacity:.85}
+.meter{height:6px;border-radius:999px;background:#1a222b;margin:9px 0 4px;overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#b9892d,#f5d77e);transition:width .4s}
+.reasons{display:grid;gap:5px;margin-top:8px}
+.reason{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#0d1217;border:1px solid #222b35;border-radius:10px;padding:7px 9px}
+.reason span{font-size:11px;color:var(--muted)}.reason b{font-size:12px;text-align:right}
+.nextev{background:#0d1217;border:1px solid #232d37;border-radius:13px;padding:12px}
+.nextev.alert{border-color:#6c4f16;background:#22190c}
+.nextev .count{font-size:26px;font-weight:950;margin:6px 0 2px}
+.nextev .evtitle{font-size:13px;font-weight:800;line-height:1.4}
+
+/* ===== chart ===== */
+.segmented{display:flex;gap:5px;flex:none}
+.seg{background:#121820;color:#d5dde5;border:1px solid #34404c;border-radius:999px;padding:7px 12px;font-size:12px}
+.seg.active{background:linear-gradient(180deg,#e6c973,#b5872d);border-color:#b5872d;color:#101114}
+.chartwrap{position:relative}
+canvas{display:block;width:100%;height:340px;background:linear-gradient(180deg,#0c1116,#0e151c);border:1px solid #222c36;border-radius:13px;touch-action:pan-y}
+.chartinfo{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted);margin-top:8px;min-height:16px}
+.chartinfo b{color:var(--text);font-weight:700}
+.legend{display:inline-flex;align-items:center;gap:5px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px}
+
+/* ===== risk ===== */
+.dirlabel{font-size:12px;margin:8px 0 0;color:var(--muted)}
+.dirlabel b{font-size:14px}
+.form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.form.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.form label{font-size:11px;color:var(--muted)}
+.inlinecheck{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:10px}
+.inlinecheck input{width:18px;height:18px;margin:0;accent-color:var(--gold)}
+.results{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
+.result{background:#0c1116;border:1px solid #242e38;border-radius:11px;padding:9px 10px;min-width:0}
+.result.key{border-color:#5d4a20;background:#16130b}
+.result span{display:block;color:var(--muted);font-size:10px}.result strong{display:block;margin-top:4px;color:var(--gold2);font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result em{display:block;font-style:normal;font-size:10px;color:var(--muted);margin-top:2px}
+details{margin-top:10px;background:#0d1217;border:1px solid #232d37;border-radius:11px;padding:0 10px}
+details summary{cursor:pointer;padding:10px 0;font-size:12px;font-weight:700;color:#d5dde5;list-style:none;display:flex;justify-content:space-between;gap:8px}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"▾";color:var(--muted)}
+details[open] summary::after{content:"▴"}
+details[open]{padding-bottom:10px}
+details .form{margin-top:0}
+.autonote{color:var(--muted);font-size:11px;margin-top:9px;line-height:1.5}
+
+/* ===== events ===== */
+.events{display:grid;gap:6px}
+.daysep{font-size:11px;color:var(--gold2);font-weight:800;margin:6px 2px 0}
+.event{display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;background:#0c1116;border:1px solid #242e38;border-radius:11px;padding:9px 10px}
+.event.past{opacity:.5}
+.event.next{border-color:#8a6f32;background:#16130b}
+.eventtime{font-weight:850;font-size:13px}
+.eventtitle{font-size:12px;font-weight:750;line-height:1.4}.eventmeta{font-size:10px;color:var(--muted);margin-top:3px}
+.star{font-size:12px;font-weight:950;text-align:right;white-space:nowrap}
+.star.high{color:var(--red)}.star.medium{color:var(--amber)}
+.star small{display:block;font-size:10px;color:var(--muted);font-weight:700;margin-top:2px}
+
+/* ===== checklist ===== */
+.progress{font-size:12px;font-weight:800;color:var(--gold2)}
+.checks{display:grid;gap:7px}
+.check{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;background:#0d1217;border:1px solid #242e38;border-radius:11px;padding:10px;cursor:pointer;user-select:none}
+.check input{width:20px;height:20px;margin:0;accent-color:var(--green)}
+.check.done{border-color:#275e49;background:#0c1c17}
+.check b{display:block;font-size:12px}.check span{display:block;font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
+.badge{font-size:10px;font-weight:900;border-radius:999px;padding:4px 8px;white-space:nowrap}
+.badge.ok{background:#0e2d23;color:var(--green)}.badge.ng{background:#35181b;color:var(--red)}.badge.na{background:#1a222b;color:var(--muted)}.badge.wn{background:#2c2414;color:var(--amber)}
+.metricgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+.metric{background:#0c1116;border:1px solid #232d37;border-radius:11px;padding:9px 10px}
+.metric span{display:block;color:var(--muted);font-size:10px}.metric b{display:block;margin-top:4px;font-size:14px}
+.linkbtn{background:none;border:0;color:var(--muted);font-size:11px;padding:4px;text-decoration:underline}
+
+footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
+
+@media(max-width:1100px){
+ .s4,.s5,.s7,.s8{grid-column:span 12}
+ .hero{grid-template-columns:1fr 1fr}
+ .hero>.hero-next{grid-column:1/-1;border-left:0;padding-left:0}
+}
+@media(max-width:720px){
+ .shell{padding-left:10px;padding-right:10px}
+ .hero{grid-template-columns:1fr;gap:14px}
+ .hero>div+div{border-left:0;padding-left:0;border-top:1px solid #222b35;padding-top:14px}
+ canvas{height:260px}
+ .results{grid-template-columns:1fr 1fr}
+ .form{grid-template-columns:1fr 1fr 1fr}
+ .head-actions{width:100%}
+ .head-actions .pill{margin-right:auto}
+}
+@media(max-width:430px){
+ .logo{width:40px;height:40px;font-size:16px}
+ h1{font-size:20px}.subtitle{display:none}
+ .price{font-size:38px}
+ .form:not(.two){grid-template-columns:repeat(3,minmax(0,1fr))}.seg{padding:7px 10px}
+ .caution-title{font-size:17px}.caution-count{font-size:19px}
+ .mini{gap:10px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<div id="mini" class="mini" aria-hidden="true">
+  <span>XAU <b id="miniPrice">--</b> <span id="miniChange">--</span></span>
+  <span id="miniSignal" class="chip">WAIT</span>
+  <span id="miniNext" class="sub">--</span>
+</div>
+
+<div class="shell">
+<header>
+  <div class="brand">
+    <div class="logo">Au</div>
+    <div><h1>GOLD Trade <em>Dashboard</em></h1>
+      <div class="subtitle">XAU/USD専用｜自動更新｜iPad・iPhone・Android対応</div>
+    </div>
+  </div>
+  <div class="head-actions">
+    <div class="pill"><span id="mainDot" class="dot"></span><b id="mainStatus">接続中</b></div>
+    <button id="autoBtn" class="toggle on" aria-pressed="true"><span class="knob"></span>AUTO</button>
+    <button id="refreshBtn" class="primary">⟳ 今すぐ更新</button>
+  </div>
+</header>
+
+<div class="metaline">
+  <span>最終更新 <b id="lastUpdate">--</b></span>
+  <span id="nextInfo">--</span>
+  <span>価格30秒／チャート5分／指標60分</span>
+</div>
+
+<nav class="quicknav">
+  <a href="#secOverview">概要</a><a href="#secChart">チャート</a><a href="#secRisk">ロット計算</a><a href="#secNews">経済指標</a><a href="#secCheck">チェック</a>
+</nav>
+
+<div id="notice" class="notice"></div>
+
+<section id="caution" class="caution hidden">
+  <div><div class="caution-title">⚠ TRADE CAUTION</div><div id="cautionText" class="caution-sub">重要指標が近づいています。</div></div>
+  <div id="cautionCount" class="caution-count">--:--</div>
+</section>
+
+<main class="grid">
+  <!-- ===== 概要：価格・判定・次の指標 ===== -->
+  <section id="secOverview" class="panel s12 hero">
+    <div class="hero-price">
+      <div class="cardhead"><div><div class="title">XAU / USD</div><div id="goldFresh" class="sub">取得中...</div></div><span class="tag">SPOT</span></div>
+      <div id="goldPrice" class="price">--</div>
+      <div id="goldChange" class="change">--</div>
+      <div class="stats">
+        <div class="stat"><span>当日高値</span><b id="dayHigh">--</b></div>
+        <div class="stat"><span>当日安値</span><b id="dayLow">--</b></div>
+        <div class="stat"><span>本日レンジ</span><b id="dayRange">--</b></div>
+        <div class="stat"><span>USD/JPY</span><b id="usdjpy">--</b></div>
+        <div class="stat"><span>円換算 / oz</span><b id="goldJpy">--</b></div>
+        <div class="stat"><span>H1 120SMA</span><b id="sma120">--</b></div>
+      </div>
+    </div>
+
+    <div class="hero-signal">
+      <div class="cardhead"><div><div class="title">セットアップ判定</div><div class="sub">3条件の合計スコアで自動判定</div></div><span class="tag">SIGNAL</span></div>
+      <div id="signal" class="signal wait">WAIT<small>データ取得中</small></div>
+      <div class="meter"><i id="meter"></i></div>
+      <div class="sub">判定強度 <b id="confidence">--</b></div>
+      <div class="reasons">
+        <div class="reason"><span>① H1 120SMA</span><b id="reasonSma">--</b></div>
+        <div class="reason"><span>② H1モメンタム(3本)</span><b id="reasonMom">--</b></div>
+        <div class="reason"><span>③ 当日レンジ位置</span><b id="reasonRange">--</b></div>
+      </div>
+    </div>
+
+    <div class="hero-next">
+      <div class="cardhead"><div><div class="title">次の重要指標</div><div class="sub">USD・JPY｜端末の時刻で表示</div></div><span class="tag">NEXT</span></div>
+      <div id="nextEv" class="nextev"><div class="sub">取得中...</div></div>
+      <div class="sub" style="margin-top:8px">High指標は30分前〜15分後、Mediumは15分前〜5分後をCAUTIONとし、判定を自動でWAITにします。</div>
+    </div>
+  </section>
+
+  <!-- ===== チャート ===== -->
+  <section id="secChart" class="panel s8">
+    <div class="cardhead">
+      <div><div class="title">GOLDチャート</div><div id="chartMeta" class="sub">取得中...</div></div>
+      <div class="segmented"><button id="h1Btn" class="seg active">H1</button><button id="m15Btn" class="seg">M15</button></div>
+    </div>
+    <div class="chartwrap"><canvas id="chart"></canvas></div>
+    <div id="chartInfo" class="chartinfo">--</div>
+  </section>
+
+  <!-- ===== リスク・ロット ===== -->
+  <section id="secRisk" class="panel s4">
+    <div class="cardhead"><div><div class="title">リスク・ロット計算</div><div class="sub">ライブ価格とM15 ATRからSL/TPを算出</div></div><span class="tag">RISK</span></div>
+    <div class="segmented" id="dirSeg">
+      <button class="seg" data-dir="auto">シグナル連動</button>
+      <button class="seg" data-dir="buy">買い</button>
+      <button class="seg" data-dir="sell">売り</button>
+    </div>
+    <div id="dirLabel" class="dirlabel">--</div>
+    <div class="form">
+      <label>エントリー<input id="entry" type="number" step="0.01" inputmode="decimal"></label>
+      <label>損切り SL<input id="stop" type="number" step="0.01" inputmode="decimal"></label>
+      <label>利確 TP<input id="target" type="number" step="0.01" inputmode="decimal"></label>
+    </div>
+    <label class="inlinecheck"><input id="autoRisk" type="checkbox" checked> 価格・SL・TPを自動入力（OFFで手入力）</label>
+    <div class="results">
+      <div class="result key"><span>目安ロット</span><strong id="lotSize">--</strong><em id="lotRound">--</em></div>
+      <div class="result key"><span>最大損失</span><strong id="riskYen">--</strong><em id="riskSub">--</em></div>
+      <div class="result key"><span>想定利益</span><strong id="profitYen">--</strong><em id="rr">RR --</em></div>
+      <div class="result"><span>SL幅</span><strong id="slDist">--</strong></div>
+      <div class="result"><span>TP幅</span><strong id="tpDist">--</strong></div>
+      <div class="result"><span>M15 ATR14</span><strong id="atrVal">--</strong></div>
+    </div>
+    <details id="settings">
+      <summary id="settingsSum">口座設定</summary>
+      <div class="form two">
+        <label>口座資金（円）<input id="capital" type="number" inputmode="numeric" value="100000"></label>
+        <label>許容リスク（%）<input id="riskPct" type="number" step="0.1" inputmode="decimal" value="1.0"></label>
+        <label>1lot契約量(oz)<input id="contract" type="number" inputmode="numeric" value="100"></label>
+        <label>SL = ATR ×<input id="slMult" type="number" step="0.1" inputmode="decimal" value="1.2"></label>
+        <label>目標RR<input id="rrTarget" type="number" step="0.1" inputmode="decimal" value="2.0"></label>
+      </div>
+    </details>
+    <div id="atrNote" class="autonote">--</div>
+  </section>
+
+  <!-- ===== 経済指標 ===== -->
+  <section id="secNews" class="panel s7">
+    <div class="cardhead">
+      <div><div class="title">経済指標</div><div class="sub">USD / JPYのHigh・Mediumを自動取得</div></div>
+      <div class="segmented"><button class="seg" data-ev="all">★★以上</button><button class="seg" data-ev="high">★★★のみ</button></div>
+    </div>
+    <div id="eventList" class="events"><div class="sub">取得中...</div></div>
+    <div id="calendarStatus" class="autonote">カレンダー接続中...</div>
+  </section>
+
+  <!-- ===== チェック ===== -->
+  <section id="secCheck" class="panel s5">
+    <div class="cardhead">
+      <div><div class="title">トレード前チェック</div><div class="sub">自動判定を見ながらタップで確認（毎日リセット）</div></div>
+      <span id="checkProgress" class="progress">0/5</span>
+    </div>
+    <div id="checks" class="checks"></div>
+    <div style="text-align:right"><button id="resetChecks" class="linkbtn">チェックをリセット</button></div>
+
+    <details id="reboundBox">
+      <summary>120SMAタッチ後の反発（H1タッチ → M15追跡）</summary>
+      <div class="metricgrid">
+        <div class="metric"><span>最終タッチ</span><b id="touchTime">--</b></div>
+        <div class="metric"><span>タッチ価格</span><b id="touchPrice">--</b></div>
+        <div class="metric"><span>最大上反発</span><b id="reboundUp" class="up">--</b></div>
+        <div class="metric"><span>最大下反発</span><b id="reboundDown" class="down">--</b></div>
+      </div>
+      <div id="reboundNote" class="sub" style="margin-top:8px">データ取得後に自動計算します。</div>
+    </details>
+  </section>
+</main>
+
+<footer>
+データ: XAUS / Gold API（GOLD）・Frankfurter（USD/JPY補助）・Finance Calendar（経済指標）。表示値は参考情報で、取引可能価格や投資助言ではありません。ブローカーの実勢値・スプレッド・契約サイズを必ず確認してください。
+</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const state = {
+  auto:true, tf:'h1', dir:'auto', evFilter:'all',
+  spot:null, fx:null, goldJpy:null,
+  h1:[], m15:[], events:[],
+  signal:'WAIT', lastOk:null, prevPrice:null,
+  nextSpot:0, nextChart:0, nextCalendar:0,
+  loading:false, errMsg:'', hover:null, chartGeo:null,
+  health:{spot:false,fx:false,h1:false,m15:false,calendar:false},
+  rolling:{date:'',high:null,low:null,open:null}
+};
+
+const URLS = {
+  xausSpot:'https://xaus.com/api/v1/spot?currency=JPY&unit=oz&compact=1',
+  goldApi:'https://api.gold-api.com/price/XAU',
+  fx:'https://api.frankfurter.dev/v2/rate/usd/jpy',
+  h1:'https://xaus.com/api/v1/chart?symbol=xau&range=1mo&interval=1h',
+  h1alt:'https://xaus.com/api/v1/chart?symbol=xau&range=1mo&interval=60m',
+  m15:'https://xaus.com/api/v1/chart?symbol=xau&range=5d&interval=15m',
+  intraday:'https://xaus.com/api/v1/intraday?symbol=xau&hours=48',
+  calendar:'https://www.financecalendar.com/wp-json/fc/v1/week?tz=Asia/Tokyo'
+};
+
+const INTERVALS = {spot:30000, chart:300000, calendar:3600000};
+
+/* ---------- utils ---------- */
+function n(v){const x=Number(v);return Number.isFinite(x)?x:0}
+function fmt(v,d=2){return n(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function yen(v){return '¥'+Math.round(n(v)).toLocaleString('ja-JP')}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function lsGet(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch{return d}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch{}}
+function todayKey(){return new Date().toLocaleDateString('sv-SE')}
+function localTime(ms){
+  if(!ms)return '--';
+  return new Date(ms).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function hhmm(ms){return new Date(ms).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}
+function dur(ms){
+  const s=Math.max(0,Math.round(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),sec=s%60;
+  if(h>=24)return Math.floor(h/24)+'日'+(h%24)+'時間';
+  if(h)return h+'時間'+m+'分';
+  if(m>=10)return m+'分';
+  return m+'分'+String(sec).padStart(2,'0')+'秒';
+}
+function toMs(v){
+  if(typeof v==='number') return v<1e12?v*1000:v;
+  if(!v)return 0;
+  const p=Date.parse(String(v));
+  return Number.isFinite(p)?p:0;
+}
+function setStatus(type,text){
+  $('mainStatus').textContent=text;
+  $('mainDot').className='dot '+(type==='live'?'live':type==='error'?'error':'');
+}
+function showError(msg){state.errMsg=msg||'';updateNotice()}
+function updateNotice(){
+  const el=$('notice');
+  const okCount=Object.values(state.health).filter(Boolean).length;
+  if(state.errMsg){
+    el.className='notice show err';el.textContent=state.errMsg;
+  }else if(okCount>=3){
+    el.className='notice';
+  }else if(state.lastOk){
+    el.className='notice show';
+    el.innerHTML='<b>一部データ源を再接続中</b>｜取得できた項目は表示を続け、未接続項目だけ自動で再試行しています。';
+  }else{
+    el.className='notice show';
+    el.innerHTML='<b>ライブ通信を確認中...</b>｜アプリ内プレビューで数値が入らない場合は、Safari / Chromeで直接開いてください。';
+  }
+}
+
+/* ---------- data normalize ---------- */
+function normalizeChart(data){
+  const arr = Array.isArray(data) ? data :
+    (Array.isArray(data?.points)?data.points:
+    Array.isArray(data?.values)?data.values:
+    Array.isArray(data?.data)?data.data:
+    Array.isArray(data?.chart)?data.chart:[]);
+  return arr.map(p=>({
+    t:toMs(p.t ?? p.timestamp ?? p.datetime ?? p.date),
+    o:n(p.o ?? p.open ?? p.p ?? p.price),
+    h:n(p.h ?? p.high ?? p.p ?? p.price),
+    l:n(p.l ?? p.low ?? p.p ?? p.price),
+    c:n(p.c ?? p.close ?? p.p ?? p.price)
+  })).filter(p=>p.t&&p.c).sort((a,b)=>a.t-b.t);
+}
+function aggregatePoints(points, minutes){
+  if(!points.length)return [];
+  const bucketMs=minutes*60000, map=new Map();
+  points.forEach(p=>{
+    const key=Math.floor(p.t/bucketMs)*bucketMs;
+    if(!map.has(key)) map.set(key,{t:key,o:p.c,h:p.c,l:p.c,c:p.c});
+    const b=map.get(key);
+    b.h=Math.max(b.h,p.c); b.l=Math.min(b.l,p.c); b.c=p.c;
+  });
+  return [...map.values()].sort((a,b)=>a.t-b.t);
+}
+
+/* ---------- fetch ---------- */
+async function getJSON(url, timeout=12000){
+  const c=new AbortController(); const timer=setTimeout(()=>c.abort(),timeout);
+  try{
+    const r=await fetch(url,{cache:'no-store',signal:c.signal,headers:{'Accept':'application/json'}});
+    const text=await r.text();
+    let j; try{j=JSON.parse(text)}catch{throw new Error('JSON解析エラー')}
+    if(!r.ok) throw new Error(j?.message||j?.error||('HTTP '+r.status));
+    return j;
+  } finally { clearTimeout(timer) }
+}
+async function firstSuccess(tasks){
+  let lastErr=null;
+  for(const task of tasks){
+    try{return await task()}catch(e){lastErr=e}
+  }
+  throw lastErr||new Error('全データ源に接続できません');
+}
+
+/* ---------- cache / prefs ---------- */
+function saveCache(){
+  lsSet('gold_auto_cache_final',JSON.stringify({
+    spot:state.spot,fx:state.fx,goldJpy:state.goldJpy,h1:state.h1,m15:state.m15,
+    events:state.events,lastOk:state.lastOk,rolling:state.rolling
+  }));
+}
+function loadCache(){
+  try{
+    const c=JSON.parse(lsGet('gold_auto_cache_final','null'));
+    if(c){Object.assign(state,c);renderAll()}
+  }catch{}
+}
+const PREFS={capital:['gold_capital','100000'],riskPct:['gold_risk_pct','1.0'],contract:['gold_contract','100'],
+  slMult:['gold_sl_mult','1.2'],rrTarget:['gold_rr','2.0']};
+function loadPrefs(){
+  Object.entries(PREFS).forEach(([id,[k,d]])=>$(id).value=lsGet(k,d));
+  $('autoRisk').checked=lsGet('gold_auto_risk','1')==='1';
+  state.dir=lsGet('gold_dir','auto');
+  state.evFilter=lsGet('gold_ev_filter','all');
+  state.tf=lsGet('gold_tf','h1');
+}
+function savePrefs(){
+  Object.entries(PREFS).forEach(([id,[k]])=>lsSet(k,$(id).value));
+  lsSet('gold_auto_risk',$('autoRisk').checked?'1':'0');
+  lsSet('gold_dir',state.dir);lsSet('gold_ev_filter',state.evFilter);lsSet('gold_tf',state.tf);
+}
+
+function updateRolling(price){
+  const key=todayKey();
+  if(state.rolling.date!==key){
+    state.rolling={date:key,open:price,high:price,low:price};
+  }else{
+    state.rolling.high=state.rolling.high==null?price:Math.max(state.rolling.high,price);
+    state.rolling.low=state.rolling.low==null?price:Math.min(state.rolling.low,price);
+    if(state.rolling.open==null)state.rolling.open=price;
+  }
+}
+
+/* ---------- refreshers ---------- */
+async function refreshFx(){
+  try{
+    const d=await getJSON(URLS.fx);
+    const rate=n(d.rate ?? d?.rates?.JPY);
+    if(rate){state.fx=rate;state.health.fx=true;return rate}
+    throw new Error('FX rate missing');
+  }catch(e){
+    state.health.fx=!!state.fx;
+    return state.fx||0;
+  }
+}
+
+async function refreshSpot(){
+  try{
+    let xaus=null;
+    try{xaus=await getJSON(URLS.xausSpot+'&fresh='+Math.floor(Date.now()/30000))}catch{}
+    let usd=0,jpyOz=0,fx=0,asof=Date.now(),freshness='fresh';
+
+    if(xaus){
+      usd=n(xaus.spot_usd_oz ?? xaus?.xau?.spot_usd_oz ?? (xaus?.xau?.currency==='USD'?xaus?.xau?.price:0));
+      jpyOz=n(xaus?.xau?.price);
+      fx=n(xaus.fx_rate)||(usd&&jpyOz?jpyOz/usd:0);
+      asof=toMs(xaus?.data_state?.as_of ?? xaus.updated_at)||Date.now();
+      freshness=xaus?.data_state?.status||'fresh';
+    }
+    if(!usd){
+      const g=await getJSON(URLS.goldApi);
+      usd=n(g.price);
+      asof=toMs(g.updatedAt)||Date.now();
+      freshness='fresh';
+    }
+    if(!usd) throw new Error('GOLD price missing');
+
+    if(!fx) fx=await refreshFx();
+    state.prevPrice=state.spot?.price??null;
+    state.spot={price:usd,asof,freshness,age:0};
+    if(fx){state.fx=fx;state.health.fx=true}
+    state.goldJpy=jpyOz||(fx?usd*fx:state.goldJpy);
+    updateRolling(usd);
+    state.health.spot=true;
+    state.lastOk=Date.now(); state.nextSpot=Date.now()+INTERVALS.spot;
+    saveCache(); setStatus('live','LIVE'); showError(''); renderAll(); flashPrice();
+  }catch(e){
+    state.health.spot=false;
+    setStatus(state.lastOk?'live':'error',state.lastOk?'キャッシュ表示中':'接続再試行中');
+    showError('GOLD価格を再接続しています（15秒後に自動再試行）。');
+    state.nextSpot=Date.now()+15000;
+  }
+}
+
+async function refreshCharts(){
+  let changed=false;
+  try{
+    const h1d=await firstSuccess([()=>getJSON(URLS.h1),()=>getJSON(URLS.h1alt)]);
+    const hb=normalizeChart(h1d);
+    if(hb.length>=120){state.h1=hb;state.health.h1=true;changed=true}
+    else throw new Error('H1 insufficient');
+  }catch{state.health.h1=state.h1.length>=120}
+
+  try{
+    let mb=[];
+    try{mb=normalizeChart(await getJSON(URLS.m15))}catch{}
+    if(mb.length<20){
+      const intr=await getJSON(URLS.intraday);
+      mb=aggregatePoints(normalizeChart(intr),15);
+    }
+    if(mb.length>=20){state.m15=mb;state.health.m15=true;changed=true}
+    else throw new Error('M15 insufficient');
+  }catch{state.health.m15=state.m15.length>=20}
+
+  state.nextChart=Date.now()+(state.health.h1&&state.health.m15?INTERVALS.chart:60000);
+  if(changed){state.lastOk=Date.now();saveCache();renderAll();setStatus('live','LIVE')}
+  if(!state.health.h1&&!state.health.m15&&!state.errMsg){
+    showError('チャートを再接続中です。価格・経済指標は独立して更新を継続します。');
+  }
+  updateNotice();
+}
+
+function normalizeCalendarPayload(d){
+  const arr=Array.isArray(d)?d:
+    Array.isArray(d?.data)?d.data:
+    Array.isArray(d?.events)?d.events:
+    Array.isArray(d?.items)?d.items:[];
+  return arr.map((e,i)=>{
+    const rawImpact=String(e.impact ?? e.importance ?? e.priority ?? '').toLowerCase();
+    const impact=rawImpact.includes('high')||rawImpact==='3'?'High':
+                 rawImpact.includes('medium')||rawImpact.includes('med')||rawImpact==='2'?'Medium':'Low';
+    let currency=String(e.currency ?? e.country ?? e.ccy ?? '').toUpperCase();
+    if(currency==='US'||currency==='USA'||currency==='UNITED STATES')currency='USD';
+    if(currency==='JP'||currency==='JAPAN')currency='JPY';
+    const timeCandidate=e.time_utc ?? e.time_local ?? e.scheduledAt ?? e.datetime ?? e.date;
+    return {
+      id:e.id??i, title:e.title??e.name??e.event??'', currency, impact,
+      ts:toMs(timeCandidate),
+      forecast:e.consensus??e.forecast??'', previous:e.prior??e.previous??'', actual:e.actual??''
+    }
+  }).filter(e=>['USD','JPY'].includes(e.currency)&&['High','Medium'].includes(e.impact)&&e.ts)
+    .sort((a,b)=>a.ts-b.ts);
+}
+
+async function refreshCalendar(){
+  try{
+    const d=await getJSON(URLS.calendar,15000);
+    const ev=normalizeCalendarPayload(d);
+    if(!ev.length) throw new Error('calendar empty');
+    state.events=ev;
+    state.health.calendar=true;
+    state.nextCalendar=Date.now()+INTERVALS.calendar;
+    state.lastOk=Date.now();
+    saveCache();renderAll();
+    $('calendarStatus').textContent='自動取得済み（'+hhmm(Date.now())+'）｜次回 約60分後';
+  }catch(e){
+    state.health.calendar=state.events.length>0;
+    state.nextCalendar=Date.now()+300000;
+    $('calendarStatus').textContent=state.events.length?'前回取得データを表示中｜5分後に再試行':'カレンダー再接続待ち｜5分後に再試行';
+  }
+  updateNotice();
+}
+
+/* ---------- calc ---------- */
+function smaSeries(bars,len){
+  const out=[];let sum=0;
+  for(let i=0;i<bars.length;i++){
+    sum+=bars[i].c;if(i>=len)sum-=bars[i-len].c;
+    out.push(i>=len-1?sum/len:null);
+  }return out
+}
+function atr(bars,len=14){
+  if(bars.length<len+1)return 0;
+  const tr=[];
+  for(let i=1;i<bars.length;i++){
+    const b=bars[i],p=bars[i-1];
+    tr.push(Math.max(b.h-b.l,Math.abs(b.h-p.c),Math.abs(b.l-p.c)));
+  }
+  const s=tr.slice(-len);return s.reduce((a,b)=>a+b,0)/s.length;
+}
+function dayBars(){
+  if(!state.m15.length)return [];
+  const key=todayKey();
+  const today=state.m15.filter(b=>new Date(b.t).toLocaleDateString('sv-SE')===key);
+  return today.length?today:state.m15.slice(-96);
+}
+function dayHL(){
+  const db=dayBars();
+  let hi=db.length?Math.max(...db.map(b=>b.h)):state.rolling.high;
+  let lo=db.length?Math.min(...db.map(b=>b.l)):state.rolling.low;
+  let open=db.length?db[0].o:state.rolling.open;
+  if(state.spot){
+    hi=hi==null?state.spot.price:Math.max(hi,state.spot.price);
+    lo=lo==null?state.spot.price:Math.min(lo,state.spot.price);
+    open=open==null?state.spot.price:open;
+  }
+  return {hi:n(hi),lo:n(lo),open:n(open)};
+}
+function calcSignal(){
+  if(!state.spot||state.h1.length<120)return {sig:'WAIT',score:0,sma:0,mom:0,mid:state.spot?.price||0,hi:0,lo:0,forced:false,ready:false};
+  const sma=smaSeries(state.h1,120).at(-1)||0;
+  const closes=state.h1.map(b=>b.c);
+  const mom=closes.at(-1)-closes.at(-4);
+  const {hi,lo}=dayHL(), mid=(hi+lo)/2;
+  let score=0;
+  score+=state.spot.price>=sma?1:-1;
+  score+=mom>0.8?1:mom<-0.8?-1:0;
+  score+=state.spot.price>=mid?1:-1;
+  let sig=score>=2?'BUY':score<=-2?'SELL':'WAIT', forced=false;
+  if(isCautionActive()&&sig!=='WAIT'){sig='WAIT';forced=true}
+  return {sig,score,sma,mom,mid,hi,lo,forced,ready:true};
+}
+function detectTouch(){
+  if(state.h1.length<120)return null;
+  const s=smaSeries(state.h1,120);
+  for(let i=state.h1.length-1;i>=119;i--){
+    const b=state.h1[i],v=s[i];
+    if(b.l<=v&&b.h>=v)return {t:b.t,p:v}
+  }return null
+}
+function rebound(){
+  const touch=detectTouch();
+  if(!touch)return {touch:null,up:0,down:0,count:0};
+  const after=state.m15.filter(b=>b.t>=touch.t).slice(0,48);
+  if(!after.length)return {touch,up:0,down:0,count:0};
+  return {touch,up:Math.max(...after.map(b=>b.h))-touch.p,down:touch.p-Math.min(...after.map(b=>b.l)),count:after.length};
+}
+function riskDirection(){
+  if(state.dir==='buy')return 1;
+  if(state.dir==='sell')return -1;
+  return calcSignal().sig==='SELL'?-1:1;
+}
+function currentAtr(){return atr(state.m15,14)}
+function autoRisk(){
+  const on=$('autoRisk').checked;
+  ['entry','stop','target'].forEach(id=>$(id).readOnly=on);
+  if(!on||!state.spot)return;
+  const a=currentAtr()||Math.max(state.spot.price*0.0012,3);
+  const direction=riskDirection();
+  const mult=n($('slMult').value)||1.2, rrT=n($('rrTarget').value)||2;
+  const entry=state.spot.price, sl=Math.max(a*mult,2), tp=sl*rrT;
+  $('entry').value=entry.toFixed(2);
+  $('stop').value=(entry-direction*sl).toFixed(2);
+  $('target').value=(entry+direction*tp).toFixed(2);
+}
+function calcRisk(){
+  autoRisk();
+  const capital=n($('capital').value),rp=n($('riskPct').value),entry=n($('entry').value),stop=n($('stop').value),target=n($('target').value);
+  const contract=n($('contract').value)||100, fx=state.fx||0;
+  const maxLoss=capital*rp/100,sl=Math.abs(entry-stop),tp=Math.abs(target-entry);
+  const lot=fx&&sl?((maxLoss/fx)/(sl*contract)):0;
+  const lotStep=Math.floor(lot*100)/100;
+  const profit=fx?tp*contract*lot*fx:0;
+  const isBuy=stop&&entry?stop<entry:riskDirection()>0;
+
+  $('riskYen').textContent=yen(maxLoss);
+  $('riskSub').textContent='資金の'+rp+'%';
+  $('lotSize').textContent=lot?lot.toFixed(3):'--';
+  $('lotRound').textContent=lot?(lotStep>=0.01?'0.01刻み → '+lotStep.toFixed(2)+' lot':'最小0.01lot未満'):'--';
+  $('lotRound').className=lot&&lotStep<0.01?'warn':'';
+  $('slDist').textContent=sl?'$'+sl.toFixed(2):'--';
+  $('tpDist').textContent=tp?'$'+tp.toFixed(2):'--';
+  $('profitYen').textContent=profit?yen(profit):'--';
+  $('rr').textContent='RR '+(sl?(tp/sl).toFixed(2):'--');
+  $('atrVal').textContent=state.m15.length?'$'+fmt(currentAtr()):'--';
+
+  const dirTxt=isBuy?'<b class="up">買い（BUY）</b>':'<b class="down">売り（SELL）</b>';
+  const why=state.dir==='auto'?(state.signal==='WAIT'?'シグナルWAIT中のため買い想定':'シグナル連動'):'手動指定';
+  $('dirLabel').innerHTML='想定方向：'+dirTxt+' <span class="sub">｜'+why+'</span>';
+  $('settingsSum').textContent='口座設定（'+yen(capital)+'・リスク'+rp+'%・'+contract+'oz/lot）';
+  $('atrNote').textContent=$('autoRisk').checked
+    ?'自動SL = ATR×'+(n($('slMult').value)||1.2)+'（最低$2）／TP = SL×'+(n($('rrTarget').value)||2)+(state.m15.length?'':'｜M15データ待ちのため価格の0.12%で代用')
+    :'手入力モード：エントリー・SL・TPを自由に入力できます。';
+  return {lot,lotStep,sl};
+}
+
+/* ---------- caution / events ---------- */
+function cautionWindow(e){return e.impact==='High'?[30,15]:[15,5]}
+function nextCautionEvent(){
+  const now=Date.now();
+  return state.events.find(e=>{
+    const [before,after]=cautionWindow(e);
+    return now>=e.ts-before*60000&&now<=e.ts+after*60000
+  })||null
+}
+function isCautionActive(){return !!nextCautionEvent()}
+function upcomingEvent(){
+  const now=Date.now();
+  return state.events.find(e=>e.ts+cautionWindow(e)[1]*60000>=now&&(state.evFilter==='all'||e.impact==='High'))||null;
+}
+function stars(e){return e.impact==='High'?'★★★':'★★'}
+
+/* ---------- render ---------- */
+function flashPrice(){
+  if(!state.spot||state.prevPrice==null||state.prevPrice===state.spot.price)return;
+  const el=$('goldPrice'),cls=state.spot.price>state.prevPrice?'flash-up':'flash-down';
+  el.classList.add(cls);setTimeout(()=>el.classList.remove(cls),900);
+}
+function renderSnapshot(){
+  const s=calcSignal();
+  state.signal=s.sig;
+  const el=$('signal');
+  const sub=!s.ready?'データ取得中':s.forced?'重要指標前後のため待機':s.sig==='WAIT'?'条件がそろうまで待機':'3条件中2つ以上が一致';
+  el.innerHTML=esc(s.sig)+'<small>'+esc(sub)+'</small>';
+  el.className='signal '+(s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait');
+  const conf=s.ready?Math.min(100,Math.round(Math.abs(s.score)/3*100)):0;
+  $('meter').style.width=conf+'%';
+  $('confidence').textContent=s.ready?conf+'%（スコア '+(s.score>0?'+':'')+s.score+'）':'--';
+
+  if(!state.spot)return;
+  const d=dayHL(), pct=d.open?((state.spot.price-d.open)/d.open*100):0, diff=state.spot.price-d.open;
+  const chg=(pct>=0?'+':'')+fmt(diff)+'（'+(pct>=0?'+':'')+pct.toFixed(2)+'%）今日';
+  $('goldPrice').textContent=fmt(state.spot.price);
+  $('goldChange').textContent=chg;
+  $('goldChange').className='change '+(pct>=0?'up':'down');
+  $('goldFresh').textContent=(state.spot.freshness==='stale'?'⚠ STALE':'LIVE')+'｜'+localTime(state.spot.asof);
+  $('dayHigh').textContent=d.hi?fmt(d.hi):'--';$('dayLow').textContent=d.lo?fmt(d.lo):'--';$('dayRange').textContent=d.hi&&d.lo?'$'+fmt(d.hi-d.lo):'--';
+  $('usdjpy').textContent=state.fx?fmt(state.fx,3):'--';
+  $('goldJpy').textContent=state.goldJpy?yen(state.goldJpy):(state.fx?yen(state.spot.price*state.fx):'--');
+  $('sma120').textContent=s.sma?fmt(s.sma)+(state.spot.price>=s.sma?' ▲':' ▼'):'接続待ち';
+  $('sma120').className=s.sma?(state.spot.price>=s.sma?'up':'down'):'';
+
+  const setReason=(id,txt,dirv)=>{$(id).textContent=txt;$(id).className=dirv>0?'up':dirv<0?'down':''};
+  if(s.ready){
+    setReason('reasonSma',state.spot.price>=s.sma?'上（買い +1）':'下（売り −1）',state.spot.price>=s.sma?1:-1);
+    setReason('reasonMom',s.mom>0.8?'上昇 +$'+fmt(s.mom)+'（+1）':s.mom<-0.8?'下降 −$'+fmt(-s.mom)+'（−1）':'横ばい（0）',s.mom>0.8?1:s.mom<-0.8?-1:0);
+  }else{setReason('reasonSma','H1待ち',0);setReason('reasonMom','H1待ち',0)}
+  if(d.hi&&d.lo){const mid=(d.hi+d.lo)/2;setReason('reasonRange',state.spot.price>=mid?'上半分（+1）':'下半分（−1）',state.spot.price>=mid?1:-1)}
+  else setReason('reasonRange','取得中',0);
+
+  $('miniPrice').textContent=fmt(state.spot.price);
+  $('miniChange').textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%';
+  $('miniChange').className=pct>=0?'up':'down';
+  $('miniSignal').textContent=s.sig;
+  $('miniSignal').className='chip signal '+(s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait');
+}
+function renderRebound(){
+  const r=rebound();
+  if(!r.touch){['touchTime','touchPrice','reboundUp','reboundDown'].forEach(id=>$(id).textContent='--');$('reboundNote').textContent='H1/M15データ接続後に自動計算';return r}
+  $('touchTime').textContent=localTime(r.touch.t);$('touchPrice').textContent=fmt(r.touch.p);
+  $('reboundUp').textContent='$'+fmt(Math.max(0,r.up));$('reboundDown').textContent='$'+fmt(Math.max(0,r.down));
+  $('reboundNote').textContent=r.count?`タッチ後M15 ${r.count}本（最大12時間）を集計`:'M15データの範囲外';
+  return r;
+}
+
+function sizeCanvas(c){
+  const r=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  const w=Math.round(r.width*dpr),h=Math.round(r.height*dpr);
+  if(c.width!==w||c.height!==h){c.width=w;c.height=h}
+  const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {ctx,W:r.width,H:r.height};
+}
+function barLabel(t,isH1){
+  const d=new Date(t),hh=String(d.getHours()).padStart(2,'0'),mm=String(d.getMinutes()).padStart(2,'0');
+  return isH1?`${d.getMonth()+1}/${d.getDate()} ${hh}時`:`${hh}:${mm}`;
+}
+function drawChart(){
+  const c=$('chart'),{ctx,W,H}=sizeCanvas(c);
+  ctx.clearRect(0,0,W,H);
+  const isH1=state.tf==='h1',source=isH1?state.h1:state.m15;
+  const count=W<520?(isH1?40:48):(isH1?72:96);
+  const bars=source.slice(-count);
+  if(!bars.length||!W){
+    ctx.fillStyle='#93a0ad';ctx.font='14px sans-serif';ctx.fillText('チャートデータ接続中...',20,34);
+    $('chartInfo').textContent='--';state.chartGeo=null;return;
+  }
+  const len=isH1?120:20,sm=smaSeries(source,len).slice(source.length-bars.length);
+  const vals=bars.flatMap((b,i)=>sm[i]==null?[b.h,b.l]:[b.h,b.l,sm[i]]);
+  if(state.spot)vals.push(state.spot.price);
+  let min=Math.min(...vals),max=Math.max(...vals);const span=max-min||1;min-=span*.07;max+=span*.07;
+  const P={l:8,r:66,t:12,b:24},step=(W-P.l-P.r)/bars.length;
+  const x=i=>P.l+step*(i+.5),y=v=>P.t+(max-v)*(H-P.t-P.b)/(max-min);
+
+  ctx.font='11px -apple-system,BlinkMacSystemFont,sans-serif';ctx.textBaseline='middle';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const v=max-i*(max-min)/4,yy=Math.round(y(v))+.5;
+    ctx.strokeStyle='#1f2831';ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();
+    ctx.fillStyle='#83909c';ctx.textAlign='left';ctx.fillText(fmt(v),W-P.r+6,yy);
+  }
+  const every=Math.max(1,Math.ceil(bars.length/(W<520?3:6)));
+  ctx.textAlign='center';ctx.fillStyle='#6f7c88';
+  for(let i=every-1;i<bars.length;i+=every)ctx.fillText(barLabel(bars[i].t,isH1),x(i),H-P.b+13);
+
+  const cw=Math.max(1,step*.62);
+  bars.forEach((b,i)=>{
+    const up=b.c>=b.o,col=up?'#42d59c':'#ff6969',xx=x(i);
+    ctx.strokeStyle=col;ctx.beginPath();ctx.moveTo(xx,y(b.h));ctx.lineTo(xx,y(b.l));ctx.stroke();
+    const y1=y(Math.max(b.o,b.c)),y2=y(Math.min(b.o,b.c));
+    ctx.fillStyle=col;ctx.fillRect(xx-cw/2,y1,cw,Math.max(1,y2-y1));
+  });
+
+  ctx.strokeStyle='#68b9ff';ctx.lineWidth=2;ctx.beginPath();let begun=false;
+  sm.forEach((v,i)=>{if(v==null)return;if(!begun){ctx.moveTo(x(i),y(v));begun=true}else ctx.lineTo(x(i),y(v))});ctx.stroke();
+
+  if(state.spot){
+    const yy=y(state.spot.price);
+    ctx.setLineDash([5,5]);ctx.strokeStyle='#d9b458';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#d9b458';ctx.fillRect(W-P.r+2,yy-9,P.r-4,18);
+    ctx.fillStyle='#101114';ctx.textAlign='left';ctx.font='bold 11px -apple-system,sans-serif';ctx.fillText(fmt(state.spot.price),W-P.r+6,yy);
+  }
+
+  const hi=state.hover!=null&&bars[state.hover]?state.hover:null;
+  if(hi!=null){
+    ctx.strokeStyle='rgba(245,215,126,.45)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x(hi),P.t);ctx.lineTo(x(hi),H-P.b);ctx.stroke();
+  }
+  const b=bars[hi??bars.length-1],sv=sm[hi??bars.length-1];
+  $('chartInfo').innerHTML=`<span>${hi==null?'最新足':'選択足'} <b>${esc(barLabel(b.t,isH1))}</b></span>`+
+    `<span>始 <b>${fmt(b.o)}</b></span><span>高 <b>${fmt(b.h)}</b></span><span>安 <b>${fmt(b.l)}</b></span><span>終 <b class="${b.c>=b.o?'up':'down'}">${fmt(b.c)}</b></span>`+
+    `<span class="legend"><i style="background:#68b9ff"></i>${isH1?'120':'20'}SMA <b>${sv==null?'--':fmt(sv)}</b></span>`+
+    `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
+  $('chartMeta').textContent=(isH1?'H1 ローソク足 / 120SMA':'M15 ローソク足 / 20SMA')+'｜'+bars.length+'本｜タップで足の詳細';
+  state.chartGeo={P,step,n:bars.length};
+}
+
+function renderEvents(){
+  const box=$('eventList'),now=Date.now(),nx=upcomingEvent();
+  const list=state.events.filter(e=>e.ts>now-60*60000&&(state.evFilter==='all'||e.impact==='High')).slice(0,10);
+  if(!list.length){box.innerHTML='<div class="sub">表示できる重要指標はありません（接続中、または直近に予定なし）。</div>';return}
+  let day='',html='';
+  list.forEach(e=>{
+    const dk=new Date(e.ts).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric',weekday:'short'});
+    if(dk!==day){day=dk;html+=`<div class="daysep">${esc(dk)}</div>`}
+    const cls=e===nx?'next':e.ts<now?'past':'';
+    const rel=e.ts>now?'あと'+dur(e.ts-now):'発表済';
+    html+=`<div class="event ${cls}"><div class="eventtime">${esc(hhmm(e.ts))}</div>`+
+      `<div><div class="eventtitle">${esc(e.currency)}｜${esc(e.title)}</div><div class="eventmeta">予想 ${esc(e.forecast||'--')} / 前回 ${esc(e.previous||'--')}${e.actual?' / <b>結果 '+esc(e.actual)+'</b>':''}</div></div>`+
+      `<div class="star ${e.impact==='High'?'high':'medium'}">${stars(e)}<small>${esc(rel)}</small></div></div>`;
+  });
+  box.innerHTML=html;
+}
+function renderNext(){
+  const e=upcomingEvent(),box=$('nextEv'),now=Date.now();
+  let miniTxt='次の指標 --';
+  if(!e){
+    box.className='nextev';
+    box.innerHTML='<div class="sub">'+(state.events.length?'直近の重要指標はありません。':'取得中...')+'</div>';
+  }else{
+    const caution=isCautionActive(),diff=e.ts-now;
+    box.className='nextev'+(caution?' alert':'');
+    box.innerHTML=`<div class="sub">${esc(new Date(e.ts).toLocaleString('ja-JP',{month:'numeric',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'}))}　<span class="star ${e.impact==='High'?'high':'medium'}">${stars(e)}</span></div>`+
+      `<div class="count ${caution?'warn':''}">${diff>=0?'あと '+esc(dur(diff)):'発表後 '+esc(dur(-diff))}</div>`+
+      `<div class="evtitle">${esc(e.currency)}｜${esc(e.title)}</div>`+
+      `<div class="sub" style="margin-top:4px">予想 ${esc(e.forecast||'--')} / 前回 ${esc(e.previous||'--')}</div>`;
+    miniTxt=(caution?'⚠ ':'')+e.currency+' '+(diff>=0?'あと'+dur(diff):'発表後');
+  }
+  $('miniNext').textContent=miniTxt;
+}
+function updateCaution(){
+  const e=nextCautionEvent(),box=$('caution');
+  if(!e){box.classList.add('hidden');return}
+  box.classList.remove('hidden');const diff=e.ts-Date.now();
+  $('cautionText').textContent=`${e.currency}｜${e.title}（${hhmm(e.ts)}）— 新規エントリーは控えめに`;
+  $('cautionCount').textContent=diff>=0?'あと '+dur(diff):'発表後 '+dur(-diff);
+}
+
+/* ---------- checklist ---------- */
+const CHECKS=[
+  {id:'trend',t:'H1 120SMAで方向を確認'},
+  {id:'atr',t:'M15 ATRでSL幅を確認'},
+  {id:'news',t:'重要指標の時間を確認'},
+  {id:'lot',t:'ロットと最大損失を確認'},
+  {id:'rebound',t:'120SMAタッチ後の反発幅を確認'}
+];
+function loadTicks(){
+  try{const c=JSON.parse(lsGet('gold_checks','null'));if(c&&c.date===todayKey())return c.ticks||{}}catch{}
+  return {};
+}
+let ticks=loadTicks();
+function saveTicks(){lsSet('gold_checks',JSON.stringify({date:todayKey(),ticks}))}
+function renderChecks(risk,reb){
+  if(!risk)risk=calcRisk();
+  if(!reb)reb=rebound();
+  const s=calcSignal(),caution=nextCautionEvent(),nx=upcomingEvent(),a=currentAtr();
+  const live={
+    trend:s.ready?[s.sig==='WAIT'?'wn':'ok',s.sig,`価格は120SMAの${state.spot.price>=s.sma?'上 → 買い目線':'下 → 売り目線'}（SMA ${fmt(s.sma)}）`]:['na','待機','H1データ接続待ち'],
+    atr:a?['ok','$'+fmt(a),`SL幅 $${fmt(risk.sl)}（ATR×${n($('slMult').value)||1.2}）`]:['na','待機','M15データ接続待ち'],
+    news:caution?['ng','CAUTION',`${caution.currency} ${caution.title} の前後です`]:nx?['ok','OK',`次は ${hhmm(nx.ts)} ${nx.currency} ${nx.title}`]:['ok','OK','直近の重要指標なし'],
+    lot:risk.lot?[risk.lotStep>=0.01?'ok':'wn',risk.lotStep>=0.01?risk.lotStep.toFixed(2)+' lot':'最小未満',`最大損失 ${$('riskYen').textContent}／計算値 ${risk.lot.toFixed(3)} lot`]:['na','待機','価格・為替の取得待ち'],
+    rebound:reb.touch?['ok','反発',`上 $${fmt(Math.max(0,reb.up))} / 下 $${fmt(Math.max(0,reb.down))}（${hhmm(reb.touch.t)}タッチ）`]:['na','なし','直近の120SMAタッチなし']
+  };
+  $('checks').innerHTML=CHECKS.map((c,i)=>{
+    const [k,label,desc]=live[c.id],done=!!ticks[c.id];
+    return `<label class="check ${done?'done':''}"><input type="checkbox" data-check="${c.id}" ${done?'checked':''}>`+
+      `<div><b>${i+1}. ${esc(c.t)}</b><span>${esc(desc)}</span></div><span class="badge ${k}">${esc(label)}</span></label>`;
+  }).join('');
+  const cnt=CHECKS.filter(c=>ticks[c.id]).length;
+  $('checkProgress').textContent=cnt===CHECKS.length?'✓ 準備OK':cnt+'/'+CHECKS.length+' 確認';
+}
+
+function renderAll(){
+  renderSnapshot();
+  const reb=renderRebound();
+  drawChart();renderEvents();renderNext();
+  const risk=calcRisk();
+  renderChecks(risk,reb);updateCaution();
+  $('lastUpdate').textContent=state.lastOk?localTime(state.lastOk):'--';
+  updateNotice();
+}
+
+/* ---------- control ---------- */
+async function fullRefresh(){
+  if(state.loading)return;
+  state.loading=true;$('refreshBtn').textContent='更新中...';$('refreshBtn').disabled=true;
+  await Promise.allSettled([refreshSpot(),refreshCharts(),refreshCalendar()]);
+  state.loading=false;$('refreshBtn').textContent='⟳ 今すぐ更新';$('refreshBtn').disabled=false;renderAll();
+}
+let lastCautionState=null;
+function scheduler(){
+  const now=Date.now();
+  if(state.auto){
+    if(now>=state.nextSpot){state.nextSpot=now+INTERVALS.spot;refreshSpot()}
+    if(now>=state.nextChart){state.nextChart=now+INTERVALS.chart;refreshCharts()}
+    if(now>=state.nextCalendar){state.nextCalendar=now+INTERVALS.calendar;refreshCalendar()}
+    $('nextInfo').innerHTML='次の価格更新 <b>'+Math.max(0,Math.ceil((state.nextSpot-now)/1000))+'秒</b>';
+  }else{
+    $('nextInfo').innerHTML='<b class="warn">自動更新 停止中</b>';
+  }
+  updateCaution();renderNext();
+  // CAUTIONの開始・終了で判定とチェックを即時反映
+  const c=isCautionActive();
+  if(c!==lastCautionState){lastCautionState=c;renderAll()}
+}
+function setSegActive(sel,attr,val){document.querySelectorAll(sel).forEach(b=>b.classList.toggle('active',b.dataset[attr]===val))}
+function setTf(tf){
+  state.tf=tf;state.hover=null;
+  $('h1Btn').classList.toggle('active',tf==='h1');$('m15Btn').classList.toggle('active',tf==='m15');
+  savePrefs();drawChart();
+}
+
+$('refreshBtn').onclick=fullRefresh;
+$('autoBtn').onclick=()=>{
+  state.auto=!state.auto;
+  $('autoBtn').classList.toggle('on',state.auto);$('autoBtn').setAttribute('aria-pressed',state.auto);
+  if(state.auto){state.nextSpot=state.nextChart=state.nextCalendar=0}
+  scheduler();
+};
+$('h1Btn').onclick=()=>setTf('h1');
+$('m15Btn').onclick=()=>setTf('m15');
+document.querySelectorAll('#dirSeg .seg').forEach(b=>b.onclick=()=>{
+  state.dir=b.dataset.dir;setSegActive('#dirSeg .seg','dir',state.dir);savePrefs();renderAll();
+});
+document.querySelectorAll('[data-ev]').forEach(b=>b.onclick=()=>{
+  state.evFilter=b.dataset.ev;setSegActive('[data-ev]','ev',state.evFilter);savePrefs();renderEvents();renderNext();
+});
+['capital','riskPct','contract','slMult','rrTarget','entry','stop','target'].forEach(id=>$(id).addEventListener('input',()=>{savePrefs();const r=calcRisk();renderChecks(r)}));
+$('autoRisk').addEventListener('change',()=>{savePrefs();const r=calcRisk();renderChecks(r)});
+$('checks').addEventListener('change',e=>{
+  const id=e.target.dataset.check;if(!id)return;
+  ticks[id]=e.target.checked;saveTicks();renderChecks();
+});
+$('resetChecks').onclick=()=>{ticks={};saveTicks();renderChecks()};
+
+const chart=$('chart');
+function hoverAt(clientX){
+  const g=state.chartGeo;if(!g)return;
+  const r=chart.getBoundingClientRect(),i=Math.floor((clientX-r.left-g.P.l)/g.step);
+  const v=i>=0&&i<g.n?i:null;
+  if(v!==state.hover){state.hover=v;drawChart()}
+}
+chart.addEventListener('pointermove',e=>hoverAt(e.clientX));
+chart.addEventListener('pointerdown',e=>hoverAt(e.clientX));
+chart.addEventListener('pointerleave',()=>{if(state.hover!=null){state.hover=null;drawChart()}});
+
+let rz=0;
+window.addEventListener('resize',()=>{cancelAnimationFrame(rz);rz=requestAnimationFrame(drawChart)});
+window.addEventListener('online',()=>{state.nextSpot=state.nextChart=state.nextCalendar=0;scheduler()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.auto){state.nextSpot=0;state.nextChart=0;scheduler()}});
+
+// 概要が画面外に出たら上部にミニバーを表示
+if('IntersectionObserver' in window){
+  new IntersectionObserver(([en])=>$('mini').classList.toggle('show',!en.isIntersecting&&!!state.spot),{rootMargin:'-40px 0px 0px 0px'})
+    .observe(document.querySelector('.hero-price .stats'));
+}
+
+loadPrefs();
+setSegActive('#dirSeg .seg','dir',state.dir);
+setSegActive('[data-ev]','ev',state.evFilter);
+$('h1Btn').classList.toggle('active',state.tf==='h1');$('m15Btn').classList.toggle('active',state.tf==='m15');
+loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(scheduler,1000);
+</script>
+</body>
+</html>
