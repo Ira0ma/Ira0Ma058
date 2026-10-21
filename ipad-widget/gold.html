@@ -99,6 +99,13 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .signal.buy{background:#0e2d23;border:1px solid #275e49;color:var(--green)}
 .signal.sell{background:#35181b;border:1px solid #71343a;color:var(--red)}
 .signal.wait{background:#2c2414;border:1px solid #654f1f;color:var(--amber)}
+/* 3条件すべて一致：エントリー表示 */
+.signal.entry{color:#08110d;letter-spacing:.04em;animation:entryGlow 1.6s ease-in-out infinite}
+.signal.entry.buy{background:linear-gradient(180deg,#5fe8b2,#2bb682);border-color:#7ff0c4;--glow:rgba(66,213,156,.45)}
+.signal.entry.sell{background:linear-gradient(180deg,#ff8a8a,#e04f55);border-color:#ffb0b0;color:#1a0708;--glow:rgba(255,105,105,.45)}
+.signal.entry small{opacity:1;font-weight:800}
+@keyframes entryGlow{50%{box-shadow:0 0 0 6px var(--glow)}}
+@media (prefers-reduced-motion:reduce){.signal.entry{animation:none}}
 .signal small{display:block;font-size:11px;letter-spacing:0;font-weight:700;margin-top:3px;opacity:.85}
 .meter{height:6px;border-radius:999px;background:#1a222b;margin:9px 0 4px;overflow:hidden}
 .meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#b9892d,#f5d77e);transition:width .4s}
@@ -724,7 +731,7 @@ function dayHL(){
   return {hi:n(hi),lo:n(lo),open:n(open)};
 }
 function calcSignal(){
-  if(!state.spot||state.h1.length<120)return {sig:'WAIT',score:0,sma:0,mom:0,mid:state.spot?.price||0,hi:0,lo:0,forced:false,ready:false};
+  if(!state.spot||state.h1.length<120)return {sig:'WAIT',entry:false,score:0,sma:0,mom:0,mid:state.spot?.price||0,hi:0,lo:0,forced:false,ready:false};
   const sma=smaSeries(state.h1,120).at(-1)||0;
   const closes=state.h1.map(b=>b.c);
   const mom=closes.at(-1)-closes.at(-4);
@@ -735,7 +742,9 @@ function calcSignal(){
   score+=state.spot.price>=mid?1:-1;
   let sig=score>=2?'BUY':score<=-2?'SELL':'WAIT', forced=false;
   if(isCautionActive()&&sig!=='WAIT'){sig='WAIT';forced=true}
-  return {sig,score,sma,mom,mid,hi,lo,forced,ready:true};
+  // 3条件すべてが同じ方向（スコア±3）で、重要指標のCAUTION中でなければエントリー
+  const entry=sig!=='WAIT'&&Math.abs(score)===3;
+  return {sig,entry,score,sma,mom,mid,hi,lo,forced,ready:true};
 }
 function detectTouch(){
   if(state.h1.length<120)return null;
@@ -827,9 +836,11 @@ function renderSnapshot(){
   const s=calcSignal();
   state.signal=s.sig;
   const el=$('signal');
-  const sub=!s.ready?'データ取得中':s.forced?'重要指標前後のため待機':s.sig==='WAIT'?'条件がそろうまで待機':'3条件中2つ以上が一致';
-  el.innerHTML=esc(s.sig)+'<small>'+esc(sub)+'</small>';
-  el.className='signal '+(s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait');
+  const sub=!s.ready?'データ取得中':s.forced?'重要指標前後のため待機':s.sig==='WAIT'?'条件がそろうまで待機':
+    s.entry?'3条件すべて一致':'3条件中2つが一致｜エントリー待ち';
+  const label=s.entry?(s.sig==='BUY'?'買いエントリー':'売りエントリー'):s.sig;
+  el.innerHTML=esc(label)+'<small>'+esc(sub)+'</small>';
+  el.className='signal '+(s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait')+(s.entry?' entry':'');
   const conf=s.ready?Math.min(100,Math.round(Math.abs(s.score)/3*100)):0;
   $('meter').style.width=conf+'%';
   $('confidence').textContent=s.ready?conf+'%（スコア '+(s.score>0?'+':'')+s.score+'）':'--';
@@ -858,8 +869,8 @@ function renderSnapshot(){
   $('miniPrice').textContent=fmt(state.spot.price);
   $('miniChange').textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%';
   $('miniChange').className=pct>=0?'up':'down';
-  $('miniSignal').textContent=s.sig;
-  $('miniSignal').className='chip signal '+(s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait');
+  $('miniSignal').textContent=s.entry?(s.sig==='BUY'?'買いエントリー':'売りエントリー'):s.sig;
+  $('miniSignal').className='chip signal '+(s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait')+(s.entry?' entry':'');
 }
 function renderRebound(){
   const r=rebound();
@@ -1007,7 +1018,7 @@ function renderChecks(risk,reb){
   if(!reb)reb=rebound();
   const s=calcSignal(),caution=nextCautionEvent(),nx=upcomingEvent(),a=currentAtr();
   const live={
-    trend:s.ready?[s.sig==='WAIT'?'wn':'ok',s.sig,`価格は120SMAの${state.spot.price>=s.sma?'上 → 買い目線':'下 → 売り目線'}（SMA ${fmt(s.sma)}）`]:['na','待機','H1データ接続待ち'],
+    trend:s.ready?[s.sig==='WAIT'?'wn':'ok',s.entry?'エントリー':s.sig,`価格は120SMAの${state.spot.price>=s.sma?'上 → 買い目線':'下 → 売り目線'}（SMA ${fmt(s.sma)}）`]:['na','待機','H1データ接続待ち'],
     atr:a?['ok','$'+fmt(a),`SL幅 $${fmt(risk.sl)}（ATR×${n($('slMult').value)||1.2}）`]:['na','待機','M15データ接続待ち'],
     news:caution?['ng','CAUTION',`${caution.currency} ${caution.title} の前後です`]:nx?['ok','OK',`次は ${hhmm(nx.ts)} ${nx.currency} ${nx.title}`]:['ok','OK','直近の重要指標なし'],
     lot:risk.lot?[risk.lotStep>=0.01?'ok':'wn',risk.lotStep>=0.01?risk.lotStep.toFixed(2)+' lot':'最小未満',`最大損失 ${$('riskYen').textContent}／計算値 ${risk.lot.toFixed(3)} lot`]:['na','待機','価格・為替の取得待ち'],
