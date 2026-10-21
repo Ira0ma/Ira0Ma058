@@ -39,7 +39,7 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p prev
-          for f in market.json calendar.json holidays.json; do
+          for f in market.json calendar.json holidays.json spothist.json; do
             curl -fsSL --retry 2 "${{ steps.pages.outputs.base_url }}/$f" -o "prev/$f" || rm -f "prev/$f"
           done
           ls -la prev
@@ -80,26 +80,11 @@ jobs:
           else
             echo "holiday fetch failed; keeping the published copy"; cp prev/holidays.json _site/holidays.json
           fi
-      - name: Restore spot-candle files (gold/silver, Dukascopy) from earlier runs
-        uses: actions/cache/restore@v4
-        with:
-          path: duka-cache
-          key: duka-${{ github.run_id }}
-          restore-keys: duka-
       - name: Fetch prices and build chart analysis
         continue-on-error: true
-        env:
-          DUKA_CACHE: duka-cache
         run: |
           python3 ipad-widget/analyze.py _site/market.json --prev=prev/market.json \
-            || cp prev/market.json _site/market.json
-      - name: Keep the spot-candle files for the next run (saved only when new files arrived)
-        if: hashFiles('duka-cache/**') != ''
-        continue-on-error: true
-        uses: actions/cache/save@v4
-        with:
-          path: duka-cache
-          key: duka-${{ hashFiles('duka-cache/**') }}
+            || { cp prev/market.json _site/market.json; cp prev/spothist.json _site/spothist.json || true; }
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
