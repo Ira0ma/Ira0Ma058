@@ -82,11 +82,15 @@ DUKA_DAYS = 16  # enough finished days to cover the 300 hourly candles (about 12
 # Finished days and hours never change, so their files are kept between runs (the workflow restores this
 # folder from the Actions cache); each 5-minute run then downloads only the hour that just finished.
 DUKA_CACHE = os.environ.get("DUKA_CACHE")
+# Downloads per run stop after this many seconds (runs come every 5 minutes and a new one cancels a
+# run still going); what is missing comes in on the next runs, as the cache keeps what arrived.
+DUKA_BUDGET = 60
+_duka_deadline = []
 
 
-def get_bytes(url):
+def get_bytes(url, timeout=20):
     req = urllib.request.Request(url, headers=UA)
-    with urllib.request.urlopen(req, timeout=20) as r:
+    with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read()
 
 
@@ -96,9 +100,13 @@ def _bi5(url):
     if cached and os.path.exists(cached):
         with open(cached, "rb") as f:
             return lzma.decompress(f.read())
+    if not _duka_deadline:
+        _duka_deadline.append(time.time() + DUKA_BUDGET)
     for attempt in range(3):
+        if time.time() > _duka_deadline[0]:
+            raise TimeoutError(f"download time for this run used up ({DUKA_BUDGET}s)")
         try:
-            raw = get_bytes(url)
+            raw = get_bytes(url, timeout=8)
             break
         except urllib.error.HTTPError as e:
             if e.code == 404:
