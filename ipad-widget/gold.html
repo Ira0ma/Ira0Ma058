@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="ffde4e72ad">
+<meta name="build" content="249dff6e2b">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -813,9 +813,10 @@ function emaSeries(bars,len){
   }return out
 }
 // チャートに重ねる移動平均（H1・M15共通のEMAと、時間足ごとのSMA）
-const EMAS=[{key:'e10',len:10,color:'#ff8fd1',w:1.4},{key:'e20',len:20,color:'#b48cff',w:1.4},{key:'e200',len:200,color:'#f4f6f8',w:2}];
+const SMA_COLOR='#f4f6f8';  // 120SMA（H1）・20SMA（M15）
+const EMAS=[{key:'e10',len:10,color:'#ff8fd1',w:1.4},{key:'e20',len:20,color:'#ff8c2e',w:1.4},{key:'e200',len:200,color:'#3d8bff',w:2}];
 // 各移動平均の表示・非表示（端末ごとに保存）
-const MA_BTNS=[{key:'sma',color:'#68b9ff',label:()=>state.tf==='h1'?'120SMA':'20SMA'}].concat(EMAS.map(m=>({key:m.key,color:m.color,label:()=>m.len+'EMA'})));
+const MA_BTNS=[{key:'sma',color:SMA_COLOR,label:()=>state.tf==='h1'?'120SMA':'20SMA'}].concat(EMAS.map(m=>({key:m.key,color:m.color,label:()=>m.len+'EMA'})));
 function loadMaOn(){let o={};try{o=JSON.parse(lsGet('gold_ma','{}'))||{}}catch{}
   state.maOn=Object.fromEntries(MA_BTNS.map(b=>[b.key,o[b.key]!==false]))}
 function renderMaToggles(){
@@ -1083,7 +1084,7 @@ function drawChart(){
     ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();let begun=false;
     vals.forEach((val,i)=>{if(val==null)return;if(!begun){ctx.moveTo(x(i),y(val));begun=true}else ctx.lineTo(x(i),y(val))});ctx.stroke();
   };
-  if(state.maOn.sma)drawLine(sm,'#68b9ff',2);
+  if(state.maOn.sma)drawLine(sm,SMA_COLOR,2);
   const emas=EMAS.filter(m=>state.maOn[m.key]).map(m=>({...m,vals:emaSeries(source,m.len).slice(startIdx,endIdx)}));
   emas.forEach(m=>drawLine(m.vals,m.color,m.w));
   ctx.textBaseline='middle';
@@ -1103,7 +1104,7 @@ function drawChart(){
   const b=bars[hi??bars.length-1],sv=sm[hi??bars.length-1];
   $('chartInfo').innerHTML=`<span>${hi==null?'最新足':'選択足'} <b>${esc(barLabel(b.t,isH1))}</b></span>`+
     `<span>始 <b>${fmt(b.o)}</b></span><span>高 <b>${fmt(b.h)}</b></span><span>安 <b>${fmt(b.l)}</b></span><span>終 <b class="${b.c>=b.o?'up':'down'}">${fmt(b.c)}</b></span>`+
-    (state.maOn.sma?`<span class="legend"><i style="background:#68b9ff"></i>${isH1?'120':'20'}SMA <b>${sv==null?'--':fmt(sv)}</b></span>`:'')+
+    (state.maOn.sma?`<span class="legend"><i style="background:${SMA_COLOR}"></i>${isH1?'120':'20'}SMA <b>${sv==null?'--':fmt(sv)}</b></span>`:'')+
     emas.map(m=>{const ev=m.vals[hi??bars.length-1];return `<span class="legend"><i style="background:${m.color}"></i>${m.len}EMA <b>${ev==null?'--':fmt(ev)}</b></span>`}).join('')+
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
   $('chartMeta').textContent=(isH1?'H1 ローソク足 / 120SMA':'M15 ローソク足 / 20SMA')+' / 10・20・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
