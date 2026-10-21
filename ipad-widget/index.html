@@ -953,17 +953,44 @@ html:not(.flow) #flow { display: none; }
     }
     this.render(dir); this.draw();
   };
+  /* Gold/silver candles in market.json are futures moved onto the spot price. If a file ever arrives
+     unmoved (spotAdjusted false), shift its candles by the gap to the live spot price once. */
+  Market.prototype.alignSpot = function (p) {
+    var s = this.series, h = s && s["1h"], last = h && h[h.length - 1];
+    if (!this.unadjusted || !last) return;
+    var gap = p - last[4];
+    this.unadjusted = false;
+    if (Math.abs(gap) > Math.max(80, p * 0.03)) return;  // too far apart: something else is wrong, leave it
+    Object.keys(s).forEach(function (tf) {
+      s[tf] = s[tf].map(function (r) { return [r[0], r[1] + gap, r[2] + gap, r[3] + gap, r[4] + gap]; });
+    });
+  };
   function loadPrices() {
     if (!window.fetch) return;
     markets.forEach(function (mk) {
       var spot = INST[mk.key].spot, key = mk.key;
       if (!spot) return;
-      fetch("https://api.gold-api.com/price/" + spot, { cache: "no-store" })
-        .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      var use = function (price, asOf) {
+        if (!price || mk.key !== key) return;
+        mk.asOf = asOf;
+        mk.alignSpot(price);
+        mk.applyLive(price);
+      };
+      var get = function (url) {
+        return fetch(url, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : Promise.reject(); });
+      };
+      get("https://api.gold-api.com/price/" + spot)
         .then(function (j) {
-          if (!j || !j.price || mk.key !== key) return;
-          mk.asOf = j.updatedAt ? Date.parse(j.updatedAt) / 1000 : Date.now() / 1000;
-          mk.applyLive(+j.price);
+          if (!j || !j.price) return Promise.reject();
+          use(+j.price, j.updatedAt ? Date.parse(j.updatedAt) / 1000 : Date.now() / 1000);
+        })
+        // backup: Swissquote's public quote (middle of bid and ask)
+        .catch(function () {
+          return get("https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/" + spot + "/USD")
+            .then(function (q) {
+              var p = q && q[0] && q[0].spreadProfilePrices && q[0].spreadProfilePrices[0];
+              if (p && p.bid && p.ask) use((p.bid + p.ask) / 2, q[0].ts ? q[0].ts / 1000 : Date.now() / 1000);
+            });
         })
         .catch(function () {});
     });
@@ -1544,8 +1571,10 @@ html:not(.flow) #flow { display: none; }
           var m = all[mk.key];
           if (!m) return;
           mk.series = m.candles; mk.prevClose = m.prevClose;
+          mk.unadjusted = !!INST[mk.key].spot && m.spotAdjusted === false;
           // spot-priced instruments keep their fresher minute quote
           var keepSpot = mk.live && INST[mk.key].spot && mk.asOf > (m.asOf || 0);
+          if (keepSpot) mk.alignSpot(mk.price);
           if (!keepSpot) mk.asOf = m.asOf;
           mk.applyLive(keepSpot ? mk.price : m.price);
           mk.gen(); mk.draw();
