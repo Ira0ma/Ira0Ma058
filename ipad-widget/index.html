@@ -240,6 +240,16 @@ body {
 /* GOLD dashboard: opens full-screen over the desk; closing keeps it loaded so it reopens instantly */
 .dash-open { position: absolute; left: 22px; right: 12px; bottom: 18px; z-index: 1; display: flex; gap: 8px; }
 .gold-open { white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: 13px; font-weight: 700; color: #14100a; background: var(--gold); border: 0; border-radius: 999px; padding: 7px 14px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.45); }
+.mkt.entry-buy, .mkt.entry-sell { animation: entryPulse 1.3s ease-in-out infinite; border-radius: 16px; }
+.mkt.entry-buy { --pulse: rgba(67,210,127,.55); --tint: rgba(67,210,127,.16); }
+.mkt.entry-sell { --pulse: rgba(255,106,92,.6); --tint: rgba(255,106,92,.16); }
+@keyframes entryPulse { 0%, 100% { box-shadow: inset 0 0 0 2px var(--pulse); background: transparent; } 50% { box-shadow: inset 0 0 0 3px var(--pulse), inset 0 0 28px var(--pulse); background: var(--tint); } }
+.entry-badge { position: absolute; right: 10px; top: 10px; z-index: 2; font: inherit; font-size: 11px; font-weight: 800; border: 0; border-radius: 999px; padding: 4px 9px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.45); }
+.entry-badge.buy { background: #43d27f; color: #08130d; }
+.entry-badge.sell { background: #ff6a5c; color: #1a0707; }
+.gold-open.entry-on { animation: btnPulse 1.3s ease-in-out infinite; }
+@keyframes btnPulse { 50% { box-shadow: 0 0 0 4px rgba(227,184,103,.45), 0 0 18px rgba(227,184,103,.8); transform: scale(1.04); } }
+@media (prefers-reduced-motion: reduce) { .mkt.entry-buy, .mkt.entry-sell { animation: none; box-shadow: inset 0 0 0 3px var(--pulse); background: var(--tint); } .gold-open.entry-on { animation: none; box-shadow: 0 0 0 3px rgba(227,184,103,.6); } }
 .dash-sheet { position: fixed; inset: 0; z-index: 30; background: var(--night); }
 .dash-sheet iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
 .dash-close { position: absolute; z-index: 1; top: calc(env(safe-area-inset-top, 0px) + 10px); right: calc(env(safe-area-inset-right, 0px) + 10px);
@@ -549,7 +559,7 @@ html:not(.flow) #flow { display: none; }
     usdjpy: { src: "usdjpy.html", title: "ドル円分析" }
   };
   var openSheet = null, sheetOpener = null;
-  function openDash(key, opener) {
+  function ensureSheet(key) {
     var sh = SHEETS[key];
     if (!sh.el) {
       sh.el = document.createElement("div"); sh.el.className = "dash-sheet";
@@ -557,8 +567,13 @@ html:not(.flow) #flow { display: none; }
       sh.el.innerHTML = '<iframe title=""></iframe><button class="dash-close" type="button">✕ 閉じる</button>';
       sh.el.querySelector("iframe").src = sh.src; sh.el.querySelector("iframe").title = sh.title;
       sh.el.querySelector(".dash-close").addEventListener("click", closeDash);
+      sh.el.hidden = true;
       document.body.appendChild(sh.el);
     }
+    return sh;
+  }
+  function openDash(key, opener) {
+    var sh = ensureSheet(key);
     sh.el.hidden = false; openSheet = sh; sheetOpener = opener;
     sh.el.querySelector(".dash-close").focus();
   }
@@ -571,6 +586,44 @@ html:not(.flow) #flow { display: none; }
     btn.addEventListener("click", function () { openDash(btn.getAttribute("data-sheet"), btn); });
   });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeDash(); });
+
+  /* Entry alerts: both dashboards run hidden in the background and report their setup call. When one
+     calls an entry, the market panel showing that instrument and its button blink, with a badge that
+     opens the dashboard. */
+  var entryState = {};
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (!d || d.type !== "dash-signal" || !SHEETS[d.key] || !SHEETS[d.key].el) return;
+    if (e.source !== SHEETS[d.key].el.querySelector("iframe").contentWindow) return;  // only our own dashboards
+    entryState[d.key] = d; paintEntries();
+  });
+  function paintEntries() {
+    if (!markets) return;
+    markets.forEach(function (mk) {
+      var st = entryState[mk.key], on = !!(st && st.entry), buy = on && st.sig === "BUY";
+      mk.el.classList.toggle("entry-buy", on && buy);
+      mk.el.classList.toggle("entry-sell", on && !buy);
+      var badge = mk.el.querySelector(".entry-badge");
+      if (on && !badge) {
+        badge = document.createElement("button"); badge.type = "button"; badge.className = "entry-badge";
+        badge.addEventListener("click", function () { openDash(badge.getAttribute("data-key"), badge); });
+        mk.el.appendChild(badge);
+      }
+      if (badge) {
+        badge.hidden = !on;
+        if (on) {
+          badge.setAttribute("data-key", mk.key);
+          badge.textContent = (buy ? "買い" : "売り") + "エントリー ›";
+          badge.className = "entry-badge " + (buy ? "buy" : "sell");
+        }
+      }
+    });
+    document.querySelectorAll("[data-sheet]").forEach(function (btn) {
+      var st = entryState[btn.getAttribute("data-sheet")];
+      btn.classList.toggle("entry-on", !!(st && st.entry));
+    });
+  }
+  setInterval(paintEntries, 2000);  // follows a panel switched to or from GOLD / USD/JPY
 
   /* ---------- clock ---------- */
   function tickClock() {
@@ -1538,6 +1591,9 @@ html:not(.flow) #flow { display: none; }
   loadHolidays(); setInterval(function () { renderIndicators(); paintUpdated(); if (calendarHot()) scheduleSoon(); }, 30000);
   // X's script is slow and third-party: start it only after the page itself has finished loading
   if (document.readyState === "complete") loadX(); else window.addEventListener("load", loadX);
+  // start both dashboards in the background so their entry calls reach the desk
+  var preload = function () { setTimeout(function () { ensureSheet("gold"); ensureSheet("usdjpy"); }, 1500); };
+  if (document.readyState === "complete") preload(); else window.addEventListener("load", preload);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); loadCalendar(); loadMarket(); } });
   setInterval(loadWeather, 30 * 60000);
   var lastDay = new Date().getDate(), lastMonth = new Date().getMonth();

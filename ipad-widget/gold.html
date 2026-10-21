@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="a898e3cfbb">
+<meta name="build" content="658356eaa1">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1116,9 +1116,18 @@ function flashPrice(){
   const el=$('goldPrice'),cls=state.spot.price>state.prevPrice?'flash-up':'flash-down';
   el.classList.add(cls);setTimeout(()=>el.classList.remove(cls),900);
 }
+// トレードデスクの中で動いているときは、エントリーの状態を知らせる（デスク側で窓を点滅させる）
+let lastSignalMsg='';
+function notifyDesk(s){
+  if(window.parent===window)return;
+  const msg={type:'dash-signal',key:INSTR.key,entry:!!s.entry,sig:s.sig,tpPips:s.plan?Math.round(s.plan.tpPips):0};
+  const k=JSON.stringify(msg);if(k===lastSignalMsg)return;lastSignalMsg=k;
+  try{window.parent.postMessage(msg,'*')}catch{}
+}
 function renderSnapshot(){
   const s=calcSignal();
   state.signal=s.sig;
+  notifyDesk(s);
   const el=$('signal');
   const sub=!s.ready?'データ取得中':s.forced?'重要指標前後のため待機':s.sig==='WAIT'?'条件がそろうまで待機':
     s.entry?'3条件一致・利確目安まで'+Math.round(s.plan.tpPips)+'pips':
