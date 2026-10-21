@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="879429737d">
+<meta name="build" content="e2289f8fa6">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1257,10 +1257,23 @@ function drawChart(){
   const P={l:8,r:66,t:12,b:24},step=(W-P.l-P.r)/(bars.length+blank);
   const x=i=>P.l+step*(i+.5),y=v=>P.t+(max-v)*(H-P.t-P.b)/(max-min);
 
+  // H1の強い水平線と、右の目盛りに出す価格タグの位置（現在値タグと重ならないよう上下にずらし、タグ同士も16pxあける）
+  const levels=state.showLevels?h1Levels():[];
+  const spotY=state.spot&&state.spot.price>=min&&state.spot.price<=max?y(state.spot.price):null;
+  const tags=levels.filter(l=>l.price>=min&&l.price<=max).map(l=>({l,yy:y(l.price)}));
+  if(spotY==null){
+    tags.sort((a,b)=>a.yy-b.yy);for(let i=1;i<tags.length;i++)tags[i].yy=Math.max(tags[i].yy,tags[i-1].yy+16);
+  }else{
+    const above=tags.filter(t=>t.l.price>=state.spot.price).sort((a,b)=>b.yy-a.yy),below=tags.filter(t=>t.l.price<state.spot.price).sort((a,b)=>a.yy-b.yy);
+    above.forEach((t,i)=>t.yy=Math.min(t.yy,(i?above[i-1].yy:spotY-1)-16));
+    below.forEach((t,i)=>t.yy=Math.max(t.yy,(i?below[i-1].yy:spotY+1)+16));
+    tags.sort((a,b)=>a.yy-b.yy);
+  }
   ctx.font='11px -apple-system,BlinkMacSystemFont,sans-serif';ctx.textBaseline='middle';ctx.lineWidth=1;
   for(let i=0;i<=4;i++){
     const v=max-i*(max-min)/4,yy=Math.round(y(v))+.5;
     ctx.strokeStyle='#1f2831';ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();
+    if(tags.some(t=>Math.abs(t.yy-yy)<14)||(spotY!=null&&Math.abs(spotY-yy)<14))continue;  // 価格タグと重なる目盛りは省く
     ctx.fillStyle='#83909c';ctx.textAlign='left';ctx.fillText(fmt(v),W-P.r+6,yy);
   }
   const every=Math.max(1,Math.ceil(Math.max(isH1?90:50,(W-P.l-P.r)/7)/step));  // 時刻ラベルが重ならない間隔（広い画面では7つ程度）
@@ -1269,7 +1282,6 @@ function drawChart(){
 
   ctx.save();ctx.beginPath();ctx.rect(P.l,P.t,W-P.l-P.r,H-P.t-P.b);ctx.clip();
   // H1の強い水平線（H1・M15どちらの表示にも引く）
-  const levels=state.showLevels?h1Levels():[];
   levels.forEach(l=>{
     if(l.price<min||l.price>max)return;
     const yy=Math.round(y(l.price))+.5,col=l.kind==='r'?'255,105,105':'66,213,156';
@@ -1301,6 +1313,16 @@ function drawChart(){
   ctx.textBaseline='middle';
   ctx.restore();
 
+  // 水平線の価格を右の目盛りに色付きタグで表示
+  ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';
+  tags.forEach(({l,yy})=>{
+    const ly=y(l.price);ctx.fillStyle=l.kind==='r'?'#ff6969':'#42d59c';
+    // ずらしたタグも、線の位置を指す小さな矢印で結ぶ
+    ctx.beginPath();ctx.moveTo(W-P.r-5,ly);ctx.lineTo(W-P.r+2,Math.min(yy+7,Math.max(yy-7,ly))-4);ctx.lineTo(W-P.r+2,Math.min(yy+7,Math.max(yy-7,ly))+4);ctx.closePath();ctx.fill();
+    ctx.fillRect(W-P.r+2,yy-8,P.r-4,16);
+    ctx.fillStyle='#101114';ctx.fillText(fmt(l.price),W-P.r+6,yy);
+  });
+
   if(state.spot&&state.spot.price>=min&&state.spot.price<=max){
     const yy=y(state.spot.price);
     ctx.setLineDash([5,5]);ctx.strokeStyle='#d9b458';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();ctx.setLineDash([]);
@@ -1318,6 +1340,7 @@ function drawChart(){
     (state.maOn.sma?`<span class="legend"><i style="background:${SMA_COLOR}"></i>${isH1?'120':'20'}SMA <b>${sv==null?'--':fmt(sv)}</b></span>`:'')+
     emas.map(m=>{const ev=m.vals[hi??bars.length-1];return `<span class="legend"><i style="background:${m.color}"></i>${m.len}EMA <b>${ev==null?'--':fmt(ev)}</b></span>`}).join('')+
     tls.map(t=>`<span class="legend"><i style="background:${t.kind==='up'?TL_UP:TL_DOWN}"></i>${t.kind==='up'?'上昇':'下降'}トレンドライン <b>${fmt(t.p1+t.slope*(endIdx-1-t.i1))}</b>（接点${t.touches}）</span>`).join('')+
+    tags.map(({l})=>`<span class="legend"><i style="background:${l.kind==='r'?'#ff6969':'#42d59c'}"></i>${l.kind==='r'?'抵抗線':'支持線'} <b>${fmt(l.price)}</b></span>`).join('')+
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
   $('chartMeta').textContent=(isH1?'H1 ローソク足 / 120SMA':'M15 ローソク足 / 20SMA')+' / 10・20・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
   $('chartReset').hidden=!(v.off||v.count||v.yOff||v.yZoom!==1);
