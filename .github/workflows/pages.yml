@@ -49,6 +49,7 @@ jobs:
           mkdir -p _site
           cp ipad-widget/ipad.html _site/index.html
           cp ipad-widget/icon-cup.png _site/icon-cup.png
+          cp ipad-widget/gold.html _site/gold.html
       - name: Fetch economic calendar
         continue-on-error: true
         run: |
