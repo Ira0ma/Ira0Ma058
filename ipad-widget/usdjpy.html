@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="93aec94129">
+<meta name="build" content="efd23da716">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -157,6 +157,9 @@ canvas.dragging{cursor:grabbing}
 /* ===== risk ===== */
 .dirlabel{font-size:12px;margin:8px 0 0;color:var(--muted)}
 .brokerrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.form.lotrow{grid-template-columns:1fr auto;align-items:end}
+.form.lotrow .seg{padding:9px 12px;white-space:nowrap}
+#lotManual:not(:placeholder-shown){border-color:#8a6f32;background:#16130b}
 .dirlabel b{font-size:14px}
 .form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
 .form.two{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -344,9 +347,13 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <label>利確 TP<input id="target" type="number" step="0.01" inputmode="decimal"></label>
     </div>
     <label class="inlinecheck"><input id="autoRisk" type="checkbox" checked> 価格・SL・TPを自動入力（OFFで手入力）</label>
+    <div class="form lotrow">
+      <label>ロット（自分で入力）<input id="lotManual" type="number" step="0.01" min="0" inputmode="decimal" placeholder="空欄で自動計算"></label>
+      <button type="button" id="lotClear" class="seg">自動に戻す</button>
+    </div>
     <div class="results">
-      <div class="result key"><span>目安ロット</span><strong id="lotSize">--</strong><em id="lotRound">--</em></div>
-      <div class="result key"><span>最大損失</span><strong id="riskYen">--</strong><em id="riskSub">--</em></div>
+      <div class="result key"><span id="lotLabel">目安ロット</span><strong id="lotSize">--</strong><em id="lotRound">--</em></div>
+      <div class="result key"><span id="lossLabel">最大損失</span><strong id="riskYen">--</strong><em id="riskSub">--</em></div>
       <div class="result key"><span>想定利益</span><strong id="profitYen">--</strong><em id="rr">RR --</em></div>
       <div class="result"><span>SL幅</span><strong id="slDist">--</strong></div>
       <div class="result"><span>TP幅</span><strong id="tpDist">--</strong></div>
@@ -599,7 +606,7 @@ function loadCache(){
     if(c){Object.assign(state,c);renderAll()}
   }catch{}
 }
-const PREFS={capital:[LSP+'capital','100000'],riskPct:[LSP+'risk_pct','1.0'],
+const PREFS={capital:[LSP+'capital','100000'],riskPct:[LSP+'risk_pct','1.0'],lotManual:[LSP+'lot_manual',''],
   slMult:[LSP+'sl_mult','1.2'],rrTarget:[LSP+'rr','2.0']};
 // 口座ごとの初期値（契約量oz・レバレッジ）。変更した値は口座ごとに保存
 const BROKERS={xm:{name:'XM',contract:INSTR.contract,lev:'1000'},xs:{name:'XS',contract:INSTR.contract,lev:'2000'}};
@@ -1047,15 +1054,30 @@ function calcRisk(){
   const maxLot=marginPerLot?Math.floor(capital/marginPerLot*100)/100:0;
   const limited=marginPerLot&&riskStep>maxLot;
   const lotStep=limited?maxLot:riskStep;
-  const profit=fx?tp*contract*lot*fx:0;
   const isBuy=stop&&entry?stop<entry:riskDirection()>0;
-
-  $('riskYen').textContent=yen(maxLoss);
-  $('riskSub').textContent='資金の'+rp+'%';
-  $('lotSize').textContent=lot?lot.toFixed(3):'--';
-  $('lotRound').textContent=!lot?'--':limited?'証拠金の上限 → '+lotStep.toFixed(2)+' lot':lotStep>=0.01?'0.01刻み → '+lotStep.toFixed(2)+' lot':'最小0.01lot未満';
-  $('lotRound').className=lot&&(lotStep<0.01||limited)?'warn':'';
-  const useLot=Math.max(lotStep,0.01),margin=marginPerLot*useLot,level=margin?capital/margin*100:0;
+  // ロットを自分で入力したときは、そのロットで損失・利益・証拠金を計算する
+  const manual=n($('lotManual').value);
+  let useLot,profit;
+  if(manual>0){
+    useLot=manual;
+    const loss=fx?sl*contract*manual*fx:0;profit=fx?tp*contract*manual*fx:0;
+    $('riskYen').textContent=loss?yen(loss):'--';
+    $('riskSub').textContent=loss&&capital?'資金の'+(loss/capital*100).toFixed(2)+'%（SL到達時）':'SL到達時';
+    $('riskSub').className=capital&&loss/capital*100>rp?'warn':'';
+    $('lotSize').textContent=manual.toFixed(2);
+    $('lotRound').textContent=marginPerLot&&manual>maxLot?'証拠金が不足します（最大'+maxLot.toFixed(2)+' lot）':'手入力｜自動なら '+(lot?(lotStep>=0.01?lotStep.toFixed(2):lot.toFixed(3)):'--')+' lot';
+    $('lotRound').className=marginPerLot&&manual>maxLot?'warn':'';
+    $('lotLabel').textContent='入力ロット';$('lossLabel').textContent='想定損失';
+  }else{
+    useLot=Math.max(lotStep,0.01);profit=fx?tp*contract*lot*fx:0;
+    $('riskYen').textContent=yen(maxLoss);
+    $('riskSub').textContent='資金の'+rp+'%';$('riskSub').className='';
+    $('lotSize').textContent=lot?lot.toFixed(3):'--';
+    $('lotRound').textContent=!lot?'--':limited?'証拠金の上限 → '+lotStep.toFixed(2)+' lot':lotStep>=0.01?'0.01刻み → '+lotStep.toFixed(2)+' lot':'最小0.01lot未満';
+    $('lotRound').className=lot&&(lotStep<0.01||limited)?'warn':'';
+    $('lotLabel').textContent='目安ロット';$('lossLabel').textContent='最大損失';
+  }
+  const margin=marginPerLot*useLot,level=margin?capital/margin*100:0;
   $('marginYen').textContent=marginPerLot?yen(margin):'--';
   $('marginSub').textContent=marginPerLot?useLot.toFixed(2)+' lot・'+BROKERS[state.broker].name+' '+lev+'倍':'--';
   $('marginLevel').textContent=level?Math.round(level).toLocaleString('ja-JP')+'%':'--';
@@ -1075,7 +1097,7 @@ function calcRisk(){
   $('atrNote').textContent=$('autoRisk').checked
     ?'自動SL = ATR×'+(n($('slMult').value)||1.2)+'（最低'+INSTR.dist(INSTR.slMin)+'）／TP = SL×'+(n($('rrTarget').value)||2)+(state.m15.length?'':'｜M15データ待ちのため価格の0.12%で代用')
     :'手入力モード：エントリー・SL・TPを自由に入力できます。';
-  return {lot,lotStep,sl};
+  return manual>0?{lot:manual,lotStep:manual,sl}:{lot,lotStep,sl};
 }
 
 /* ---------- caution / events ---------- */
@@ -1453,7 +1475,8 @@ document.querySelectorAll('[data-ev]').forEach(b=>b.onclick=()=>{
 document.querySelectorAll('#brokerSeg .seg').forEach(b=>b.onclick=()=>{
   savePrefs();state.broker=b.dataset.broker;loadBroker();savePrefs();renderAll();
 });
-['capital','riskPct','contract','leverage','slMult','rrTarget','entry','stop','target'].forEach(id=>$(id).addEventListener('input',()=>{savePrefs();const r=calcRisk();renderChecks(r)}));
+$('lotClear').onclick=()=>{$('lotManual').value='';savePrefs();const r=calcRisk();renderChecks(r)};
+['capital','riskPct','lotManual','contract','leverage','slMult','rrTarget','entry','stop','target'].forEach(id=>$(id).addEventListener('input',()=>{savePrefs();const r=calcRisk();renderChecks(r)}));
 $('autoRisk').addEventListener('change',()=>{savePrefs();const r=calcRisk();renderChecks(r)});
 $('checks').addEventListener('change',e=>{
   const id=e.target.dataset.check;if(!id)return;
