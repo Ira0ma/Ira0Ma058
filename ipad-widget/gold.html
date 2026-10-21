@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="ecbeb17616">
+<meta name="build" content="2dcde9cb4d">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -295,7 +295,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     </div>
     <div class="chartwrap"><canvas id="chart"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
     <div id="chartInfo" class="chartinfo">--</div>
-    <div class="charthint">ドラッグで左右（過去へ）・上下に移動／ピンチ・ホイールで拡大縮小／右端の価格目盛りを上下ドラッグで縦の拡大縮小／ダブルタップでリセット</div>
+    <div class="charthint">ドラッグで左右（過去へ・右側に空白）・上下に移動／ピンチ・ホイールで拡大縮小／右端の価格目盛りを上下ドラッグで縦の拡大縮小／ダブルタップでリセット</div>
   </section>
 
   <!-- ===== リスク・ロット ===== -->
@@ -943,11 +943,11 @@ function drawChart(){
   const c=$('chart'),{ctx,W,H}=sizeCanvas(c);
   ctx.clearRect(0,0,W,H);
   const isH1=state.tf==='h1',source=isH1?state.h1:state.m15;
-  // view: off = 最新から何本さかのぼるか, count = 表示本数, yOff/yZoom = 縦方向の移動・拡大
+  // view: off = 最新から何本さかのぼるか（マイナスは最新足の右側の空白の本数）, count = 表示枠の本数, yOff/yZoom = 縦方向の移動・拡大
   const v=state.view,defCount=W<520?(isH1?40:48):(isH1?72:96);
   const count=Math.max(12,Math.min(v.count||defCount,source.length||12));
-  v.off=Math.max(0,Math.min(v.off,Math.max(0,source.length-count)));
-  const endIdx=source.length-v.off,startIdx=Math.max(0,endIdx-count);
+  v.off=Math.max(-Math.floor(count*.8),Math.min(v.off,Math.max(0,source.length-count)));
+  const blank=Math.max(0,-v.off),endIdx=source.length-Math.max(0,v.off),startIdx=Math.max(0,endIdx-(count-blank));
   const bars=source.slice(startIdx,endIdx);
   if(!bars.length||!W){
     ctx.fillStyle='#93a0ad';ctx.font='14px sans-serif';ctx.fillText('チャートデータ接続中...',20,34);
@@ -955,10 +955,10 @@ function drawChart(){
   }
   const len=isH1?120:20,sm=smaSeries(source,len).slice(startIdx,endIdx);
   const vals=bars.flatMap((b,i)=>sm[i]==null?[b.h,b.l]:[b.h,b.l,sm[i]]);
-  if(state.spot&&v.off===0)vals.push(state.spot.price);
+  if(state.spot&&v.off<=0)vals.push(state.spot.price);
   let min=Math.min(...vals),max=Math.max(...vals);const span=max-min||1;min-=span*.07;max+=span*.07;
   {const mid=(max+min)/2+v.yOff,half=(max-min)/2*v.yZoom;min=mid-half;max=mid+half}
-  const P={l:8,r:66,t:12,b:24},step=(W-P.l-P.r)/bars.length;
+  const P={l:8,r:66,t:12,b:24},step=(W-P.l-P.r)/(bars.length+blank);
   const x=i=>P.l+step*(i+.5),y=v=>P.t+(max-v)*(H-P.t-P.b)/(max-min);
 
   ctx.font='11px -apple-system,BlinkMacSystemFont,sans-serif';ctx.textBaseline='middle';ctx.lineWidth=1;
@@ -1000,7 +1000,7 @@ function drawChart(){
     `<span>始 <b>${fmt(b.o)}</b></span><span>高 <b>${fmt(b.h)}</b></span><span>安 <b>${fmt(b.l)}</b></span><span>終 <b class="${b.c>=b.o?'up':'down'}">${fmt(b.c)}</b></span>`+
     `<span class="legend"><i style="background:#68b9ff"></i>${isH1?'120':'20'}SMA <b>${sv==null?'--':fmt(sv)}</b></span>`+
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
-  $('chartMeta').textContent=(isH1?'H1 ローソク足 / 120SMA':'M15 ローソク足 / 20SMA')+'｜'+bars.length+'本'+(v.off?'｜'+v.off+'本前まで表示中':'｜最新');
+  $('chartMeta').textContent=(isH1?'H1 ローソク足 / 120SMA':'M15 ローソク足 / 20SMA')+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
   $('chartReset').hidden=!(v.off||v.count||v.yOff||v.yZoom!==1);
   state.chartGeo={P,step,n:bars.length,W,H,priceSpan:max-min,plotH:H-P.t-P.b};
 }
@@ -1181,7 +1181,7 @@ chart.addEventListener('pointermove',e=>{
   if(!drag.moved&&Math.abs(dx)+Math.abs(dy)<6)return;
   drag.moved=true;
   if(drag.axis){state.view.yZoom=Math.max(.2,Math.min(8,drag.yZoom*Math.exp(dy/150)))}
-  else{state.view.off=Math.max(0,drag.off+Math.round(dx/drag.step));state.view.yOff=drag.yOff+dy*drag.ppx}
+  else{state.view.off=drag.off+Math.round(dx/drag.step);state.view.yOff=drag.yOff+dy*drag.ppx}
   drawChart();
 });
 function endPtr(e){
@@ -1201,7 +1201,7 @@ chart.addEventListener('wheel',e=>{
   e.preventDefault();
   const r=chart.getBoundingClientRect(),g=state.chartGeo;
   if(g&&e.clientX-r.left>g.W-g.P.r)state.view.yZoom=Math.max(.2,Math.min(8,state.view.yZoom*Math.exp(e.deltaY/300)));
-  else if(Math.abs(e.deltaX)>Math.abs(e.deltaY)&&g)state.view.off=Math.max(0,state.view.off+Math.round(e.deltaX/g.step));
+  else if(Math.abs(e.deltaX)>Math.abs(e.deltaY)&&g)state.view.off=state.view.off+Math.round(e.deltaX/g.step);
   else state.view.count=Math.round(Math.max(12,curCount()*Math.exp(e.deltaY/400)));
   drawChart();
 },{passive:false});
