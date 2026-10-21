@@ -703,42 +703,6 @@ html:not(.flow) #flow { display: none; }
     }, { passive: false });
   };
   var TFKEY = ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"];
-  /* Strong H1 levels (same rule as the GOLD page): swing highs/lows that stand above/below 3 hourly
-     candles on each side, grouped when within 0.35 x H1 ATR; zones hit at least twice are kept, and the
-     three strongest above the price (resistance) and below it (support) are drawn on every timeframe. */
-  Market.prototype.h1Levels = function () {
-    var rows = this.series && this.series["1h"];
-    if (!rows || rows.length < 30) return [];
-    var n = rows.length, k = 3, tr = 0, piv = [], i, j;
-    for (i = n - 14; i < n; i++) tr += Math.max(rows[i][2] - rows[i][3], Math.abs(rows[i][2] - rows[i - 1][4]), Math.abs(rows[i][3] - rows[i - 1][4]));
-    var tol = Math.max(tr / 14 * 0.35, 1e-9);
-    for (i = k; i < n - k; i++) {
-      var isH = true, isL = true;
-      for (j = i - k; j <= i + k; j++) {
-        if (j === i) continue;
-        if (rows[j][2] > rows[i][2]) isH = false;
-        if (rows[j][3] < rows[i][3]) isL = false;
-      }
-      if (isH) piv.push({ p: rows[i][2], i: i });
-      if (isL) piv.push({ p: rows[i][3], i: i });
-    }
-    piv.sort(function (a, b) { return a.p - b.p; });
-    var groups = [];
-    piv.forEach(function (pt) {
-      var g = groups[groups.length - 1];
-      if (g && pt.p - g.ps[g.ps.length - 1] <= tol) { g.ps.push(pt.p); g.last = Math.max(g.last, pt.i); }
-      else groups.push({ ps: [pt.p], last: pt.i });
-    });
-    var price = this.price, lv = groups.filter(function (g) { return g.ps.length >= 2; }).map(function (g) {
-      var p = g.ps.reduce(function (s, v) { return s + v; }, 0) / g.ps.length;
-      return { price: p, touches: g.ps.length, score: g.ps.length + (g.last >= n - 48 ? 0.5 : 0), kind: p >= price ? "r" : "s" };
-    });
-    var pick = function (kind) {
-      return lv.filter(function (l) { return l.kind === kind; })
-        .sort(function (a, b) { return b.score - a.score || Math.abs(a.price - price) - Math.abs(b.price - price); }).slice(0, 3);
-    };
-    return pick("r").concat(pick("s"));
-  };
   Market.prototype.gen = function () {
     var real = this.series && this.series[TFKEY[this.tf]];
     if (real && real.length > 2) {
@@ -814,13 +778,6 @@ html:not(.flow) #flow { display: none; }
       c.restore();
     }
     c.save(); c.beginPath(); c.rect(0, 0, cw, bot + 2); c.clip();  // candles stay inside the plot when scrolled
-    this.h1Levels().forEach(function (l) {  // solid red resistance above, green support below; thicker at 3+ touches
-      if (l.price < lo || l.price > hi) return;
-      var y = Math.round(Y(l.price)) + .5, a = l.touches >= 3 ? .9 : .65;
-      c.strokeStyle = l.kind === "r" ? "rgba(255,106,92," + a + ")" : "rgba(67,210,127," + a + ")";
-      c.lineWidth = l.touches >= 3 ? 1.8 : 1.1;
-      c.beginPath(); c.moveTo(0, y); c.lineTo(cw - 4, y); c.stroke();
-    });
     c.shadowColor = "rgba(227,184,103,.45)"; c.shadowBlur = 6;
     cs.forEach(function (k, i) {
       var x = i * bw + bw / 2, up = k.c >= k.o;
