@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="1de462bad5">
+<meta name="build" content="18fa1d0a46">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -798,6 +798,16 @@ function h1Levels(){
   return r.concat(s);
 }
 
+// 指数移動平均：最初のlen本の単純平均から始め、以降は 2/(len+1) の重みで更新
+function emaSeries(bars,len){
+  const out=[],k=2/(len+1);let e=null,sum=0;
+  for(let i=0;i<bars.length;i++){
+    if(i<len){sum+=bars[i].c;if(i===len-1)e=sum/len;out.push(e);continue}
+    e=bars[i].c*k+e*(1-k);out.push(e);
+  }return out
+}
+// チャートに重ねる移動平均（H1・M15共通のEMAと、時間足ごとのSMA）
+const EMAS=[{len:10,color:'#ff8fd1',w:1.4},{len:20,color:'#b48cff',w:1.4},{len:200,color:'#f4f6f8',w:2}];
 function smaSeries(bars,len){
   const out=[];let sum=0;
   for(let i=0;i<bars.length;i++){
@@ -1056,8 +1066,13 @@ function drawChart(){
     ctx.fillStyle=col;ctx.fillRect(xx-cw/2,y1,cw,Math.max(1,y2-y1));
   });
 
-  ctx.strokeStyle='#68b9ff';ctx.lineWidth=2;ctx.beginPath();let begun=false;
-  sm.forEach((sv,i)=>{if(sv==null)return;if(!begun){ctx.moveTo(x(i),y(sv));begun=true}else ctx.lineTo(x(i),y(sv))});ctx.stroke();
+  const drawLine=(vals,color,w)=>{
+    ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();let begun=false;
+    vals.forEach((val,i)=>{if(val==null)return;if(!begun){ctx.moveTo(x(i),y(val));begun=true}else ctx.lineTo(x(i),y(val))});ctx.stroke();
+  };
+  drawLine(sm,'#68b9ff',2);
+  const emas=EMAS.map(m=>({...m,vals:emaSeries(source,m.len).slice(startIdx,endIdx)}));
+  emas.forEach(m=>drawLine(m.vals,m.color,m.w));
   ctx.textBaseline='middle';
   ctx.restore();
 
@@ -1076,8 +1091,9 @@ function drawChart(){
   $('chartInfo').innerHTML=`<span>${hi==null?'最新足':'選択足'} <b>${esc(barLabel(b.t,isH1))}</b></span>`+
     `<span>始 <b>${fmt(b.o)}</b></span><span>高 <b>${fmt(b.h)}</b></span><span>安 <b>${fmt(b.l)}</b></span><span>終 <b class="${b.c>=b.o?'up':'down'}">${fmt(b.c)}</b></span>`+
     `<span class="legend"><i style="background:#68b9ff"></i>${isH1?'120':'20'}SMA <b>${sv==null?'--':fmt(sv)}</b></span>`+
+    emas.map(m=>{const ev=m.vals[hi??bars.length-1];return `<span class="legend"><i style="background:${m.color}"></i>${m.len}EMA <b>${ev==null?'--':fmt(ev)}</b></span>`}).join('')+
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
-  $('chartMeta').textContent=(isH1?'H1 ローソク足 / 120SMA':'M15 ローソク足 / 20SMA')+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
+  $('chartMeta').textContent=(isH1?'H1 ローソク足 / 120SMA':'M15 ローソク足 / 20SMA')+' / 10・20・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
   $('chartReset').hidden=!(v.off||v.count||v.yOff||v.yZoom!==1);
   state.chartGeo={P,step,n:bars.length,W,H,priceSpan:max-min,plotH:H-P.t-P.b};
 }

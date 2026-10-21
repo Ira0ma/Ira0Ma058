@@ -60,7 +60,8 @@ def ny_daily(h1):
             out.append([t, o, h, l, c]); key = k
     return out
 N_CANDLES = 150  # per timeframe; the widget shows ~38 and lets you scroll back through the rest
-N_H1 = 300  # hourly keeps more history: a 120-hour average across the whole visible chart, and H1 levels over ~12 days
+N_H1 = 300  # hourly keeps more history: a 120-hour average and 200 EMA across the whole visible chart, and H1 levels over ~12 days
+N_M15 = 300  # likewise for the 200 EMA on the GOLD page's 15-minute chart
 
 
 def get_json(url):
@@ -283,7 +284,7 @@ def one(key, sym, spot_sym, fixture):
         "candles": {
             "1m": r6(m1[-N_CANDLES:]),
             "5m": r6(m5[-N_CANDLES:]),
-            "15m": r6(m15[-N_CANDLES:]),
+            "15m": r6(m15[-N_M15:]),
             "30m": r6(aggregate(m15, 1800)[-N_CANDLES:]),
             "1h": r6(h1[-N_H1:]),
             "4h": r6(aggregate(h1, 4 * 3600)[-N_CANDLES:]),
