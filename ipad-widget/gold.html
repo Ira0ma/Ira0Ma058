@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="04d9016408">
+<meta name="build" content="533d40bb06">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -661,6 +661,9 @@ function mergeSpot(bars,minutes,price,t){
   if(t<last.t+ms){last.c=price;last.h=Math.max(last.h,price);last.l=Math.min(last.l,price)}
   else{bars.push({t:last.t+Math.floor((t-last.t)/ms)*ms,o:last.c,h:Math.max(last.c,price),l:Math.min(last.c,price),c:price})}  // 足の区切りは直前の足に合わせる
 }
+function replayLive(){  // 覚えておいた配信の1分足を、読み直したローソク足の最新部分に重ねる
+  for(const m of LIVE.mins){mergeSpotAll(m.h,m.t);mergeSpotAll(m.l,m.t);mergeSpotAll(m.c,m.t)}
+}
 function mergeSpotAll(price,t){
   for(const tf in TFS){
     if(tf!=='mn'){mergeSpot(state[tf],TFS[tf].min,price,t);continue}
@@ -751,7 +754,7 @@ async function refreshFx(){
    ドル円：GMOコイン外国為替FXの公開配信（売値。サイトで測ったXS売値との差を引く）。
    ゴールド：金に連動するトークンXAUTの配信（OKX→Bitfinex→KrakenのPAXG）。現物より数ドル高いので、
    30秒ごとに取る現物価格（Gold API）との差の中央値を引いて現物に合わせる。 */
-const LIVE={raw:0,rawAt:0,src:'',offs:[],ws:null,tries:0,lastDraw:0,timer:0};
+const LIVE={raw:0,rawAt:0,src:'',offs:[],ws:null,tries:0,lastDraw:0,timer:0,mins:[]};
 const GOLD_WS=[
   {name:'OKX XAUT',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'tickers',instId:'XAUT-USDT'}]},ping:'ping',
    parse:m=>{const d=m?.data?.[0];return d&&+d.bidPx&&+d.askPx?(+d.bidPx+ +d.askPx)/2:0}},
@@ -798,6 +801,9 @@ function onLiveTick(){
   state.src.spot='リアルタイム（'+LIVE.src+(IS_GOLD?'・現物に補正':'・売値')+'）';
   if(!IS_GOLD)state.fx=px;else if(state.fx)state.goldJpy=px*state.fx;
   updateRolling(px);mergeSpotAll(px,Date.now());
+  // 配信の値を1分足として1時間分覚えておく（サイトの足は約9分遅れなので、読み直したときにこの分を重ね直す）
+  const mt=Math.floor(Date.now()/60000)*60000,mb=LIVE.mins.at(-1);
+  if(mb&&mb.t===mt){mb.h=Math.max(mb.h,px);mb.l=Math.min(mb.l,px);mb.c=px}else{LIVE.mins.push({t:mt,h:px,l:px,c:px});if(LIVE.mins.length>60)LIVE.mins.shift()}
   // 描画は1秒に1回まで（iPadの負担を抑える）
   const now=Date.now();if(now-LIVE.lastDraw<1000)return;LIVE.lastDraw=now;
   renderAll();flashPrice();
@@ -907,6 +913,7 @@ async function refreshCharts(){
       // サイトの金のローソク足は先物（GC=F）をスポット価格に合わせたもの。合わせられなかった回は、ここでライブのスポット価格に合わせる
       state.siteUnadjusted=IS_GOLD&&inst.spotAdjusted===false;
       if(state.spot&&!String(state.src.spot||'').startsWith('サイト'))alignSiteBars(state.spot.price);
+      replayLive();
       if(state.spot)mergeSpotAll(state.spot.price,state.spot.asof);
     }
   }catch{}
