@@ -41,7 +41,7 @@ KIND = {"dxy": "index", "jxy": "index", "vix": "vix"}  # wording of the automati
 # JXY: a yen strength index, the geometric mean of the yen against six currencies,
 # scaled to 100 at early-2020 rates. It is our own calculation, not TradingView's TVC:JXY.
 JXY_BASKET = {"JPY=X": 108.6, "EURJPY=X": 121.6, "GBPJPY=X": 143.8, "AUDJPY=X": 76.2, "CADJPY=X": 83.6, "CHFJPY=X": 112.0}
-TF_FETCH = [("1m", "1m", "5d"), ("5m", "5m", "5d"), ("15m", "15m", "5d"), ("1h", "60m", "1y"), ("1d", "1d", "1y"), ("1w", "1wk", "5y")]
+TF_FETCH = [("1m", "1m", "5d"), ("5m", "5m", "5d"), ("15m", "15m", "5d"), ("1h", "60m", "1y"), ("1d", "1d", "1y"), ("1w", "1wk", "5y"), ("1mo", "1mo", "10y")]
 # Markets that trade nearly 24 hours roll their day at 17:00 New York (the FX convention MT4/TradingView use).
 # Their daily candles, previous close and pivots are rebuilt from hourly data on that boundary.
 # Bitcoin keeps the UTC day; VIX keeps its exchange close.
@@ -264,7 +264,12 @@ _cache = {}
 def fetch_series(sym, fixture):
     """Raw candles per timeframe for one Yahoo symbol (cached within a run)."""
     if sym not in _cache:
-        _cache[sym] = {tf: yahoo(sym, iv, rng, fixture) for tf, iv, rng in TF_FETCH}
+        _cache[sym] = {tf: yahoo(sym, iv, rng, fixture) for tf, iv, rng in TF_FETCH if tf != "1mo"}
+        try:  # monthly candles are for the charts only; without them the rest still counts
+            _cache[sym]["1mo"] = yahoo(sym, "1mo", "10y", fixture)
+        except Exception as e:
+            print(sym, "monthly candles unavailable:", e)
+            _cache[sym]["1mo"] = []
     return {tf: [r[:] for r in rows] for tf, rows in _cache[sym].items()}
 
 
@@ -416,7 +421,7 @@ def shift_by_gaps(rows, seconds, samples):
 
 def one(key, sym, spot_sym, fixture, prev=None):
     ser = jxy_series(fixture) if key == "jxy" else fetch_series(sym, fixture)
-    m1, m5, m15, h1, d1, w1 = (ser[tf] for tf in ("1m", "5m", "15m", "1h", "1d", "1w"))
+    m1, m5, m15, h1, d1, w1, mo = (ser[tf] for tf in ("1m", "5m", "15m", "1h", "1d", "1w", "1mo"))
     # Futures trade above spot (XM/XS quote spot), so metals are moved onto the spot price by the
     # futures-to-spot gap. Without a spot quote this hour, the last known gap is reused for a while.
     spot, shift, adjusted, hist = None, None, None, None
@@ -441,11 +446,11 @@ def one(key, sym, spot_sym, fixture, prev=None):
             print(key, f"{len(samples)} matched gap samples since",
                   datetime.fromtimestamp(samples[0][0], timezone.utc).strftime("%m-%d %H:%M"),
                   f"UTC, gap {gs[0]:+.2f}..{gs[-1]:+.2f}, latest {samples[-1][1]:+.2f}")
-            for rows, sec in ((m1, 60), (m5, 300), (m15, 900), (h1, 3600), (d1, 86400), (w1, 604800)):
+            for rows, sec in ((m1, 60), (m5, 300), (m15, 900), (h1, 3600), (d1, 86400), (w1, 604800), (mo, 2629746)):
                 shift_by_gaps(rows, sec, samples)
             shift = samples[-1][1]
         elif shift is not None:
-            for rows in (m1, m5, m15, h1, d1, w1):
+            for rows in (m1, m5, m15, h1, d1, w1, mo):
                 for r in rows:
                     r[1:] = [v + shift for v in r[1:]]
         adjusted = shift is not None
@@ -477,6 +482,7 @@ def one(key, sym, spot_sym, fixture, prev=None):
         "4h": r6(aggregate(h1, 4 * 3600, server=True)[-N_CANDLES:]),
         "1d": r6(d1[-N_CANDLES:]),
         "1w": r6(w1[-N_CANDLES:]),
+        "1mo": r6(mo[-N_CANDLES:]),
     }
     if key in CHECK and fixture is None:
         try:

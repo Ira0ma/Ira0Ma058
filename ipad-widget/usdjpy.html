@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="2a75729467">
+<meta name="build" content="78b932424a">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -148,6 +148,7 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 
 /* ===== chart ===== */
 .segmented{display:flex;gap:5px;flex:none}
+#secChart .cardhead{flex-wrap:wrap}#secChart .segmented{flex-wrap:wrap;flex:0 1 auto;justify-content:flex-end}
 .seg{background:#121820;color:#d5dde5;border:1px solid #34404c;border-radius:999px;padding:7px 12px;font-size:12px}
 .seg.active{background:linear-gradient(180deg,#e6c973,#b5872d);border-color:#b5872d;color:#101114}
 .chartwrap{position:relative}
@@ -338,7 +339,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
   <section id="secChart" class="panel s8">
     <div class="cardhead">
       <div><div class="title" id="chartTitle">GOLDチャート</div><div id="chartMeta" class="sub">取得中...</div></div>
-      <div class="segmented"><button class="seg tfBtn" data-tf="m5">M5</button><button class="seg tfBtn" data-tf="m15">M15</button><button class="seg tfBtn active" data-tf="h1">H1</button><button class="seg tfBtn" data-tf="h4">H4</button><button id="lvBtn" class="seg active" aria-pressed="true">水平線</button><button id="tlBtn" class="seg active" aria-pressed="true">トレンドライン</button></div>
+      <div class="segmented"><button class="seg tfBtn" data-tf="m5">M5</button><button class="seg tfBtn" data-tf="m15">M15</button><button class="seg tfBtn active" data-tf="h1">H1</button><button class="seg tfBtn" data-tf="h4">H4</button><button class="seg tfBtn" data-tf="d1">D1</button><button class="seg tfBtn" data-tf="w1">W1</button><button class="seg tfBtn" data-tf="mn">MN</button><button id="lvBtn" class="seg active" aria-pressed="true">水平線</button><button id="tlBtn" class="seg active" aria-pressed="true">トレンドライン</button></div>
     </div>
     <div id="maToggles" class="matoggles" role="group" aria-label="移動平均線の表示"></div>
     <div id="dowRow" class="dowrow" aria-label="時間足ごとのダウ理論トレンド"></div>
@@ -474,7 +475,7 @@ try{if(window.self!==window.top)document.documentElement.classList.add('embedded
 const state = {
   auto:true, tf:'h1', dir:'auto', evFilter:'all', broker:'xm',
   spot:null, fx:null, goldJpy:null,
-  h1:[], m15:[], m5:[], h4:[], events:[],
+  h1:[], m15:[], m5:[], h4:[], d1:[], w1:[], mn:[], events:[],
   signal:'WAIT', lastOk:null, prevPrice:null,
   nextSpot:0, nextChart:0, nextCalendar:0,
   loading:false, errMsg:'', hover:null, chartGeo:null,
@@ -503,7 +504,7 @@ const URLS = {
 };
 
 // チャートの時間足（H4は XM・XS のサーバー時間の区切り。判定に使うのはH1・M15）
-const TFS = {m5:{min:5,site:'5m'},m15:{min:15,site:'15m'},h1:{min:60,site:'1h'},h4:{min:240,site:'4h'}};
+const TFS = {m5:{min:5,site:'5m'},m15:{min:15,site:'15m'},h1:{min:60,site:'1h'},h4:{min:240,site:'4h'},d1:{min:1440,site:'1d'},w1:{min:10080,site:'1w'},mn:{min:0,site:'1mo'}};
 const INTERVALS = {spot:30000, chart:300000, calendar:300000, calendarHot:60000};
 
 /* ---------- utils ---------- */
@@ -626,12 +627,18 @@ function mergeSpot(bars,minutes,price,t){
   if(t<last.t+ms){last.c=price;last.h=Math.max(last.h,price);last.l=Math.min(last.l,price)}
   else{bars.push({t:last.t+Math.floor((t-last.t)/ms)*ms,o:last.c,h:Math.max(last.c,price),l:Math.min(last.c,price),c:price})}  // 足の区切りは直前の足に合わせる
 }
-function mergeSpotAll(price,t){for(const tf in TFS)mergeSpot(state[tf],TFS[tf].min,price,t)}
+function mergeSpotAll(price,t){
+  for(const tf in TFS){
+    if(tf!=='mn'){mergeSpot(state[tf],TFS[tf].min,price,t);continue}
+    const last=state.mn.at(-1);  // 月足は月の長さが違うので、同じ月の間だけ最新足に反映（新しい月の足はサイトの更新で入る）
+    if(last&&t>=last.t&&new Date(t).getUTCMonth()===new Date(last.t+86400000).getUTCMonth()){last.c=price;last.h=Math.max(last.h,price);last.l=Math.min(last.l,price)}
+  }
+}
 
 /* ---------- cache / prefs ---------- */
 function saveCache(){
   lsSet(LSP+'auto_cache_final',JSON.stringify({
-    spot:state.spot,fx:state.fx,goldJpy:state.goldJpy,h1:state.h1,m15:state.m15,m5:state.m5,h4:state.h4,
+    spot:state.spot,fx:state.fx,goldJpy:state.goldJpy,h1:state.h1,m15:state.m15,m5:state.m5,h4:state.h4,d1:state.d1,w1:state.w1,mn:state.mn,
     events:state.events,lastOk:state.lastOk,rolling:state.rolling
   }));
 }
@@ -793,7 +800,7 @@ async function refreshCharts(){
     const inst=(await getSite()).instruments[INSTR.site],g=inst.candles;
     const hb=siteBars(g['1h']),mb=siteBars(g['15m']);
     if(hb.length>=120&&mb.length>=20){
-      state.h1=hb;state.m15=mb;state.m5=siteBars(g['5m']);state.h4=siteBars(g['4h']);state.health.h1=state.health.m15=true;changed=true;state.src.chart='サイト';
+      state.h1=hb;state.m15=mb;for(const tf of ['m5','h4','d1','w1','mn'])state[tf]=siteBars(g[TFS[tf].site]);state.health.h1=state.health.m15=true;changed=true;state.src.chart='サイト';
       // サイトの金のローソク足は先物（GC=F）をスポット価格に合わせたもの。合わせられなかった回は、ここでライブのスポット価格に合わせる
       state.siteUnadjusted=IS_GOLD&&inst.spotAdjusted===false;
       if(state.spot&&!String(state.src.spot||'').startsWith('サイト'))alignSiteBars(state.spot.price);
@@ -942,7 +949,7 @@ function trendLines(src){
 // ダウ理論のトレンド：直近の山（高値）2つと谷（安値）2つを比べる。
 // 高値・安値とも切り上げ＝上昇トレンド、切り下げ＝下降トレンド。上昇中に直近の押し安値を割る（下降中に戻り高値を超える）とトレンド崩れ。
 // 片方だけ切り上げ（切り下げ）でも直近の山（谷）を抜けたら転換とみる。それ以外はレンジ。
-const DOW_K={m5:5,m15:5,h1:4,h4:3};
+const DOW_K={m5:5,m15:5,h1:4,h4:3,d1:3,w1:3,mn:2};
 const DOW_NAME={up:'上昇トレンド',down:'下降トレンド',upx:'上昇崩れ（押し安値割れ）',downx:'下降崩れ（戻り高値超え）',upt:'上昇転換',downt:'下降転換',range:'レンジ',none:'データ待ち'};
 function dowTrend(src,k){
   const N=src.length,from=Math.max(0,N-150),hs=[],ls=[];
@@ -1552,12 +1559,14 @@ function sizeCanvas(c){
 function smaLen(){return state.tf==='h1'?120:20}
 function barLabel(t,isH1){
   const d=new Date(t),hh=String(d.getHours()).padStart(2,'0'),mm=String(d.getMinutes()).padStart(2,'0');
+  if(state.tf==='mn')return `${d.getFullYear()}/${d.getMonth()+1}`;
+  if(state.tf==='d1'||state.tf==='w1')return `${String(d.getFullYear()).slice(2)}/${d.getMonth()+1}/${d.getDate()}`;
   return isH1?`${d.getMonth()+1}/${d.getDate()} ${hh}時`:`${hh}:${mm}`;
 }
 function drawChart(){
   const c=$('chart'),{ctx,W,H}=sizeCanvas(c);
   ctx.clearRect(0,0,W,H);
-  const isH1=state.tf==='h1'||state.tf==='h4',source=state[state.tf]||state.h1;  // isH1: 時間単位の足（ラベルに日付を出す）
+  const isH1=!['m5','m15'].includes(state.tf),source=state[state.tf]||state.h1;  // isH1: 時間単位の足（ラベルに日付を出す）
   // view: off = 最新から何本さかのぼるか（マイナスは最新足の右側の空白の本数）, count = 表示枠の本数, yOff/yZoom = 縦方向の移動・拡大
   const v=state.view,defCount=W<520?(isH1?40:48):(isH1?72:96);
   const count=Math.max(12,Math.min(v.count||defCount,source.length||12));
