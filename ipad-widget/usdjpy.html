@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="9c4c106e42">
+<meta name="build" content="025985f49b">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -107,6 +107,10 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .signal.entry small{opacity:1;font-weight:800}
 @keyframes entryGlow{50%{box-shadow:0 0 0 6px var(--glow)}}
 @media (prefers-reduced-motion:reduce){.signal.entry{animation:none}}
+.waitfor{margin-top:8px;background:#0d1217;border:1px solid #654f1f;border-radius:10px;padding:8px 10px;font-size:11px;display:grid;gap:5px}
+.waitfor .wh{color:var(--amber);font-weight:800}
+.waitfor .wl{display:flex;flex-wrap:wrap;gap:3px 10px;color:var(--muted)}.waitfor .wl b{color:var(--text);font-weight:700;margin-right:2px}
+.waitfor .ok{color:#42d59c}.waitfor .ng{color:#ffb547}
 .signal small{display:block;font-size:11px;letter-spacing:0;font-weight:700;margin-top:3px;opacity:.85}
 .meter{height:6px;border-radius:999px;background:#1a222b;margin:9px 0 4px;overflow:hidden}
 .meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#b9892d,#f5d77e);transition:width .4s}
@@ -304,6 +308,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <div class="hero-signal">
       <div class="cardhead"><div><div class="title">セットアップ判定</div><div class="sub" id="setupSub">3条件・チャートパターン＋利確余地で自動判定</div></div><span class="tag">SIGNAL</span></div>
       <div id="signal" class="signal wait">WAIT<small>データ取得中</small></div>
+      <div id="waitFor" class="waitfor" hidden></div>
       <div class="meter"><i id="meter"></i></div>
       <div class="sub">判定強度 <b id="confidence">--</b></div>
       <div class="reasons">
@@ -1369,6 +1374,31 @@ function renderPatList(s){
   }).join('');
   el.innerHTML='<div class="ph">チャートパターン別のエントリー条件</div>'+html;el.hidden=false;
 }
+// エントリー待ちのとき、どの条件がそろっていて、あと何を待っているかを表示
+function renderWait(s){
+  const el=$('waitFor');
+  if(!s.ready||s.entry||!state.spot){el.hidden=true;return}
+  const price=state.spot.price,th=INSTR.momTh,item=(ok,txt)=>'<span class="'+(ok?'ok':'ng')+'">'+(ok?'✓':'○')+' '+esc(txt)+'</span>';
+  const smaD=price>=s.sma?1:-1,momD=s.mom>th?1:s.mom<-th?-1:0,rngD=price>=s.mid?1:-1;
+  const d=s.score>0?1:s.score<0?-1:smaD,side=d>0?'買い':'売り',lines=[];
+  const parts=[
+    smaD===d?item(true,'①120SMAより'+(d>0?'上':'下')):item(false,'①120SMA '+fmt(s.sma)+(d>0?' の上抜け待ち':' の下抜け待ち')),
+    momD===d?item(true,'②モメンタム'+(d>0?'上昇':'下降')):item(false,'②モメンタム'+(d>0?'上昇':'下降')+'待ち（3本で'+(d>0?'+':'−')+INSTR.dist(th)+'超、今'+(s.mom>=0?'+':'−')+INSTR.dist(Math.abs(s.mom))+'）'),
+    rngD===d?item(true,'③レンジ'+(d>0?'上半分':'下半分')):item(false,'③当日レンジ中値 '+fmt(s.mid)+(d>0?' の上抜け待ち':' の下抜け待ち'))];
+  const n=[smaD,momD,rngD].filter(x=>x===d).length;
+  let head='3条件（'+side+'）'+n+'/3';
+  if(n===3)head+=s.forced?'｜重要指標のCAUTION明け待ち':s.plan&&s.plan.tpPips<MIN_TP_PIPS?'｜利確余地 '+Math.round(s.plan.tpPips)+'pips→'+MIN_TP_PIPS+'pips以上待ち':'';
+  lines.push('<div class="wl"><b>'+esc(head)+'</b>'+parts.join('')+'</div>');
+  // チャートパターン：形成中のブレイク待ち、ブレイク済みで条件が足りないもの
+  for(const pt of s.pats||[]){
+    const sd=pt.dir>0?'買い':'売り';
+    if(pt.state==='forming'){lines.push('<div class="wl"><b>'+esc(pt.label+'（'+sd+'）')+'</b>'+item(false,'形成中｜ネックライン '+fmt(pt.neck)+(pt.dir>0?' の上抜け待ち':' の下抜け待ち'))+'</div>');continue}
+    const c=s.checks?.get(pt);if(!c||pt.entry===false)continue;
+    const miss=[!c.smaOk&&'120SMA'+(pt.dir>0?'の上抜け待ち':'の下抜け待ち'),!c.tpOk&&'目標まで'+(c.plan?Math.round(c.plan.tpPips):0)+'pips（'+MIN_TP_PIPS+'以上必要）',s.caution&&'CAUTION明け待ち'].filter(Boolean);
+    if(miss.length)lines.push('<div class="wl"><b>'+esc(pt.label+'（'+sd+'）')+'</b>'+item(true,'ブレイク済み')+miss.map(m=>item(false,m)).join('')+'</div>');
+  }
+  el.innerHTML='<div class="wh">エントリー待ちの条件</div>'+lines.join('');el.hidden=false;
+}
 function renderSnapshot(){
   const s=calcSignal();
   state.signal=s.sig;
@@ -1382,6 +1412,7 @@ function renderSnapshot(){
   const label=s.entry?(s.sig==='BUY'?'買いエントリー':'売りエントリー'):s.sig;
   el.innerHTML=esc(label)+'<small>'+esc(sub)+'</small>';
   el.className='signal '+(s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait')+(s.entry?' entry':'');
+  renderWait(s);
   const conf=s.ready?Math.min(100,Math.round(Math.abs(s.score)/3*100)):0;
   $('meter').style.width=conf+'%';
   $('confidence').textContent=s.ready?conf+'%（スコア '+(s.score>0?'+':'')+s.score+'）':'--';
