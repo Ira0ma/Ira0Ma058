@@ -1,0 +1,32 @@
+name: Cup-with-handle backtest (XAU/USD M15, 10 years)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/amazon-affiliate-articles]
+    paths: ["research/cup_backtest.py", ".github/workflows/cup-backtest.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cup-backtest
+  cancel-in-progress: true
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy numba
+      - name: Restore downloaded HistData files
+        uses: actions/cache@v4
+        with:
+          path: histdata
+          key: histdata-xauusd-m1-2016-2025
+      - name: Backtest
+        run: python3 research/cup_backtest.py histdata
