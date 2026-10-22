@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="5bc9c9015d">
+<meta name="build" content="629059db56">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -94,6 +94,16 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .price.flash-up{color:var(--green)}.price.flash-down{color:var(--red)}
 .change{margin-top:7px;font-size:13px;font-weight:700}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:11px}
+.dxybox{margin-top:10px;background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:10px 11px;font-size:11.5px;display:grid;gap:7px}
+.dxybox .dh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.dxybox .dh b{font-size:13px}.dxybox .dh span{color:var(--muted)}
+.dxyrow{display:grid;grid-template-columns:7em minmax(0,1fr) auto;gap:8px;align-items:center;white-space:nowrap}
+.dxyrow .lb{color:var(--muted)}
+.dxybar{position:relative;height:8px;border-radius:999px;background:linear-gradient(90deg,rgba(66,213,156,.25),#1a222b 50%,rgba(255,105,105,.25))}
+.dxybar::after{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#4a5663}
+.dxybar i{position:absolute;top:-3px;width:4px;height:14px;border-radius:2px;background:#e6c973;transform:translateX(-2px)}
+.dxyrow .v{font-weight:800;white-space:nowrap}
+.dxynote{color:var(--muted);line-height:1.5}.dxynote b{color:var(--text)}
 .stat{background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:9px 10px;min-width:0}
 .stat span{display:block;color:var(--muted);font-size:10px}.stat b{display:block;font-size:14px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .signal{padding:12px;text-align:center;border-radius:14px;font-size:30px;font-weight:950;letter-spacing:.08em}
@@ -337,6 +347,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
         <div class="stat"><span id="stat5Label">円換算 / oz</span><b id="goldJpy">--</b></div>
         <div class="stat"><span>H1 120SMA</span><b id="sma120">--</b></div>
       </div>
+      <div id="dxyBox" class="dxybox" hidden></div>
     </div>
 
     <div class="hero-signal">
@@ -1658,6 +1669,44 @@ function renderWait(s){
   }
   el.innerHTML='<div class="wh">エントリー待ちの条件</div>'+lines.join('');el.hidden=false;
 }
+// ゴールドとDXY（ドル指数）の相関：同じ時刻の足どうしの値動き（終値の変化率）の相関係数。
+// −1に近いほど逆相関（ドル高＝金安）、+1に近いほど同じ向き。1日（H1×24本）・1週間（H1×120本）・1か月（日足×20本）
+function corrOf(a,b){
+  const n=a.length;if(n<8)return null;
+  const ma=a.reduce((s,x)=>s+x,0)/n,mb=b.reduce((s,x)=>s+x,0)/n;let sab=0,saa=0,sbb=0;
+  for(let i=0;i<n;i++){const x=a[i]-ma,y=b[i]-mb;sab+=x*y;saa+=x*x;sbb+=y*y}
+  return saa&&sbb?sab/Math.sqrt(saa*sbb):null;
+}
+function pairedReturns(ga,da,keyOf,len){
+  const dm=new Map(da.map(r=>[keyOf(r[0]),r[4]])),g=[],d=[];
+  for(let i=1;i<ga.length;i++){
+    const k0=keyOf(ga[i-1].t/1000),k1=keyOf(ga[i].t/1000),d0=dm.get(k0),d1=dm.get(k1);
+    if(d0&&d1&&ga[i-1].c){g.push(ga[i].c/ga[i-1].c-1);d.push(d1/d0-1)}
+  }
+  return [g.slice(-len),d.slice(-len)];
+}
+function corrLabel(r){
+  if(r==null)return ['--',''];
+  return r<=-0.6?['強い逆相関','up']:r<=-0.3?['逆相関','up']:r<0.3?['連動ほぼなし','']:r<0.6?['相関（同じ向き）','down']:['強い相関（同じ向き）','down'];
+}
+function renderDxy(){
+  const el=$('dxyBox');if(!IS_GOLD){el.hidden=true;return}
+  const dx=siteCache.d?.instruments?.dxy;if(!dx?.candles?.['1h']||state.h1.length<30){el.hidden=true;return}
+  const hour=t=>Math.floor(t/3600),day=t=>Math.floor((t+3*3600)/86400);
+  const rows=[['1日（H1）',...pairedReturns(state.h1,dx.candles['1h'],hour,24)],['1週間（H1）',...pairedReturns(state.h1,dx.candles['1h'],hour,120)],
+    ['1か月（日足）',...pairedReturns(state.d1||[],dx.candles['1d']||[],day,20)]].map(([lb,g,d])=>[lb,corrOf(g,d)]);
+  const chg=dx.prevClose?(dx.price/dx.prevClose-1)*100:0,dir=chg>0.05?'ドル高':chg<-0.05?'ドル安':'横ばい';
+  const r1=rows[0][1],rw=rows[1][1];
+  let note;
+  if(r1!=null&&r1<=-0.3)note=`いまは<b>ドルと逆向き</b>に動きやすい状態です。DXYが${dir==='ドル高'?'上がっている（ドル高）ので、金には<b>逆風</b>':dir==='ドル安'?'下がっている（ドル安）ので、金には<b>追い風</b>':'横ばいなので、ドル要因の影響は小さめ'}です。`;
+  else if(r1!=null&&r1>=0.3)note='いまはドルと<b>同じ向き</b>に動いています。リスク回避（有事の買い）など、ドル以外の材料で金が動いている可能性があります。';
+  else note='いまはドルとの連動が<b>弱い</b>状態です。金はドル以外の材料（金利・リスク・需給）で動いています。';
+  if(rw!=null&&r1!=null&&Math.abs(r1-rw)>0.5)note+=` 1週間の関係（${rw.toFixed(2)}）から大きく変わっているので注意。`;
+  el.innerHTML=`<div class="dh"><b>DXY（ドル指数）との相関</b><span>DXY ${fmt(dx.price,2)}（${chg>=0?'+':''}${chg.toFixed(2)}%・${dir}）</span></div>`+
+    rows.map(([lb,r])=>{const [tx,cl]=corrLabel(r);return `<div class="dxyrow"><span class="lb">${lb}</span><span class="dxybar">${r==null?'':`<i style="left:${(1+r)*50}%"></i>`}</span><span class="v ${cl}">${r==null?'--':(r>0?'+':'')+r.toFixed(2)} ${tx}</span></div>`}).join('')+
+    `<div class="dxynote">${note}<br>（−1に近いほど「ドル高＝金安」がはっきり。金とドルはふだん逆相関です）</div>`;
+  el.hidden=false;
+}
 function renderSnapshot(){
   const s=calcSignal();
   state.signal=s.sig;
@@ -1717,6 +1766,7 @@ function renderSnapshot(){
     renderPatList(s);
   }
   renderPlan(s);
+  renderDxy();
 
   $('miniPrice').textContent=fmt(state.spot.price);
   $('miniChange').textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%';
