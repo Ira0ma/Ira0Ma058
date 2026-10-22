@@ -322,6 +322,13 @@ def fetch_series(sym, fixture):
     """Raw candles per timeframe for one Yahoo symbol (cached within a run)."""
     if sym not in _cache:
         _cache[sym] = {tf: yahoo(sym, iv, rng, fixture) for tf, iv, rng in TF_FETCH if tf != "1mo"}
+        if fixture is None:  # two years of hours (Yahoo's limit) so two years of weeks and months follow the server days
+            try:
+                h2 = yahoo(sym, "60m", "2y")
+                if len(h2) > len(_cache[sym]["1h"]):
+                    _cache[sym]["1h"] = h2
+            except Exception as e:
+                print(sym, "two years of hours unavailable, keeping one:", e)
         try:  # monthly candles are for the charts only; without them the rest still counts
             _cache[sym]["1mo"] = yahoo(sym, "1mo", "10y", fixture)
         except Exception as e:
