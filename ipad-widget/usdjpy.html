@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="78b932424a">
+<meta name="build" content="77927a19a5">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -160,11 +160,15 @@ canvas.dragging{cursor:grabbing}
 .chartinfo b{color:var(--text);font-weight:700}
 .levelinfo{margin-top:4px}
 .matoggles{display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 8px}
-.dowrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 8px;font-size:11px;color:var(--muted)}
-.dowrow .dl{font-weight:700;margin-right:2px}
-.dowrow button{font:inherit;font-size:11px;font-weight:700;border-radius:999px;padding:4px 9px;border:1px solid #34404c;background:#121820;color:var(--muted);cursor:pointer}
-.dowrow button.up{color:#42d59c;border-color:#275e49}.dowrow button.down{color:#ff6969;border-color:#71343a}.dowrow button.warn{color:#ffb547;border-color:#654f1f}
-.dowrow button.cur{background:#18212b;box-shadow:0 0 0 1px currentColor inset}
+.tfcap{font-size:10px;color:var(--muted);margin:0 2px 4px}
+.tfgrid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px;margin:0 0 8px}
+.tfgrid button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 2px;border-radius:10px;border:1px solid #34404c;background:#121820;color:#d5dde5;cursor:pointer;font:inherit;min-width:0}
+.tfgrid b{font-size:13px;font-weight:800;letter-spacing:.02em}
+.tfgrid small{font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;color:var(--muted)}
+.tfgrid .up{color:#42d59c}.tfgrid .down{color:#ff6969}.tfgrid .warn{color:#ffb547}
+.tfgrid button.cur{background:linear-gradient(180deg,#e6c973,#b5872d);border-color:#b5872d;color:#101114}
+.tfgrid button.cur small,.tfgrid button.cur .up,.tfgrid button.cur .down,.tfgrid button.cur .warn{color:#101114}
+@media(max-width:560px){.tfgrid{grid-template-columns:repeat(4,minmax(0,1fr))}.matoggles{gap:5px}.matoggles .seg{padding:4px 8px;font-size:10.5px;gap:4px}}
 .matoggles .seg{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;font-size:11px;opacity:.55}
 .matoggles .seg i{width:12px;height:3px;border-radius:2px;display:inline-block}
 .matoggles .seg.on{opacity:1;background:#18212b;border-color:#5a6775;color:var(--text)}
@@ -339,10 +343,10 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
   <section id="secChart" class="panel s8">
     <div class="cardhead">
       <div><div class="title" id="chartTitle">GOLDチャート</div><div id="chartMeta" class="sub">取得中...</div></div>
-      <div class="segmented"><button class="seg tfBtn" data-tf="m5">M5</button><button class="seg tfBtn" data-tf="m15">M15</button><button class="seg tfBtn active" data-tf="h1">H1</button><button class="seg tfBtn" data-tf="h4">H4</button><button class="seg tfBtn" data-tf="d1">D1</button><button class="seg tfBtn" data-tf="w1">W1</button><button class="seg tfBtn" data-tf="mn">MN</button><button id="lvBtn" class="seg active" aria-pressed="true">水平線</button><button id="tlBtn" class="seg active" aria-pressed="true">トレンドライン</button></div>
     </div>
-    <div id="maToggles" class="matoggles" role="group" aria-label="移動平均線の表示"></div>
-    <div id="dowRow" class="dowrow" aria-label="時間足ごとのダウ理論トレンド"></div>
+    <div class="tfcap">時間足｜下段＝ダウ理論のトレンドとST（スーパートレンド）の向き</div>
+    <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
+    <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button></div>
     <div class="chartwrap"><canvas id="chart"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
     <div id="chartInfo" class="chartinfo">--</div>
     <div class="charthint">ドラッグで左右（過去へ・右側に空白）・上下に移動／ピンチ・ホイールで拡大縮小／右端の価格目盛りを上下ドラッグで縦の拡大縮小／ダブルタップでリセット</div>
@@ -475,7 +479,7 @@ try{if(window.self!==window.top)document.documentElement.classList.add('embedded
 const state = {
   auto:true, tf:'h1', dir:'auto', evFilter:'all', broker:'xm',
   spot:null, fx:null, goldJpy:null,
-  h1:[], m15:[], m5:[], h4:[], d1:[], w1:[], mn:[], events:[],
+  h1:[], m15:[], m5:[], m30:[], h4:[], d1:[], w1:[], mn:[], events:[],
   signal:'WAIT', lastOk:null, prevPrice:null,
   nextSpot:0, nextChart:0, nextCalendar:0,
   loading:false, errMsg:'', hover:null, chartGeo:null,
@@ -504,7 +508,8 @@ const URLS = {
 };
 
 // チャートの時間足（H4は XM・XS のサーバー時間の区切り。判定に使うのはH1・M15）
-const TFS = {m5:{min:5,site:'5m'},m15:{min:15,site:'15m'},h1:{min:60,site:'1h'},h4:{min:240,site:'4h'},d1:{min:1440,site:'1d'},w1:{min:10080,site:'1w'},mn:{min:0,site:'1mo'}};
+const TFS = {m5:{min:5,site:'5m'},m15:{min:15,site:'15m'},m30:{min:30,site:'30m'},h1:{min:60,site:'1h'},h4:{min:240,site:'4h'},d1:{min:1440,site:'1d'},w1:{min:10080,site:'1w'},mn:{min:0,site:'1mo'}};
+const TF_NAME = {m5:'5分足',m15:'15分足',m30:'30分足',h1:'1時間足',h4:'4時間足',d1:'日足',w1:'週足',mn:'月足'};
 const INTERVALS = {spot:30000, chart:300000, calendar:300000, calendarHot:60000};
 
 /* ---------- utils ---------- */
@@ -638,7 +643,7 @@ function mergeSpotAll(price,t){
 /* ---------- cache / prefs ---------- */
 function saveCache(){
   lsSet(LSP+'auto_cache_final',JSON.stringify({
-    spot:state.spot,fx:state.fx,goldJpy:state.goldJpy,h1:state.h1,m15:state.m15,m5:state.m5,h4:state.h4,d1:state.d1,w1:state.w1,mn:state.mn,
+    spot:state.spot,fx:state.fx,goldJpy:state.goldJpy,h1:state.h1,m15:state.m15,m5:state.m5,m30:state.m30,h4:state.h4,d1:state.d1,w1:state.w1,mn:state.mn,
     events:state.events,lastOk:state.lastOk,rolling:state.rolling
   }));
 }
@@ -800,7 +805,7 @@ async function refreshCharts(){
     const inst=(await getSite()).instruments[INSTR.site],g=inst.candles;
     const hb=siteBars(g['1h']),mb=siteBars(g['15m']);
     if(hb.length>=120&&mb.length>=20){
-      state.h1=hb;state.m15=mb;for(const tf of ['m5','h4','d1','w1','mn'])state[tf]=siteBars(g[TFS[tf].site]);state.health.h1=state.health.m15=true;changed=true;state.src.chart='サイト';
+      state.h1=hb;state.m15=mb;for(const tf of ['m5','m30','h4','d1','w1','mn'])state[tf]=siteBars(g[TFS[tf].site]);state.health.h1=state.health.m15=true;changed=true;state.src.chart='サイト';
       // サイトの金のローソク足は先物（GC=F）をスポット価格に合わせたもの。合わせられなかった回は、ここでライブのスポット価格に合わせる
       state.siteUnadjusted=IS_GOLD&&inst.spotAdjusted===false;
       if(state.spot&&!String(state.src.spot||'').startsWith('サイト'))alignSiteBars(state.spot.price);
@@ -949,7 +954,7 @@ function trendLines(src){
 // ダウ理論のトレンド：直近の山（高値）2つと谷（安値）2つを比べる。
 // 高値・安値とも切り上げ＝上昇トレンド、切り下げ＝下降トレンド。上昇中に直近の押し安値を割る（下降中に戻り高値を超える）とトレンド崩れ。
 // 片方だけ切り上げ（切り下げ）でも直近の山（谷）を抜けたら転換とみる。それ以外はレンジ。
-const DOW_K={m5:5,m15:5,h1:4,h4:3,d1:3,w1:3,mn:2};
+const DOW_K={m5:5,m15:5,m30:4,h1:4,h4:3,d1:3,w1:3,mn:2};
 const DOW_NAME={up:'上昇トレンド',down:'下降トレンド',upx:'上昇崩れ（押し安値割れ）',downx:'下降崩れ（戻り高値超え）',upt:'上昇転換',downt:'下降転換',range:'レンジ',none:'データ待ち'};
 function dowTrend(src,k){
   const N=src.length,from=Math.max(0,N-150),hs=[],ls=[];
@@ -968,11 +973,14 @@ function dowTrend(src,k){
   return {kind,highs:[{i:h1,p:H1},{i:h2,p:H2}],lows:[{i:l1,p:L1},{i:l2,p:L2}]};
 }
 const dowCls=k=>k==='up'||k==='upt'?'up':k==='down'||k==='downt'?'down':k==='upx'||k==='downx'?'warn':'';
-function renderDowRow(){
-  $('dowRow').innerHTML='<span class="dl">ダウ理論｜ST＝スーパートレンド</span>'+Object.keys(TFS).map(tf=>{
-    const d=dowTrend(state[tf],DOW_K[tf]),mark=dowCls(d.kind)==='up'?'▲ ':dowCls(d.kind)==='down'?'▼ ':'',sd=superTrend(state[tf]).dir.at(-1);
-    return '<button type="button" data-dow="'+tf+'" class="'+dowCls(d.kind)+(tf===state.tf?' cur':'')+'">'+tf.toUpperCase()+' '+mark+DOW_NAME[d.kind]+
-      (sd?'<span style="color:'+(sd>0?'#42d59c':'#ff6969')+'">｜ST'+(sd>0?'上昇':'下降')+'</span>':'')+'</button>';
+// 時間足の切り替えボタン（各ボタンの下段に、その時間足のダウ理論トレンドとスーパートレンドの向き）
+const DOW_SHORT={up:'▲上昇',down:'▼下降',upx:'上昇崩れ',downx:'下降崩れ',upt:'▲転換',downt:'▼転換',range:'レンジ',none:'—'};
+function renderTfGrid(){
+  $('tfGrid').innerHTML=Object.keys(TFS).map(tf=>{
+    const bars=state[tf]||[],d=dowTrend(bars,DOW_K[tf]),sd=superTrend(bars).dir.at(-1);
+    const st=sd?'<span class="'+(sd>0?'up':'down')+'">ST'+(sd>0?'▲':'▼')+'</span>':'';
+    return '<button type="button" data-tf="'+tf+'" class="'+(tf===state.tf?'cur':'')+'" aria-pressed="'+(tf===state.tf)+'" title="'+esc(TF_NAME[tf]+'：'+DOW_NAME[d.kind])+'">'+
+      '<b>'+tf.toUpperCase()+'</b><small><span class="'+dowCls(d.kind)+'">'+DOW_SHORT[d.kind]+'</span> '+st+'</small></button>';
   }).join('');
 }
 
@@ -1566,7 +1574,7 @@ function barLabel(t,isH1){
 function drawChart(){
   const c=$('chart'),{ctx,W,H}=sizeCanvas(c);
   ctx.clearRect(0,0,W,H);
-  const isH1=!['m5','m15'].includes(state.tf),source=state[state.tf]||state.h1;  // isH1: 時間単位の足（ラベルに日付を出す）
+  const isH1=!['m5','m15','m30'].includes(state.tf),source=state[state.tf]||state.h1;  // isH1: 時間単位の足（ラベルに日付を出す）
   // view: off = 最新から何本さかのぼるか（マイナスは最新足の右側の空白の本数）, count = 表示枠の本数, yOff/yZoom = 縦方向の移動・拡大
   const v=state.view,defCount=W<520?(isH1?40:48):(isH1?72:96);
   const count=Math.max(12,Math.min(v.count||defCount,source.length||12));
@@ -1729,9 +1737,9 @@ function drawChart(){
     tls.map(t=>`<span class="legend"><i style="background:${t.kind==='up'?TL_UP:TL_DOWN}"></i>${t.kind==='up'?'上昇':'下降'}トレンドライン <b>${fmt(t.p1+t.slope*(endIdx-1-t.i1))}</b>（接点${t.touches}）</span>`).join('')+
     tags.map(({l})=>`<span class="legend"><i style="background:${l.kind==='r'?'#ff6969':'#42d59c'}"></i>${l.kind==='r'?'抵抗線':'支持線'} <b>${fmt(l.price)}</b></span>`).join('')+
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
-  $('chartMeta').textContent=state.tf.toUpperCase()+' ローソク足 / '+len+'SMA'+' / 10・20・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
+  $('chartMeta').textContent=TF_NAME[state.tf]+'（'+state.tf.toUpperCase()+'）/ '+len+'SMA'+' / 10・20・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
   $('chartReset').hidden=!(v.off||v.count||v.yOff||v.yZoom!==1);
-  renderDowRow();
+  renderTfGrid();
   state.chartGeo={P,step,n:bars.length,W,H,priceSpan:max-min,plotH:H-P.t-P.b};
 }
 
@@ -1861,7 +1869,7 @@ function scheduler(){
 function setSegActive(sel,attr,val){document.querySelectorAll(sel).forEach(b=>b.classList.toggle('active',b.dataset[attr]===val))}
 function setTf(tf){
   state.tf=tf;state.hover=null;resetView();renderMaToggles();
-  setSegActive('.tfBtn','tf',tf);
+  renderTfGrid();
   savePrefs();drawChart();
 }
 
@@ -1872,14 +1880,13 @@ $('autoBtn').onclick=()=>{
   if(state.auto){state.nextSpot=state.nextChart=state.nextCalendar=0}
   scheduler();
 };
-document.querySelectorAll('.tfBtn').forEach(b=>b.onclick=()=>setTf(b.dataset.tf));
-$('dowRow').addEventListener('click',e=>{const b=e.target.closest('[data-dow]');if(b)setTf(b.dataset.dow)});
+$('tfGrid').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)});
 $('maToggles').addEventListener('click',e=>{
   const btn=e.target.closest('[data-ma]');if(!btn)return;
   const k=btn.dataset.ma;state.maOn[k]=!state.maOn[k];lsSet(LSP+'ma',JSON.stringify(state.maOn));renderMaToggles();drawChart();
 });
-$('tlBtn').onclick=()=>{state.showTrend=!state.showTrend;$('tlBtn').classList.toggle('active',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);savePrefs();drawChart()};
-$('lvBtn').onclick=()=>{state.showLevels=!state.showLevels;$('lvBtn').classList.toggle('active',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);savePrefs();drawChart()};
+$('tlBtn').onclick=()=>{state.showTrend=!state.showTrend;$('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);savePrefs();drawChart()};
+$('lvBtn').onclick=()=>{state.showLevels=!state.showLevels;$('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);savePrefs();drawChart()};
 document.querySelectorAll('#dirSeg .seg').forEach(b=>b.onclick=()=>{
   state.dir=b.dataset.dir;setSegActive('#dirSeg .seg','dir',state.dir);savePrefs();renderAll();
 });
@@ -1992,10 +1999,10 @@ if('IntersectionObserver' in window){
 loadPrefs();
 setSegActive('#dirSeg .seg','dir',state.dir);
 setSegActive('[data-ev]','ev',state.evFilter);
-setSegActive('.tfBtn','tf',state.tf);
+renderTfGrid();
 renderMaToggles();
-$('tlBtn').classList.toggle('active',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);
-$('lvBtn').classList.toggle('active',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);
+$('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);
+$('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);
 loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(scheduler,1000);
 </script>
 </body>
