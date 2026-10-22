@@ -326,12 +326,11 @@ def probe_pyth(key):
     hdr = {**UA, "Origin": "https://ira0ma.github.io"}
     now = int(time.time())
     q = urllib.parse.quote
-    for url in (f"https://hermes.pyth.network/api/latest_price_feeds?ids[]={fid}",
-                f"https://hermes.pyth.network/v2/updates/price/latest?ids%5B%5D={fid}&parsed=true&encoding=hex",
-                f"https://benchmarks.pyth.network/v1/updates/price/latest?ids={fid}&parsed=true",
-                f"https://benchmarks.pyth.network/v1/shims/tradingview/history?symbol={q(sym)}&resolution=60&from={now - 86400}&to={now}",
-                f"https://benchmarks.pyth.network/v1/shims/tradingview/history?symbol={q('Crypto.BTC/USD')}&resolution=60&from={now - 86400}&to={now}",
-                f"https://benchmarks.pyth.network/v1/shims/tradingview/symbols?symbol={q(sym)}"):
+    for url in (f"https://benchmarks.pyth.network/v1/updates/price/latest?ids%5B%5D={fid}&parsed=true",
+                f"https://benchmarks.pyth.network/v1/updates/price/{now - 3600}?ids%5B%5D={fid}&parsed=true",
+                f"https://benchmarks.pyth.network/v1/updates/price/{now - 3600}/60?ids%5B%5D={fid}&parsed=true",
+                f"https://benchmarks.pyth.network/v1/price_feeds/{fid}",
+                f"https://benchmarks.pyth.network/docs"):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, headers=hdr), timeout=20) as r:
                 body = r.read(400).decode("utf-8", "replace")
