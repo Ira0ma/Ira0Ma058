@@ -75,9 +75,19 @@ def get_json(url):
 
 
 def spot_price(spot_sym):
-    """Spot price of a metal (XAU/XAG in USD) and when it was quoted (unix seconds):
-    gold-api.com, then Swissquote's public quote feed."""
+    """Spot price of a metal (XAU/XAG in USD) and when it was quoted (unix seconds): Swissquote's public
+    quote feed first (its bid, the side MT4/MT5 charts at XM/XS are drawn from, with an exact quote time),
+    then gold-api.com, whose time stamp can trail its price by minutes in a fast market."""
     errs = []
+    try:
+        feed = get_json(f"https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/{spot_sym}/USD")
+        bids = sorted(p["bid"] for q in feed for p in q.get("spreadProfilePrices", [])[:1])
+        if bids:
+            ts = max((q.get("ts") or 0) for q in feed) / 1000 or time.time()
+            return bids[len(bids) // 2], "swissquote bid", int(ts)  # median across Swissquote's platforms
+        errs.append("swissquote: no prices")
+    except Exception as e:
+        errs.append(f"swissquote: {e}")
     try:
         d = get_json(f"https://api.gold-api.com/price/{spot_sym}")
         try:
@@ -87,15 +97,6 @@ def spot_price(spot_sym):
         return float(d["price"]), "gold-api", int(ts)
     except Exception as e:
         errs.append(f"gold-api: {e}")
-    try:
-        feed = get_json(f"https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/{spot_sym}/USD")
-        mids = [(p["bid"] + p["ask"]) / 2 for q in feed for p in q.get("spreadProfilePrices", [])[:1]]
-        if mids:
-            mids.sort()
-            ts = max((q.get("ts") or 0) for q in feed) / 1000 or time.time()
-            return mids[len(mids) // 2], "swissquote", int(ts)  # median across Swissquote's platforms
-    except Exception as e:
-        errs.append(f"swissquote: {e}")
     raise RuntimeError("; ".join(errs))
 
 
