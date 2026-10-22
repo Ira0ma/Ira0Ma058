@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="572ed96b14">
+<meta name="build" content="5429282281">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -95,10 +95,18 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .change{margin-top:7px;font-size:13px;font-weight:700}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:11px}
 .dxybox{margin-top:10px;background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:10px 11px;font-size:11.5px;display:grid;gap:7px}
-.dxybox .dh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.dxybox .dh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 8px}.dxybox .dh b{white-space:nowrap}
 .dxybox .dh b{font-size:13px}.dxybox .dh span{color:var(--muted)}
-.dxyrow{display:grid;grid-template-columns:7em minmax(0,1fr) auto;gap:8px;align-items:center;white-space:nowrap}
+.dxyrow{display:grid;grid-template-columns:7em minmax(0,1fr) 11.5em;gap:8px;align-items:center;white-space:nowrap}
 .dxyrow .lb{color:var(--muted)}
+.dxyrow .v{text-align:right}
+.dxyguide{border-top:1px solid #232d36;padding-top:9px;display:grid;gap:7px;line-height:1.55}
+.dxyguide h4{margin:0;font-size:12.5px}
+.dxyguide dl{margin:0;display:grid;grid-template-columns:7em minmax(0,1fr);gap:5px 8px}
+.dxyguide dt{color:#e6c973;font-weight:700}.dxyguide dd{margin:0;color:var(--muted)}
+.dxyguide ol{margin:0;padding-left:1.3em;color:var(--muted)}.dxyguide ol b,.dxyguide dd b{color:var(--text,#e8edf2)}
+@media (max-width:520px){.dxyguide dl{grid-template-columns:5.6em minmax(0,1fr)}}
+.dxyguide .warn{color:var(--muted);font-size:11px}
 .dxybar{position:relative;height:8px;border-radius:999px;background:linear-gradient(90deg,rgba(66,213,156,.25),#1a222b 50%,rgba(255,105,105,.25))}
 .dxybar::after{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#4a5663}
 .dxybar i{position:absolute;top:-3px;width:4px;height:14px;border-radius:2px;background:#e6c973;transform:translateX(-2px)}
@@ -1690,6 +1698,17 @@ function corrLabel(r){
   if(r==null)return ['--',''];
   return r<=-0.6?['強い逆相関','up']:r<=-0.3?['逆相関','up']:r<0.3?['連動ほぼなし','']:r<0.6?['相関（同じ向き）','down']:['強い相関（同じ向き）','down'];
 }
+// How to use the three readings, shown under them
+const DXY_GUIDE=`<div class="dxyguide"><h4>DXYの使い分け</h4>
+<dl><dt>1週間（H1）</dt><dd><b>基本の判断に使う</b>。−0.5以下なら「ドル高＝金安」が効いている状態で、DXYの向きを金の方向の確認に使えます。0付近ならDXYは判断材料から外します。</dd>
+<dt>1日（H1）</dt><dd><b>変化の早期発見</b>。1週間と大きく違うときは、指標や要人発言でいつもの関係が崩れている合図です。1日の値だけで判断しないこと。</dd>
+<dt>1か月（H4）</dt><dd><b>大きな流れ（背景）の確認</b>。1週間と同じ向きなら、その関係は当面続きやすいと考えます。</dd>
+<dt>分足</dt><dd>相関は当てになりません（市場ごとの反応のずれで0に近づくため）。指標・発言の瞬間に、DXYと金が逆に跳ねたかを目で確かめる程度にします。</dd></dl>
+<h4>エントリー前の確認手順</h4>
+<ol><li>1週間の値で、いまドルと逆相関かどうかを見る。</li>
+<li>逆相関なら、DXYの向きがエントリーと合うか確認する。<b>買いはドル安</b>、<b>売りはドル高</b>なら追い風。逆なら見送りか、ロットを控えめに。</li>
+<li>1日の値が1週間から大きくずれていたら（注意書きが出たら）、落ち着くまで様子見。</li></ol>
+<div class="warn">※相関は「これまで一緒にどう動いたか」を示すだけで、先の値動きを予測するものではありません。</div></div>`;
 function renderDxy(){
   const el=$('dxyBox');if(!IS_GOLD){el.hidden=true;return}
   const dx=siteCache.d?.instruments?.dxy;if(!dx?.candles?.['1h']||state.h1.length<30){el.hidden=true;return}
@@ -1705,7 +1724,7 @@ function renderDxy(){
   if(rw!=null&&r1!=null&&Math.abs(r1-rw)>0.5)note+=` 1週間の関係（${rw.toFixed(2)}）から大きく変わっているので注意。`;
   el.innerHTML=`<div class="dh"><b>DXY（ドル指数）との相関</b><span>DXY ${fmt(dx.price,2)}（${chg>=0?'+':''}${chg.toFixed(2)}%・${dir}）</span></div>`+
     rows.map(([lb,r])=>{const [tx,cl]=corrLabel(r);return `<div class="dxyrow"><span class="lb">${lb}</span><span class="dxybar">${r==null?'':`<i style="left:${(1+r)*50}%"></i>`}</span><span class="v ${cl}">${r==null?'--':(r>0?'+':'')+r.toFixed(2)} ${tx}</span></div>`}).join('')+
-    `<div class="dxynote">${note}<br>（−1に近いほど「ドル高＝金安」がはっきり。金とドルはふだん逆相関です）</div>`;
+    `<div class="dxynote">${note}<br>（−1に近いほど「ドル高＝金安」がはっきり。金とドルはふだん逆相関です）</div>`+DXY_GUIDE;
   el.hidden=false;
 }
 function renderSnapshot(){
