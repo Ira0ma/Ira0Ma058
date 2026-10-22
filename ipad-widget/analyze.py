@@ -78,7 +78,25 @@ def splice_long(key, label, yahoo_rows, daily, keyf):
     if len(groups) < 2:
         return yahoo_rows
     derived = [r[:] for r in groups[1:]]  # the first period is only partly covered by the daily candles
-    older = [r for r in yahoo_rows if r[0] < derived[0][0]]
+    older = [r[:] for r in yahoo_rows if r[0] < derived[0][0]]
+    # Yahoo's weekly/monthly FX candles carry the odd bad tick (a USD/JPY week of Dec 2024 with a low 10 yen
+    # under the real one). A wick over 3x the median candle range that is also most of its candle is cut back
+    # to a median-sized wick.
+    rngs = sorted(r[2] - r[3] for r in older + derived)
+    med = rngs[len(rngs) // 2] if rngs else 0
+    wicks = sorted(min(r[1], r[4]) - r[3] for r in derived) or [0]
+    mw = wicks[len(wicks) // 2]
+    tops = sorted(r[2] - max(r[1], r[4]) for r in derived) or [0]
+    mt = tops[len(tops) // 2]
+    fixed = []
+    for r in older:
+        lo, hi = min(r[1], r[4]) - r[3], r[2] - max(r[1], r[4])
+        if med and lo > 3 * med and lo > 0.7 * (r[2] - r[3]):
+            fixed.append(f"{ny_day(r[0])} low {r[3]:.5g}"); r[3] = min(r[1], r[4]) - mw
+        if med and hi > 3 * med and hi > 0.7 * (r[2] - r[3]):
+            fixed.append(f"{ny_day(r[0])} high {r[2]:.5g}"); r[2] = max(r[1], r[4]) + mt
+    if fixed and key in CHECK:
+        print(key, f"{label}: cut back bad Yahoo wicks:", "; ".join(fixed))
     if key in CHECK:
         by = {keyf(ny_day(r[0])): r for r in yahoo_rows}
         diffs = [(abs(by[k][2] - r[2]), abs(by[k][3] - r[3])) for r in derived if (k := keyf(ny_day(r[0]))) in by]
