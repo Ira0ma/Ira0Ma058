@@ -312,33 +312,7 @@ def check(key, price, h1, m15):
         except Exception as e:
             msg += f", swissquote CORS check failed ({e})"
     print(msg + (f"; outsized candles (>8x median range): {odd}" if odd else "; no outsized candles"))
-    probe_pyth(key)
 
-
-PYTH = {"usdjpy": ("USD/JPY", "fx", "FX.USD/JPY"), "gold": ("XAU", "metal", "Metal.XAU/USD")}
-
-
-def probe_pyth(key):
-    """Trial: Pyth Network's public price service (live price, history, and whether pages may read them)."""
-    fid = {"usdjpy": "ef2c98c804ba503c6a707e38be4dfbb16683775f195b091252bf24693042fd52",
-           "gold": "765d2ba906dbc32ca17cc11f5310a89e9ee1f6420508c63861f2f8ba4ee34bb2"}[key]
-    sym = PYTH[key][2]
-    hdr = {**UA, "Origin": "https://ira0ma.github.io"}
-    now = int(time.time())
-    q = urllib.parse.quote
-    for url in (f"https://benchmarks.pyth.network/v1/updates/price/latest?ids%5B%5D={fid}&parsed=true",
-                f"https://benchmarks.pyth.network/v1/updates/price/{now - 3600}?ids%5B%5D={fid}&parsed=true",
-                f"https://benchmarks.pyth.network/v1/updates/price/{now - 3600}/60?ids%5B%5D={fid}&parsed=true",
-                f"https://benchmarks.pyth.network/v1/price_feeds/{fid}",
-                f"https://benchmarks.pyth.network/docs"):
-        try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers=hdr), timeout=20) as r:
-                body = r.read(400).decode("utf-8", "replace")
-                print(key, "pyth OK", url.split("?")[0], "CORS", repr(r.headers.get("Access-Control-Allow-Origin")), body[:300])
-        except urllib.error.HTTPError as e:
-            print(key, "pyth", e.code, url.split("?")[0], e.read(200).decode("utf-8", "replace"))
-        except Exception as e:
-            print(key, "pyth failed", url.split("?")[0], e)
 
 
 def coinbase_offset(price):
