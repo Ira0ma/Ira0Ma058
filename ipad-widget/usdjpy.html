@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="422a8375b0">
+<meta name="build" content="43e46906c4">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -810,6 +810,21 @@ function onLiveTick(){
   renderAll();flashPrice();
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!LIVE.ws)startLive()});
+// ゴールド：サイトの足は約10分遅れの先物を現物に換算したもの。その空白を、XAUTの1分足（OKX、1時間分）を
+// 現物に補正して埋める。急な動きの最中でも、直近の足が実際の値動きに近くなる。1分ごと
+async function fillRecentGold(){
+  if(!IS_GOLD||!LIVE.offs.length)return;
+  try{
+    const d=await getJSON('https://www.okx.com/api/v5/market/candles?instId=XAUT-USDT&bar=1m&limit=60',8000);
+    const asOf=toMs(siteCache.d?.instruments?.gold?.asOf)||0,off=liveOffset(),r2=v=>Math.round((n(v)-off)*100)/100;
+    const rows=(d?.data||[]).map(x=>({t:n(x[0]),h:r2(x[2]),l:r2(x[3]),c:r2(x[4])})).filter(x=>x.t>asOf&&x.h&&x.l).sort((a,b)=>a.t-b.t);
+    if(!rows.length)return;
+    const have=new Map(LIVE.mins.map(m=>[m.t,m]));
+    rows.forEach(x=>{const m=have.get(x.t);if(m){m.h=Math.max(m.h,x.h);m.l=Math.min(m.l,x.l)}else LIVE.mins.push({...x})});
+    LIVE.mins.sort((a,b)=>a.t-b.t);while(LIVE.mins.length>90)LIVE.mins.shift();
+    replayLive();renderAll();
+  }catch{}
+}
 
 // ドル円：Coinbaseの最新レート（ブラウザから直接）→ サイトのmarket.json（定期取得）
 async function refreshSpotFx(){
@@ -2276,7 +2291,7 @@ renderMaToggles();
 $('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);
 $('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);
 loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(scheduler,1000);
-refreshLiveTalk();setInterval(refreshLiveTalk,45000);startLive();document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
+refreshLiveTalk();setInterval(refreshLiveTalk,45000);startLive();setTimeout(fillRecentGold,20000);setInterval(fillRecentGold,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
 </script>
 </body>
 </html>
