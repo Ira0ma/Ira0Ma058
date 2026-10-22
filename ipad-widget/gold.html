@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="0af8e76c85">
+<meta name="build" content="5ca24ceeaa">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -685,6 +685,8 @@ async function refreshFx(){
 async function refreshSpotFx(){
   let px=0,asof=Date.now(),src='';
   try{const d=await getJSON(URLS.coinbase,8000);px=n(d?.data?.rates?.JPY);if(px)src='Coinbase'}catch{}
+  // Coinbase は買値寄り（約1pips高い）。XM・XS のチャートと同じ売値に合わせるため、サイトで測った差を引く
+  if(px){try{const off=n((await getSite()).instruments.usdjpy.liveOffset);if(off&&Math.abs(off)<0.1){px=Math.round((px-off)*1000)/1000;src='Coinbase（売値換算）'}}catch{}}
   if(!px){const g=(await getSite()).instruments.usdjpy;px=n(g.price);asof=toMs(g.asOf)||Date.now();src='サイト（定期取得）'}
   if(!px)throw new Error('USDJPY price missing');
   return {px,asof,src};

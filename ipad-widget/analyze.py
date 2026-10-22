@@ -312,6 +312,25 @@ def check(key, price, h1, m15):
     print(msg + (f"; outsized candles (>8x median range): {odd}" if odd else "; no outsized candles"))
 
 
+def coinbase_offset(price):
+    """How far Coinbase's USD/JPY rate (the USD/JPY page's live price) sits from the chart's price, which
+    follows the bid that XM/XS charts and quote first. Coinbase runs near the ask, about a pip higher;
+    the page takes this offset off. Median of the last 12 runs, so one stale minute does not move it."""
+    hist = SPOT_HIST.setdefault("usdjpy_coinbase", [])
+    try:
+        off = float(get_json(COINBASE)["data"]["rates"]["JPY"]) - price
+        if abs(off) < 0.1:  # a bigger gap is a stale or broken quote, not the spread
+            hist.append([int(time.time()), round(off, 4)])
+    except Exception as e:
+        print("usdjpy coinbase unavailable:", e)
+    del hist[:-12]
+    if not hist:
+        return None
+    offs = sorted(o for _, o in hist)
+    print("usdjpy coinbase offset", f"{offs[len(offs) // 2]:+.4f}", f"(median of {len(offs)})")
+    return offs[len(offs) // 2]
+
+
 BASIS_MAX_AGE = 3 * 86400  # how long the last futures-to-spot gap may stand in when no spot source answers
 # The futures-to-spot gap drifts during the day, and Yahoo's futures run about 10 minutes behind, so one gap
 # taken "now" is off by a few dollars for earlier candles. Every run therefore keeps the spot quote with its
@@ -381,6 +400,7 @@ def one(key, sym, spot_sym, fixture, prev=None):
         adjusted = shift is not None
     last = (m1 or m15 or h1)[-1]
     price, as_of = last[4], last[0]  # the freshest close and when it traded
+    live_offset = coinbase_offset(price) if key == "usdjpy" and fixture is None else None
     if key in CHECK and fixture is None:
         try:
             check(key, price, h1, m15)
@@ -399,6 +419,7 @@ def one(key, sym, spot_sym, fixture, prev=None):
     print(key, round(price, 5), a["trend"], a["title"])
     return {
         "price": price, "asOf": as_of, "prevClose": prev_close, "analysis": a,
+        **({} if live_offset is None else {"liveOffset": round(live_offset, 4)}),
         **({} if adjusted is None else {
             "spotAdjusted": adjusted,
             "basis": shift if adjusted else None,
