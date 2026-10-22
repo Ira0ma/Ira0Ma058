@@ -10,6 +10,7 @@ import json
 import os
 import sys
 import time
+import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -310,6 +311,46 @@ def check(key, price, h1, m15):
         except Exception as e:
             msg += f", swissquote CORS check failed ({e})"
     print(msg + (f"; outsized candles (>8x median range): {odd}" if odd else "; no outsized candles"))
+    probe_pyth(key)
+
+
+PYTH = {"usdjpy": ("USD/JPY", "fx", "FX.USD/JPY"), "gold": ("XAU", "metal", "Metal.XAU/USD")}
+
+
+def probe_pyth(key):
+    """Trial: Pyth Network's public price service (live price, history, and whether pages may read them)."""
+    q, kind, sym = PYTH[key]
+    hdr = {**UA, "Origin": "https://ira0ma.github.io"}
+
+    def get(url):
+        with urllib.request.urlopen(urllib.request.Request(url, headers=hdr), timeout=20) as r:
+            return json.load(r), r.headers.get("Access-Control-Allow-Origin")
+    try:
+        feeds, cors = get(f"https://hermes.pyth.network/v2/price_feeds?query={urllib.parse.quote(q)}&asset_type={kind}")
+        hit = [f for f in feeds if f.get("attributes", {}).get("symbol") == sym]
+        print(key, "pyth feeds:", [(f["id"], f["attributes"].get("symbol")) for f in feeds][:6], "CORS", repr(cors))
+        if hit:
+            fid = hit[0]["id"]
+            d, cors = get(f"https://hermes.pyth.network/v2/updates/price/latest?ids[]={fid}&parsed=true")
+            p = d["parsed"][0]["price"]
+            v = int(p["price"]) * 10 ** int(p["expo"])
+            print(key, f"pyth latest {v:.5f} conf {int(p['conf']) * 10 ** int(p['expo']):.5f}",
+                  "age", int(time.time()) - int(p["publish_time"]), "s, CORS", repr(cors))
+    except Exception as e:
+        print(key, "pyth hermes failed:", e)
+    try:
+        now = int(time.time())
+        d, cors = get("https://benchmarks.pyth.network/v1/shims/tradingview/history?symbol="
+                      f"{urllib.parse.quote(sym)}&resolution=60&from={now - 2 * 86400}&to={now}")
+        if d.get("s") == "ok":
+            bars = list(zip(d["t"], d["o"], d["h"], d["l"], d["c"]))
+            day = [b for b in bars if ny_day(b[0]) == ny_day(bars[-1][0])]
+            print(key, f"pyth history {len(bars)} H1 bars, last {bars[-1]}, today high {max(b[2] for b in day)} "
+                  f"low {min(b[3] for b in day)}, CORS {cors!r}")
+        else:
+            print(key, "pyth history:", str(d)[:200])
+    except Exception as e:
+        print(key, "pyth history failed:", e)
 
 
 def coinbase_offset(price):
