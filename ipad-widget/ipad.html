@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#06070b">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="4c665c6b13">
+<meta name="build" content="4d28a49025">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -170,6 +170,22 @@ body {
 .pt-picker { inset: 10px; }
 .picker-list .follow { grid-column: 1 / -1; }
 .pt-list p { margin: 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* daily report (strategy.json): row 3 opens the full recap and outlook */
+.pt-list li.has-report p { -webkit-line-clamp: 3; cursor: pointer; }
+.pt-more { display: none; margin-top: 4px; font: inherit; font-size: 11.5px; font-weight: 600; color: var(--gold); background: none; border: 0; padding: 0; cursor: pointer; }
+.pt-list li.has-report .pt-more { display: inline-flex; align-items: center; gap: 4px; }
+.rep { position: absolute; inset: 6px; z-index: 3; background: #0e1016; border: 1px solid var(--glass-line); border-radius: 16px; display: flex; flex-direction: column; }
+.rep-h { display: flex; align-items: baseline; gap: 8px; padding: 12px 14px 8px; border-bottom: 1px solid var(--glass-line); }
+.rep-h b { font-size: 14px; font-weight: 600; }
+.rep-h small { font-size: 10.5px; color: var(--ink-3); }
+.rep-h button { margin-left: auto; font: inherit; font-size: 12px; color: var(--ink-2); background: none; border: 0; cursor: pointer; padding: 2px 4px; }
+.rep-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 4px 14px 14px; -webkit-user-select: text; user-select: text; }
+.rep-body h4 { margin: 12px 0 5px; font-size: 12.5px; font-weight: 600; color: var(--gold); }
+.rep-body ul { margin: 0; padding: 0 0 0 14px; }
+.rep-body li { font-size: 12px; line-height: 1.6; color: var(--ink); margin-bottom: 4px; }
+.rep-body li::marker { color: var(--ink-3); }
+.rep-src { margin-top: 12px; font-size: 10.5px; line-height: 1.6; color: var(--ink-3); }
+.rep-src a { color: var(--ink-2); }
 
 /* weather */
 #weather { left: 352px; top: 329px; width: 305px; height: 194px; padding: 16px 20px; }
@@ -377,9 +393,10 @@ html:not(.flow) #flow { display: none; }
 下抜けで2,330を意識。</p></div></li>
       <li data-check="p3"><button class="ck" type="button" aria-label="チェックを切り替え"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <div><h3 data-pt="3h">本日のトレード戦略</h3><p data-pt="3p">重要指標前はポジションを軽く、
-値動きに応じて柔軟に対応する。</p></div></li>
+値動きに応じて柔軟に対応する。</p><button class="pt-more" type="button">前日の振り返りと今日の予想<svg width="6" height="9" viewBox="0 0 7 10"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></div></li>
     </ul>
     <div class="picker pt-picker" hidden><div class="picker-h"><span>注目ポイントの銘柄</span><button type="button" class="picker-close">閉じる</button></div><div class="picker-list"></div></div>
+    <div class="rep" id="rep" hidden role="dialog" aria-label="前日の振り返りと今日の予想"><div class="rep-h"><b>本日のトレード戦略</b><small id="rep-when"></small><button type="button" class="rep-close">閉じる</button></div><div class="rep-body" id="rep-body"></div></div>
     <div class="pt-foot" id="pt-foot">サンプル表示（自動分析の読み込み前）</div>
   </section>
 
@@ -1643,7 +1660,49 @@ html:not(.flow) #flow { display: none; }
     foot.style.color = stale ? "var(--up-red)" : "";
     renderStrategy();
   }
+  /* Daily report (strategy.json): written each weekday morning by the scheduled report task.
+     It fills row 3 for its own trading day (Fri's also covers the weekend); otherwise row 3 falls back to the automatic text. */
+  var report = null;
+  function ymd(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function reportIsCurrent(now) {
+    if (!report || !report.date || !report.headline) return false;
+    var day = tradingDay(now).start, d = new Date(day);
+    if (report.date === ymd(d)) return true;
+    while (d.getDay() === 0 || d.getDay() === 6) { d.setDate(d.getDate() - 1); if (report.date === ymd(d)) return true; }
+    return false;
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function fillReport() {
+    var body = document.getElementById("rep-body"), u = report.updated ? new Date(report.updated) : null;
+    document.getElementById("rep-when").textContent = report.date.slice(5).replace("-", "/") + (u && !isNaN(u) ? " " + u.getHours() + ":" + String(u.getMinutes()).padStart(2, "0") + "更新" : "");
+    var html = (report.sections || []).map(function (s) {
+      return "<h4>" + esc(s.title) + "</h4><ul>" + (s.items || []).map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + "</ul>";
+    }).join("");
+    var src = (report.sources || []).filter(function (s) { return /^https:\/\//.test(s.url); }).map(function (s) {
+      return '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.title || s.url) + "</a>";
+    });
+    html += '<div class="rep-src">' + (src.length ? "出典：" + src.join("、") + "<br>" : "") + "※参考情報であり投資助言ではありません</div>";
+    body.innerHTML = html;
+  }
+  (function () {
+    var rep = document.getElementById("rep"), li = document.querySelector('[data-check="p3"]');
+    var open = function () { if (!li.classList.contains("has-report")) return; fillReport(); rep.hidden = false; document.getElementById("rep-body").scrollTop = 0; };
+    li.querySelector(".pt-more").addEventListener("click", open);
+    li.querySelector("p").addEventListener("click", open);
+    rep.querySelector(".rep-close").addEventListener("click", function () { rep.hidden = true; });
+  })();
+  function loadReport() {
+    if (!window.fetch) return;
+    fetch("strategy.json", { cache: "no-cache" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d && typeof d === "object") { report = d; renderStrategy(); } })
+      .catch(function () {});
+  }
   function renderStrategy() {
+    var li3 = document.querySelector('[data-check="p3"]'), useReport = reportIsCurrent(new Date());
+    li3.classList.toggle("has-report", useReport);
+    if (useReport) { setPoint(3, report.title || "本日のトレード戦略", report.headline); return; }
+    document.getElementById("rep").hidden = true;
     if (!market) return;
     var now = new Date(), line1 = "本日は米国・日本の重要指標なし。\nテクニカル主導の値動きを想定。";
     if (calEvents) {
@@ -1691,7 +1750,7 @@ html:not(.flow) #flow { display: none; }
       .catch(function () {
         if (market || PREVIEW) return;
         setPoint(1, "分析データを取得できませんでした", "通信状態を確認してください。\n次の更新で自動的に再取得します。");
-        setPoint(2, "", ""); setPoint(3, "", "");
+        setPoint(2, "", ""); if (!reportIsCurrent(new Date())) setPoint(3, "", "");
         document.getElementById("pt-foot").textContent = "";
         markets.forEach(function (mk) { if (!mk.live) { mk.failed = true; mk.render(); } });
       });
@@ -1775,13 +1834,14 @@ html:not(.flow) #flow { display: none; }
   checkUpdate(); setInterval(checkUpdate, 10 * 60000);
   loadCalendar();
   loadMarket(); setInterval(loadMarket, 5 * 60000);
+  loadReport(); setInterval(loadReport, 10 * 60000);
   loadHolidays(); setInterval(function () { renderIndicators(); paintUpdated(); if (calendarHot()) scheduleSoon(); }, 30000);
   // X's script is slow and third-party: start it only after the page itself has finished loading
   if (document.readyState === "complete") loadX(); else window.addEventListener("load", loadX);
   // start both dashboards in the background so their entry calls reach the desk
   var preload = function () { setTimeout(function () { ensureSheet("gold"); ensureSheet("usdjpy"); }, 1500); };
   if (document.readyState === "complete") preload(); else window.addEventListener("load", preload);
-  document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); loadCalendar(); loadMarket(); } });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); loadCalendar(); loadMarket(); loadReport(); } });
   setInterval(loadWeather, 30 * 60000);
   var lastDay = new Date().getDate(), lastMonth = new Date().getMonth();
   setInterval(function () {

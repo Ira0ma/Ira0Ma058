@@ -51,6 +51,7 @@ jobs:
           cp ipad-widget/icon-cup.png _site/icon-cup.png
           cp ipad-widget/gold.html _site/gold.html
           cp ipad-widget/usdjpy.html _site/usdjpy.html
+          cp ipad-widget/strategy.json _site/strategy.json || true  # daily recap and outlook (written by the morning report task)
       - name: Fetch economic calendar
         continue-on-error: true
         run: |
