@@ -108,13 +108,30 @@ def yahoo(symbol, interval, rng, fixture=None):
         data = get_json(f"https://query2.finance.yahoo.com/v8/finance/chart/{symbol}?interval={interval}&range={rng}")
     res = data["chart"]["result"][0]
     q = res["indicators"]["quote"][0]
-    rows = []
+    rows, vol = [], {}
     for i, t in enumerate(res.get("timestamp") or []):
         o, h, l, c = q["open"][i], q["high"][i], q["low"][i], q["close"][i]
         if None in (o, h, l, c):
             continue
         rows.append([t, o, h, l, c])
+        v = (q.get("volume") or [None] * (i + 1))[i]
+        if v:
+            vol[t] = v
+    VOLUME[(symbol, interval)] = vol
     return rows
+
+
+VOLUME = {}  # (Yahoo symbol, interval) -> {candle time: traded volume}; futures only (FX has none)
+
+
+def volumes(rows, vol):
+    """Volume of each candle: the source candles' volumes from its start up to the next candle's start."""
+    ts = sorted(vol)
+    out = []
+    for i, r in enumerate(rows):
+        end = rows[i + 1][0] if i + 1 < len(rows) else float("inf")
+        out.append(int(sum(vol[t] for t in ts[bisect.bisect_left(ts, r[0]):bisect.bisect_left(ts, end)])))
+    return out
 
 
 def server_offset(t):
@@ -484,6 +501,10 @@ def one(key, sym, spot_sym, fixture, prev=None):
         "1w": r6(w1[-N_CANDLES:]),
         "1mo": r6(mo[-N_CANDLES:]),
     }
+    volume = None
+    if key == "gold":  # futures volume, for the GOLD page's large-position exit marks
+        src = {"5m": "5m", "15m": "15m", "30m": "15m", "1h": "60m", "4h": "60m", "1d": "60m"}
+        volume = {tf: volumes(candles[tf], VOLUME.get((sym, iv), {})) for tf, iv in src.items()}
     if key in CHECK and fixture is None:
         try:
             tf_check(key, candles)
@@ -499,6 +520,7 @@ def one(key, sym, spot_sym, fixture, prev=None):
             "basisAt": (prev or {}).get("basisAt") if adjusted and spot is None else int(time.time()),
         }),
         "candles": candles,
+        **({"volume": volume} if volume else {}),
     }
 
 if __name__ == "__main__":

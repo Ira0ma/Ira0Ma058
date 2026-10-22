@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="77927a19a5">
+<meta name="build" content="43c81df2bb">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -152,6 +152,21 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .seg{background:#121820;color:#d5dde5;border:1px solid #34404c;border-radius:999px;padding:7px 12px;font-size:12px}
 .seg.active{background:linear-gradient(180deg,#e6c973,#b5872d);border-color:#b5872d;color:#101114}
 .chartwrap{position:relative}
+#rsi{height:96px;margin-top:4px;cursor:default;touch-action:pan-y}
+#rsi[hidden]{display:none}
+.charttools{display:flex;gap:6px;align-items:center}
+.fullbtn{font-size:12px;font-weight:800;border-radius:999px;padding:6px 12px;border:1px solid #b5872d;background:linear-gradient(180deg,#e6c973,#b5872d);color:#101114;cursor:pointer;white-space:nowrap}
+#secChart.full{position:fixed;inset:0;z-index:60;margin:0;border-radius:0;overflow:hidden;width:auto;max-width:none;background:var(--bg);
+  display:flex;flex-direction:column;padding:10px 12px calc(8px + env(safe-area-inset-bottom))}
+#secChart.full>*{flex:none}
+#secChart.full .chartwrap{flex:1 1 auto;min-height:200px}
+#secChart.full #chart{height:100%}
+#secChart.full #rsi{height:min(140px,16dvh)}
+#secChart.full .charthint,#secChart.full .tfcap{display:none}
+#secChart.full .matoggles{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+#secChart.full .matoggles .seg{flex:none}
+#secChart.full .chartinfo{max-height:44px;overflow:auto}
+body.chartfull{overflow:hidden}
 canvas{display:block;width:100%;height:340px;background:linear-gradient(180deg,#0c1116,#0e151c);border:1px solid #222c36;border-radius:13px;touch-action:none;cursor:grab}
 canvas.dragging{cursor:grabbing}
 .chartreset{position:absolute;left:10px;top:10px;z-index:1;font-size:11px;font-weight:800;color:#101114;background:var(--gold);border-radius:999px;padding:5px 11px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
@@ -343,11 +358,13 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
   <section id="secChart" class="panel s8">
     <div class="cardhead">
       <div><div class="title" id="chartTitle">GOLDチャート</div><div id="chartMeta" class="sub">取得中...</div></div>
+      <div class="charttools"><button type="button" id="fullBtn" class="fullbtn" aria-pressed="false">⤢ 大きく表示</button></div>
     </div>
     <div class="tfcap">時間足｜下段＝ダウ理論のトレンドとST（スーパートレンド）の向き</div>
     <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
     <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button></div>
     <div class="chartwrap"><canvas id="chart"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
+    <canvas id="rsi" aria-label="RSI(14)"></canvas>
     <div id="chartInfo" class="chartinfo">--</div>
     <div class="charthint">ドラッグで左右（過去へ・右側に空白）・上下に移動／ピンチ・ホイールで拡大縮小／右端の価格目盛りを上下ドラッグで縦の拡大縮小／ダブルタップでリセット</div>
   </section>
@@ -805,7 +822,10 @@ async function refreshCharts(){
     const inst=(await getSite()).instruments[INSTR.site],g=inst.candles;
     const hb=siteBars(g['1h']),mb=siteBars(g['15m']);
     if(hb.length>=120&&mb.length>=20){
-      state.h1=hb;state.m15=mb;for(const tf of ['m5','m30','h4','d1','w1','mn'])state[tf]=siteBars(g[TFS[tf].site]);state.health.h1=state.health.m15=true;changed=true;state.src.chart='サイト';
+      state.h1=hb;state.m15=mb;for(const tf of ['m5','m30','h4','d1','w1','mn'])state[tf]=siteBars(g[TFS[tf].site]);
+      // 先物の出来高（ゴールドのみ）。足と同じ並び
+      const vol=inst.volume||{};for(const tf in TFS){const vv=vol[TFS[tf].site];if(vv&&vv.length===state[tf].length)state[tf].forEach((b,i)=>{b.v=vv[i]})}
+      state.health.h1=state.health.m15=true;changed=true;state.src.chart='サイト';
       // サイトの金のローソク足は先物（GC=F）をスポット価格に合わせたもの。合わせられなかった回は、ここでライブのスポット価格に合わせる
       state.siteUnadjusted=IS_GOLD&&inst.spotAdjusted===false;
       if(state.spot&&!String(state.src.spot||'').startsWith('サイト'))alignSiteBars(state.spot.price);
@@ -917,6 +937,38 @@ async function refreshCalendar(){
 }
 
 /* ---------- calc ---------- */
+// RSI(14)：ワイルダーの平滑化（TradingViewやMT4/5の標準と同じ）
+function rsiSeries(bars,len=14){
+  const out=new Array(bars.length).fill(null);let up=0,dn=0;
+  for(let i=1;i<bars.length;i++){
+    const d=bars[i].c-bars[i-1].c,u=Math.max(d,0),w=Math.max(-d,0);
+    if(i<=len){up+=u/len;dn+=w/len;if(i<len)continue}
+    else{up=(up*(len-1)+u)/len;dn=(dn*(len-1)+w)/len}
+    out[i]=dn===0?100:100-100/(1+up/dn);
+  }
+  return out;
+}
+// 大口決済の兆候：それまでの流れ（20本でATRの3倍以上）と逆向きに、値幅がATRの2.5倍以上・実体が1.5倍以上の大きな足が出て、
+// 出来高（ゴールド先物）が直近50本の中央値の2倍以上。上昇の後の大陰線＝買いポジションの利食い・投げ（大口決済）、
+// 下落の後の大陽線＝売りポジションの買い戻し。金曜（日本時間 金曜21時〜土曜6時）は週末前の手じまいとして印を付ける。
+// 実際の注文やポジションは見えないので、値動きと出来高から推定した「兆候」です。
+function bigMoves(bars){
+  const out=[],n=bars.length;if(n<60)return out;
+  const tr=bars.map((b,i)=>i?Math.max(b.h-b.l,Math.abs(b.h-bars[i-1].c),Math.abs(b.l-bars[i-1].c)):b.h-b.l);
+  for(let i=50;i<n;i++){
+    const b=bars[i];let a=0;for(let j=i-14;j<i;j++)a+=tr[j];a/=14;if(!a)continue;
+    const range=b.h-b.l,body=Math.abs(b.c-b.o),move=bars[i-1].c-bars[i-21].c;
+    if(range<a*2.5||body<a*1.5)continue;
+    const dir=b.c<b.o?-1:1;
+    if(dir<0?move<a*3:move>-a*3)continue;  // 流れと逆向きの大きな足だけ
+    let vr=null;
+    if(b.v){const vs=bars.slice(i-50,i).map(x=>x.v).filter(Boolean).sort((p,q)=>p-q);if(vs.length>=25){vr=b.v/vs[vs.length>>1];if(vr<2)continue}}
+    else if(range<a*3)continue;  // 出来高がないときは値幅の条件を厳しく
+    const d=new Date(b.t),fri=(d.getUTCDay()===5&&d.getUTCHours()>=12);
+    out.push({i,dir,vr,size:b.c-b.o,fri});
+  }
+  return out;
+}
 // 自動トレンドライン（表示中の時間足で計算）：直近150本の山・谷（前後3本より高い／低い足）を2点ずつ結び、
 // 3点以上がATRの0.25倍以内で線に乗り、引いた後の終値が一度も線を大きく割って（超えて）いない線だけを「明確」とする。
 // 上昇（谷を結ぶ・右上がり）と下降（山を結ぶ・右下がり）をそれぞれ最大1本、接点が多く新しいものを選ぶ。
@@ -1025,7 +1077,9 @@ const SMA_COLOR='#f4f6f8';  // 120SMA（H1）・20SMA（M15）
 const EMAS=[{key:'e10',len:10,color:'#ff8fd1',w:1.4},{key:'e20',len:20,color:'#ff8c2e',w:1.4},{key:'e200',len:200,color:'#3d8bff',w:2}];
 // 各移動平均の表示・非表示（端末ごとに保存）
 const MA_BTNS=[{key:'sma',color:SMA_COLOR,label:()=>smaLen()+'SMA'}].concat(EMAS.map(m=>({key:m.key,color:m.color,label:()=>m.len+'EMA'})),
-  [{key:'st',color:'linear-gradient(90deg,#42d59c 50%,#ff6969 50%)',label:()=>'スーパートレンド'}]);
+  [{key:'st',color:'linear-gradient(90deg,#42d59c 50%,#ff6969 50%)',label:()=>'スーパートレンド'},
+   {key:'rsi',color:'#b48cff',label:()=>'RSI(14)'}],
+  IS_GOLD?[{key:'big',color:'#ffb547',label:()=>'大口決済の兆候'}]:[]);
 // スーパートレンド（TradingViewの標準と同じ：ATR10（RMA）×3、中心は(高値+安値)/2）。上昇中は線が足の下（緑）、下降中は上（赤）
 const ST_LEN=10,ST_MULT=3;
 function superTrend(bars){
@@ -1691,6 +1745,15 @@ function drawChart(){
     ctx.fillStyle='rgba(13,18,23,.85)';ctx.fillRect(P.l+4,P.t+2,tw+12,20);
     ctx.fillStyle=c==='up'?'#42d59c':c==='down'?'#ff6969':c==='warn'?'#ffb547':'#c9d2db';ctx.fillText(txt,P.l+10,P.t+6);
   }
+  // 大口決済の兆候（ゴールド）：足の外側に印
+  const bigs=IS_GOLD&&state.maOn.big&&!['w1','mn'].includes(state.tf)?bigMoves(source).filter(m=>m.i>=startIdx&&m.i<endIdx):[];
+  bigs.forEach(m=>{
+    const xi=m.i-startIdx,b=source[m.i],yy=m.dir<0?y(b.h)-8:y(b.l)+8,txt=(m.dir<0?'大口決済':'買い戻し')+(m.fri?'(金)':'');
+    ctx.font='bold 10px -apple-system,sans-serif';const w=ctx.measureText(txt).width+8;
+    ctx.fillStyle='rgba(255,181,71,.95)';ctx.beginPath();ctx.moveTo(x(xi),yy+(m.dir<0?6:-6));ctx.lineTo(x(xi)-5,yy);ctx.lineTo(x(xi)+5,yy);ctx.fill();
+    const by=Math.min(Math.max(m.dir<0?yy-18:yy,P.t),H-P.b-16);
+    ctx.fillRect(x(xi)-w/2,by,w,16);ctx.fillStyle='#101114';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(txt,x(xi),by+8);
+  });
   const cup=state.tf==='m15'?cupHandle():null;
   if(cup){
     const ix=t=>{const i=source.findIndex(b=>b.t===t);return i<0?null:i-startIdx};
@@ -1741,6 +1804,27 @@ function drawChart(){
   $('chartReset').hidden=!(v.off||v.count||v.yOff||v.yZoom!==1);
   renderTfGrid();
   state.chartGeo={P,step,n:bars.length,W,H,priceSpan:max-min,plotH:H-P.t-P.b};
+  drawRsi(source,startIdx,endIdx,bars.length,P,step,hi);
+  const lastBig=bigs.at(-1);
+  if(lastBig){const b=source[lastBig.i];$('chartInfo').insertAdjacentHTML('beforeend',`<span class="legend"><i style="background:#ffb547"></i>${lastBig.dir<0?'大口決済':'買い戻し'}の兆候 <b>${esc(barLabel(b.t,isH1))}${lastBig.fri?'（金曜）':''} ${lastBig.size>=0?'+':'−'}${INSTR.dist(Math.abs(lastBig.size))}</b>${lastBig.vr?'（出来高'+lastBig.vr.toFixed(1)+'倍）':''}</span>`)}
+}
+// RSI(14) をチャートの下に、同じ足の並び・同じ横位置で描く（70／30に線、選択足に縦線）
+function drawRsi(source,startIdx,endIdx,nb,P,step,hi){
+  const c=$('rsi');c.hidden=!state.maOn.rsi;if(c.hidden)return;
+  const {ctx,W,H}=sizeCanvas(c);ctx.clearRect(0,0,W,H);
+  const r=rsiSeries(source).slice(startIdx,endIdx),T=6,B=6,y=v=>T+(100-v)*(H-T-B)/100,x=i=>P.l+step*(i+.5);
+  ctx.fillStyle='rgba(180,140,255,.07)';ctx.fillRect(P.l,y(70),W-P.l-P.r,y(30)-y(70));
+  ctx.font='10px -apple-system,sans-serif';ctx.textBaseline='middle';ctx.textAlign='left';
+  [[70,'#ff6969'],[50,'#2a343f'],[30,'#42d59c']].forEach(([v,col])=>{
+    ctx.strokeStyle=col;ctx.setLineDash(v===50?[]:[4,4]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(P.l,y(v)+.5);ctx.lineTo(W-P.r,y(v)+.5);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#6f7c88';ctx.fillText(String(v),W-P.r+6,y(v));
+  });
+  ctx.strokeStyle='#b48cff';ctx.lineWidth=1.6;ctx.beginPath();let on=false;
+  r.forEach((v,i)=>{if(v==null)return;if(!on){ctx.moveTo(x(i),y(v));on=true}else ctx.lineTo(x(i),y(v))});ctx.stroke();
+  const k=hi??nb-1,v=r[k];
+  if(hi!=null){ctx.strokeStyle='rgba(245,215,126,.45)';ctx.beginPath();ctx.moveTo(x(hi),T);ctx.lineTo(x(hi),H-B);ctx.stroke()}
+  ctx.fillStyle='#b48cff';ctx.font='bold 11px -apple-system,sans-serif';
+  ctx.fillText('RSI(14) '+(v==null?'--':v.toFixed(1))+(v>=70?' 買われすぎ':v!=null&&v<=30?' 売られすぎ':''),P.l+6,T+8);
 }
 
 function renderEvents(){
@@ -1973,6 +2057,14 @@ chart.addEventListener('wheel',e=>{
 chart.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 chart.addEventListener('dblclick',()=>{resetView();state.hover=null;drawChart()});
 $('chartReset').onclick=()=>{resetView();state.hover=null;drawChart()};
+// チャートを画面いっぱいに（もう一度押すか Esc で戻る）
+function setFull(on){
+  $('secChart').classList.toggle('full',on);document.body.classList.toggle('chartfull',on);
+  $('fullBtn').textContent=on?'✕ 閉じる':'⤢ 大きく表示';$('fullBtn').setAttribute('aria-pressed',on);
+  requestAnimationFrame(drawChart);
+}
+$('fullBtn').onclick=()=>setFull(!$('secChart').classList.contains('full'));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('secChart').classList.contains('full'))setFull(false)});
 
 // 新しい版が公開されたら自動で読み込み直す（ホーム画面アプリやキャッシュで古い版が残らないように）
 function checkUpdate(){
