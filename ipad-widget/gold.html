@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="2fcdcb94d9">
+<meta name="build" content="66a09c3a8d">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -961,9 +961,10 @@ function dowTrend(src,k){
 }
 const dowCls=k=>k==='up'||k==='upt'?'up':k==='down'||k==='downt'?'down':k==='upx'||k==='downx'?'warn':'';
 function renderDowRow(){
-  $('dowRow').innerHTML='<span class="dl">ダウ理論</span>'+Object.keys(TFS).map(tf=>{
-    const d=dowTrend(state[tf],DOW_K[tf]),mark=dowCls(d.kind)==='up'?'▲ ':dowCls(d.kind)==='down'?'▼ ':'';
-    return '<button type="button" data-dow="'+tf+'" class="'+dowCls(d.kind)+(tf===state.tf?' cur':'')+'">'+tf.toUpperCase()+' '+mark+DOW_NAME[d.kind]+'</button>';
+  $('dowRow').innerHTML='<span class="dl">ダウ理論｜ST＝スーパートレンド</span>'+Object.keys(TFS).map(tf=>{
+    const d=dowTrend(state[tf],DOW_K[tf]),mark=dowCls(d.kind)==='up'?'▲ ':dowCls(d.kind)==='down'?'▼ ':'',sd=superTrend(state[tf]).dir.at(-1);
+    return '<button type="button" data-dow="'+tf+'" class="'+dowCls(d.kind)+(tf===state.tf?' cur':'')+'">'+tf.toUpperCase()+' '+mark+DOW_NAME[d.kind]+
+      (sd?'<span style="color:'+(sd>0?'#42d59c':'#ff6969')+'">｜ST'+(sd>0?'上昇':'下降')+'</span>':'')+'</button>';
   }).join('');
 }
 
@@ -1007,7 +1008,26 @@ function emaSeries(bars,len){
 const SMA_COLOR='#f4f6f8';  // 120SMA（H1）・20SMA（M15）
 const EMAS=[{key:'e10',len:10,color:'#ff8fd1',w:1.4},{key:'e20',len:20,color:'#ff8c2e',w:1.4},{key:'e200',len:200,color:'#3d8bff',w:2}];
 // 各移動平均の表示・非表示（端末ごとに保存）
-const MA_BTNS=[{key:'sma',color:SMA_COLOR,label:()=>smaLen()+'SMA'}].concat(EMAS.map(m=>({key:m.key,color:m.color,label:()=>m.len+'EMA'})));
+const MA_BTNS=[{key:'sma',color:SMA_COLOR,label:()=>smaLen()+'SMA'}].concat(EMAS.map(m=>({key:m.key,color:m.color,label:()=>m.len+'EMA'})),
+  [{key:'st',color:'linear-gradient(90deg,#42d59c 50%,#ff6969 50%)',label:()=>'スーパートレンド'}]);
+// スーパートレンド（TradingViewの標準と同じ：ATR10（RMA）×3、中心は(高値+安値)/2）。上昇中は線が足の下（緑）、下降中は上（赤）
+const ST_LEN=10,ST_MULT=3;
+function superTrend(bars){
+  const n=bars.length,line=new Array(n).fill(null),dir=new Array(n).fill(0);
+  let atrv=0,up=0,dn=0,d=1;
+  for(let i=0;i<n;i++){
+    const b=bars[i],tr=i?Math.max(b.h-b.l,Math.abs(b.h-bars[i-1].c),Math.abs(b.l-bars[i-1].c)):b.h-b.l;
+    atrv=i<ST_LEN?(atrv*i+tr)/(i+1):(atrv*(ST_LEN-1)+tr)/ST_LEN;
+    if(i<ST_LEN)continue;
+    const mid=(b.h+b.l)/2,pc=bars[i-1].c,u=mid-ST_MULT*atrv,l=mid+ST_MULT*atrv;
+    const first=line[i-1]==null;
+    up=first||u>up||pc<up?u:up;
+    dn=first||l<dn||pc>dn?l:dn;
+    if(!first)d=d<0&&b.c>dn?1:d>0&&b.c<up?-1:d;
+    dir[i]=d;line[i]=d>0?up:dn;
+  }
+  return {line,dir};
+}
 function loadMaOn(){let o={};try{o=JSON.parse(lsGet(LSP+'ma','{}'))||{}}catch{}
   state.maOn=Object.fromEntries(MA_BTNS.map(b=>[b.key,o[b.key]!==false]))}
 function renderMaToggles(){
@@ -1599,6 +1619,24 @@ function drawChart(){
     vals.forEach((val,i)=>{if(val==null)return;if(!begun){ctx.moveTo(x(i),y(val));begun=true}else ctx.lineTo(x(i),y(val))});ctx.stroke();
   };
   if(state.maOn.sma)drawLine(sm,SMA_COLOR,2);
+  // スーパートレンド：向きが変わった足で線を切り、変わった所に「買い」「売り」
+  const st=superTrend(source),stl=st.line.slice(startIdx,endIdx),std=st.dir.slice(startIdx,endIdx);
+  if(state.maOn.st){
+    ctx.lineWidth=2;
+    for(let i=1;i<bars.length;i++){
+      if(stl[i]==null||stl[i-1]==null||std[i]!==std[i-1])continue;
+      ctx.strokeStyle=std[i]>0?'rgba(66,213,156,.9)':'rgba(255,105,105,.9)';
+      ctx.beginPath();ctx.moveTo(x(i-1),y(stl[i-1]));ctx.lineTo(x(i),y(stl[i]));ctx.stroke();
+    }
+    ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='center';
+    for(let i=1;i<bars.length;i++){
+      if(!std[i]||!std[i-1]||std[i]===std[i-1])continue;
+      const buy=std[i]>0,yy=y(stl[i]),txt=buy?'買い':'売り',w=ctx.measureText(txt).width+8;
+      ctx.fillStyle=buy?'#2bb682':'#e04f55';
+      const by=Math.min(Math.max(buy?yy+6:yy-22,P.t),H-P.b-16);ctx.fillRect(x(i)-w/2,by,w,16);
+      ctx.fillStyle='#fff';ctx.textBaseline='middle';ctx.fillText(txt,x(i),by+8);
+    }
+  }
   const emas=EMAS.filter(m=>state.maOn[m.key]).map(m=>({...m,vals:emaSeries(source,m.len).slice(startIdx,endIdx)}));
   emas.forEach(m=>drawLine(m.vals,m.color,m.w));
   // トレンドライン：始点の山・谷から右端（右側の空白を含む）まで延長
@@ -1626,7 +1664,7 @@ function drawChart(){
     ctx.fillStyle=up==null?'#93a0ad':up?'#42d59c':'#ff6969';
     ctx.beginPath();ctx.arc(x(xi),y(pv.p),2.5,0,Math.PI*2);ctx.fill();
     ctx.textBaseline=sd<0?'bottom':'top';
-    ctx.fillText((key==='highs'?'高値':'安値')+(up==null?'':up?'↑':'↓'),x(xi),yy+(sd<0?3:-3));
+    ctx.fillText((n?'直近':'前回')+(key==='highs'?'高値':'安値')+(up==null?'':up?'↑':'↓'),x(xi),yy+(sd<0?3:-3));
   }));
   if(dow.kind!=='none'){
     const txt=state.tf.toUpperCase()+' ダウ理論：'+DOW_NAME[dow.kind],c=dowCls(dow.kind);
@@ -1676,6 +1714,7 @@ function drawChart(){
   $('chartInfo').innerHTML=`<span>${hi==null?'最新足':'選択足'} <b>${esc(barLabel(b.t,isH1))}</b></span>`+
     `<span>始 <b>${fmt(b.o)}</b></span><span>高 <b>${fmt(b.h)}</b></span><span>安 <b>${fmt(b.l)}</b></span><span>終 <b class="${b.c>=b.o?'up':'down'}">${fmt(b.c)}</b></span>`+
     (state.maOn.sma?`<span class="legend"><i style="background:${SMA_COLOR}"></i>${len}SMA <b>${sv==null?'--':fmt(sv)}</b></span>`:'')+
+    (state.maOn.st&&stl[hi??bars.length-1]!=null?`<span class="legend"><i style="background:${std[hi??bars.length-1]>0?'#42d59c':'#ff6969'}"></i>スーパートレンド ${std[hi??bars.length-1]>0?'上昇':'下降'} <b>${fmt(stl[hi??bars.length-1])}</b></span>`:'')+
     emas.map(m=>{const ev=m.vals[hi??bars.length-1];return `<span class="legend"><i style="background:${m.color}"></i>${m.len}EMA <b>${ev==null?'--':fmt(ev)}</b></span>`}).join('')+
     tls.map(t=>`<span class="legend"><i style="background:${t.kind==='up'?TL_UP:TL_DOWN}"></i>${t.kind==='up'?'上昇':'下降'}トレンドライン <b>${fmt(t.p1+t.slope*(endIdx-1-t.i1))}</b>（接点${t.touches}）</span>`).join('')+
     tags.map(({l})=>`<span class="legend"><i style="background:${l.kind==='r'?'#ff6969':'#42d59c'}"></i>${l.kind==='r'?'抵抗線':'支持線'} <b>${fmt(l.price)}</b></span>`).join('')+
