@@ -965,6 +965,72 @@ html:not(.flow) #flow { display: none; }
       s[tf] = s[tf].map(function (r) { return [r[0], r[1] + gap, r[2] + gap, r[3] + gap, r[4] + gap]; });
     });
   };
+  /* Real-time ticks over WebSocket for panels showing GOLD or USD/JPY, as on the dashboards:
+     USD/JPY from GMO Coin's FX feed less the site's measured gap to the XS bid; gold from XAUT
+     (OKX, then Bitfinex, then Kraken's PAXG) less its median gap to the spot price polled every minute.
+     A panel repaints at most twice a second. */
+  var LIVE_SRC = {
+    usdjpy: [{ url: "wss://forex-api.coin.z.com/ws/public/v1", sub: { command: "subscribe", channel: "ticker", symbol: "USD_JPY" },
+      parse: function (m) { return m && m.symbol === "USD_JPY" ? +m.bid : 0; } }],
+    gold: [{ url: "wss://ws.okx.com:8443/ws/v5/public", sub: { op: "subscribe", args: [{ channel: "tickers", instId: "XAUT-USDT" }] }, ping: "ping",
+      parse: function (m) { var d = m && m.data && m.data[0]; return d && +d.bidPx && +d.askPx ? (+d.bidPx + +d.askPx) / 2 : 0; } },
+      { url: "wss://api-pub.bitfinex.com/ws/2", sub: { event: "subscribe", channel: "ticker", symbol: "tXAUT:USD" },
+      parse: function (m) { return m && m[1] && m[1].length > 2 ? (m[1][0] + m[1][2]) / 2 : 0; } },
+      { url: "wss://ws.kraken.com/v2", sub: { method: "subscribe", params: { channel: "ticker", symbol: ["PAXG/USD"] } },
+      parse: function (m) { var d = m && m.channel === "ticker" && m.data && m.data[0]; return d ? (d.bid + d.ask) / 2 : 0; } }]
+  };
+  var live = {};
+  function liveFresh(key) {
+    var L = live[key];
+    return !!(L && L.raw && Date.now() - L.at < 15000 && (key !== "gold" || L.offs.length));
+  }
+  function liveOffset(key) {
+    var L = live[key];
+    if (key === "usdjpy") { var m = market && (market.instruments || market).usdjpy; return m ? +m.liveOffsetGmo || 0 : 0; }
+    var o = L.offs.slice().sort(function (a, b) { return a - b; });
+    return o.length ? o[o.length >> 1] : 0;
+  }
+  function liveCalibrate(key, spot) {  // gold: the feed against the spot price polled at the same time
+    var L = live[key];
+    if (key !== "gold" || !L || !L.raw || Date.now() - L.at > 10000 || !spot || Math.abs(L.raw - spot) > 40) return;
+    L.offs.push(L.raw - spot); if (L.offs.length > 20) L.offs.shift();
+  }
+  function liveTick(key) {
+    var L = live[key];
+    if (!liveFresh(key) || Date.now() - L.drawn < 500) return;
+    L.drawn = Date.now();
+    var px = Math.round((L.raw - liveOffset(key)) * (key === "gold" ? 100 : 1000)) / (key === "gold" ? 100 : 1000);
+    markets.forEach(function (mk) {
+      if (mk.key !== key || !mk.price || Math.abs(px - mk.price) > (key === "gold" ? 30 : 0.5)) return;
+      mk.asOf = Date.now() / 1000; mk.applyLive(px);
+    });
+  }
+  function liveConnect(key) {
+    var L = live[key] || (live[key] = { raw: 0, at: 0, offs: [], drawn: 0, tries: 0, ws: null, timer: 0 });
+    if (L.ws || !window.WebSocket) return;
+    var src = LIVE_SRC[key][L.tries % LIVE_SRC[key].length], ws, ping = 0, got = false;
+    try { ws = new WebSocket(src.url); } catch (e) { L.tries++; return; }
+    L.ws = ws;
+    ws.onopen = function () { ws.send(JSON.stringify(src.sub)); if (src.ping) ping = setInterval(function () { try { ws.send(src.ping); } catch (e) {} }, 20000); };
+    ws.onmessage = function (ev) {
+      var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+      var px = src.parse(m); if (!px) return;
+      got = true; L.tries = 0; L.raw = px; L.at = Date.now();
+      if (key === "gold" && !L.offs.length && L.spot && Date.now() - L.spotAt < 60000) liveCalibrate(key, L.spot);
+      liveTick(key);
+    };
+    ws.onclose = ws.onerror = function () {
+      clearInterval(ping); if (L.ws !== ws) return; L.ws = null; if (!got) L.tries++;
+      clearTimeout(L.timer); L.timer = setTimeout(liveWatch, Math.min(30000, 2000 * (1 + L.tries)));
+    };
+  }
+  function liveWatch() {  // keep a feed open for each of GOLD and USD/JPY while a panel shows it
+    ["gold", "usdjpy"].forEach(function (key) {
+      var used = markets.some(function (mk) { return mk.key === key; }), L = live[key];
+      if (used && !document.hidden) liveConnect(key);
+      else if (L && L.ws) { var ws = L.ws; L.ws = null; try { ws.close(); } catch (e) {} }
+    });
+  }
   function loadPrices() {
     if (!window.fetch) return;
     markets.forEach(function (mk) {
@@ -980,6 +1046,7 @@ html:not(.flow) #flow { display: none; }
             var m = market && (market.instruments || market)[key], off = m && +m.liveOffset;
             if (off && Math.abs(off) < 0.1) px = Math.round((px - off) * 1000) / 1000;
             if (m && m.price && Math.abs(px - m.price) > 1) return;  // far from the site's price: a broken quote
+            if (liveFresh(key)) return;  // the real-time feed is newer
             mk.asOf = Date.now() / 1000;
             mk.applyLive(px);
           })
@@ -989,6 +1056,11 @@ html:not(.flow) #flow { display: none; }
       if (!spot) return;
       var use = function (price, asOf) {
         if (!price || mk.key !== key) return;
+        if (key === "gold") {
+          var L = live.gold || (live.gold = { raw: 0, at: 0, offs: [], drawn: 0, tries: 0, ws: null, timer: 0 });
+          L.spot = price; L.spotAt = Date.now(); liveCalibrate("gold", price);
+          if (liveFresh("gold") && mk.price) return;  // the real-time feed is newer; this price only calibrates it
+        }
         mk.asOf = asOf;
         mk.alignSpot(price);
         mk.applyLive(price);
@@ -1682,6 +1754,7 @@ html:not(.flow) #flow { display: none; }
   tickClock(); renderCal(); bg.start(); layout(); loadWeather(); loadPrices();
   if (loc.gps) locate(loadWeather, function () {});
   setInterval(loadPrices, 60000);
+  liveWatch(); setInterval(liveWatch, 5000);
   checkUpdate(); setInterval(checkUpdate, 10 * 60000);
   loadCalendar();
   loadMarket(); setInterval(loadMarket, 5 * 60000);

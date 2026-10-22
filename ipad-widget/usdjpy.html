@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="6f5180a8f7">
+<meta name="build" content="c15efe2a6b">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -748,6 +748,63 @@ async function refreshFx(){
   }
 }
 
+/* ---------- リアルタイム（WebSocket）：ローソク足を秒単位で動かす ----------
+   ドル円：GMOコイン外国為替FXの公開配信（売値。サイトで測ったXS売値との差を引く）。
+   ゴールド：金に連動するトークンXAUTの配信（OKX→Bitfinex→KrakenのPAXG）。現物より数ドル高いので、
+   30秒ごとに取る現物価格（Gold API）との差の中央値を引いて現物に合わせる。 */
+const LIVE={raw:0,rawAt:0,src:'',offs:[],ws:null,tries:0,lastDraw:0,timer:0};
+const GOLD_WS=[
+  {name:'OKX XAUT',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'tickers',instId:'XAUT-USDT'}]},ping:'ping',
+   parse:m=>{const d=m?.data?.[0];return d&&+d.bidPx&&+d.askPx?(+d.bidPx+ +d.askPx)/2:0}},
+  {name:'Bitfinex XAUT',url:'wss://api-pub.bitfinex.com/ws/2',sub:{event:'subscribe',channel:'ticker',symbol:'tXAUT:USD'},
+   parse:m=>Array.isArray(m)&&Array.isArray(m[1])?(m[1][0]+m[1][2])/2:0},
+  {name:'Kraken PAXG',url:'wss://ws.kraken.com/v2',sub:{method:'subscribe',params:{channel:'ticker',symbol:['PAXG/USD']}},
+   parse:m=>m?.channel==='ticker'&&m.data?.[0]?(m.data[0].bid+m.data[0].ask)/2:0}];
+const FX_WS=[{name:'GMO FX',url:'wss://forex-api.coin.z.com/ws/public/v1',sub:{command:'subscribe',channel:'ticker',symbol:'USD_JPY'},
+   parse:m=>m?.symbol==='USD_JPY'&&+m.bid?+m.bid:0}];
+function liveFresh(){return LIVE.raw&&Date.now()-LIVE.rawAt<15000&&(!IS_GOLD||LIVE.offs.length)}
+function liveOffset(){
+  if(!IS_GOLD)return n(siteCache.d?.instruments?.usdjpy?.liveOffsetGmo);
+  const o=[...LIVE.offs].sort((a,b)=>a-b);return o.length?o[o.length>>1]:0;
+}
+// 30秒ごとの現物価格が来たら、そのときの配信値との差を記録（最新20件の中央値で補正）
+function liveCalibrate(spot){
+  if(!IS_GOLD||!LIVE.raw||Date.now()-LIVE.rawAt>10000||!spot)return;
+  const d=LIVE.raw-spot;if(Math.abs(d)>40)return;
+  LIVE.offs.push(d);if(LIVE.offs.length>20)LIVE.offs.shift();
+}
+function startLive(){
+  const list=IS_GOLD?GOLD_WS:FX_WS,src=list[LIVE.tries%list.length];
+  let ws,ping=0,got=false;
+  try{ws=new WebSocket(src.url)}catch{return retryLive()}
+  LIVE.ws=ws;
+  ws.onopen=()=>{ws.send(JSON.stringify(src.sub));if(src.ping)ping=setInterval(()=>{try{ws.send(src.ping)}catch{}},20000)};
+  ws.onmessage=ev=>{
+    let m;try{m=JSON.parse(ev.data)}catch{return}
+    const px=src.parse(m);if(!px)return;
+    got=true;LIVE.tries=0;LIVE.raw=px;LIVE.rawAt=Date.now();LIVE.src=src.name;
+    // 最初の補正：直前1分以内に取った現物価格があれば、それとの差で始める
+    if(IS_GOLD&&!LIVE.offs.length&&state.spot&&!String(state.src.spot).startsWith('サイト')&&Date.now()-state.spot.asof<60000)liveCalibrate(state.spot.price);
+    onLiveTick();
+  };
+  ws.onclose=ws.onerror=()=>{clearInterval(ping);if(LIVE.ws!==ws)return;LIVE.ws=null;if(!got)LIVE.tries++;retryLive()};
+}
+function retryLive(){clearTimeout(LIVE.timer);LIVE.timer=setTimeout(startLive,Math.min(30000,2000*(1+LIVE.tries)))}
+function onLiveTick(){
+  if(!liveFresh()||!state.spot)return;
+  const px=Math.round((LIVE.raw-liveOffset())*(IS_GOLD?100:1000))/(IS_GOLD?100:1000);
+  if(Math.abs(px-state.spot.price)>(IS_GOLD?30:0.5))return;  // 補正前の大きな食い違いは使わない
+  state.prevPrice=state.spot.price;
+  state.spot={...state.spot,price:px,asof:Date.now(),freshness:'fresh'};
+  state.src.spot='リアルタイム（'+LIVE.src+(IS_GOLD?'・現物に補正':'・売値')+'）';
+  if(!IS_GOLD)state.fx=px;else if(state.fx)state.goldJpy=px*state.fx;
+  updateRolling(px);mergeSpotAll(px,Date.now());
+  // 描画は1秒に1回まで（iPadの負担を抑える）
+  const now=Date.now();if(now-LIVE.lastDraw<1000)return;LIVE.lastDraw=now;
+  renderAll();flashPrice();
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!LIVE.ws)startLive()});
+
 // ドル円：Coinbaseの最新レート（ブラウザから直接）→ サイトのmarket.json（定期取得）
 async function refreshSpotFx(){
   let px=0,asof=Date.now(),src='';
@@ -762,6 +819,10 @@ async function refreshSpot(){
   if(!IS_GOLD){
     try{
       const {px,asof,src}=await refreshSpotFx();
+      if(liveFresh()){  // リアルタイム配信が生きている間は、その値を使い続ける（30秒ごとの取得は控え）
+        try{const all=(await getSite()).instruments;state.extra={dxy:all.dxy?.price,jxy:all.jxy?.price,gold:all.gold?.price}}catch{}
+        state.health.spot=true;state.lastOk=Date.now();state.nextSpot=Date.now()+INTERVALS.spot;setStatus('live','LIVE');showError('');return;
+      }
       state.src.spot=src;state.src.fx='価格と同じ';
       state.prevPrice=state.spot?.price??null;
       state.spot={price:px,asof,freshness:Date.now()-asof>10*60000?'stale':'fresh',age:0};
@@ -807,6 +868,11 @@ async function refreshSpot(){
     }
     if(!usd) throw new Error('GOLD price missing');
     if(Date.now()-asof>10*60000)freshness='stale';
+    if(!src.startsWith('サイト'))liveCalibrate(usd);
+    if(liveFresh()&&state.spot){  // リアルタイム配信が生きている間は、補正だけして配信の値を使い続ける
+      if(fx){state.fx=fx;state.health.fx=true}
+      state.health.spot=true;state.lastOk=Date.now();state.nextSpot=Date.now()+INTERVALS.spot;setStatus('live','LIVE');showError('');return;
+    }
     state.src.spot=src;
 
     if(!fx) fx=await refreshFx();
@@ -2203,7 +2269,7 @@ renderMaToggles();
 $('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);
 $('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);
 loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(scheduler,1000);
-refreshLiveTalk();setInterval(refreshLiveTalk,45000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
+refreshLiveTalk();setInterval(refreshLiveTalk,45000);startLive();document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
 </script>
 </body>
 </html>

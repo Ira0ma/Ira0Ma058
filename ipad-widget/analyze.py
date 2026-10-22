@@ -460,11 +460,29 @@ def coinbase_offset(price):
     except Exception as e:
         print("usdjpy coinbase unavailable:", e)
     del hist[:-12]
+    # GMO Coin's FX feed (the pages' real-time USD/JPY over WebSocket): its bid against the same Swissquote bid
+    gh = SPOT_HIST.setdefault("usdjpy_gmo_sq", [])
+    try:
+        gmo = next(float(x["bid"]) for x in get_json(GMO)["data"] if x["symbol"] == "USD_JPY")
+        if abs(gmo - price) < 0.05:
+            gh.append([int(time.time()), round(gmo - price, 4)])
+    except Exception as e:
+        print("usdjpy GMO unavailable:", e)
+    del gh[:-12]
+    global GMO_OFFSET
+    if gh:
+        go = sorted(o for _, o in gh)
+        GMO_OFFSET = go[len(go) // 2]
+        print("usdjpy GMO offset", f"{GMO_OFFSET:+.4f}", f"(median of {len(go)})")
     if not hist:
         return None
     offs = sorted(o for _, o in hist)
     print("usdjpy coinbase offset", f"{offs[len(offs) // 2]:+.4f}", f"(median of {len(offs)})")
     return offs[len(offs) // 2]
+
+
+GMO = "https://forex-api.coin.z.com/public/v1/ticker"
+GMO_OFFSET = None
 
 
 BASIS_MAX_AGE = 3 * 86400  # how long the last futures-to-spot gap may stand in when no spot source answers
@@ -586,6 +604,7 @@ def one(key, sym, spot_sym, fixture, prev=None):
     return {
         "price": price, "asOf": as_of, "prevClose": prev_close, "analysis": a,
         **({} if live_offset is None else {"liveOffset": round(live_offset, 4)}),
+        **({"liveOffsetGmo": round(GMO_OFFSET, 4)} if key == "usdjpy" and GMO_OFFSET is not None else {}),
         **({} if adjusted is None else {
             "spotAdjusted": adjusted,
             "basis": shift if adjusted else None,
