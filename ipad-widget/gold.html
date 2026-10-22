@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="b399827fad">
+<meta name="build" content="a5861deb70">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -171,6 +171,22 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .result-line{margin-top:8px;padding:8px 10px;border-radius:10px;background:#16130b;border:1px solid #5d4a20;font-size:13px}
 .result-line b{font-size:16px;color:var(--gold2)}
 .result-line.wait{color:var(--amber);border-style:dashed}
+.relbox{margin-top:12px;display:grid;gap:8px}
+.relbox .rh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.relbox .rh b{font-size:13px}.relbox .rh span{color:var(--muted);font-size:11px}
+.rel{background:#0d1217;border:1px solid #232d37;border-radius:11px;padding:9px 10px;font-size:12px;display:grid;gap:5px}
+.rel.fresh{border-color:#5d4a20;background:#16130b}
+.rel.wait{border-style:dashed;color:var(--amber)}
+.rel .rt{display:flex;justify-content:space-between;gap:8px;font-weight:800;line-height:1.4}
+.rel .rv b{font-size:15px;color:var(--gold2)}
+.result-line b.cmp,.rel b.cmp{font-size:inherit;color:inherit}
+.reff{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.reff .chip{padding:2px 8px;border-radius:999px;border:1px solid #2b3742;font-weight:800;font-size:12px}
+.reff .chip.up{background:rgba(66,213,156,.12);border-color:rgba(66,213,156,.45)}
+.reff .chip.down{background:rgba(255,105,105,.12);border-color:rgba(255,105,105,.45)}
+.reff .chip.flat{color:var(--muted)}
+.reff .why{color:var(--muted);font-size:11px}
+.rel .react{color:var(--muted);font-size:11px}.rel .react.warn{color:var(--amber)}
 .livedot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(66,213,156,.8);margin-right:6px;vertical-align:middle}
 
 /* ===== chart ===== */
@@ -380,6 +396,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div class="cardhead"><div><div class="title">次の重要指標</div><div class="sub" id="nextSub">ゴールドに影響する米国指標｜端末の時刻で表示</div></div><span class="tag">NEXT</span></div>
       <div id="nextEv" class="nextev"><div class="sub">取得中...</div></div>
       <div class="sub" style="margin-top:8px"><span id="nextScope">米国の物価・雇用・景気・FRB関連の指標が対象です。</span>High指標は30分前〜15分後、Mediumは15分前〜5分後をCAUTIONとし、判定を自動でWAITにします。</div>
+      <div id="relBox" class="relbox"></div>
     </div>
   </section>
 
@@ -1054,7 +1071,7 @@ async function refreshCalendar(){
     const known=new Map(state.events.filter(e=>e.actual).map(e=>[evKey(e)+'|'+e.title,e]));
     ev.forEach(e=>{const k=known.get(evKey(e)+'|'+e.title);if(k&&!e.actual){e.actual=k.actual;e.actualAt=k.actualAt}});
     if(fc&&fc.length){mergeActuals(ev,fc);state.src.calendar='サイト（Forex Factory）＋Finance Calendar（結果）'}
-    state.events=ev;
+    state.events=ev;applyLiveResults();
     try{const nw=await getJSON(SITE+'news.json?t='+Math.floor(Date.now()/60000));state.talk=(nw.items||[]).filter(i=>(i.pages||[]).includes(INSTR.key));state.talkAt=nw.updated*1000}catch{}
     state.health.calendar=true;
     state.calendarAt=Date.now();
@@ -2054,15 +2071,36 @@ function liveTone(t,grp){
 }
 const LIVE_EFFECT={'FRB|hawkish':['ドル高（ドル円↑）','金↓'],'FRB|dovish':['ドル安（ドル円↓）','金↑'],'米政権|dovish':['ドル安（ドル円↓）','金↑'],'米政権|hawkish':['ドル高（ドル円↑）','金↓'],
   '日銀|hawkish':['円高（ドル円↓）',''],'日銀|dovish':['円安（ドル円↑）',''],'日銀|intervention':['円高警戒（ドル円↓）',''],'財務省|intervention':['円高警戒（ドル円↓）','']};
-let liveTalk=[],liveBusy=false;
+let liveTalk=[],liveBusy=false,liveResults=[];
+// 指標の結果の速報：FinancialJuice は発表と同時に「US Unemployment Claims Actual 225K (Forecast 200K, Previous 199K)」の形で流す。
+// 通貨・時刻（±6分）・名前・予想値でカレンダーの指標に結び付ける
+const FJ_RESULT=/^(.*?)\s+Actual\s+(.+?)\s*\(Forecast\s*(.*?),\s*Previous\s*(.*?)\)\s*$/i;
+function fjNorm(t){return String(t).toLowerCase().replace(/\bm\/m\b|\bmom\b|\bmm\b/g,' mom ').replace(/\by\/y\b|\byoy\b|\byy\b/g,' yoy ').replace(/\bq\/q\b|\bqoq\b|\bqq\b/g,' qoq ').replace(/jobless/g,'unemployment').replace(/\binitial\b/g,' ')}
+function sameVal(a,b){const x=num(a),y=num(b);return x!=null&&y!=null&&Math.abs(x-y)<1e-9}
+function applyLiveResults(){
+  let changed=false;
+  liveResults.forEach(r=>{
+    const cur=/^(US|U\.S\.|United States)\b/i.test(r.name)?'USD':/^(Japan|Japanese|JP)\b/i.test(r.name)?'JPY':'';if(!cur)return;
+    const cands=state.events.filter(e=>!e.speech&&e.currency===cur&&Math.abs(e.ts-r.t*1000)<=6*60000&&(!e.actual||e.actualSrc==='fj'));
+    let best=null,bestScore=-1;
+    cands.forEach(e=>{const sc=titleScore(fjNorm(e.title),fjNorm(r.name))+(sameVal(e.forecast,r.forecast)?.6:0)+(sameVal(e.previous,r.previous)?.3:0);if(sc>bestScore){best=e;bestScore=sc}});
+    if(!best||(bestScore<.5&&cands.length>1)||best.actual===r.actual)return;
+    best.actual=r.actual;best.actualAt=best.actualAt||Date.now();best.actualSrc='fj';changed=true;
+  });
+  return changed;
+}
+// 発表直後（結果が出るまで最大20分）は5秒ごとに速報を確認する
+function releaseHot(){const now=Date.now();return state.events.some(e=>!e.speech&&!e.actual&&now>=e.ts-5000&&now<=e.ts+20*60000)}
 async function refreshLiveTalk(){
   if(liveBusy||document.hidden)return;liveBusy=true;
   try{
     const c=new AbortController(),tm=setTimeout(()=>c.abort(),12000);
     const txt=await (await fetch(FJ_URL+'&t='+Date.now(),{cache:'no-store',signal:c.signal})).text();clearTimeout(tm);
-    const doc=new DOMParser().parseFromString(txt,'text/xml'),out=[];
+    const doc=new DOMParser().parseFromString(txt,'text/xml'),out=[],res=[];
     doc.querySelectorAll('item').forEach(it=>{
       const title=(it.querySelector('title')?.textContent||'').replace(/^FinancialJuice:\s*/,'').trim();
+      const rm=title.match(FJ_RESULT);
+      if(rm){const rt=Math.floor(Date.parse(it.querySelector('pubDate')?.textContent||'')/1000);if(rt)res.push({t:rt,name:rm[1],actual:rm[2],forecast:rm[3],previous:rm[4]});return}
       const w=LIVE_WHO.find(x=>x[0].test(title));if(!w)return;
       if(w[2]==='usdjpy'&&IS_GOLD)return;
       const t=Math.floor(Date.parse(it.querySelector('pubDate')?.textContent||'')/1000);if(!t)return;
@@ -2070,6 +2108,7 @@ async function refreshLiveTalk(){
       out.push({t,title,source:'FinancialJuice（速報）',link:it.querySelector('link')?.textContent||'https://www.financialjuice.com/',who:w[1],tone,usdjpy:eff[0],gold:eff[1],live:true});
     });
     liveTalk=out;state.liveTalkAt=Date.now();renderTalk();
+    liveResults=res;if(applyLiveResults()){renderNext();renderEvents()}renderResults();
   }catch{}finally{liveBusy=false}
 }
 // 要人発言ニュース：見出し・時刻・誰の発言か・トーン・ふつう起きやすい値動き
@@ -2131,8 +2170,68 @@ function resultLine(e,diff){
   if(diff>0)return '';
   if(!e.actual)return '<div class="result-line wait">発表済み｜結果を取得しています…</div>';
   const a=num(e.actual),f=num(e.forecast);
-  const cmp=a!=null&&f!=null?(a>f?'<span class="up">予想より上</span>':a<f?'<span class="down">予想より下</span>':'予想どおり'):'';
-  return `<div class="result-line">結果 <b>${esc(e.actual)}</b>　${cmp}</div>`;
+  const cmp=a!=null&&f!=null?(a>f?'<b class="cmp">予想より上</b>':a<f?'<b class="cmp">予想より下</b>':'予想どおり'):'';
+  const ef=releaseEffect(e,surprise(e));
+  return `<div class="result-line">結果 <b>${esc(e.actual)}</b>　${cmp}${ef?`<div class="reff" style="margin-top:5px">${effChips(ef)}</div>`:''}</div>`;
+}
+// 予想（なければ前回）との差で、どちらの通貨に良い結果かを判定する。失業率・失業保険申請件数は低いほど良い結果
+const LOWER_BETTER=/unemployment|claims|jobless|claimant/i;
+const SURPRISE_JA=['予想どおり','小','中','大'];
+function surprise(e){
+  const a=num(e.actual);let f=num(e.forecast),base='予想';
+  if(f==null){f=num(e.previous);base='前回'}
+  if(a==null||f==null)return null;
+  const d=a-f,pct=/%/.test(e.actual);
+  const mag=Math.round((pct?Math.abs(d):Math.abs(d)/Math.max(Math.abs(f),1e-9)*100)*1000)/1000;
+  const lv=mag===0?0:pct?(mag>=0.2?3:mag>=0.1?2:1):(mag>=8?3:mag>=2?2:1);
+  const good=lv===0?0:(d>0)!==LOWER_BETTER.test(e.title)?1:-1;  // +1＝その国の通貨に良い結果
+  return {a,f,d,base,lv,good};
+}
+// 判定：米国の良い結果＝ドル高（ドル円↑・金↓）、日本の良い結果＝円高（ドル円↓、金への影響は小さい）
+function releaseEffect(e,s){
+  if(!s)return null;
+  const flat={usdjpy:['→','flat'],gold:['→','flat'],head:'予想どおりで影響は限定的',lv:s.lv};
+  if(!s.good)return flat;
+  const up=['↑','up'],dn=['↓','down'];
+  if(e.currency==='USD')return s.good>0?{usdjpy:up,gold:dn,head:'ドル高材料',lv:s.lv}:{usdjpy:dn,gold:up,head:'ドル安材料',lv:s.lv};
+  if(e.currency==='JPY')return s.good>0?{usdjpy:dn,gold:['影響小','flat'],head:'円高材料',lv:s.lv}:{usdjpy:up,gold:['影響小','flat'],head:'円安材料',lv:s.lv};
+  return null;
+}
+function effChips(ef){
+  const c=[['ドル円',ef.usdjpy,'usdjpy'],['金',ef.gold,'gold']].sort((a,b)=>(b[2]===INSTR.key)-(a[2]===INSTR.key));
+  return c.map(([n,[t,k]])=>`<span class="chip ${k}">${n} ${t}</span>`).join('')+`<span class="why">${esc(ef.head)}${ef.lv?'（サプライズ'+SURPRISE_JA[ef.lv]+'）':''}</span>`;
+}
+// 発表後の実際の値動き（このページの銘柄）：発表時刻を含む5分足の始値から現在値まで
+function reactionSince(e){
+  const b=(state.m5||[]).find(x=>x.t<=e.ts&&e.ts<x.t+300000),p=state.spot?.price;
+  return b&&p?p-b.o:null;
+}
+function renderResults(){
+  const box=$('relBox');if(!box)return;
+  const now=Date.now(),hot=releaseHot();
+  const list=state.events.filter(e=>!e.speech&&goldRelevant(e)&&e.ts<=now&&e.ts>now-12*3600000).sort((a,b)=>b.ts-a.ts).slice(0,4);
+  let html=`<div class="rh"><b>発表結果と影響の判定</b><span><span class="livedot"></span>速報を${hot?'5秒':'45秒'}ごとに確認</span></div>`;
+  if(!list.length)html+='<div class="sub">直近12時間に発表された対象指標はありません。発表されると数秒〜数十秒で、ここに結果とドル円・金への影響の判定が出ます。</div>';
+  list.forEach(e=>{
+    const head=`<div class="rt"><span>${esc(hhmm(e.ts))}　${esc(e.currency)}｜${esc(evTitle(e))}</span><span class="star ${e.impact==='High'?'high':'medium'}">${stars(e)}</span></div>`;
+    if(!e.actual){
+      html+=now-e.ts<20*60000?`<div class="rel wait">${head}<div>発表済み｜結果の速報を待っています（予想 ${esc(e.forecast||'--')} / 前回 ${esc(e.previous||'--')}）</div></div>`
+        :`<div class="rel">${head}<div class="react">結果を取得できませんでした（予想 ${esc(e.forecast||'--')} / 前回 ${esc(e.previous||'--')}）</div></div>`;
+      return;
+    }
+    const s=surprise(e),ef=releaseEffect(e,s);
+    const cmp=s?(s.d>0?`<b class="cmp">${s.base}より上</b>`:s.d<0?`<b class="cmp">${s.base}より下</b>`:'予想どおり'):'';
+    let react='';
+    const mv=now-e.ts<3*3600000?reactionSince(e):null;
+    if(mv!=null){
+      const exp=ef?ef[INSTR.key][1]:'flat',got=mv>0?'up':'down',th=IS_GOLD?2:0.05;
+      const odd=exp!=='flat'&&Math.abs(mv)>=th&&exp!==got;
+      react=`<div class="react ${odd?'warn':''}">発表後の${INSTR.name}の動き：${mv>=0?'+':'−'}${esc(INSTR.dist(Math.abs(mv)))}${odd?'｜判定と逆向き（織り込み済み、または他の材料が優勢の可能性）':''}</div>`;
+    }
+    html+=`<div class="rel ${now-e.ts<30*60000?'fresh':''}">${head}<div class="rv">結果 <b>${esc(e.actual)}</b>　予想 ${esc(e.forecast||'--')} / 前回 ${esc(e.previous||'--')}　${cmp}</div>`+
+      (ef?`<div class="reff">${effChips(ef)}</div>`:'')+react+`</div>`;
+  });
+  box.innerHTML=html;
 }
 function updateCaution(){
   const e=nextCautionEvent(),box=$('caution');
@@ -2179,7 +2278,7 @@ function renderChecks(risk,reb){
 function renderAll(){
   renderSnapshot();
   const reb=renderRebound();
-  drawChart();renderEvents();renderNext();
+  drawChart();renderEvents();renderNext();renderResults();
   const risk=calcRisk();
   renderChecks(risk,reb);updateCaution();
   $('lastUpdate').textContent=state.lastOk?localTime(state.lastOk):'--';
@@ -2359,7 +2458,7 @@ renderMaToggles();
 $('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);
 $('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);
 loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(scheduler,1000);
-refreshLiveTalk();setInterval(refreshLiveTalk,45000);startLive();setTimeout(fillRecentGold,20000);setInterval(fillRecentGold,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
+refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(releaseHot())refreshLiveTalk()},5000);startLive();setTimeout(fillRecentGold,20000);setInterval(fillRecentGold,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
 </script>
 </body>
 </html>
