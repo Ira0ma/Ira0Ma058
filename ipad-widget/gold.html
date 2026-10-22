@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="d06238f3b6">
+<meta name="build" content="468f5a59eb">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2423,7 +2423,9 @@ $('chartReset').onclick=()=>{resetView();state.hover=null;drawChart()};
 // チャートを画面いっぱいに（もう一度押すか Esc で戻る）
 function setFull(on){
   $('secChart').classList.toggle('full',on);document.body.classList.toggle('chartfull',on);
-  $('fullBtn').textContent=on?'✕ 閉じる':'⤢ 大きく表示';$('fullBtn').setAttribute('aria-pressed',on);
+  $('fullBtn').textContent=on?'↙ 元の表示に戻す':'⤢ 大きく表示';$('fullBtn').setAttribute('aria-pressed',on);
+  // トレードデスクの中では、デスクの「閉じる」ボタンが同じ右上に重なるので、大きく表示している間は隠してもらう
+  if(window.parent!==window)window.parent.postMessage({type:'dash-chartfull',key:INSTR.key,on},'*');
   requestAnimationFrame(drawChart);
 }
 $('fullBtn').onclick=()=>setFull(!$('secChart').classList.contains('full'));

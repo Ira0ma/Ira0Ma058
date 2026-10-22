@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#06070b">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="588a21cc1e">
+<meta name="build" content="4c665c6b13">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -272,6 +272,7 @@ body {
 @media (prefers-reduced-motion: reduce) { .mkt.entry-buy, .mkt.entry-sell { animation: none; box-shadow: inset 0 0 0 3px var(--pulse); background: var(--tint); } .gold-open.entry-on { animation: none; box-shadow: 0 0 0 3px rgba(227,184,103,.6); } }
 .dash-sheet { position: fixed; inset: 0; z-index: 30; background: var(--night); }
 .dash-sheet iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+.dash-close[hidden] { display: none; }
 .dash-close { position: absolute; z-index: 1; top: calc(env(safe-area-inset-top, 0px) + 10px); right: calc(env(safe-area-inset-right, 0px) + 10px);
   display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px; font-weight: 700; color: var(--ink); background: rgba(16,18,24,.9); border: 1px solid var(--glass-line); border-radius: 999px; padding: 8px 14px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.5); }
 .gold-open:focus-visible, .dash-close:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
@@ -577,8 +578,8 @@ html:not(.flow) #flow { display: none; }
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=d06238f3b6", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=73dc963a8b", title: "ドル円分析" }
+    gold: { src: "gold.html?v=468f5a59eb", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=a02a966d9a", title: "ドル円分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -615,8 +616,10 @@ html:not(.flow) #flow { display: none; }
   var entryState = {};
   window.addEventListener("message", function (e) {
     var d = e.data;
-    if (!d || d.type !== "dash-signal" || !SHEETS[d.key] || !SHEETS[d.key].el) return;
+    if (!d || (d.type !== "dash-signal" && d.type !== "dash-chartfull") || !SHEETS[d.key] || !SHEETS[d.key].el) return;
     if (e.source !== SHEETS[d.key].el.querySelector("iframe").contentWindow) return;  // only our own dashboards
+    // While a dashboard shows its chart full screen, its own "back" button sits where ours does: hide ours
+    if (d.type === "dash-chartfull") { SHEETS[d.key].el.querySelector(".dash-close").hidden = !!d.on; return; }
     var was = entryState[d.key] && entryState[d.key].entry;
     entryState[d.key] = d; paintEntries();
     if (d.entry && !was) chime(d.sig === "BUY");  // a new entry call: sound once
