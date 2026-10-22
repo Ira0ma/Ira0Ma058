@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="36ff0ba4bf">
+<meta name="build" content="b4aabb0b9a">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1042,7 +1042,7 @@ function cupHandle(){
         if(P>line+depth*0.5)continue;  // もう大きく進んだあと
         found.push({dir,state:P>line?'breakout':'forming',line:dir*line,handleLow:dir*hLow,bottom:dir*B[bi].l,depth,
           target:dir*(line+depth),tl:bars[l].t,tb:bars[bi].t,tr:bars[r].t,len:cup.length,hlen:handle.length,
-          id:'cup',tf:'m15',label:'M15'+(dir>0?'カップウィズハンドル':'逆カップウィズハンドル'),neck:dir*line,stop:dir*hLow,
+          id:'cup',tf:'m15',label:'15分足'+(dir>0?'カップウィズハンドル':'逆カップウィズハンドル'),neck:dir*line,stop:dir*hLow,
           height:depth,t0:bars[l].t,atr:a,useSma:1,slSrc:'ハンドルの'+(dir>0?'安値':'高値')+'の外'});
         break;  // この右の縁ではいちばん近い左の縁で十分
       }
@@ -1136,7 +1136,7 @@ function chartPatterns(){
     const r=(cfg.id==='db'?detectDB:detectIHS)(B,cfg.dir*price,a,cfg.p);
     if(!r)continue;
     const d=cfg.dir;
-    out.push({id:cfg.id,tf:cfg.tf,dir:d,label:(cfg.tf==='h1'?'H1':'M15')+cfg.name,state:r.state,neck:d*r.neck,stop:d*r.stop,
+    out.push({id:cfg.id,tf:cfg.tf,dir:d,label:(cfg.tf==='h1'?'1時間足':'15分足')+cfg.name,state:r.state,neck:d*r.neck,stop:d*r.stop,
       height:r.height,target:d*(r.neck+r.height),t0:r.t0,atr:a,useSma:cfg.p.useSma,entry:cfg.entry,
       slSrc:(cfg.id==='db'?(d>0?'ボトム':'トップ'):'右肩')+'の'+(d>0?'安値':'高値')+'の外'});
   }
@@ -1348,7 +1348,7 @@ function renderPatList(s){
   const side=d=>d>0?'買い':d<0?'売り':'買い・売り';
   const html=rows.map(r=>{
     const pt=(s.pats||[]).find(p=>p.id===r.id&&p.tf===r.tf&&(r.dir===0||p.dir===r.dir));
-    const dir=pt?pt.dir:r.dir,name=(r.tf==='h1'?'H1':'M15')+(pt&&r.id==='cup'?pt.label.replace(/^M15/,''):r.name)+'（'+side(dir)+'）';
+    const dir=pt?pt.dir:r.dir,name=(r.tf==='h1'?'1時間足':'15分足')+(pt&&r.id==='cup'?pt.label.replace(/^15分足/,''):r.name)+'（'+side(dir)+'）';
     const c=pt&&s.checks?.get(pt),item=(ok,txt)=>'<span class="'+(ok?'ok':'ng')+'">'+(ok?'✓':'✗')+' '+esc(txt)+'</span>';
     let st='未検出',cls='idle',det='';
     if(pt&&pt.state==='forming'){
@@ -1549,7 +1549,7 @@ function drawChart(){
     ctx.strokeStyle=`rgba(${col},.9)`;ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
     ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(xe,yy);ctx.stroke();ctx.setLineDash([]);
     ctx.fillStyle=`rgba(${col},1)`;ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline=pt.dir>0?'top':'bottom';
-    ctx.fillText(pt.label.replace(/^(M15|H1)/,'')+(pt.state==='breakout'?' ブレイク':' 形成中'),Math.max(P.l+2,x0)+4,yy+(pt.dir>0?4:-4));
+    ctx.fillText(pt.label.replace(/^(15分足|1時間足)/,'')+(pt.state==='breakout'?' ブレイク':' 形成中'),Math.max(P.l+2,x0)+4,yy+(pt.dir>0?4:-4));
   });
   const cup=state.tf==='m15'?cupHandle():null;
   if(cup){
