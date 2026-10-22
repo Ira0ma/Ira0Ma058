@@ -36,19 +36,19 @@ MAX_HOLD = 288    # 3 days of 15-minute candles
 
 # ---------- data ----------
 
-def histdata_year(year, cache):
-    path = os.path.join(cache, f"XAUUSD_M1_{year}.zip")
+def histdata_year(year, cache, pair="xauusd"):
+    path = os.path.join(cache, f"{pair.upper()}_M1_{year}.zip")
     if not os.path.exists(path):
         jar = http.cookiejar.CookieJar()
         op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
         ua = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124 Safari/537.36"}
-        ref = f"https://www.histdata.com/download-free-forex-historical-data/?/ascii/1-minute-bar-quotes/xauusd/{year}"
+        ref = f"https://www.histdata.com/download-free-forex-historical-data/?/ascii/1-minute-bar-quotes/{pair}/{year}"
         page = op.open(urllib.request.Request(ref, headers=ua), timeout=60).read().decode("utf-8", "replace")
         tk = re.search(r'id="tk"\s+value="([^"]+)"', page) or re.search(r'name="tk"\s+value="([^"]+)"', page)
         if not tk:
             raise RuntimeError(f"{year}: no download token on the page")
         form = urllib.parse.urlencode({"tk": tk.group(1), "date": str(year), "datemonth": str(year),
-                                       "platform": "ASCII", "timeframe": "M1", "fxpair": "XAUUSD"}).encode()
+                                       "platform": "ASCII", "timeframe": "M1", "fxpair": pair.upper()}).encode()
         req = urllib.request.Request("https://www.histdata.com/get.php", data=form,
                                      headers={**ua, "Referer": ref, "Content-Type": "application/x-www-form-urlencoded"})
         data = op.open(req, timeout=300).read()

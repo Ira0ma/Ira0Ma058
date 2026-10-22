@@ -1,0 +1,56 @@
+name: USD/JPY chart patterns that ran 30 pips (M15/H1, 10 years)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/amazon-affiliate-articles]
+    paths: ["research/usdjpy_patterns.py", ".github/workflows/usdjpy-patterns.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: usdjpy-patterns
+  cancel-in-progress: true
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy numba
+      - name: Restore downloaded HistData files
+        uses: actions/cache@v4
+        with:
+          path: histdata
+          key: histdata-usdjpy-m1-2016-2025
+      - name: Download
+        run: python3 research/usdjpy_patterns.py histdata download
+
+  backtest:
+    needs: download
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        tf: [m15, h1]
+        pattern: [db, ihs, cup, box]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy numba
+      - name: Restore downloaded HistData files
+        uses: actions/cache/restore@v4
+        with:
+          path: histdata
+          key: histdata-usdjpy-m1-2016-2025
+          fail-on-cache-miss: true
+      - name: Backtest
+        run: python3 research/usdjpy_patterns.py histdata ${{ matrix.tf }} ${{ matrix.pattern }}
