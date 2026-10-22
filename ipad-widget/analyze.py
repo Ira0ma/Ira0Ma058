@@ -278,6 +278,8 @@ def jxy_series(fixture):
     return out
 
 
+COINBASE = "https://api.coinbase.com/v2/exchange-rates?currency=USD"
+SQ = "https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/"
 CHECK = {"gold": "XAU/USD", "usdjpy": "USD/JPY"}  # dashboard instruments: log a sanity check each run
 
 
@@ -296,6 +298,17 @@ def check(key, price, h1, m15):
         msg += f", swissquote {mids[len(mids) // 2]:.3f}"
     except Exception as e:
         msg += f", swissquote unavailable ({e})"
+    if key == "usdjpy":  # the USD/JPY page's live price sources, side by side
+        try:
+            msg += f", coinbase {float(get_json(COINBASE)['data']['rates']['JPY']):.3f}"
+        except Exception as e:
+            msg += f", coinbase unavailable ({e})"
+        try:  # can a browser page read the Swissquote feed (CORS)?
+            req = urllib.request.Request(SQ + "USD/JPY", headers={**UA, "Origin": "https://ira0ma.github.io"})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                msg += f", swissquote CORS {r.headers.get('Access-Control-Allow-Origin')!r}"
+        except Exception as e:
+            msg += f", swissquote CORS check failed ({e})"
     print(msg + (f"; outsized candles (>8x median range): {odd}" if odd else "; no outsized candles"))
 
 
