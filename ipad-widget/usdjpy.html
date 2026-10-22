@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="e365474170">
+<meta name="build" content="63799fd6fd">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -303,6 +303,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
         <div class="reason"><span>② H1モメンタム(3本)</span><b id="reasonMom">--</b></div>
         <div class="reason"><span>③ 当日レンジ位置</span><b id="reasonRange">--</b></div>
         <div class="reason"><span>④ 利確余地（<span id="minTpLabel">50</span>pips以上）</span><b id="reasonTp">--</b></div>
+        <div class="reason" id="cupRow" hidden><span>⑤ M15 カップウィズハンドル</span><b id="reasonCup">--</b></div>
       </div>
       <div id="planBox" class="planbox" hidden></div>
     </div>
@@ -421,7 +422,7 @@ const $ = id => document.getElementById(id);
 /* 銘柄ごとの設定。同じページを usdjpy.html として配信すると USD/JPY 版になる（build.py が生成） */
 const INSTRUMENTS={
   gold:{key:'gold',site:'gold',title:'GOLD',label:'XAU / USD',short:'XAU',name:'ゴールド',sub:'XAU/USD専用｜自動更新｜iPad・iPhone・Android対応',
-    dp:2,pip:0.1,minTp:50,pipNote:'1pips＝$0.10',momTh:0.8,slMin:2,tolMin:.5,unit:'oz',contract:'100',
+    dp:2,pip:0.1,minTp:50,pipNote:'1pips＝$0.10',momTh:0.8,slMin:2,tolMin:.5,unit:'oz',contract:'100',cupHandle:true,
     brokerNote:'XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,2),
     footer:'データ: Gold API・XAUS（GOLD価格）／GitHub Actionsで定期取得したYahoo Finance足（チャート）・Forex Factory（経済指標）／Frankfurter（USD/JPY補助）。'},
@@ -995,6 +996,47 @@ function dayHL(){
   }
   return {hi:n(hi),lo:n(lo),open:n(open)};
 }
+/* M15のカップウィズハンドル（買い）と逆カップウィズハンドル（売り）
+   カップ：左右の縁がほぼ同じ高さ（深さの25%以内）で、底が真ん中寄りの丸い形（V字ではなく、底から深さ20%以内に3割以上の足）。
+          長さ15〜80本（約4〜20時間）、深さはM15 ATRの1.5〜12倍。
+   ハンドル：右の縁のあと3〜16本（カップの半分以下の長さ）、押しはカップの深さの10〜50%で、縁を上抜けていない。
+   ブレイク：現在値がハンドルの高値（縁）を超えたら成立。縁から深さの半分以上進んでいたら「過ぎた」とみなして出さない。 */
+let cupCache={k:'',v:null};
+function cupHandle(){
+  if(!INSTR.cupHandle||!state.spot||state.m15.length<40)return null;
+  const bars=state.m15,price=state.spot.price,k=bars.length+':'+bars.at(-1).t+':'+price;
+  if(cupCache.k===k)return cupCache.v;
+  const a=atr(bars,14)||0, found=[];
+  if(a)for(const dir of [1,-1]){
+    // 売り型は価格を上下反転して同じ形を探す
+    const B=bars.map(b=>dir>0?b:{t:b.t,o:-b.o,h:-b.l,l:-b.h,c:-b.c}), P=dir*price, n=B.length;
+    for(let r=n-4;r>=n-17&&r>0;r--){
+      const handle=B.slice(r+1,n-1);  // 最新の足（形成中）はブレイクの判定に使う
+      if(handle.length<3)continue;
+      if(B.slice(Math.max(0,r-3),r).some(b=>b.h>B[r].h)){continue}  // 右の縁は山（直前より高い）
+      for(let l=r-15;l>=Math.max(0,r-80);l--){
+        const cup=B.slice(l,r+1),hl=B[l].h,hr=B[r].h,rimMax=Math.max(hl,hr);
+        if(Math.max(...cup.map(b=>b.h))>rimMax+1e-9)continue;  // 縁がカップ内の最高値
+        let bi=l;for(let i=l;i<=r;i++)if(B[i].l<B[bi].l)bi=i;
+        const rim=Math.min(hl,hr),depth=rim-B[bi].l;
+        if(depth<a*1.5||depth>a*12||Math.abs(hl-hr)>depth*0.25)continue;
+        const pos=(bi-l)/(r-l);if(pos<0.25||pos>0.75)continue;  // 底が真ん中寄り
+        if(cup.filter(b=>b.l<=B[bi].l+depth*0.2).length<Math.max(4,cup.length*0.3))continue;  // 丸い底（底付近に3割以上の足。V字を除く）
+        if(handle.length>cup.length/2)continue;
+        const hHigh=Math.max(...handle.map(b=>b.h)),hLow=Math.min(...handle.map(b=>b.l)),pull=hr-hLow;
+        if(hHigh>hr+depth*0.1||pull<depth*0.1||pull>depth*0.5)continue;
+        const line=Math.max(hr,hHigh);  // ブレイクの基準＝右の縁とハンドルの高い方
+        if(P>line+depth*0.5)continue;  // もう大きく進んだあと
+        found.push({dir,state:P>line?'breakout':'forming',line:dir*line,handleLow:dir*hLow,bottom:dir*B[bi].l,depth,
+          target:dir*(line+depth),tl:bars[l].t,tb:bars[bi].t,tr:bars[r].t,len:cup.length,hlen:handle.length});
+        break;  // この右の縁ではいちばん近い左の縁で十分
+      }
+      if(found.some(f=>f.dir===dir))break;  // 最新の形だけ使う
+    }
+  }
+  const v=found.sort((x,y)=>(y.state==='breakout')-(x.state==='breakout')||y.tr-x.tr)[0]||null;
+  cupCache={k,v};return v;
+}
 function calcSignal(){
   if(!state.spot||state.h1.length<120)return {sig:'WAIT',entry:false,score:0,sma:0,mom:0,mid:state.spot?.price||0,hi:0,lo:0,forced:false,ready:false};
   const sma=smaSeries(state.h1,120).at(-1)||0;
@@ -1008,18 +1050,31 @@ function calcSignal(){
   let sig=score>=2?'BUY':score<=-2?'SELL':'WAIT', forced=false;
   if(isCautionActive()&&sig!=='WAIT'){sig='WAIT';forced=true}
   // 3条件すべてが同じ方向（スコア±3）で、重要指標のCAUTION中でなく、利確目安まで基準（ゴールド50pips・ドル円30pips）以上あればエントリー
-  const plan=sig!=='WAIT'?tradePlan(sig==='BUY'?1:-1):null;
+  let plan=sig!=='WAIT'?tradePlan(sig==='BUY'?1:-1):null;
   const aligned=sig!=='WAIT'&&Math.abs(score)===3;
-  const entry=aligned&&!!plan&&plan.tpPips>=MIN_TP_PIPS;
-  return {sig,entry,aligned,plan,score,sma,mom,mid,hi,lo,forced,ready:true};
+  let entry=aligned&&!!plan&&plan.tpPips>=MIN_TP_PIPS, via='';
+  // ⑤ M15カップウィズハンドルのブレイク：H1 120SMAと同じ向きで、CAUTION中でなく、利確余地が基準以上ならエントリー
+  const cup=cupHandle();
+  if(cup&&cup.state==='breakout'&&!isCautionActive()&&(cup.dir>0?state.spot.price>=sma:state.spot.price<sma)){
+    const cp=tradePlan(cup.dir,cup);
+    if(cp.tpPips>=MIN_TP_PIPS&&!(entry&&plan.dir===cup.dir)){sig=cup.dir>0?'BUY':'SELL';plan=cp;entry=true;via='cup'}
+    else if(entry&&plan.dir===cup.dir)via='both';
+  }
+  return {sig,entry,aligned,plan,score,sma,mom,mid,hi,lo,forced,ready:true,cup,via};
 }
 // ゴールドの1pips＝0.1ドル（XMなど国内向け業者の一般的な表記。1lot＝100ozで1pips＝10ドル）
 const PIP=INSTR.pip, MIN_TP_PIPS=INSTR.minTp;
 // 売買プラン：エントリー＝現在値。損切り＝M15 ATR×倍率（最低2ドル）。
 // 利確＝進む方向でいちばん近いH1水平線（5pips以上先）。線がなければ損切り幅×目標RR。
-function tradePlan(dir){
+function tradePlan(dir,cup){
   if(!state.spot)return null;
   const entry=state.spot.price;
+  // カップウィズハンドル：損切りはハンドルの安値（売りは高値）の少し外、利確はカップの深さ分（計測値）
+  if(cup){
+    const buf=(currentAtr()||0)*0.2, slDist=Math.max(Math.abs(entry-(cup.handleLow-cup.dir*buf)),INSTR.slMin);
+    const sl=entry-dir*slDist, tp=cup.target, tpPips=Math.max(0,dir*(tp-entry))/PIP, slPips=slDist/PIP;
+    return {dir,entry,tp,sl,tpPips,slPips,rr:tpPips/slPips,tpSrc:'カップの深さ分',slSrc:'ハンドルの'+(dir>0?'安値':'高値')+'の外'};
+  }
   const a=currentAtr()||Math.max(entry*0.0012,INSTR.slMin*1.5);
   const slDist=Math.max(a*(n($('slMult').value)||1.2),INSTR.slMin);
   const lv=h1Levels().filter(l=>dir>0?l.price>entry+5*PIP:l.price<entry-5*PIP)
@@ -1055,9 +1110,9 @@ function autoRisk(){
   ['entry','stop','target'].forEach(id=>$(id).readOnly=on);
   if(!on||!state.spot)return;
   const a=currentAtr()||Math.max(state.spot.price*0.0012,3);
-  const direction=riskDirection();
-  // セットアップ判定と同じ売買プラン（利確はH1水平線、なければ損切り幅×目標RR）
-  const plan=tradePlan(direction);
+  const direction=riskDirection(), s=calcSignal();
+  // セットアップ判定と同じ売買プラン（利確はH1水平線、なければ損切り幅×目標RR。カップウィズハンドルのエントリーはその形のプラン）
+  const plan=s.via==='cup'&&s.plan.dir===direction?s.plan:tradePlan(direction);
   $('entry').value=plan.entry.toFixed(2);
   $('stop').value=plan.sl.toFixed(2);
   $('target').value=plan.tp.toFixed(2);
@@ -1177,7 +1232,10 @@ function renderSnapshot(){
   state.signal=s.sig;
   notifyDesk(s);
   const el=$('signal');
-  const sub=!s.ready?'データ取得中':s.forced?'重要指標前後のため待機':s.sig==='WAIT'?'条件がそろうまで待機':
+  const sub=!s.ready?'データ取得中':s.forced?'重要指標前後のため待機':
+    s.via==='cup'?'M15カップウィズハンドル ブレイク・利確目安まで'+Math.round(s.plan.tpPips)+'pips':
+    s.via==='both'?'3条件一致＋カップウィズハンドル・利確目安まで'+Math.round(s.plan.tpPips)+'pips':
+    s.sig==='WAIT'?'条件がそろうまで待機':
     s.entry?'3条件一致・利確目安まで'+Math.round(s.plan.tpPips)+'pips':
     s.aligned?'3条件一致｜利確余地が'+MIN_TP_PIPS+'pips未満のため見送り':'3条件中2つが一致｜エントリー待ち';
   const label=s.entry?(s.sig==='BUY'?'買いエントリー':'売りエントリー'):s.sig;
@@ -1216,6 +1274,13 @@ function renderSnapshot(){
   else setReason('reasonRange','取得中',0);
   if(s.plan)setReason('reasonTp',Math.round(s.plan.tpPips)+'pips'+(s.plan.tpPips>=MIN_TP_PIPS?'（OK）':'（不足）'),s.plan.tpPips>=MIN_TP_PIPS?(s.sig==='BUY'?1:-1):0);
   else setReason('reasonTp',s.ready?'方向が決まると計算':'取得中',0);
+  if(INSTR.cupHandle){
+    $('cupRow').hidden=false;
+    const c=s.cup,side=c?(c.dir>0?'買い型':'売り型（逆カップ）'):'';
+    if(!c)setReason('reasonCup',state.m15.length<40?'M15待ち':'なし',0);
+    else if(c.state==='breakout')setReason('reasonCup',side+' ブレイク '+fmt(c.line)+(s.via?'（エントリー）':(c.dir>0?state.spot.price<s.sma:state.spot.price>=s.sma)?'（120SMAと逆向きのため見送り）':'（利確余地不足・CAUTION等で見送り）'),c.dir);
+    else setReason('reasonCup',side+' ハンドル形成中｜'+fmt(c.line)+(c.dir>0?' 上抜けで':' 下抜けで')+'成立',0);
+  }
   renderPlan(s);
 
   $('miniPrice').textContent=fmt(state.spot.price);
@@ -1234,7 +1299,7 @@ function renderPlan(s){
   box.innerHTML=`<div class="plhead">${s.entry?(pl.dir>0?'買い':'売り')+'エントリー プラン':'参考プラン（エントリー条件未達）'}</div>`+
     row('エントリーポイント',fmt(pl.entry),'現在値（成行）')+
     row('利確目安',fmt(pl.tp),'+'+Math.round(pl.tpPips)+'pips｜'+pl.tpSrc,'tp')+
-    row('損切り目安',fmt(pl.sl),'−'+Math.round(pl.slPips)+'pips｜M15 ATR×'+(n($('slMult').value)||1.2),'sl')+
+    row('損切り目安',fmt(pl.sl),'−'+Math.round(pl.slPips)+'pips｜'+(pl.slSrc||'M15 ATR×'+(n($('slMult').value)||1.2)),'sl')+
     `<div class="plfoot">RR ${pl.rr.toFixed(2)}｜${INSTR.pipNote}</div>`;
 }
 function renderRebound(){
@@ -1332,6 +1397,20 @@ function drawChart(){
     ctx.strokeStyle=t.kind==='up'?TL_UP:TL_DOWN;ctx.lineWidth=t.touches>=4?2.4:1.8;
     ctx.beginPath();ctx.moveTo(x(g0-startIdx),y(t.p1));ctx.lineTo(x(g1-startIdx),y(t.p1+t.slope*(g1-g0)));ctx.stroke();
   });
+  // M15のカップウィズハンドル：左の縁から今までブレイクの基準線（点線）、カップの底に印
+  const cup=!isH1?cupHandle():null;
+  if(cup){
+    const ix=t=>{const i=source.findIndex(b=>b.t===t);return i<0?null:i-startIdx};
+    const xl=ix(cup.tl),xb=ix(cup.tb),xe=bars.length-1+blank;
+    if(xl!=null&&cup.line>=min&&cup.line<=max){
+      const col=cup.dir>0?'66,213,156':'255,105,105',yy=y(cup.line);
+      ctx.strokeStyle=`rgba(${col},.9)`;ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
+      ctx.beginPath();ctx.moveTo(x(xl),yy);ctx.lineTo(x(xe),yy);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=`rgba(${col},1)`;ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline=cup.dir>0?'top':'bottom';  // 名前はカップの内側に書く
+      ctx.fillText((cup.dir>0?'カップ&ハンドル':'逆カップ&ハンドル')+(cup.state==='breakout'?' ブレイク':' 形成中'),Math.max(P.l+2,x(xl))+4,yy+(cup.dir>0?4:-4));
+      if(xb!=null){const yb=y(cup.bottom);ctx.beginPath();ctx.arc(x(xb),yb+(cup.dir>0?6:-6),3,0,Math.PI*2);ctx.fill()}
+    }
+  }
   ctx.textBaseline='middle';
   ctx.restore();
 
