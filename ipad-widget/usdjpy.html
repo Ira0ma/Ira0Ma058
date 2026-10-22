@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="025985f49b">
+<meta name="build" content="8a047375cf">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -159,6 +159,11 @@ canvas.dragging{cursor:grabbing}
 .chartinfo b{color:var(--text);font-weight:700}
 .levelinfo{margin-top:4px}
 .matoggles{display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 8px}
+.dowrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 8px;font-size:11px;color:var(--muted)}
+.dowrow .dl{font-weight:700;margin-right:2px}
+.dowrow button{font:inherit;font-size:11px;font-weight:700;border-radius:999px;padding:4px 9px;border:1px solid #34404c;background:#121820;color:var(--muted);cursor:pointer}
+.dowrow button.up{color:#42d59c;border-color:#275e49}.dowrow button.down{color:#ff6969;border-color:#71343a}.dowrow button.warn{color:#ffb547;border-color:#654f1f}
+.dowrow button.cur{background:#18212b;box-shadow:0 0 0 1px currentColor inset}
 .matoggles .seg{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;font-size:11px;opacity:.55}
 .matoggles .seg i{width:12px;height:3px;border-radius:2px;display:inline-block}
 .matoggles .seg.on{opacity:1;background:#18212b;border-color:#5a6775;color:var(--text)}
@@ -336,6 +341,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div class="segmented"><button class="seg tfBtn" data-tf="m5">M5</button><button class="seg tfBtn" data-tf="m15">M15</button><button class="seg tfBtn active" data-tf="h1">H1</button><button class="seg tfBtn" data-tf="h4">H4</button><button id="lvBtn" class="seg active" aria-pressed="true">水平線</button><button id="tlBtn" class="seg active" aria-pressed="true">トレンドライン</button></div>
     </div>
     <div id="maToggles" class="matoggles" role="group" aria-label="移動平均線の表示"></div>
+    <div id="dowRow" class="dowrow" aria-label="時間足ごとのダウ理論トレンド"></div>
     <div class="chartwrap"><canvas id="chart"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
     <div id="chartInfo" class="chartinfo">--</div>
     <div class="charthint">ドラッグで左右（過去へ・右側に空白）・上下に移動／ピンチ・ホイールで拡大縮小／右端の価格目盛りを上下ドラッグで縦の拡大縮小／ダブルタップでリセット</div>
@@ -931,6 +937,35 @@ function trendLines(src){
     return top;
   };
   return [best(lows,'up'),best(highs,'down')].filter(Boolean);
+}
+
+// ダウ理論のトレンド：直近の山（高値）2つと谷（安値）2つを比べる。
+// 高値・安値とも切り上げ＝上昇トレンド、切り下げ＝下降トレンド。上昇中に直近の押し安値を割る（下降中に戻り高値を超える）とトレンド崩れ。
+// 片方だけ切り上げ（切り下げ）でも直近の山（谷）を抜けたら転換とみる。それ以外はレンジ。
+const DOW_K={m5:5,m15:5,h1:4,h4:3};
+const DOW_NAME={up:'上昇トレンド',down:'下降トレンド',upx:'上昇崩れ（押し安値割れ）',downx:'下降崩れ（戻り高値超え）',upt:'上昇転換',downt:'下降転換',range:'レンジ',none:'データ待ち'};
+function dowTrend(src,k){
+  const N=src.length,from=Math.max(0,N-150),hs=[],ls=[];
+  for(let i=from+k;i<N-k;i++){
+    let isH=true,isL=true;
+    for(let j=i-k;j<=i+k;j++){if(j===i)continue;if(src[j].h>src[i].h||(j<i&&src[j].h===src[i].h))isH=false;if(src[j].l<src[i].l||(j<i&&src[j].l===src[i].l))isL=false}
+    if(isH)hs.push(i);if(isL)ls.push(i);
+  }
+  if(hs.length<2||ls.length<2)return {kind:'none',highs:[],lows:[]};
+  const [h1,h2]=hs.slice(-2),[l1,l2]=ls.slice(-2),H1=src[h1].h,H2=src[h2].h,L1=src[l1].l,L2=src[l2].l,p=src.at(-1).c;
+  let kind='range';
+  if(H2>H1&&L2>L1)kind=p<L2?'upx':'up';
+  else if(H2<H1&&L2<L1)kind=p>H2?'downx':'down';
+  else if(L2>L1&&p>H2)kind='upt';
+  else if(H2<H1&&p<L2)kind='downt';
+  return {kind,highs:[{i:h1,p:H1},{i:h2,p:H2}],lows:[{i:l1,p:L1},{i:l2,p:L2}]};
+}
+const dowCls=k=>k==='up'||k==='upt'?'up':k==='down'||k==='downt'?'down':k==='upx'||k==='downx'?'warn':'';
+function renderDowRow(){
+  $('dowRow').innerHTML='<span class="dl">ダウ理論</span>'+Object.keys(TFS).map(tf=>{
+    const d=dowTrend(state[tf],DOW_K[tf]),mark=dowCls(d.kind)==='up'?'▲ ':dowCls(d.kind)==='down'?'▼ ':'';
+    return '<button type="button" data-dow="'+tf+'" class="'+dowCls(d.kind)+(tf===state.tf?' cur':'')+'">'+tf.toUpperCase()+' '+mark+DOW_NAME[d.kind]+'</button>';
+  }).join('');
 }
 
 // H1の強い水平線：H1の山・谷（前後3本より高い／低い足）を集め、ATRの0.35倍以内に重なるものを1本にまとめる。
@@ -1583,6 +1618,24 @@ function drawChart(){
     ctx.fillStyle=`rgba(${col},1)`;ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline=pt.dir>0?'top':'bottom';
     ctx.fillText(pt.label.replace(/^(15分足|1時間足)/,'')+(pt.state==='breakout'?' ブレイク':' 形成中'),Math.max(P.l+2,x0)+4,yy+(pt.dir>0?4:-4));
   });
+  // ダウ理論の判定に使った直近の山・谷に印（高値↑＝切り上げ、↓＝切り下げ）と、左上に判定
+  const dow=dowTrend(source,DOW_K[state.tf]||4);
+  ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='center';
+  [['highs',-1],['lows',1]].forEach(([key,sd])=>dow[key].forEach((pv,n)=>{
+    const xi=pv.i-startIdx;if(xi<0||xi>=bars.length)return;
+    const yy=y(pv.p)+sd*9,up=n?pv.p>dow[key][0].p:null;
+    ctx.fillStyle=up==null?'#93a0ad':up?'#42d59c':'#ff6969';
+    ctx.beginPath();ctx.arc(x(xi),y(pv.p),2.5,0,Math.PI*2);ctx.fill();
+    ctx.textBaseline=sd<0?'bottom':'top';
+    ctx.fillText((key==='highs'?'高値':'安値')+(up==null?'':up?'↑':'↓'),x(xi),yy+(sd<0?3:-3));
+  }));
+  if(dow.kind!=='none'){
+    const txt=state.tf.toUpperCase()+' ダウ理論：'+DOW_NAME[dow.kind],c=dowCls(dow.kind);
+    ctx.font='bold 12px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='top';
+    const tw=ctx.measureText(txt).width;
+    ctx.fillStyle='rgba(13,18,23,.85)';ctx.fillRect(P.l+4,P.t+2,tw+12,20);
+    ctx.fillStyle=c==='up'?'#42d59c':c==='down'?'#ff6969':c==='warn'?'#ffb547':'#c9d2db';ctx.fillText(txt,P.l+10,P.t+6);
+  }
   const cup=state.tf==='m15'?cupHandle():null;
   if(cup){
     const ix=t=>{const i=source.findIndex(b=>b.t===t);return i<0?null:i-startIdx};
@@ -1630,6 +1683,7 @@ function drawChart(){
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
   $('chartMeta').textContent=state.tf.toUpperCase()+' ローソク足 / '+len+'SMA'+' / 10・20・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
   $('chartReset').hidden=!(v.off||v.count||v.yOff||v.yZoom!==1);
+  renderDowRow();
   state.chartGeo={P,step,n:bars.length,W,H,priceSpan:max-min,plotH:H-P.t-P.b};
 }
 
@@ -1771,6 +1825,7 @@ $('autoBtn').onclick=()=>{
   scheduler();
 };
 document.querySelectorAll('.tfBtn').forEach(b=>b.onclick=()=>setTf(b.dataset.tf));
+$('dowRow').addEventListener('click',e=>{const b=e.target.closest('[data-dow]');if(b)setTf(b.dataset.dow)});
 $('maToggles').addEventListener('click',e=>{
   const btn=e.target.closest('[data-ma]');if(!btn)return;
   const k=btn.dataset.ma;state.maOn[k]=!state.maOn[k];lsSet(LSP+'ma',JSON.stringify(state.maOn));renderMaToggles();drawChart();
