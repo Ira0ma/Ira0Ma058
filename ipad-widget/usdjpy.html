@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="6f0aa3094a">
+<meta name="build" content="6f5180a8f7">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -157,7 +157,7 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 
 /* ===== chart ===== */
 .segmented{display:flex;gap:5px;flex:none}
-#secChart .cardhead{flex-wrap:wrap}#secChart .segmented{flex-wrap:wrap;flex:0 1 auto;justify-content:flex-end}
+#secChart .cardhead,#secNews .cardhead{flex-wrap:wrap}#secNews .segmented{flex-wrap:wrap}#secChart .segmented{flex-wrap:wrap;flex:0 1 auto;justify-content:flex-end}
 .seg{background:#121820;color:#d5dde5;border:1px solid #34404c;border-radius:999px;padding:7px 12px;font-size:12px}
 .seg.active{background:linear-gradient(180deg,#e6c973,#b5872d);border-color:#b5872d;color:#101114}
 .chartwrap{position:relative}
@@ -434,7 +434,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
   <section id="secNews" class="panel s7">
     <div class="cardhead">
       <div><div class="title">経済指標</div><div class="sub">USD / JPYのHigh・Medium＋各国の要人発言を自動取得</div></div>
-      <div class="segmented"><button class="seg" data-ev="gold" id="relBtn">ゴールド関連</button><button class="seg" data-ev="all">★★以上＋要人発言</button><button class="seg" data-ev="high">★★★のみ</button></div>
+      <div class="segmented"><button class="seg" data-ev="gold" id="relBtn">ゴールド関連</button><button class="seg" data-ev="all">★★以上＋発言</button><button class="seg" data-ev="high">★★★のみ</button></div>
     </div>
     <div id="eventList" class="events"><div class="sub">取得中...</div></div>
     <div id="calendarStatus" class="autonote">カレンダー接続中...</div>
