@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="4646868592">
+<meta name="build" content="d4bd26d977">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -302,7 +302,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     </div>
 
     <div class="hero-signal">
-      <div class="cardhead"><div><div class="title">セットアップ判定</div><div class="sub">3条件・チャートパターン＋利確余地で自動判定</div></div><span class="tag">SIGNAL</span></div>
+      <div class="cardhead"><div><div class="title">セットアップ判定</div><div class="sub" id="setupSub">3条件・チャートパターン＋利確余地で自動判定</div></div><span class="tag">SIGNAL</span></div>
       <div id="signal" class="signal wait">WAIT<small>データ取得中</small></div>
       <div class="meter"><i id="meter"></i></div>
       <div class="sub">判定強度 <b id="confidence">--</b></div>
@@ -453,7 +453,7 @@ const LSP=IS_GOLD?'gold_':'usdjpy_';  // 端末に保存する設定は銘柄ご
   t('relBtn',INSTR.name+'関連');t('minTpLabel',INSTR.minTp);t('footerSrc',INSTR.footer);
   if(!IS_GOLD){
     const logo=document.querySelector('.logo');if(logo){logo.textContent='$¥';logo.style.fontSize='15px'}
-    t('stat4Label','ドル指数 DXY');t('stat5Label','円指数 JXY');
+    t('setupSub','3条件のスコア＋利確余地で自動判定');t('stat4Label','ドル指数 DXY');t('stat5Label','円指数 JXY');
     t('nextSub','ドル円に影響する米国・日本の指標｜端末の時刻で表示');
     t('nextScope','米国の物価・雇用・景気・FRB関連と、日本の日銀・物価・賃金・景気の指標が対象です。');
   }
