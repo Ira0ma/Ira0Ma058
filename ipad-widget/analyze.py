@@ -53,6 +53,42 @@ def ny_day(t):
     return (datetime.fromtimestamp(t, NY) + timedelta(hours=7)).date()  # 17:00 NY -> next calendar day
 
 
+def regroup(daily, keyf):
+    """Daily candles grouped into longer ones by keyf(server date): weeks, months."""
+    out, key = [], None
+    for t, o, h, l, c in daily:
+        k = keyf(ny_day(t))
+        if k == key:
+            r = out[-1]
+            r[2], r[3], r[4] = max(r[2], h), min(r[3], l), c
+        else:
+            out.append([t, o, h, l, c]); key = k
+    return out
+
+
+WEEK = lambda d: d - timedelta(days=d.weekday())  # the server week starts on Monday (Sunday 17:00 New York)
+MONTH = lambda d: (d.year, d.month)
+
+
+def splice_long(key, label, yahoo_rows, daily, keyf):
+    """Weekly/monthly candles on the XM/XS server calendar: the periods the daily candles cover entirely are
+    built from them (spot for metals, server-day boundaries), older ones stay Yahoo's. Logs how far apart the
+    two are where both exist, and the latest candles."""
+    groups = regroup(daily, keyf)
+    if len(groups) < 2:
+        return yahoo_rows
+    derived = [r[:] for r in groups[1:]]  # the first period is only partly covered by the daily candles
+    older = [r for r in yahoo_rows if r[0] < derived[0][0]]
+    if key in CHECK:
+        by = {keyf(ny_day(r[0])): r for r in yahoo_rows}
+        diffs = [(abs(by[k][2] - r[2]), abs(by[k][3] - r[3])) for r in derived if (k := keyf(ny_day(r[0]))) in by]
+        fmt = lambda r: f"{ny_day(r[0])} {r[1]:.5g}/{r[2]:.5g}/{r[3]:.5g}/{r[4]:.5g}"
+        print(key, f"{label}: {len(older)} from Yahoo + {len(derived)} from daily candles;",
+              f"Yahoo vs daily-built over {len(diffs)} periods: max high diff {max(d[0] for d in diffs):.4g}, max low diff {max(d[1] for d in diffs):.4g};" if diffs else "",
+              "latest (server date o/h/l/c):", "; ".join(fmt(r) for r in derived[-3:]))
+    return older + derived
+
+
 def ny_daily(h1):
     out, key = [], None
     for t, o, h, l, c in h1:
@@ -481,6 +517,8 @@ def one(key, sym, spot_sym, fixture, prev=None):
             print(key, "check failed:", e)
     if key not in UTC_DAY and len(h1) > 24 * 60:
         d1 = ny_daily(h1)
+        w1 = splice_long(key, "weekly", w1, d1, WEEK)
+        mo = splice_long(key, "monthly", mo, d1, MONTH)
         current = ny_day(time.time())
         done = d1[:-1] if ny_day(d1[-1][0]) >= current else d1
     else:
