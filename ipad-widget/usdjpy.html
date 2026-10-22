@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="9fcfdfed9e">
+<meta name="build" content="b50d62f756">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1046,12 +1046,20 @@ function cupHandle(){
    2023〜2025年でも勝ち越した設定。k＝山・谷を決める前後の足の本数、sep＝谷と谷の間隔（本数）、tol＝谷（肩）の高さの差の許容（形の高さ比）、
    dep＝形の高さ（ATR倍）、useSma＝H1 120SMAと同じ向きのときだけ、prior＝形の前に反対方向の動きがあったこと、wait＝最後の谷からブレイクまでの本数。 */
 const PATTERNS=[
-  {id:'db',tf:'m15',dir:1,name:'ダブルボトム',p:{k:3,sepMin:10,sepMax:80,tol:0.1,depMin:1.5,depMax:10,useSma:1,prior:0,wait:25}},
-  {id:'db',tf:'h1',dir:1,name:'ダブルボトム',p:{k:3,sepMin:5,sepMax:40,tol:0.2,depMin:3,depMax:20,useSma:0,prior:1,wait:25}},
-  {id:'ihs',tf:'m15',dir:1,name:'逆三尊',p:{k:3,sepMin:10,sepMax:80,tol:0.2,depMin:1.5,depMax:10,useSma:0,prior:1,wait:25}},
-  {id:'ihs',tf:'h1',dir:1,name:'逆三尊',p:{k:3,sepMin:5,sepMax:40,tol:0.2,depMin:3,depMax:20,useSma:0,prior:1,wait:25}},
-  {id:'db',tf:'m15',dir:-1,name:'ダブルトップ',p:{k:3,sepMin:10,sepMax:80,tol:0.2,depMin:1.5,depMax:10,useSma:1,prior:0,wait:25}},
-  {id:'ihs',tf:'m15',dir:-1,name:'三尊',p:{k:3,sepMin:10,sepMax:80,tol:0.2,depMin:1.5,depMax:10,useSma:0,prior:1,wait:25}},
+  // 10年の成績（1回あたりの損益は損切り幅=1、2016〜2022年／2023〜2025年）
+  {id:'db',tf:'m15',dir:1,name:'ダブルボトム',entry:true,   // 287回・勝率64%・+0.11（+0.11／+0.10）・PF1.30
+    p:{k:2,sepMin:20,sepMax:120,tol:0.2,depMin:3,depMax:20,useSma:1,prior:1,wait:25}},
+  {id:'db',tf:'h1',dir:1,name:'ダブルボトム',entry:true,    // 83回・勝率66%・+0.19（+0.20／+0.16）・PF1.67
+    p:{k:3,sepMin:10,sepMax:80,tol:0.05,depMin:3,depMax:20,useSma:0,prior:0,wait:25}},
+  {id:'ihs',tf:'m15',dir:1,name:'逆三尊',entry:true,       // 230回・勝率46%・+0.29（+0.24／+0.37）・PF1.50
+    p:{k:3,sepMin:5,sepMax:40,tol:0.1,depMin:3,depMax:20,useSma:1,prior:0,wait:25}},
+  {id:'ihs',tf:'h1',dir:1,name:'逆三尊',entry:true,        // 99回・勝率47%・+0.24（+0.24／+0.24）・PF1.44
+    p:{k:2,sepMin:5,sepMax:40,tol:0.05,depMin:1.5,depMax:10,useSma:1,prior:0,wait:10}},
+  {id:'ihs',tf:'m15',dir:-1,name:'三尊',entry:true,        // 284回・勝率40%・+0.08（+0.08／+0.08）・PF1.13
+    p:{k:3,sepMin:10,sepMax:80,tol:0.2,depMin:3,depMax:20,useSma:1,prior:1,wait:10}},
+  // ダブルトップ（売り）は648通りのどれも優位性がほぼゼロ（最良でも+0.03・PF1.08）のため、表示だけしてエントリーには使わない
+  {id:'db',tf:'m15',dir:-1,name:'ダブルトップ',entry:false,
+    p:{k:5,sepMin:10,sepMax:80,tol:0.2,depMin:1.5,depMax:10,useSma:0,prior:1,wait:10}},
 ];
 function pivotLows(B,k){
   const out=[];
@@ -1118,7 +1126,7 @@ function chartPatterns(){
     if(!r)continue;
     const d=cfg.dir;
     out.push({id:cfg.id,tf:cfg.tf,dir:d,label:(cfg.tf==='h1'?'H1':'M15')+cfg.name,state:r.state,neck:d*r.neck,stop:d*r.stop,
-      height:r.height,target:d*(r.neck+r.height),t0:r.t0,atr:a,useSma:cfg.p.useSma,
+      height:r.height,target:d*(r.neck+r.height),t0:r.t0,atr:a,useSma:cfg.p.useSma,entry:cfg.entry,
       slSrc:(cfg.id==='db'?(d>0?'ボトム':'トップ'):'右肩')+'の'+(d>0?'安値':'高値')+'の外'});
   }
   patCache={k,v:out};return out;
@@ -1142,7 +1150,7 @@ function calcSignal(){
   // ⑤ チャートパターンのブレイク：CAUTION中でなく、（設定により）H1 120SMAと同じ向きで、利確余地が基準以上ならエントリー
   const pats=chartPatterns(),fired=[];
   if(!isCautionActive())for(const pt of pats){
-    if(pt.state!=='breakout'||(pt.useSma&&(pt.dir>0?state.spot.price<sma:state.spot.price>=sma)))continue;
+    if(pt.state!=='breakout'||pt.entry===false||(pt.useSma&&(pt.dir>0?state.spot.price<sma:state.spot.price>=sma)))continue;
     const pp=tradePlan(pt.dir,pt);if(pp.tpPips>=MIN_TP_PIPS)fired.push({pt,plan:pp});
   }
   if(fired.length){
@@ -1370,7 +1378,7 @@ function renderSnapshot(){
     const ps=s.pats||[],br=ps.filter(p=>p.state==='breakout'),fm=ps.filter(p=>p.state==='forming');
     const side=p=>p.dir>0?'買い':'売り';
     if(br.length)setReason('reasonCup',br.slice(0,2).map(p=>p.label+'（'+side(p)+'）ブレイク '+fmt(p.neck)+
-      (s.via.includes(p.label)?'':(p.useSma&&(p.dir>0?state.spot.price<s.sma:state.spot.price>=s.sma))?'｜120SMAと逆向きで見送り':'｜利確余地・CAUTION等で見送り')).join('／'),
+      (s.via.includes(p.label)?'':p.entry===false?'｜参考表示（10年で優位性なし）':(p.useSma&&(p.dir>0?state.spot.price<s.sma:state.spot.price>=s.sma))?'｜120SMAと逆向きで見送り':'｜利確余地・CAUTION等で見送り')).join('／'),
       s.via.length?(s.sig==='BUY'?1:-1):0);
     else if(fm.length)setReason('reasonCup',fm.slice(0,2).map(p=>p.label+'（'+side(p)+'）形成中｜'+fmt(p.neck)+(p.dir>0?' 上抜けで':' 下抜けで')+'成立').join('／'),0);
     else setReason('reasonCup',state.m15.length<200?'M15待ち':'なし',0);
