@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="629059db56">
+<meta name="build" content="18014399cf">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1670,7 +1670,7 @@ function renderWait(s){
   el.innerHTML='<div class="wh">エントリー待ちの条件</div>'+lines.join('');el.hidden=false;
 }
 // ゴールドとDXY（ドル指数）の相関：同じ時刻の足どうしの値動き（終値の変化率）の相関係数。
-// −1に近いほど逆相関（ドル高＝金安）、+1に近いほど同じ向き。1日（H1×24本）・1週間（H1×120本）・1か月（日足×20本）
+// −1に近いほど逆相関（ドル高＝金安）、+1に近いほど同じ向き。1日（H1×24本）・1週間（H1×120本）・1か月（H4×120本）
 function corrOf(a,b){
   const n=a.length;if(n<8)return null;
   const ma=a.reduce((s,x)=>s+x,0)/n,mb=b.reduce((s,x)=>s+x,0)/n;let sab=0,saa=0,sbb=0;
@@ -1692,9 +1692,9 @@ function corrLabel(r){
 function renderDxy(){
   const el=$('dxyBox');if(!IS_GOLD){el.hidden=true;return}
   const dx=siteCache.d?.instruments?.dxy;if(!dx?.candles?.['1h']||state.h1.length<30){el.hidden=true;return}
-  const hour=t=>Math.floor(t/3600),day=t=>Math.floor((t+3*3600)/86400);
+  const hour=t=>Math.floor(t/3600);
   const rows=[['1日（H1）',...pairedReturns(state.h1,dx.candles['1h'],hour,24)],['1週間（H1）',...pairedReturns(state.h1,dx.candles['1h'],hour,120)],
-    ['1か月（日足）',...pairedReturns(state.d1||[],dx.candles['1d']||[],day,20)]].map(([lb,g,d])=>[lb,corrOf(g,d)]);
+    ['1か月（H4）',...pairedReturns(state.h4||[],dx.candles['4h']||[],hour,120)]].map(([lb,g,d])=>[lb,corrOf(g,d)]);
   const chg=dx.prevClose?(dx.price/dx.prevClose-1)*100:0,dir=chg>0.05?'ドル高':chg<-0.05?'ドル安':'横ばい';
   const r1=rows[0][1],rw=rows[1][1];
   let note;
