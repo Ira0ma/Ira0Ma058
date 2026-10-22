@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="43c81df2bb">
+<meta name="build" content="6d2f6a811d">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -464,12 +464,12 @@ const $ = id => document.getElementById(id);
 /* 銘柄ごとの設定。同じページを usdjpy.html として配信すると USD/JPY 版になる（build.py が生成） */
 const INSTRUMENTS={
   gold:{key:'gold',site:'gold',title:'GOLD',label:'XAU / USD',short:'XAU',name:'ゴールド',sub:'XAU/USD専用｜自動更新｜iPad・iPhone・Android対応',
-    dp:2,pip:0.1,minTp:50,pipNote:'1pips＝$0.10',momTh:0.8,slMin:2,tolMin:.5,unit:'oz',contract:'100',cupHandle:true,
+    dp:2,pip:0.1,minTp:50,pipNote:'1pips＝$0.10',momTh:0.8,slMin:2,tolMin:.5,unit:'oz',contract:'100',cupHandle:true,patterns:true,
     brokerNote:'XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,2),
     footer:'データ: Gold API・XAUS（GOLD価格）／GitHub Actionsで定期取得したYahoo Finance足（チャート）・Forex Factory（経済指標）／Frankfurter（USD/JPY補助）。'},
   usdjpy:{key:'usdjpy',site:'usdjpy',title:'USDJPY',label:'USD / JPY',short:'USDJPY',name:'ドル円',sub:'USD/JPY専用｜自動更新｜iPad・iPhone・Android対応',
-    dp:3,pip:0.01,minTp:30,pipNote:'1pips＝0.01円',momTh:0.03,slMin:0.05,tolMin:.02,unit:'通貨',contract:'100000',
+    dp:3,pip:0.01,minTp:30,pipNote:'1pips＝0.01円',momTh:0.03,slMin:0.05,tolMin:.02,unit:'通貨',contract:'100000',patterns:true,
     brokerNote:'ドル円の1lotは多くの業者で10万通貨です。ご自身の口座の取引条件で確認してください。',
     dist:v=>(v/0.01).toFixed(1)+'pips',
     footer:'データ: Coinbase（ドル円の最新レート）／GitHub Actionsで定期取得したYahoo Finance足（チャート・価格）・Forex Factory（経済指標）。'}
@@ -486,7 +486,7 @@ const LSP=IS_GOLD?'gold_':'usdjpy_';  // 端末に保存する設定は銘柄ご
   t('relBtn',INSTR.name+'関連');t('minTpLabel',INSTR.minTp);t('footerSrc',INSTR.footer);
   if(!IS_GOLD){
     const logo=document.querySelector('.logo');if(logo){logo.textContent='$¥';logo.style.fontSize='15px'}
-    t('setupSub','3条件のスコア＋利確余地で自動判定');t('stat4Label','ドル指数 DXY');t('stat5Label','円指数 JXY');
+    t('stat4Label','ドル指数 DXY');t('stat5Label','円指数 JXY');
     t('nextSub','ドル円に影響する米国・日本の指標｜端末の時刻で表示');
     t('nextScope','米国の物価・雇用・景気・FRB関連と、日本の日銀・物価・賃金・景気の指標が対象です。');
   }
@@ -1186,7 +1186,7 @@ function cupHandle(){
    しきい値は XAU/USD 10年分（2016〜2025年）のバックテスト（research/pattern_backtest.py）で、2016〜2022年で選び
    2023〜2025年でも勝ち越した設定。k＝山・谷を決める前後の足の本数、sep＝谷と谷の間隔（本数）、tol＝谷（肩）の高さの差の許容（形の高さ比）、
    dep＝形の高さ（ATR倍）、useSma＝H1 120SMAと同じ向きのときだけ、prior＝形の前に反対方向の動きがあったこと、wait＝最後の谷からブレイクまでの本数。 */
-const PATTERNS=[
+const PATTERNS=IS_GOLD?[
   // 10年の成績（1回あたりの損益は損切り幅=1、2016〜2022年／2023〜2025年）
   {id:'db',tf:'m15',dir:1,name:'ダブルボトム',entry:true,   // 287回・勝率64%・+0.11（+0.11／+0.10）・PF1.30
     p:{k:2,sepMin:20,sepMax:120,tol:0.2,depMin:3,depMax:20,useSma:1,prior:1,wait:25}},
@@ -1201,6 +1201,18 @@ const PATTERNS=[
   // ダブルトップ（売り）は648通りのどれも優位性がほぼゼロ（最良でも+0.03・PF1.08）のため、表示だけしてエントリーには使わない
   {id:'db',tf:'m15',dir:-1,name:'ダブルトップ',entry:false,
     p:{k:5,sepMin:10,sepMax:80,tol:0.2,depMin:1.5,depMax:10,useSma:0,prior:1,wait:10}},
+]:[
+  // ドル円：research/usdjpy_patterns.py（2016〜2025年、2016〜2022年で選び2023〜2025年で確認）。
+  // 利確は+30pips固定、損切りは形の外。成績は1回あたりのpips（スプレッド0.8pips込み）
+  {id:'ihs',tf:'h1',dir:1,name:'逆三尊',entry:true,tpFixed:0.30,      // 52回・損切り前に+30到達85%・+18.3pips・PF3.85・9/10年プラス
+    p:{k:5,sepMin:20,sepMax:120,tol:0.05,depMin:1.5,depMax:10,useSma:1,prior:1,wait:25}},
+  {id:'db',tf:'h1',dir:1,name:'ダブルボトム',entry:true,tpFixed:0.30,  // 65回・77%・+9.5pips・PF1.74
+    p:{k:3,sepMin:10,sepMax:80,tol:0.05,depMin:3,depMax:20,useSma:0,prior:1,wait:25}},
+  // 15分足は形の高さ30pips以上のときだけ（高さ30〜60pipsで+30到達81%・+15.9pips、15pips未満は38%）
+  {id:'db',tf:'m15',dir:-1,name:'ダブルトップ',entry:true,tpFixed:0.30,minH:0.30,  // 137回・57%・+7.3pips・PF1.78・8/10年プラス
+    p:{k:5,sepMin:5,sepMax:40,tol:0.05,depMin:1.5,depMax:10,useSma:1,prior:0,wait:10}},
+  {id:'ihs',tf:'m15',dir:-1,name:'三尊',entry:true,tpFixed:0.30,minH:0.30,        // 156回・51%・+4.1pips・PF1.38（高さ60pips以上で69%）
+    p:{k:3,sepMin:10,sepMax:80,tol:0.05,depMin:3,depMax:20,useSma:1,prior:1,wait:10}},
 ];
 function pivotLows(B,k){
   const out=[];
@@ -1254,7 +1266,7 @@ function detectIHS(B,P,a,p){
 let patCache={k:'',v:[]};
 // チャートパターンの一覧（カップウィズハンドルを含む）。ブレイク中・形成中のものだけ
 function chartPatterns(){
-  if(!INSTR.cupHandle||!state.spot)return [];
+  if(!INSTR.patterns||!state.spot)return [];
   const price=state.spot.price,k=state.m15.length+':'+(state.m15.at(-1)?.t)+':'+state.h1.length+':'+(state.h1.at(-1)?.t)+':'+price;
   if(patCache.k===k)return patCache.v;
   const out=[],cup=cupHandle();if(cup)out.push(cup);
@@ -1264,10 +1276,10 @@ function chartPatterns(){
     const a=atr(bars,14);if(!a)continue;
     const B=cfg.dir>0?bars:bars.map(b=>({t:b.t,o:-b.o,h:-b.l,l:-b.h,c:-b.c}));
     const r=(cfg.id==='db'?detectDB:detectIHS)(B,cfg.dir*price,a,cfg.p);
-    if(!r)continue;
+    if(!r||(cfg.minH&&r.height<cfg.minH))continue;
     const d=cfg.dir;
     out.push({id:cfg.id,tf:cfg.tf,dir:d,label:(cfg.tf==='h1'?'1時間足':'15分足')+cfg.name,state:r.state,neck:d*r.neck,stop:d*r.stop,
-      height:r.height,target:d*(r.neck+r.height),t0:r.t0,atr:a,useSma:cfg.p.useSma,entry:cfg.entry,
+      height:r.height,target:d*(r.neck+r.height),t0:r.t0,atr:a,useSma:cfg.p.useSma,entry:cfg.entry,tpFixed:cfg.tpFixed,
       slSrc:(cfg.id==='db'?(d>0?'ボトム':'トップ'):'右肩')+'の'+(d>0?'安値':'高値')+'の外'});
   }
   patCache={k,v:out};return out;
@@ -1316,8 +1328,9 @@ function tradePlan(dir,cup){
   // チャートパターン：損切りは形の最後の安値（売りは高値）の少し外（その時間足のATR×0.2）、利確はネックラインから形の高さ分
   if(cup){
     const buf=(cup.atr||currentAtr()||0)*0.2, slDist=Math.max(Math.abs(entry-(cup.stop-cup.dir*buf)),INSTR.slMin);
-    const sl=entry-dir*slDist, tp=cup.target, tpPips=Math.max(0,dir*(tp-entry))/PIP, slPips=slDist/PIP;
-    return {dir,entry,tp,sl,tpPips,slPips,rr:tpPips/slPips,tpSrc:cup.label+'の高さ分',slSrc:cup.slSrc};
+    const tp=cup.tpFixed?entry+dir*cup.tpFixed:cup.target;  // ドル円は検証どおり+30pips固定
+    const sl=entry-dir*slDist, tpPips=Math.max(0,dir*(tp-entry))/PIP, slPips=slDist/PIP;
+    return {dir,entry,tp,sl,tpPips,slPips,rr:tpPips/slPips,tpSrc:cup.tpFixed?cup.label+'：10年検証の利確（+'+Math.round(cup.tpFixed/PIP)+'pips）':cup.label+'の高さ分',slSrc:cup.slSrc};
   }
   const a=currentAtr()||Math.max(entry*0.0012,INSTR.slMin*1.5);
   const slDist=Math.max(a*(n($('slMult').value)||1.2),INSTR.slMin);
@@ -1474,7 +1487,7 @@ function notifyDesk(s){
 // セットアップ判定の下に、エントリー条件にしているチャートパターンを全部並べ、それぞれ条件がそろっているかを表示
 function renderPatList(s){
   const el=$('patList');if(!s.ready){el.hidden=true;return}
-  const rows=[{id:'cup',tf:'m15',dir:0,name:'カップウィズハンドル',entry:true,useSma:1},...PATTERNS.map(c=>({id:c.id,tf:c.tf,dir:c.dir,name:c.name,entry:c.entry,useSma:c.p.useSma}))];
+  const rows=[...(INSTR.cupHandle?[{id:'cup',tf:'m15',dir:0,name:'カップウィズハンドル',entry:true,useSma:1}]:[]),...PATTERNS.map(c=>({id:c.id,tf:c.tf,dir:c.dir,name:c.name,entry:c.entry,useSma:c.p.useSma}))];
   const side=d=>d>0?'買い':d<0?'売り':'買い・売り';
   const html=rows.map(r=>{
     const pt=(s.pats||[]).find(p=>p.id===r.id&&p.tf===r.tf&&(r.dir===0||p.dir===r.dir));
@@ -1570,7 +1583,7 @@ function renderSnapshot(){
   else setReason('reasonRange','取得中',0);
   if(s.plan)setReason('reasonTp',Math.round(s.plan.tpPips)+'pips'+(s.plan.tpPips>=MIN_TP_PIPS?'（OK）':'（不足）'),s.plan.tpPips>=MIN_TP_PIPS?(s.sig==='BUY'?1:-1):0);
   else setReason('reasonTp',s.ready?'方向が決まると計算':'取得中',0);
-  if(INSTR.cupHandle){
+  if(INSTR.patterns){
     $('cupRow').hidden=false;
     const ps=s.pats||[],br=ps.filter(p=>p.state==='breakout'),fm=ps.filter(p=>p.state==='forming');
     const side=p=>p.dir>0?'買い':'売り';
@@ -1578,7 +1591,7 @@ function renderSnapshot(){
       (s.via.includes(p.label)?'':p.entry===false?'｜参考表示（10年で優位性なし）':(p.useSma&&(p.dir>0?state.spot.price<s.sma:state.spot.price>=s.sma))?'｜120SMAと逆向きで見送り':'｜利確余地・CAUTION等で見送り')).join('／'),
       s.via.length?(s.sig==='BUY'?1:-1):0);
     else if(fm.length)setReason('reasonCup',fm.slice(0,2).map(p=>p.label+'（'+side(p)+'）形成中｜'+fmt(p.neck)+(p.dir>0?' 上抜けで':' 下抜けで')+'成立').join('／'),0);
-    else setReason('reasonCup',state.m15.length<200?'M15待ち':'なし',0);
+    else setReason('reasonCup',INSTR.cupHandle&&state.m15.length<200?'M15待ち':'なし',0);
     renderPatList(s);
   }
   renderPlan(s);
