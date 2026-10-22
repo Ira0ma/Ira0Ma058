@@ -349,8 +349,18 @@ def tf_check(key, candles):
 def coinbase_offset(price):
     """How far Coinbase's USD/JPY rate (the USD/JPY page's live price) sits from the chart's price, which
     follows the bid that XM/XS charts and quote first. Coinbase runs near the ask, about a pip higher;
-    the page takes this offset off. Median of the last 12 runs, so one stale minute does not move it."""
-    hist = SPOT_HIST.setdefault("usdjpy_coinbase", [])
+    the page takes this offset off. It is measured against Swissquote's bid of the same moment (the chart's
+    price can be minutes old), else against the chart's price. Median of the last 12 runs, so one stale
+    minute does not move it."""
+    SPOT_HIST.pop("usdjpy_coinbase", None)  # samples taken against the chart's price, replaced by these
+    hist = SPOT_HIST.setdefault("usdjpy_coinbase_sq", [])
+    try:
+        feed = get_json(SQ + "USD/JPY")
+        bids = sorted(p["bid"] for q in feed for p in q.get("spreadProfilePrices", [])[:1])
+        if bids:
+            price = bids[len(bids) // 2]
+    except Exception as e:
+        print("usdjpy swissquote unavailable for the coinbase offset:", e)
     try:
         off = float(get_json(COINBASE)["data"]["rates"]["JPY"]) - price
         if abs(off) < 0.1:  # a bigger gap is a stale or broken quote, not the spread
