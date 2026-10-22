@@ -86,6 +86,10 @@ def splice_long(key, label, yahoo_rows, daily, keyf):
         print(key, f"{label}: {len(older)} from Yahoo + {len(derived)} from daily candles;",
               f"Yahoo vs daily-built over {len(diffs)} periods: max high diff {max(d[0] for d in diffs):.4g}, max low diff {max(d[1] for d in diffs):.4g};" if diffs else "",
               "latest (server date o/h/l/c):", "; ".join(fmt(r) for r in derived[-3:]))
+        worst = max((r for r in derived if keyf(ny_day(r[0])) in by),
+                    key=lambda r: max(abs(by[keyf(ny_day(r[0]))][2] - r[2]), abs(by[keyf(ny_day(r[0]))][3] - r[3])), default=None)
+        if worst:
+            print(key, f"{label} largest gap: daily-built {fmt(worst)} vs Yahoo {fmt(by[keyf(ny_day(worst[0]))])}")
     return older + derived
 
 
@@ -517,6 +521,12 @@ def one(key, sym, spot_sym, fixture, prev=None):
             print(key, "check failed:", e)
     if key not in UTC_DAY and len(h1) > 24 * 60:
         d1 = ny_daily(h1)
+        if key in CHECK:  # daily candles far outside the usual range: a bad tick would carry into weeks and months
+            rng = sorted(r[2] - r[3] for r in d1)
+            med = rng[len(rng) // 2]
+            odd = [r for r in d1 if r[2] - r[3] > 4 * med]
+            print(key, f"daily candles: {len(d1)}, median range {med:.4g},", f"{len(odd)} over 4x:",
+                  "; ".join(f"{ny_day(r[0])} {r[1]:.5g}/{r[2]:.5g}/{r[3]:.5g}/{r[4]:.5g}" for r in odd[-6:]))
         w1 = splice_long(key, "weekly", w1, d1, WEEK)
         mo = splice_long(key, "monthly", mo, d1, MONTH)
         current = ny_day(time.time())
