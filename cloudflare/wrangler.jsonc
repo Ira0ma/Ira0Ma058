@@ -1,0 +1,7 @@
+{
+  // トレードデスク用 価格中継（Swissquote の公開レートをダッシュボードへ渡す）
+  "name": "trade-quote",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": true
+}

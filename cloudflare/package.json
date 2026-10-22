@@ -1,0 +1,11 @@
+{
+  "name": "trade-quote",
+  "private": true,
+  "description": "Relays Swissquote's public quotes (USD/JPY, XAU/USD, XAG/USD) to the Trade Desk dashboards",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
