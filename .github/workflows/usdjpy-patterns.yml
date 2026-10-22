@@ -38,8 +38,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tf: [m15, h1]
+        tf: [m15]
         pattern: [db, ihs, cup, box]
+        side: ["1", "-1"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -53,4 +54,4 @@ jobs:
           key: histdata-usdjpy-m1-2016-2025
           fail-on-cache-miss: true
       - name: Backtest
-        run: python3 research/usdjpy_patterns.py histdata ${{ matrix.tf }} ${{ matrix.pattern }}
+        run: python3 research/usdjpy_patterns.py histdata ${{ matrix.tf }} ${{ matrix.pattern }} ${{ matrix.side }}

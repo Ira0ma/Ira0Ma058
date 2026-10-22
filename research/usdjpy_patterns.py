@@ -13,7 +13,7 @@ Every first close beyond the neckline is a breakout. For each, over a grid of th
   - R with the classic target (one pattern height past the neckline), as for GOLD.
 Settings are chosen on 2016-2022 and checked on 2023-2025 (pips per trade positive in both).
 
-Usage: python3 usdjpy_patterns.py CACHE_DIR [TF PATTERN]   (TF m15|h1, PATTERN db|ihs|cup|box; default all)
+Usage: python3 usdjpy_patterns.py CACHE_DIR [TF PATTERN [SIDE]]   (TF m15|h1, PATTERN db|ihs|cup|box, SIDE 1|-1; default all)
        python3 usdjpy_patterns.py --synthetic
 """
 import itertools
@@ -181,14 +181,14 @@ def detect(pat, p, hh, ll, cc, a, sm, piv):
     return box_breakout(hh, ll, cc, a, sm, p["use_sma"], p["length"], p["dep"][0], p["dep"][1], p["touches"])
 
 
-def run_tf(bars, tf, sma, pats):
+def run_tf(bars, tf, sma, pats, sides=(1, -1)):
     t, o, h, l, c = bars
     a = atr14(h, l, c)
     years = np.array([datetime.fromtimestamp(int(x), timezone.utc).year for x in t])
     flipped = (-l, -h, -c)
     smas = {1: np.nan_to_num(sma, nan=1e18), -1: -np.nan_to_num(sma, nan=-1e18)}
     for pat in pats:
-        for side in (1, -1):
+        for side in sides:
             t0 = time.time()
             hh, ll, cc = (h, l, c) if side > 0 else flipped
             piv = {k: pivots_low(ll, k) for k in PAT_GRID["k"]} if pat in ("db", "ihs") else None
@@ -219,19 +219,28 @@ def run_tf(bars, tf, sma, pats):
                                         "overall": loose, "best": clean(best),
                                         "bestBreakdown": best and breakdown(*best["_bd"]),
                                         "mostMfe30": clean(most)}, ensure_ascii=False), flush=True)
+            # how many breakouts ran 30 pips: the setting with the most among those not losing in either period,
+            # and the most of any setting (n x share, so a loose setting with many breakouts counts many)
+            cnt = lambda x, k: round(x["all"]["n"] * x["all"][k] / 100)
+            keep = max(robust, key=lambda x: cnt(x, "hit30")) if robust else None
+            print("COUNT", json.dumps({"pattern": name, "robustMostHit30": keep and {"hit30Count": cnt(keep, "hit30"),
+                                       "mfe30Count": cnt(keep, "mfe30"), **clean(keep)},
+                                       "anyMostMfe30": ok and max(cnt(x, "mfe30") for x in ok),
+                                       "anyMostHit30": ok and max(cnt(x, "hit30") for x in ok)}, ensure_ascii=False), flush=True)
             for x in sorted(ok, key=lambda x: x["train"]["pips"], reverse=True)[:3]:
                 print("TOP", name, json.dumps(clean(x), ensure_ascii=False), flush=True)
             print(f"{name}: {time.time() - t0:.0f}s", flush=True)
 
 
-def run(m15, tf_sel=None, pat_sel=None):
+def run(m15, tf_sel=None, pat_sel=None, side_sel=None):
     t, o, h, l, c = m15
     pats = [pat_sel] if pat_sel else ["db", "ihs", "cup", "box"]
+    sides = (int(side_sel),) if side_sel else (1, -1)
     if tf_sel in (None, "m15"):
-        run_tf(m15, "m15", h1_sma(t, c), pats)
+        run_tf(m15, "m15", h1_sma(t, c), pats, sides)
     if tf_sel in (None, "h1"):
         h1 = to_h1(*m15)
-        run_tf(h1, "h1", h1_sma(h1[0], h1[4]), pats)
+        run_tf(h1, "h1", h1_sma(h1[0], h1[4]), pats, sides)
 
 
 if __name__ == "__main__":
@@ -243,7 +252,7 @@ if __name__ == "__main__":
         o = np.r_[c[0], c[:-1]]
         w = np.abs(rng.normal(0, 0.02, n))
         MIN_N.update(m15=(5, 2), h1=(5, 2))
-        run((t, o, np.maximum(o, c) + w, np.minimum(o, c) - w, c), *sys.argv[2:4])
+        run((t, o, np.maximum(o, c) + w, np.minimum(o, c) - w, c), *sys.argv[2:5])
     else:
         parts = []
         for y in YEARS:
@@ -258,4 +267,4 @@ if __name__ == "__main__":
         order = np.argsort(t, kind="stable")
         m15 = to_m15(*(x[order] for x in (t, o, h, l, c)))
         print("M15 candles", len(m15[0]), flush=True)
-        run(m15, *sys.argv[2:4])
+        run(m15, *sys.argv[2:5])
