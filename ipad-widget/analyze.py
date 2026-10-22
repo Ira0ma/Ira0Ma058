@@ -287,7 +287,7 @@ SQ = "https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/
 CHECK = {"gold": "XAU/USD", "usdjpy": "USD/JPY"}  # dashboard instruments: log a sanity check each run
 
 
-def check(key, price, h1, m15):
+def check(key, price, h1, m15, as_of):
     """Log today's range, outsized candles and the gap to Swissquote's quote, for checking the dashboards."""
     day = [r for r in h1 if ny_day(r[0]) == ny_day(h1[-1][0])]
     hi, lo = max(r[2] for r in day), min(r[3] for r in day)
@@ -295,7 +295,7 @@ def check(key, price, h1, m15):
     med = rng[len(rng) // 2] or 1e-9
     odd = [(datetime.fromtimestamp(r[0], timezone.utc).strftime("%m-%d %H:%M"), round(r[2] - r[3], 5))
            for r in h1[-48:] + m15[-96:] if r[2] - r[3] > 8 * med]
-    age = (time.time() - m15[-1][0]) / 60 - 15  # minutes since the latest 15m candle closed (Yahoo runs late)
+    age = (time.time() - as_of) / 60 - 1  # minutes since the latest 1-minute candle closed (Yahoo's futures run late)
     msg = f"{key} check: today high {hi:.3f} low {lo:.3f} ({len(day)} H1 bars), last {price:.3f} (data ~{max(age, 0):.0f} min old)"
     try:
         feed = get_json(f"https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/{CHECK[key]}")
@@ -435,7 +435,7 @@ def one(key, sym, spot_sym, fixture, prev=None):
     live_offset = coinbase_offset(price) if key == "usdjpy" and fixture is None else None
     if key in CHECK and fixture is None:
         try:
-            check(key, price, h1, m15)
+            check(key, price, h1, m15, as_of)
         except Exception as e:  # a log line must never cost the data
             print(key, "check failed:", e)
     if key not in UTC_DAY and len(h1) > 24 * 60:
