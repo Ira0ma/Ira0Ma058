@@ -220,7 +220,9 @@ def analyze(key, done, price):
 
 
 def r6(rows):
-    return [[t] + [float(f"{v:.6g}") for v in r] for t, *r in rows]
+    # a source candle now and then has its high below the open/close (seen on Yahoo's weekly USD/JPY);
+    # widen the high/low to cover them so no page draws a broken candle
+    return [[t] + [float(f"{v:.6g}") for v in (o, max(o, h, l, c), min(o, h, l, c), c)] for t, o, h, l, c in rows]
 
 
 def build(fixture=None, prev=None):
@@ -293,7 +295,8 @@ def check(key, price, h1, m15):
     med = rng[len(rng) // 2] or 1e-9
     odd = [(datetime.fromtimestamp(r[0], timezone.utc).strftime("%m-%d %H:%M"), round(r[2] - r[3], 5))
            for r in h1[-48:] + m15[-96:] if r[2] - r[3] > 8 * med]
-    msg = f"{key} check: today high {hi:.3f} low {lo:.3f} ({len(day)} H1 bars), last {price:.3f}"
+    age = (time.time() - m15[-1][0]) / 60 - 15  # minutes since the latest 15m candle closed (Yahoo runs late)
+    msg = f"{key} check: today high {hi:.3f} low {lo:.3f} ({len(day)} H1 bars), last {price:.3f} (data ~{max(age, 0):.0f} min old)"
     try:
         feed = get_json(f"https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/{CHECK[key]}")
         mids = sorted((p["bid"] + p["ask"]) / 2 for q in feed for p in q.get("spreadProfilePrices", [])[:1])
@@ -375,16 +378,18 @@ def gap_samples(hist, m1):
 
 
 def shift_by_gaps(rows, seconds, samples):
-    """Move each candle by the median gap of the samples around it (the nearest sample when none is near)."""
+    """Move each candle by the median gap of the samples around it (the nearest sample when none is near).
+    Candles shorter than an hour take the gap of their hour, so 1m-30m highs and lows match the 1h candle."""
     ts = [t for t, _ in samples]
     for r in rows:
-        lo = bisect.bisect_left(ts, r[0] - GAP_WINDOW)
-        hi = bisect.bisect_right(ts, r[0] + seconds + GAP_WINDOW)
+        start, seconds = (r[0] - r[0] % 3600, 3600) if seconds < 3600 else (r[0], seconds)
+        lo = bisect.bisect_left(ts, start - GAP_WINDOW)
+        hi = bisect.bisect_right(ts, start + seconds + GAP_WINDOW)
         if hi > lo:
             near = sorted(g for _, g in samples[lo:hi])
             g = near[len(near) // 2]
         else:
-            mid = r[0] + seconds / 2
+            mid = start + seconds / 2
             i = bisect.bisect_left(ts, mid)
             g = min(samples[max(i - 1, 0):i + 1], key=lambda s: abs(s[0] - mid))[1]
         r[1:] = [v + g for v in r[1:]]
