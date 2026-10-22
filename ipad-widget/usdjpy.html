@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="6d2f6a811d">
+<meta name="build" content="62ef116836">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -107,6 +107,14 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .signal.entry small{opacity:1;font-weight:800}
 @keyframes entryGlow{50%{box-shadow:0 0 0 6px var(--glow)}}
 @media (prefers-reduced-motion:reduce){.signal.entry{animation:none}}
+.talkalert{margin-top:8px;border:1px solid #6b4fd1;background:rgba(124,92,255,.10);border-radius:10px;padding:7px 10px;font-size:11px;color:#d9d0ff}
+.talkalert b{color:#fff}
+.talk{display:grid;gap:6px;margin-top:6px}
+.talkitem{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 8px;background:#0d1217;border:1px solid #222b35;border-radius:10px;padding:7px 9px;font-size:12px;color:var(--text);text-decoration:none}
+.talkitem .tt{color:var(--muted);font-size:11px;white-space:nowrap}
+.talkitem .tags{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 8px;font-size:10.5px;color:var(--muted)}
+.talkitem .who{color:#b9a6ff;font-weight:700}.talkitem .hawk{color:#ff9d6b;font-weight:700}.talkitem .dove{color:#6bc8ff;font-weight:700}.talkitem .intv{color:#ffb547;font-weight:700}
+.talkhead{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px}
 .waitfor{margin-top:8px;background:#0d1217;border:1px solid #654f1f;border-radius:10px;padding:8px 10px;font-size:11px;display:grid;gap:5px}
 .waitfor .wh{color:var(--amber);font-weight:800}
 .waitfor .wl{display:flex;flex-wrap:wrap;gap:3px 10px;color:var(--muted)}.waitfor .wl b{color:var(--text);font-weight:700;margin-right:2px}
@@ -333,6 +341,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <div class="hero-signal">
       <div class="cardhead"><div><div class="title">セットアップ判定</div><div class="sub" id="setupSub">3条件・チャートパターン＋利確余地で自動判定</div></div><span class="tag">SIGNAL</span></div>
       <div id="signal" class="signal wait">WAIT<small>データ取得中</small></div>
+      <div id="talkAlert" class="talkalert" hidden></div>
       <div id="waitFor" class="waitfor" hidden></div>
       <div class="meter"><i id="meter"></i></div>
       <div class="sub">判定強度 <b id="confidence">--</b></div>
@@ -423,11 +432,14 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
   <!-- ===== 経済指標 ===== -->
   <section id="secNews" class="panel s7">
     <div class="cardhead">
-      <div><div class="title">経済指標</div><div class="sub">USD / JPYのHigh・Mediumを自動取得</div></div>
-      <div class="segmented"><button class="seg" data-ev="gold" id="relBtn">ゴールド関連</button><button class="seg" data-ev="all">★★以上</button><button class="seg" data-ev="high">★★★のみ</button></div>
+      <div><div class="title">経済指標</div><div class="sub">USD / JPYのHigh・Medium＋各国の要人発言を自動取得</div></div>
+      <div class="segmented"><button class="seg" data-ev="gold" id="relBtn">ゴールド関連</button><button class="seg" data-ev="all">★★以上＋要人発言</button><button class="seg" data-ev="high">★★★のみ</button></div>
     </div>
     <div id="eventList" class="events"><div class="sub">取得中...</div></div>
     <div id="calendarStatus" class="autonote">カレンダー接続中...</div>
+    <div class="talkhead"><div class="title">要人発言ニュース</div><div class="sub" id="talkStatus">取得中...</div></div>
+    <div class="sub">FRB・日銀・財務省・米政権などの発言の見出し（直近48時間）。見出しの言葉から、タカ派／ハト派／介入警戒と、ふつう起きやすい値動きを自動で付けています（発言の中身までは読んでいません）。</div>
+    <div id="talkList" class="talk"></div>
   </section>
 
   <!-- ===== チェック ===== -->
@@ -861,6 +873,20 @@ async function refreshCharts(){
   updateNotice();
 }
 
+// 要人発言（Forex Factoryの "... Speaks / Testifies"）。rel: both＝両方の銘柄に影響、jpy＝ドル円だけ、none＝表示のみ
+const SPEAKERS=[
+  {re:/fed chair|powell/i,ja:'FRB議長',rel:'both'},
+  {re:/fomc member|fed vice chair|fed governor/i,ja:'FRB高官',rel:'both'},
+  {re:/treasury sec/i,ja:'米財務長官',rel:'both'},
+  {re:/trump/i,ja:'トランプ大統領',rel:'both'},
+  {re:/boj gov|ueda/i,ja:'日銀総裁',rel:'jpy'},
+  {re:/boj/i,ja:'日銀幹部',rel:'jpy'},
+  {re:/finance minister|\bmof\b/i,ja:'日本の財務大臣',rel:'jpy'},
+  {re:/ecb president|lagarde/i,ja:'ECB総裁',rel:'none'},
+  {re:/boe gov|bailey/i,ja:'英中銀総裁',rel:'none'},
+  {re:/pboc/i,ja:'中国人民銀行総裁',rel:'none'}];
+function speechOf(title){return /speaks|testifies/i.test(title)?SPEAKERS.find(x=>x.re.test(title))||null:null}
+function evTitle(e){return e.speech?'🎤 '+e.speech.ja+(/testifies/i.test(e.title)?' 議会証言':' 発言')+'（'+e.title+'）':e.title}
 function normalizeCalendarPayload(d){
   const arr=Array.isArray(d)?d:
     Array.isArray(d?.data)?d.data:
@@ -877,9 +903,10 @@ function normalizeCalendarPayload(d){
     return {
       id:e.id??i, title:e.title??e.name??e.event??'', currency, impact,
       ts:toMs(timeCandidate),
-      forecast:e.consensus??e.forecast??'', previous:e.prior??e.previous??'', actual:e.actual??''
+      forecast:e.consensus??e.forecast??'', previous:e.prior??e.previous??'', actual:e.actual??'',
+      speech:speechOf(e.title??e.name??e.event??'')
     }
-  }).filter(e=>['USD','JPY'].includes(e.currency)&&['High','Medium'].includes(e.impact)&&e.ts)
+  }).filter(e=>e.ts&&(e.speech||['USD','JPY'].includes(e.currency)&&['High','Medium'].includes(e.impact)))
     .sort((a,b)=>a.ts-b.ts);
 }
 
@@ -921,6 +948,7 @@ async function refreshCalendar(){
     ev.forEach(e=>{const k=known.get(evKey(e)+'|'+e.title);if(k&&!e.actual){e.actual=k.actual;e.actualAt=k.actualAt}});
     if(fc&&fc.length){mergeActuals(ev,fc);state.src.calendar='サイト（Forex Factory）＋Finance Calendar（結果）'}
     state.events=ev;
+    try{const nw=await getJSON(SITE+'news.json?t='+Math.floor(Date.now()/60000));state.talk=(nw.items||[]).filter(i=>(i.pages||[]).includes(INSTR.key));state.talkAt=nw.updated*1000}catch{}
     state.health.calendar=true;
     state.calendarAt=Date.now();
     const hot=calendarHot();
@@ -1438,7 +1466,12 @@ function calcRisk(){
 }
 
 /* ---------- caution / events ---------- */
-function cautionWindow(e){return e.impact==='High'?[30,15]:[15,5]}
+// CAUTION（判定を止める時間）：指標は発表30分前〜15分後（Mediumは15分前〜5分後）。
+// 要人発言は話している間も動くので、★★★は15分前〜60分後、★★は10分前〜30分後。★の発言は表示だけ
+function cautionWindow(e){
+  if(e.speech)return e.impact==='High'?[15,60]:e.impact==='Medium'?[10,30]:[0,0];
+  return e.impact==='High'?[30,15]:[15,5];
+}
 // ゴールドに影響する指標：米国の物価・雇用・景気・金融政策（FRB/FOMC）。日本の指標や米国の小型指標は対象外
 const GOLD_KEYS=['cpi','pce','ppi','non-farm','nonfarm','unemployment rate','unemployment claims','average hourly earnings',
   'jolts','adp','gdp','retail sales','ism','flash manufacturing pmi','flash services pmi','consumer sentiment','inflation expectations',
@@ -1448,6 +1481,7 @@ const JPY_KEYS=['boj','monetary policy','policy rate','outlook report','press co
   'average cash earnings','household spending','unemployment rate','retail sales','trade balance','pmi'];
 function goldRelevant(e){  // 表示中の銘柄に影響する指標か（ゴールド＝米国指標、ドル円＝米国＋日本の指標）
   const t=String(e.title).toLowerCase();
+  if(e.speech)return e.speech.rel==='both'||(e.speech.rel==='jpy'&&!IS_GOLD);
   if(e.currency==='USD')return GOLD_KEYS.some(k=>t.includes(k));
   if(e.currency==='JPY'&&!IS_GOLD)return JPY_KEYS.some(k=>t.includes(k));
   return false;
@@ -1468,7 +1502,7 @@ function upcomingEvent(){
   const now=Date.now();
   return state.events.find(e=>goldRelevant(e)&&e.ts+cautionWindow(e)[1]*60000>=now&&(state.evFilter!=='high'||e.impact==='High'))||null;
 }
-function stars(e){return e.impact==='High'?'★★★':'★★'}
+function stars(e){return e.impact==='High'?'★★★':e.impact==='Medium'?'★★':'★'}
 
 /* ---------- render ---------- */
 function flashPrice(){
@@ -1840,7 +1874,24 @@ function drawRsi(source,startIdx,endIdx,nb,P,step,hi){
   ctx.fillText('RSI(14) '+(v==null?'--':v.toFixed(1))+(v>=70?' 買われすぎ':v!=null&&v<=30?' 売られすぎ':''),P.l+6,T+8);
 }
 
+// 要人発言ニュース：見出し・時刻・誰の発言か・トーン・ふつう起きやすい値動き
+const TONE_JA={hawkish:['タカ派','hawk'],dovish:['ハト派','dove'],intervention:['介入警戒','intv']};
+function talkEffect(i){return IS_GOLD?[i.gold,i.usdjpy].filter(Boolean).join('・'):i.usdjpy}
+function renderTalk(){
+  const list=(state.talk||[]).slice(0,8),now=Date.now();
+  $('talkStatus').textContent=state.talkAt?new Date(state.talkAt).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})+' 取得':'取得中...';
+  $('talkList').innerHTML=list.length?list.map(i=>{
+    const tn=TONE_JA[i.tone],eff=talkEffect(i),ago=now-i.t*1000;
+    return `<a class="talkitem" href="${esc(i.link)}" target="_blank" rel="noopener"><span class="tt">${esc(ago<86400000?dur(ago)+'前':new Date(i.t*1000).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'}))}</span><span>${esc(i.title)}</span>`+
+      `<span class="tags"><span class="who">${esc(i.who)}</span>${tn?`<span class="${tn[1]}">${tn[0]}</span>`:''}${eff?`<span>→ ${esc(eff)}</span>`:''}<span>${esc(i.source||'')}</span></span></a>`;
+  }).join(''):'<div class="sub">直近48時間の関連する発言の見出しはありません。</div>';
+  // 1時間以内のトーン付きの発言は、セットアップ判定の下にも出す（判定は止めない）
+  const hot=(state.talk||[]).filter(i=>i.tone&&now-i.t*1000<3600000);
+  const el=$('talkAlert');el.hidden=!hot.length;
+  if(hot.length){const i=hot[0],eff=talkEffect(i);el.innerHTML=`🎤 直近1時間の要人発言（${esc(dur(now-i.t*1000))}前・${esc(i.who)}）：<b>${esc(i.title)}</b>`+(TONE_JA[i.tone]?`｜${TONE_JA[i.tone][0]}`:'')+(eff?` → ${esc(eff)}`:'')+(hot.length>1?`（ほか${hot.length-1}件）`:'')}
+}
 function renderEvents(){
+  renderTalk();
   const box=$('eventList'),now=Date.now(),nx=upcomingEvent();
   const list=state.events.filter(e=>e.ts>now-60*60000&&matchesFilter(e)).slice(0,10);
   if(!list.length){box.innerHTML='<div class="sub">表示できる重要指標はありません（接続中、または直近に予定なし）。</div>';return}
@@ -1851,7 +1902,7 @@ function renderEvents(){
     const cls=e===nx?'next':e.ts<now?'past':'';
     const rel=e.ts>now?'あと'+dur(e.ts-now):'発表済';
     html+=`<div class="event ${cls}"><div class="eventtime">${esc(hhmm(e.ts))}</div>`+
-      `<div><div class="eventtitle">${esc(e.currency)}｜${esc(e.title)}</div><div class="eventmeta">予想 ${esc(e.forecast||'--')} / 前回 ${esc(e.previous||'--')}${e.actual?' / <b>結果 '+esc(e.actual)+'</b>':''}</div></div>`+
+      `<div><div class="eventtitle">${esc(e.currency)}｜${esc(evTitle(e))}</div><div class="eventmeta">${e.speech?'要人発言（予想・結果なし）｜発言中は値動きが荒くなりやすい':`予想 ${esc(e.forecast||'--')} / 前回 ${esc(e.previous||'--')}${e.actual?' / <b>結果 '+esc(e.actual)+'</b>':''}`}</div></div>`+
       `<div class="star ${e.impact==='High'?'high':'medium'}">${stars(e)}<small>${esc(rel)}</small></div></div>`;
   });
   box.innerHTML=html;
@@ -1867,8 +1918,8 @@ function renderNext(){
     box.className='nextev'+(caution?' alert':'');
     box.innerHTML=`<div class="sub">${esc(new Date(e.ts).toLocaleString('ja-JP',{month:'numeric',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'}))}　<span class="star ${e.impact==='High'?'high':'medium'}">${stars(e)}</span></div>`+
       `<div class="count ${caution?'warn':''}">${diff>=0?'あと '+esc(dur(diff)):'発表後 '+esc(dur(-diff))}</div>`+
-      `<div class="evtitle">${esc(e.currency)}｜${esc(e.title)}</div>`+
-      `<div class="sub" style="margin-top:4px">予想 ${esc(e.forecast||'--')} / 前回 ${esc(e.previous||'--')}</div>`+
+      `<div class="evtitle">${esc(e.currency)}｜${esc(evTitle(e))}</div>`+
+      `<div class="sub" style="margin-top:4px">${e.speech?'要人発言：話している間も値動きが荒くなりやすい':`予想 ${esc(e.forecast||'--')} / 前回 ${esc(e.previous||'--')}`}</div>`+
       resultLine(e,diff)+
       `<div class="sub" style="margin-top:6px"><span class="livedot"></span>指標データ ${state.calendarAt?esc(new Date(state.calendarAt).toLocaleTimeString('ja-JP'))+' 更新':'取得中'}｜${calendarHot()?'1分ごと':'5分ごと'}に自動更新</div>`;
     miniTxt=(caution?'⚠ ':'')+e.currency+' '+(diff>=0?'あと'+dur(diff):'発表後');
@@ -1888,7 +1939,7 @@ function updateCaution(){
   const e=nextCautionEvent(),box=$('caution');
   if(!e){box.classList.add('hidden');return}
   box.classList.remove('hidden');const diff=e.ts-Date.now();
-  $('cautionText').textContent=`${e.currency}｜${e.title}（${hhmm(e.ts)}）— 新規エントリーは控えめに`;
+  $('cautionText').textContent=`${e.currency}｜${evTitle(e)}（${hhmm(e.ts)}）— 新規エントリーは控えめに`;
   $('cautionCount').textContent=diff>=0?'あと '+dur(diff):'発表後 '+dur(-diff);
 }
 
