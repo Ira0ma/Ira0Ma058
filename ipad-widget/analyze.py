@@ -315,6 +315,30 @@ def check(key, price, h1, m15):
 
 
 
+def tf_check(key, candles):
+    """Log whether the timeframes the GOLD/USD-JPY pages and the Trade Desk draw agree with each other:
+    broken candles (high below open/close and the like), and the high/low of the same finished 12 hours
+    on 5m, 15m, 30m, 1h and 4h. Tolerance: 0.5 dollars for gold, 0.5 pip for USD/JPY."""
+    tol = 0.5 if key == "gold" else 0.005
+    bad = {tf: sum(1 for t, o, h, l, c in rows if h < max(o, c) - 1e-9 or l > min(o, c) + 1e-9)
+           for tf, rows in candles.items()}
+    end = candles["1h"][-1][0]
+    end -= end % (4 * 3600)  # the 4h candle still forming is left out
+    start = end - 12 * 3600
+    ranges = {}
+    for tf in ("5m", "15m", "30m", "1h", "4h"):
+        rows = [r for r in candles[tf] if start <= r[0] < end]
+        if rows and candles[tf][0][0] <= start:  # this timeframe covers the whole window
+            ranges[tf] = (max(r[2] for r in rows), min(r[3] for r in rows))
+    ref = ranges.get("1h")
+    off = {tf: (round(h - ref[0], 5), round(l - ref[1], 5)) for tf, (h, l) in ranges.items()
+           if ref and (abs(h - ref[0]) > tol or abs(l - ref[1]) > tol)}
+    span = lambda t: datetime.fromtimestamp(t, timezone.utc).strftime("%m-%d %H:%M")
+    print(key, f"timeframe check {span(start)}..{span(end)} UTC: 1h high/low {ref},",
+          f"compared {sorted(ranges)};", f"mismatch (high, low vs 1h) {off}" if off else "all agree",
+          f"; broken candles {dict((k, v) for k, v in bad.items() if v)}" if any(bad.values()) else "; no broken candles")
+
+
 def coinbase_offset(price):
     """How far Coinbase's USD/JPY rate (the USD/JPY page's live price) sits from the chart's price, which
     follows the bid that XM/XS charts and quote first. Coinbase runs near the ask, about a pip higher;
@@ -420,6 +444,21 @@ def one(key, sym, spot_sym, fixture, prev=None):
     a = analyze(key, done, price)
     prev_close = done[-1][4]
     print(key, round(price, 5), a["trend"], a["title"])
+    candles = {
+        "1m": r6(m1[-N_CANDLES:]),
+        "5m": r6(m5[-N_CANDLES:]),
+        "15m": r6(m15[-N_M15:]),
+        "30m": r6(aggregate(m15, 1800)[-N_CANDLES:]),
+        "1h": r6(h1[-N_H1:]),
+        "4h": r6(aggregate(h1, 4 * 3600)[-N_CANDLES:]),
+        "1d": r6(d1[-N_CANDLES:]),
+        "1w": r6(w1[-N_CANDLES:]),
+    }
+    if key in CHECK and fixture is None:
+        try:
+            tf_check(key, candles)
+        except Exception as e:  # a log line must never cost the data
+            print(key, "timeframe check failed:", e)
     return {
         "price": price, "asOf": as_of, "prevClose": prev_close, "analysis": a,
         **({} if live_offset is None else {"liveOffset": round(live_offset, 4)}),
@@ -429,16 +468,7 @@ def one(key, sym, spot_sym, fixture, prev=None):
             # when the gap was measured: a reused gap keeps its original time so it ages out
             "basisAt": (prev or {}).get("basisAt") if adjusted and spot is None else int(time.time()),
         }),
-        "candles": {
-            "1m": r6(m1[-N_CANDLES:]),
-            "5m": r6(m5[-N_CANDLES:]),
-            "15m": r6(m15[-N_M15:]),
-            "30m": r6(aggregate(m15, 1800)[-N_CANDLES:]),
-            "1h": r6(h1[-N_H1:]),
-            "4h": r6(aggregate(h1, 4 * 3600)[-N_CANDLES:]),
-            "1d": r6(d1[-N_CANDLES:]),
-            "1w": r6(w1[-N_CANDLES:]),
-        },
+        "candles": candles,
     }
 
 if __name__ == "__main__":
