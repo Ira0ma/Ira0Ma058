@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="a6e5818d26">
+<meta name="build" content="4646868592">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -113,6 +113,14 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .reasons{display:grid;gap:5px;margin-top:8px}
 .reason{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#0d1217;border:1px solid #222b35;border-radius:10px;padding:7px 9px}
 .reason span{font-size:11px;color:var(--muted)}.reason b{font-size:12px;text-align:right}
+.patlist{display:grid;gap:4px;margin-top:6px}
+.patlist .ph{font-size:11px;color:var(--muted);margin:4px 2px 0}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;align-items:center;background:#0d1217;border:1px solid #222b35;border-radius:10px;padding:6px 9px;font-size:11px}
+.prow .pn{color:var(--text);font-weight:600}.prow .ps{text-align:right;font-weight:700;color:var(--muted)}
+.prow .pc{grid-column:1/-1;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
+.prow .pc .ok{color:#42d59c}.prow .pc .ng{color:#ff6969}
+.prow.go{border-color:#42d59c;background:rgba(66,213,156,.08)}.prow.go.sell{border-color:#ff6969;background:rgba(255,105,105,.08)}
+.prow.go .ps{color:#42d59c}.prow.go.sell .ps{color:#ff6969}.prow.idle{opacity:.55}
 .planbox{margin-top:8px;border:1px solid #2b3540;border-radius:12px;padding:9px 11px;background:#0c1116;opacity:.8}
 .planbox.go{opacity:1;border-width:2px}
 .planbox.go.buy{border-color:#2f8a66;background:#0b1f18}
@@ -294,7 +302,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     </div>
 
     <div class="hero-signal">
-      <div class="cardhead"><div><div class="title">セットアップ判定</div><div class="sub">3条件のスコア＋利確余地で自動判定</div></div><span class="tag">SIGNAL</span></div>
+      <div class="cardhead"><div><div class="title">セットアップ判定</div><div class="sub">3条件・チャートパターン＋利確余地で自動判定</div></div><span class="tag">SIGNAL</span></div>
       <div id="signal" class="signal wait">WAIT<small>データ取得中</small></div>
       <div class="meter"><i id="meter"></i></div>
       <div class="sub">判定強度 <b id="confidence">--</b></div>
@@ -305,6 +313,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
         <div class="reason"><span>④ 利確余地（<span id="minTpLabel">50</span>pips以上）</span><b id="reasonTp">--</b></div>
         <div class="reason" id="cupRow" hidden><span>⑤ チャートパターン</span><b id="reasonCup">--</b></div>
       </div>
+      <div id="patList" class="patlist" hidden></div>
       <div id="planBox" class="planbox" hidden></div>
     </div>
 
@@ -1151,11 +1160,14 @@ function calcSignal(){
   const aligned=sig!=='WAIT'&&Math.abs(score)===3;
   let entry=aligned&&!!plan&&plan.tpPips>=MIN_TP_PIPS, via=[], entry3=entry, patPlan=false;
   // ⑤ チャートパターンのブレイク：CAUTION中でなく、（設定により）H1 120SMAと同じ向きで、利確余地が基準以上ならエントリー
-  const pats=chartPatterns(),fired=[];
-  if(!isCautionActive())for(const pt of pats){
-    if(pt.state!=='breakout'||pt.entry===false||(pt.useSma&&(pt.dir>0?state.spot.price<sma:state.spot.price>=sma)))continue;
-    const pp=tradePlan(pt.dir,pt);if(pp.tpPips>=MIN_TP_PIPS)fired.push({pt,plan:pp});
+  // パターンごとに条件を確かめる（形のブレイク・120SMAの向き・利確余地・CAUTION）。全部そろったものがエントリー
+  const pats=chartPatterns(),caution=isCautionActive(),checks=new Map();
+  for(const pt of pats){
+    const smaOk=!pt.useSma||(pt.dir>0?state.spot.price>=sma:state.spot.price<sma);
+    const pp=pt.state==='breakout'?tradePlan(pt.dir,pt):null,tpOk=!!pp&&pp.tpPips>=MIN_TP_PIPS;
+    checks.set(pt,{smaOk,plan:pp,tpOk,ok:!!pp&&pt.entry!==false&&!caution&&smaOk&&tpOk});
   }
+  const fired=pats.filter(pt=>checks.get(pt).ok).map(pt=>({pt,plan:checks.get(pt).plan}));
   if(fired.length){
     const d=entry?plan.dir:fired[0].pt.dir, same=fired.filter(f=>f.pt.dir===d);
     if(same.length){
@@ -1163,7 +1175,7 @@ function calcSignal(){
       via=same.map(f=>f.pt.label);
     }
   }
-  return {sig,entry,aligned,plan,score,sma,mom,mid,hi,lo,forced,ready:true,pats,via,entry3,patPlan};
+  return {sig,entry,aligned,plan,score,sma,mom,mid,hi,lo,forced,ready:true,pats,checks,caution,via,entry3,patPlan};
 }
 // ゴールドの1pips＝0.1ドル（XMなど国内向け業者の一般的な表記。1lot＝100ozで1pips＝10ドル）
 const PIP=INSTR.pip, MIN_TP_PIPS=INSTR.minTp;
@@ -1330,6 +1342,33 @@ function notifyDesk(s){
   const k=JSON.stringify(msg);if(k===lastSignalMsg)return;lastSignalMsg=k;
   try{window.parent.postMessage(msg,'*')}catch{}
 }
+// セットアップ判定の下に、エントリー条件にしているチャートパターンを全部並べ、それぞれ条件がそろっているかを表示
+function renderPatList(s){
+  const el=$('patList');if(!s.ready){el.hidden=true;return}
+  const rows=[{id:'cup',tf:'m15',dir:0,name:'カップウィズハンドル',entry:true,useSma:1},...PATTERNS.map(c=>({id:c.id,tf:c.tf,dir:c.dir,name:c.name,entry:c.entry,useSma:c.p.useSma}))];
+  const side=d=>d>0?'買い':d<0?'売り':'買い・売り';
+  const html=rows.map(r=>{
+    const pt=(s.pats||[]).find(p=>p.id===r.id&&p.tf===r.tf&&(r.dir===0||p.dir===r.dir));
+    const dir=pt?pt.dir:r.dir,name=(r.tf==='h1'?'H1':'M15')+(pt&&r.id==='cup'?pt.label.replace(/^M15/,''):r.name)+'（'+side(dir)+'）';
+    const c=pt&&s.checks?.get(pt),item=(ok,txt)=>'<span class="'+(ok?'ok':'ng')+'">'+(ok?'✓':'✗')+' '+esc(txt)+'</span>';
+    let st='未検出',cls='idle',det='';
+    if(pt&&pt.state==='forming'){
+      st='形成中';cls='';
+      det='<span>ネックライン '+fmt(pt.neck)+(dir>0?' を上抜けで成立':' を下抜けで成立')+'</span>';
+    }else if(pt&&c){
+      const smaTxt='120SMA'+(dir>0?'より上':'より下');
+      det=[item(true,'ネックライン '+fmt(pt.neck)+' ブレイク'),
+        r.useSma?item(c.smaOk,smaTxt):'',
+        item(c.tpOk,'目標まで '+(c.plan?Math.round(c.plan.tpPips):0)+'pips（'+MIN_TP_PIPS+'以上）'),
+        item(!s.caution,s.caution?'重要指標CAUTION中':'指標CAUTIONなし')].join('');
+      if(r.entry===false){st='参考表示（10年で優位性なし）';cls=''}
+      else if(c.ok){st='条件そろい → '+side(dir)+'エントリー';cls='go'+(dir<0?' sell':'')}
+      else{st='ブレイク・条件不足';cls=''}
+    }
+    return '<div class="prow '+cls+'"><span class="pn">'+esc(name)+'</span><span class="ps">'+esc(st)+'</span>'+(det?'<span class="pc">'+det+'</span>':'')+'</div>';
+  }).join('');
+  el.innerHTML='<div class="ph">チャートパターン別のエントリー条件</div>'+html;el.hidden=false;
+}
 function renderSnapshot(){
   const s=calcSignal();
   state.signal=s.sig;
@@ -1385,6 +1424,7 @@ function renderSnapshot(){
       s.via.length?(s.sig==='BUY'?1:-1):0);
     else if(fm.length)setReason('reasonCup',fm.slice(0,2).map(p=>p.label+'（'+side(p)+'）形成中｜'+fmt(p.neck)+(p.dir>0?' 上抜けで':' 下抜けで')+'成立').join('／'),0);
     else setReason('reasonCup',state.m15.length<200?'M15待ち':'なし',0);
+    renderPatList(s);
   }
   renderPlan(s);
 
