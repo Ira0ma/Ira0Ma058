@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="62ef116836">
+<meta name="build" content="6f0aa3094a">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -114,6 +114,7 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .talkitem .tt{color:var(--muted);font-size:11px;white-space:nowrap}
 .talkitem .tags{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 8px;font-size:10.5px;color:var(--muted)}
 .talkitem .who{color:#b9a6ff;font-weight:700}.talkitem .hawk{color:#ff9d6b;font-weight:700}.talkitem .dove{color:#6bc8ff;font-weight:700}.talkitem .intv{color:#ffb547;font-weight:700}
+.talkitem.fresh{border-color:#7c5cff;box-shadow:0 0 0 1px #7c5cff inset;animation:entryGlow 1.6s ease-in-out infinite;--glow:rgba(124,92,255,.35)}
 .talkhead{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px}
 .waitfor{margin-top:8px;background:#0d1217;border:1px solid #654f1f;border-radius:10px;padding:8px 10px;font-size:11px;display:grid;gap:5px}
 .waitfor .wh{color:var(--amber);font-weight:800}
@@ -438,7 +439,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <div id="eventList" class="events"><div class="sub">取得中...</div></div>
     <div id="calendarStatus" class="autonote">カレンダー接続中...</div>
     <div class="talkhead"><div class="title">要人発言ニュース</div><div class="sub" id="talkStatus">取得中...</div></div>
-    <div class="sub">FRB・日銀・財務省・米政権などの発言の見出し（直近48時間）。見出しの言葉から、タカ派／ハト派／介入警戒と、ふつう起きやすい値動きを自動で付けています（発言の中身までは読んでいません）。</div>
+    <div class="sub">⚡＝速報（FinancialJuiceの速報ヘッドラインを45秒ごとに直接確認・英語）。ほかはニュース記事の見出し（日本語・定期取得）。見出しの言葉から、タカ派／ハト派／介入警戒と、ふつう起きやすい値動きを自動で付けています（発言の中身までは読んでいません）。</div>
     <div id="talkList" class="talk"></div>
   </section>
 
@@ -1874,19 +1875,61 @@ function drawRsi(source,startIdx,endIdx,nb,P,step,hi){
   ctx.fillText('RSI(14) '+(v==null?'--':v.toFixed(1))+(v>=70?' 買われすぎ':v!=null&&v<=30?' 売られすぎ':''),P.l+6,T+8);
 }
 
+// 要人発言の速報：FinancialJuice の速報ヘッドライン（ブラウザから直接、45秒ごと）から要人の発言だけを拾う。
+// 見出しの言葉でトーンを判定（タカ派・ハト派・介入警戒）。サイトのGoogleニュース（定期取得）と合わせて表示
+const FJ_URL='https://www.financialjuice.com/feed.ashx?xy=rss';
+const LIVE_WHO=[  // [正規表現, 表示名, 関係する銘柄（both／usdjpy／none）, グループ]
+  [/\b(POWELL|FED CHAIR)\b/i,'パウエルFRB議長','both','FRB'],
+  [/\b(FED'?S|FOMC|WALLER|BOWMAN|JEFFERSON|WILLIAMS|BARR|COOK|LOGAN|DALY|HAMMACK|MUSALEM|KASHKARI|GOOLSBEE|BOSTIC|SCHMID|BARKIN|HARKER|MIRAN|COLLINS|PAULSON)\b/i,'FRB高官','both','FRB'],
+  [/\b(BESSENT|TREASURY SEC)/i,'米財務長官','both','米政権'],
+  [/\b(TRUMP|WHITE HOUSE|HASSETT)\b/i,'米政権','both','米政権'],
+  [/\b(UEDA|BOJ GOV)/i,'植田日銀総裁','usdjpy','日銀'],
+  [/\b(BOJ'?S?|HIMINO|UCHIDA|TAMURA|TAKATA|NAKAGAWA|NOGUCHI|KOEDA|MASU)\b/i,'日銀','usdjpy','日銀'],
+  [/\b(KATAYAMA|MIMURA|KATO|JAPAN'?S? (FINANCE|FIN\.?) MIN|JAPAN'?S? TOP CURRENCY|JAPAN MOF|JAPANESE FINANCE)/i,'日本の財務省','usdjpy','財務省'],
+  [/\b(LAGARDE|ECB'?S)\b/i,'ECB','none','ECB・その他'],
+  [/\b(BAILEY|BOE'?S)\b/i,'英中銀','none','ECB・その他'],
+  [/\b(PBOC)\b/i,'中国人民銀行','none','ECB・その他']];
+function liveTone(t,grp){
+  if((grp==='財務省'||grp==='日銀')&&/intervene|intervention|excessive|speculative|rapid|one-sided|appropriate action|all options|sense of urgency|closely watch/i.test(t))return 'intervention';
+  if(/no rush|not in a hurry|patient|cautious (about|on) (rate )?cuts?|hold rates|higher for longer|not appropriate to cut|premature to cut/i.test(t))return 'hawkish';
+  if(/\bhikes?\b|hiking|tighten|raise rates|rate increase|inflation (risks?|concerns?|too high|sticky|remains elevated)/i.test(t))return 'hawkish';
+  if(/\bcuts?\b|cutting|easing|lower rates|accommodat|downside risks?|weak(ening)? labo|support the economy/i.test(t))return 'dovish';
+  return '';
+}
+const LIVE_EFFECT={'FRB|hawkish':['ドル高（ドル円↑）','金↓'],'FRB|dovish':['ドル安（ドル円↓）','金↑'],'米政権|dovish':['ドル安（ドル円↓）','金↑'],'米政権|hawkish':['ドル高（ドル円↑）','金↓'],
+  '日銀|hawkish':['円高（ドル円↓）',''],'日銀|dovish':['円安（ドル円↑）',''],'日銀|intervention':['円高警戒（ドル円↓）',''],'財務省|intervention':['円高警戒（ドル円↓）','']};
+let liveTalk=[],liveBusy=false;
+async function refreshLiveTalk(){
+  if(liveBusy||document.hidden)return;liveBusy=true;
+  try{
+    const c=new AbortController(),tm=setTimeout(()=>c.abort(),12000);
+    const txt=await (await fetch(FJ_URL+'&t='+Date.now(),{cache:'no-store',signal:c.signal})).text();clearTimeout(tm);
+    const doc=new DOMParser().parseFromString(txt,'text/xml'),out=[];
+    doc.querySelectorAll('item').forEach(it=>{
+      const title=(it.querySelector('title')?.textContent||'').replace(/^FinancialJuice:\s*/,'').trim();
+      const w=LIVE_WHO.find(x=>x[0].test(title));if(!w)return;
+      if(w[2]==='usdjpy'&&IS_GOLD)return;
+      const t=Math.floor(Date.parse(it.querySelector('pubDate')?.textContent||'')/1000);if(!t)return;
+      const tone=liveTone(title,w[3]),eff=LIVE_EFFECT[w[3]+'|'+tone]||['',''];
+      out.push({t,title,source:'FinancialJuice（速報）',link:it.querySelector('link')?.textContent||'https://www.financialjuice.com/',who:w[1],tone,usdjpy:eff[0],gold:eff[1],live:true});
+    });
+    liveTalk=out;state.liveTalkAt=Date.now();renderTalk();
+  }catch{}finally{liveBusy=false}
+}
 // 要人発言ニュース：見出し・時刻・誰の発言か・トーン・ふつう起きやすい値動き
 const TONE_JA={hawkish:['タカ派','hawk'],dovish:['ハト派','dove'],intervention:['介入警戒','intv']};
 function talkEffect(i){return IS_GOLD?[i.gold,i.usdjpy].filter(Boolean).join('・'):i.usdjpy}
+function allTalk(){return liveTalk.concat(state.talk||[]).sort((a,b)=>b.t-a.t)}
 function renderTalk(){
-  const list=(state.talk||[]).slice(0,8),now=Date.now();
-  $('talkStatus').textContent=state.talkAt?new Date(state.talkAt).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})+' 取得':'取得中...';
+  const all=allTalk(),list=all.slice(0,10),now=Date.now();
+  $('talkStatus').textContent=(state.liveTalkAt?'速報 '+new Date(state.liveTalkAt).toLocaleTimeString('ja-JP')+' 確認（45秒ごと）':'速報 接続中')+(state.talkAt?'｜ニュース '+new Date(state.talkAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})+' 取得':'');
   $('talkList').innerHTML=list.length?list.map(i=>{
     const tn=TONE_JA[i.tone],eff=talkEffect(i),ago=now-i.t*1000;
-    return `<a class="talkitem" href="${esc(i.link)}" target="_blank" rel="noopener"><span class="tt">${esc(ago<86400000?dur(ago)+'前':new Date(i.t*1000).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'}))}</span><span>${esc(i.title)}</span>`+
+    return `<a class="talkitem${i.live&&ago<600000?' fresh':''}" href="${esc(i.link)}" target="_blank" rel="noopener"><span class="tt">${i.live?'⚡':''}${esc(ago<86400000?dur(ago)+'前':new Date(i.t*1000).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'}))}</span><span>${esc(i.title)}</span>`+
       `<span class="tags"><span class="who">${esc(i.who)}</span>${tn?`<span class="${tn[1]}">${tn[0]}</span>`:''}${eff?`<span>→ ${esc(eff)}</span>`:''}<span>${esc(i.source||'')}</span></span></a>`;
   }).join(''):'<div class="sub">直近48時間の関連する発言の見出しはありません。</div>';
   // 1時間以内のトーン付きの発言は、セットアップ判定の下にも出す（判定は止めない）
-  const hot=(state.talk||[]).filter(i=>i.tone&&now-i.t*1000<3600000);
+  const hot=all.filter(i=>i.tone&&now-i.t*1000<3600000);
   const el=$('talkAlert');el.hidden=!hot.length;
   if(hot.length){const i=hot[0],eff=talkEffect(i);el.innerHTML=`🎤 直近1時間の要人発言（${esc(dur(now-i.t*1000))}前・${esc(i.who)}）：<b>${esc(i.title)}</b>`+(TONE_JA[i.tone]?`｜${TONE_JA[i.tone][0]}`:'')+(eff?` → ${esc(eff)}`:'')+(hot.length>1?`（ほか${hot.length-1}件）`:'')}
 }
@@ -2160,6 +2203,7 @@ renderMaToggles();
 $('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);
 $('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);
 loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(scheduler,1000);
+refreshLiveTalk();setInterval(refreshLiveTalk,45000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
 </script>
 </body>
 </html>
