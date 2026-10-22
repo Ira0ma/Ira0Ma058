@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="b50d62f756">
+<meta name="build" content="a6e5818d26">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -319,7 +319,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
   <section id="secChart" class="panel s8">
     <div class="cardhead">
       <div><div class="title" id="chartTitle">GOLDチャート</div><div id="chartMeta" class="sub">取得中...</div></div>
-      <div class="segmented"><button id="h1Btn" class="seg active">H1</button><button id="m15Btn" class="seg">M15</button><button id="lvBtn" class="seg active" aria-pressed="true">水平線</button><button id="tlBtn" class="seg active" aria-pressed="true">トレンドライン</button></div>
+      <div class="segmented"><button class="seg tfBtn" data-tf="m5">M5</button><button class="seg tfBtn" data-tf="m15">M15</button><button class="seg tfBtn active" data-tf="h1">H1</button><button class="seg tfBtn" data-tf="h4">H4</button><button id="lvBtn" class="seg active" aria-pressed="true">水平線</button><button id="tlBtn" class="seg active" aria-pressed="true">トレンドライン</button></div>
     </div>
     <div id="maToggles" class="matoggles" role="group" aria-label="移動平均線の表示"></div>
     <div class="chartwrap"><canvas id="chart"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
@@ -454,7 +454,7 @@ try{if(window.self!==window.top)document.documentElement.classList.add('embedded
 const state = {
   auto:true, tf:'h1', dir:'auto', evFilter:'all', broker:'xm',
   spot:null, fx:null, goldJpy:null,
-  h1:[], m15:[], events:[],
+  h1:[], m15:[], m5:[], h4:[], events:[],
   signal:'WAIT', lastOk:null, prevPrice:null,
   nextSpot:0, nextChart:0, nextCalendar:0,
   loading:false, errMsg:'', hover:null, chartGeo:null,
@@ -482,6 +482,8 @@ const URLS = {
   calendar:'https://www.financecalendar.com/wp-json/fc/v1/week?tz=Asia/Tokyo'
 };
 
+// チャートの時間足（H4は XM・XS のサーバー時間の区切り。判定に使うのはH1・M15）
+const TFS = {m5:{min:5,site:'5m'},m15:{min:15,site:'15m'},h1:{min:60,site:'1h'},h4:{min:240,site:'4h'}};
 const INTERVALS = {spot:30000, chart:300000, calendar:300000, calendarHot:60000};
 
 /* ---------- utils ---------- */
@@ -594,7 +596,7 @@ function alignSiteBars(spot){
   if(!last||Date.now()-last.t>3*3600000)return;  // 古い足とは比べない
   const gap=spot-last.c;
   if(Math.abs(gap)>Math.max(80,spot*.03))return;  // 差が大きすぎるときは別の原因なので触らない
-  for(const bars of [state.h1,state.m15])for(const b of bars){b.o+=gap;b.h+=gap;b.l+=gap;b.c+=gap}
+  for(const tf in TFS)for(const b of state[tf]){b.o+=gap;b.h+=gap;b.l+=gap;b.c+=gap}
   state.siteUnadjusted=false;
 }
 function mergeSpot(bars,minutes,price,t){
@@ -602,13 +604,14 @@ function mergeSpot(bars,minutes,price,t){
   const ms=minutes*60000,last=bars.at(-1);
   if(t<last.t)return;
   if(t<last.t+ms){last.c=price;last.h=Math.max(last.h,price);last.l=Math.min(last.l,price)}
-  else{bars.push({t:Math.floor(t/ms)*ms,o:last.c,h:Math.max(last.c,price),l:Math.min(last.c,price),c:price})}
+  else{bars.push({t:last.t+Math.floor((t-last.t)/ms)*ms,o:last.c,h:Math.max(last.c,price),l:Math.min(last.c,price),c:price})}  // 足の区切りは直前の足に合わせる
 }
+function mergeSpotAll(price,t){for(const tf in TFS)mergeSpot(state[tf],TFS[tf].min,price,t)}
 
 /* ---------- cache / prefs ---------- */
 function saveCache(){
   lsSet(LSP+'auto_cache_final',JSON.stringify({
-    spot:state.spot,fx:state.fx,goldJpy:state.goldJpy,h1:state.h1,m15:state.m15,
+    spot:state.spot,fx:state.fx,goldJpy:state.goldJpy,h1:state.h1,m15:state.m15,m5:state.m5,h4:state.h4,
     events:state.events,lastOk:state.lastOk,rolling:state.rolling
   }));
 }
@@ -642,7 +645,7 @@ function loadPrefs(){
   $('autoRisk').checked=lsGet(LSP+'auto_risk','1')==='1';
   state.dir=lsGet(LSP+'dir','auto');
   state.evFilter=lsGet(LSP+'ev_filter','all');
-  state.tf=lsGet(LSP+'tf','h1');
+  state.tf=TFS[lsGet(LSP+'tf','h1')]?lsGet(LSP+'tf','h1'):'h1';
   state.showLevels=lsGet(LSP+'levels','1')==='1';
   state.showTrend=lsGet(LSP+'trend','1')==='1';
   loadMaOn();
@@ -703,7 +706,7 @@ async function refreshSpot(){
       state.fx=px;state.health.fx=true;
       try{const all=(await getSite()).instruments;state.extra={dxy:all.dxy?.price,jxy:all.jxy?.price,gold:all.gold?.price}}catch{}
       updateRolling(px);
-      mergeSpot(state.m15,15,px,asof);mergeSpot(state.h1,60,px,asof);
+      mergeSpotAll(px,asof);
       state.health.spot=true;
       state.lastOk=Date.now(); state.nextSpot=Date.now()+INTERVALS.spot;
       saveCache(); setStatus('live','LIVE'); showError(''); renderAll(); flashPrice();
@@ -751,7 +754,7 @@ async function refreshSpot(){
     state.goldJpy=jpyOz||(fx?usd*fx:state.goldJpy);
     if(!src.startsWith('サイト'))alignSiteBars(usd);
     updateRolling(usd);
-    mergeSpot(state.m15,15,usd,asof);mergeSpot(state.h1,60,usd,asof);
+    mergeSpotAll(usd,asof);
     state.health.spot=true;
     state.lastOk=Date.now(); state.nextSpot=Date.now()+INTERVALS.spot;
     saveCache(); setStatus('live','LIVE'); showError(''); renderAll(); flashPrice();
@@ -770,11 +773,11 @@ async function refreshCharts(){
     const inst=(await getSite()).instruments[INSTR.site],g=inst.candles;
     const hb=siteBars(g['1h']),mb=siteBars(g['15m']);
     if(hb.length>=120&&mb.length>=20){
-      state.h1=hb;state.m15=mb;state.health.h1=state.health.m15=true;changed=true;state.src.chart='サイト';
+      state.h1=hb;state.m15=mb;state.m5=siteBars(g['5m']);state.h4=siteBars(g['4h']);state.health.h1=state.health.m15=true;changed=true;state.src.chart='サイト';
       // サイトの金のローソク足は先物（GC=F）をスポット価格に合わせたもの。合わせられなかった回は、ここでライブのスポット価格に合わせる
       state.siteUnadjusted=IS_GOLD&&inst.spotAdjusted===false;
       if(state.spot&&!String(state.src.spot||'').startsWith('サイト'))alignSiteBars(state.spot.price);
-      if(state.spot){mergeSpot(state.m15,15,state.spot.price,state.spot.asof);mergeSpot(state.h1,60,state.spot.price,state.spot.asof)}
+      if(state.spot)mergeSpotAll(state.spot.price,state.spot.asof);
     }
   }catch{}
   if(!changed&&IS_GOLD){
@@ -956,7 +959,7 @@ function emaSeries(bars,len){
 const SMA_COLOR='#f4f6f8';  // 120SMA（H1）・20SMA（M15）
 const EMAS=[{key:'e10',len:10,color:'#ff8fd1',w:1.4},{key:'e20',len:20,color:'#ff8c2e',w:1.4},{key:'e200',len:200,color:'#3d8bff',w:2}];
 // 各移動平均の表示・非表示（端末ごとに保存）
-const MA_BTNS=[{key:'sma',color:SMA_COLOR,label:()=>state.tf==='h1'?'120SMA':'20SMA'}].concat(EMAS.map(m=>({key:m.key,color:m.color,label:()=>m.len+'EMA'})));
+const MA_BTNS=[{key:'sma',color:SMA_COLOR,label:()=>smaLen()+'SMA'}].concat(EMAS.map(m=>({key:m.key,color:m.color,label:()=>m.len+'EMA'})));
 function loadMaOn(){let o={};try{o=JSON.parse(lsGet(LSP+'ma','{}'))||{}}catch{}
   state.maOn=Object.fromEntries(MA_BTNS.map(b=>[b.key,o[b.key]!==false]))}
 function renderMaToggles(){
@@ -1420,6 +1423,7 @@ function sizeCanvas(c){
   const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);
   return {ctx,W:r.width,H:r.height};
 }
+function smaLen(){return state.tf==='h1'?120:20}
 function barLabel(t,isH1){
   const d=new Date(t),hh=String(d.getHours()).padStart(2,'0'),mm=String(d.getMinutes()).padStart(2,'0');
   return isH1?`${d.getMonth()+1}/${d.getDate()} ${hh}時`:`${hh}:${mm}`;
@@ -1427,7 +1431,7 @@ function barLabel(t,isH1){
 function drawChart(){
   const c=$('chart'),{ctx,W,H}=sizeCanvas(c);
   ctx.clearRect(0,0,W,H);
-  const isH1=state.tf==='h1',source=isH1?state.h1:state.m15;
+  const isH1=state.tf==='h1'||state.tf==='h4',source=state[state.tf]||state.h1;  // isH1: 時間単位の足（ラベルに日付を出す）
   // view: off = 最新から何本さかのぼるか（マイナスは最新足の右側の空白の本数）, count = 表示枠の本数, yOff/yZoom = 縦方向の移動・拡大
   const v=state.view,defCount=W<520?(isH1?40:48):(isH1?72:96);
   const count=Math.max(12,Math.min(v.count||defCount,source.length||12));
@@ -1438,7 +1442,7 @@ function drawChart(){
     ctx.fillStyle='#93a0ad';ctx.font='14px sans-serif';ctx.fillText('チャートデータ接続中...',20,34);
     $('chartInfo').textContent='--';state.chartGeo=null;return;
   }
-  const len=isH1?120:20,sm=smaSeries(source,len).slice(startIdx,endIdx);
+  const len=smaLen(),sm=smaSeries(source,len).slice(startIdx,endIdx);
   const vals=bars.flatMap((b,i)=>sm[i]==null?[b.h,b.l]:[b.h,b.l,sm[i]]);
   if(state.spot&&v.off<=0)vals.push(state.spot.price);
   let min=Math.min(...vals),max=Math.max(...vals);const span=max-min||1;min-=span*.07;max+=span*.07;
@@ -1500,7 +1504,7 @@ function drawChart(){
     ctx.beginPath();ctx.moveTo(x(g0-startIdx),y(t.p1));ctx.lineTo(x(g1-startIdx),y(t.p1+t.slope*(g1-g0)));ctx.stroke();
   });
   // チャートパターン：表示中の時間足の形について、形の始まりから今までネックライン（点線）と名前。カップは底に印
-  chartPatterns().filter(p=>p.tf===(isH1?'h1':'m15')&&p.id!=='cup').forEach(pt=>{
+  chartPatterns().filter(p=>p.tf===state.tf&&p.id!=='cup').forEach(pt=>{
     const i0=source.findIndex(b=>b.t===pt.t0);if(i0<0||pt.neck<min||pt.neck>max)return;
     const col=pt.dir>0?'66,213,156':'255,105,105',yy=y(pt.neck),x0=x(i0-startIdx),xe=x(bars.length-1+blank);
     ctx.strokeStyle=`rgba(${col},.9)`;ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
@@ -1508,7 +1512,7 @@ function drawChart(){
     ctx.fillStyle=`rgba(${col},1)`;ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline=pt.dir>0?'top':'bottom';
     ctx.fillText(pt.label.replace(/^(M15|H1)/,'')+(pt.state==='breakout'?' ブレイク':' 形成中'),Math.max(P.l+2,x0)+4,yy+(pt.dir>0?4:-4));
   });
-  const cup=!isH1?cupHandle():null;
+  const cup=state.tf==='m15'?cupHandle():null;
   if(cup){
     const ix=t=>{const i=source.findIndex(b=>b.t===t);return i<0?null:i-startIdx};
     const xl=ix(cup.tl),xb=ix(cup.tb),xe=bars.length-1+blank;
@@ -1548,12 +1552,12 @@ function drawChart(){
   const b=bars[hi??bars.length-1],sv=sm[hi??bars.length-1];
   $('chartInfo').innerHTML=`<span>${hi==null?'最新足':'選択足'} <b>${esc(barLabel(b.t,isH1))}</b></span>`+
     `<span>始 <b>${fmt(b.o)}</b></span><span>高 <b>${fmt(b.h)}</b></span><span>安 <b>${fmt(b.l)}</b></span><span>終 <b class="${b.c>=b.o?'up':'down'}">${fmt(b.c)}</b></span>`+
-    (state.maOn.sma?`<span class="legend"><i style="background:${SMA_COLOR}"></i>${isH1?'120':'20'}SMA <b>${sv==null?'--':fmt(sv)}</b></span>`:'')+
+    (state.maOn.sma?`<span class="legend"><i style="background:${SMA_COLOR}"></i>${len}SMA <b>${sv==null?'--':fmt(sv)}</b></span>`:'')+
     emas.map(m=>{const ev=m.vals[hi??bars.length-1];return `<span class="legend"><i style="background:${m.color}"></i>${m.len}EMA <b>${ev==null?'--':fmt(ev)}</b></span>`}).join('')+
     tls.map(t=>`<span class="legend"><i style="background:${t.kind==='up'?TL_UP:TL_DOWN}"></i>${t.kind==='up'?'上昇':'下降'}トレンドライン <b>${fmt(t.p1+t.slope*(endIdx-1-t.i1))}</b>（接点${t.touches}）</span>`).join('')+
     tags.map(({l})=>`<span class="legend"><i style="background:${l.kind==='r'?'#ff6969':'#42d59c'}"></i>${l.kind==='r'?'抵抗線':'支持線'} <b>${fmt(l.price)}</b></span>`).join('')+
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
-  $('chartMeta').textContent=(isH1?'H1 ローソク足 / 120SMA':'M15 ローソク足 / 20SMA')+' / 10・20・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
+  $('chartMeta').textContent=state.tf.toUpperCase()+' ローソク足 / '+len+'SMA'+' / 10・20・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
   $('chartReset').hidden=!(v.off||v.count||v.yOff||v.yZoom!==1);
   state.chartGeo={P,step,n:bars.length,W,H,priceSpan:max-min,plotH:H-P.t-P.b};
 }
@@ -1684,7 +1688,7 @@ function scheduler(){
 function setSegActive(sel,attr,val){document.querySelectorAll(sel).forEach(b=>b.classList.toggle('active',b.dataset[attr]===val))}
 function setTf(tf){
   state.tf=tf;state.hover=null;resetView();renderMaToggles();
-  $('h1Btn').classList.toggle('active',tf==='h1');$('m15Btn').classList.toggle('active',tf==='m15');
+  setSegActive('.tfBtn','tf',tf);
   savePrefs();drawChart();
 }
 
@@ -1695,14 +1699,13 @@ $('autoBtn').onclick=()=>{
   if(state.auto){state.nextSpot=state.nextChart=state.nextCalendar=0}
   scheduler();
 };
-$('h1Btn').onclick=()=>setTf('h1');
+document.querySelectorAll('.tfBtn').forEach(b=>b.onclick=()=>setTf(b.dataset.tf));
 $('maToggles').addEventListener('click',e=>{
   const btn=e.target.closest('[data-ma]');if(!btn)return;
   const k=btn.dataset.ma;state.maOn[k]=!state.maOn[k];lsSet(LSP+'ma',JSON.stringify(state.maOn));renderMaToggles();drawChart();
 });
 $('tlBtn').onclick=()=>{state.showTrend=!state.showTrend;$('tlBtn').classList.toggle('active',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);savePrefs();drawChart()};
 $('lvBtn').onclick=()=>{state.showLevels=!state.showLevels;$('lvBtn').classList.toggle('active',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);savePrefs();drawChart()};
-$('m15Btn').onclick=()=>setTf('m15');
 document.querySelectorAll('#dirSeg .seg').forEach(b=>b.onclick=()=>{
   state.dir=b.dataset.dir;setSegActive('#dirSeg .seg','dir',state.dir);savePrefs();renderAll();
 });
@@ -1815,7 +1818,7 @@ if('IntersectionObserver' in window){
 loadPrefs();
 setSegActive('#dirSeg .seg','dir',state.dir);
 setSegActive('[data-ev]','ev',state.evFilter);
-$('h1Btn').classList.toggle('active',state.tf==='h1');$('m15Btn').classList.toggle('active',state.tf==='m15');
+setSegActive('.tfBtn','tf',state.tf);
 renderMaToggles();
 $('tlBtn').classList.toggle('active',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);
 $('lvBtn').classList.toggle('active',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);

@@ -117,10 +117,16 @@ def yahoo(symbol, interval, rng, fixture=None):
     return rows
 
 
-def aggregate(rows, seconds):
+def server_offset(t):
+    """Seconds the XM/XS server clock runs ahead of UTC: New York time + 7 hours (GMT+3, GMT+2 in US winter)."""
+    return int(datetime.fromtimestamp(t, NY).utcoffset().total_seconds()) + 7 * 3600
+
+
+def aggregate(rows, seconds, server=False):
+    """Candles of `seconds`; server=True starts them on the XM/XS server clock (4h candles at 21:00, 1:00 ... UTC)."""
     out = []
     for t, o, h, l, c in rows:
-        b = t - t % seconds
+        b = t - (t + (server_offset(t) if server else 0)) % seconds
         if out and out[-1][0] == b:
             k = out[-1]
             k[2], k[3], k[4] = max(k[2], h), min(k[3], l), c
@@ -329,8 +335,7 @@ def tf_check(key, candles):
     tol = 0.5 if key == "gold" else 0.005
     bad = {tf: sum(1 for t, o, h, l, c in rows if h < max(o, c) - 1e-9 or l > min(o, c) + 1e-9)
            for tf, rows in candles.items()}
-    end = candles["1h"][-1][0]
-    end -= end % (4 * 3600)  # the 4h candle still forming is left out
+    end = candles["4h"][-1][0]  # the 4h candle still forming is left out
     start = end - 12 * 3600
     ranges = {}
     for tf in ("5m", "15m", "30m", "1h", "4h"):
@@ -469,7 +474,7 @@ def one(key, sym, spot_sym, fixture, prev=None):
         "15m": r6(m15[-N_M15:]),
         "30m": r6(aggregate(m15, 1800)[-N_CANDLES:]),
         "1h": r6(h1[-N_H1:]),
-        "4h": r6(aggregate(h1, 4 * 3600)[-N_CANDLES:]),
+        "4h": r6(aggregate(h1, 4 * 3600, server=True)[-N_CANDLES:]),
         "1d": r6(d1[-N_CANDLES:]),
         "1w": r6(w1[-N_CANDLES:]),
     }
