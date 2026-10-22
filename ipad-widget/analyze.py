@@ -10,6 +10,7 @@ import json
 import os
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -319,38 +320,26 @@ PYTH = {"usdjpy": ("USD/JPY", "fx", "FX.USD/JPY"), "gold": ("XAU", "metal", "Met
 
 def probe_pyth(key):
     """Trial: Pyth Network's public price service (live price, history, and whether pages may read them)."""
-    q, kind, sym = PYTH[key]
+    fid = {"usdjpy": "ef2c98c804ba503c6a707e38be4dfbb16683775f195b091252bf24693042fd52",
+           "gold": "765d2ba906dbc32ca17cc11f5310a89e9ee1f6420508c63861f2f8ba4ee34bb2"}[key]
+    sym = PYTH[key][2]
     hdr = {**UA, "Origin": "https://ira0ma.github.io"}
-
-    def get(url):
-        with urllib.request.urlopen(urllib.request.Request(url, headers=hdr), timeout=20) as r:
-            return json.load(r), r.headers.get("Access-Control-Allow-Origin")
-    try:
-        feeds, cors = get(f"https://hermes.pyth.network/v2/price_feeds?query={urllib.parse.quote(q)}&asset_type={kind}")
-        hit = [f for f in feeds if f.get("attributes", {}).get("symbol") == sym]
-        print(key, "pyth feeds:", [(f["id"], f["attributes"].get("symbol")) for f in feeds][:6], "CORS", repr(cors))
-        if hit:
-            fid = hit[0]["id"]
-            d, cors = get(f"https://hermes.pyth.network/v2/updates/price/latest?ids[]={fid}&parsed=true")
-            p = d["parsed"][0]["price"]
-            v = int(p["price"]) * 10 ** int(p["expo"])
-            print(key, f"pyth latest {v:.5f} conf {int(p['conf']) * 10 ** int(p['expo']):.5f}",
-                  "age", int(time.time()) - int(p["publish_time"]), "s, CORS", repr(cors))
-    except Exception as e:
-        print(key, "pyth hermes failed:", e)
-    try:
-        now = int(time.time())
-        d, cors = get("https://benchmarks.pyth.network/v1/shims/tradingview/history?symbol="
-                      f"{urllib.parse.quote(sym)}&resolution=60&from={now - 2 * 86400}&to={now}")
-        if d.get("s") == "ok":
-            bars = list(zip(d["t"], d["o"], d["h"], d["l"], d["c"]))
-            day = [b for b in bars if ny_day(b[0]) == ny_day(bars[-1][0])]
-            print(key, f"pyth history {len(bars)} H1 bars, last {bars[-1]}, today high {max(b[2] for b in day)} "
-                  f"low {min(b[3] for b in day)}, CORS {cors!r}")
-        else:
-            print(key, "pyth history:", str(d)[:200])
-    except Exception as e:
-        print(key, "pyth history failed:", e)
+    now = int(time.time())
+    q = urllib.parse.quote
+    for url in (f"https://hermes.pyth.network/api/latest_price_feeds?ids[]={fid}",
+                f"https://hermes.pyth.network/v2/updates/price/latest?ids%5B%5D={fid}&parsed=true&encoding=hex",
+                f"https://benchmarks.pyth.network/v1/updates/price/latest?ids={fid}&parsed=true",
+                f"https://benchmarks.pyth.network/v1/shims/tradingview/history?symbol={q(sym)}&resolution=60&from={now - 86400}&to={now}",
+                f"https://benchmarks.pyth.network/v1/shims/tradingview/history?symbol={q('Crypto.BTC/USD')}&resolution=60&from={now - 86400}&to={now}",
+                f"https://benchmarks.pyth.network/v1/shims/tradingview/symbols?symbol={q(sym)}"):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=hdr), timeout=20) as r:
+                body = r.read(400).decode("utf-8", "replace")
+                print(key, "pyth OK", url.split("?")[0], "CORS", repr(r.headers.get("Access-Control-Allow-Origin")), body[:300])
+        except urllib.error.HTTPError as e:
+            print(key, "pyth", e.code, url.split("?")[0], e.read(200).decode("utf-8", "replace"))
+        except Exception as e:
+            print(key, "pyth failed", url.split("?")[0], e)
 
 
 def coinbase_offset(price):
