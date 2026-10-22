@@ -969,6 +969,23 @@ html:not(.flow) #flow { display: none; }
     if (!window.fetch) return;
     markets.forEach(function (mk) {
       var spot = INST[mk.key].spot, key = mk.key;
+      // USD/JPY: Coinbase's rate every minute, less the offset to the bid the site measures (as on the USD/JPY page)
+      if (INST[key].live === "coinbase") {
+        if (!market) return;  // needs the site's offset and price first; loadMarket calls back once they are in
+        fetch("https://api.coinbase.com/v2/exchange-rates?currency=USD", { cache: "no-store" })
+          .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+          .then(function (j) {
+            var px = +(j && j.data && j.data.rates && j.data.rates.JPY);
+            if (!px || mk.key !== key) return;
+            var m = market && (market.instruments || market)[key], off = m && +m.liveOffset;
+            if (off && Math.abs(off) < 0.1) px = Math.round((px - off) * 1000) / 1000;
+            if (m && m.price && Math.abs(px - m.price) > 1) return;  // far from the site's price: a broken quote
+            mk.asOf = Date.now() / 1000;
+            mk.applyLive(px);
+          })
+          .catch(function () {});
+        return;
+      }
       if (!spot) return;
       var use = function (price, asOf) {
         if (!price || mk.key !== key) return;
@@ -1003,7 +1020,7 @@ html:not(.flow) #flow { display: none; }
     txt: function (t, cls) { return '<span class="badge-txt ' + (cls || "") + '">' + t + "</span>"; }
   };
   var INST = {
-    usdjpy: { label: "USD/JPY", sub: "米ドル／円", name: "ドル円", dp: 3, tail: 1, demo: 158.1, badge: BADGE.us, unit: "yen" },
+    usdjpy: { label: "USD/JPY", sub: "米ドル／円", name: "ドル円", dp: 3, tail: 1, demo: 158.1, badge: BADGE.us, unit: "yen", live: "coinbase" },
     eurjpy: { label: "EUR/JPY", sub: "ユーロ／円", name: "ユーロ円", dp: 3, tail: 1, demo: 177.6, badge: BADGE.txt("€"), unit: "yen" },
     gbpjpy: { label: "GBP/JPY", sub: "英ポンド／円", name: "ポンド円", dp: 3, tail: 1, demo: 210.7, badge: BADGE.txt("£"), unit: "yen" },
     audjpy: { label: "AUD/JPY", sub: "豪ドル／円", name: "豪ドル円", dp: 3, tail: 1, demo: 110.2, badge: BADGE.txt("A$", "small"), unit: "yen" },
@@ -1573,13 +1590,14 @@ html:not(.flow) #flow { display: none; }
           mk.series = m.candles; mk.prevClose = m.prevClose;
           mk.unadjusted = !!INST[mk.key].spot && m.spotAdjusted === false;
           // spot-priced instruments keep their fresher minute quote
-          var keepSpot = mk.live && INST[mk.key].spot && mk.asOf > (m.asOf || 0);
+          var keepSpot = mk.live && (INST[mk.key].spot || INST[mk.key].live) && mk.asOf > (m.asOf || 0);
           if (keepSpot) mk.alignSpot(mk.price);
           if (!keepSpot) mk.asOf = m.asOf;
           mk.applyLive(keepSpot ? mk.price : m.price);
           mk.gen(); mk.draw();
         });
         refreshPoints();
+        loadPrices();  // live prices that wait for market.json (USD/JPY's bid offset)
       })
       .catch(function () {
         if (market || PREVIEW) return;
