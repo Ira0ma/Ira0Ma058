@@ -309,15 +309,6 @@ def check(key, price, h1, m15, as_of):
             msg += f", coinbase {float(get_json(COINBASE)['data']['rates']['JPY']):.3f}"
         except Exception as e:
             msg += f", coinbase unavailable ({e})"
-        for name, url in (("xaus fx", "https://xaus.com/api/v1/spot?currency=JPY&unit=oz&compact=1"),
-                          ("gold-api XAU/JPY", "https://api.gold-api.com/price/XAU/JPY"),
-                          ("gold-api JPY", "https://api.gold-api.com/price/JPY")):
-            try:  # trial: other live USD/JPY sources a page could read
-                req = urllib.request.Request(url, headers={**UA, "Origin": "https://ira0ma.github.io"})
-                with urllib.request.urlopen(req, timeout=15) as r:
-                    msg += f", {name} CORS {r.headers.get('Access-Control-Allow-Origin')!r} {r.read(300).decode('utf-8', 'replace')}"
-            except Exception as e:
-                msg += f", {name} failed ({e})"
         try:  # can a browser page read the Swissquote feed (CORS)?
             req = urllib.request.Request(SQ + "USD/JPY", headers={**UA, "Origin": "https://ira0ma.github.io"})
             with urllib.request.urlopen(req, timeout=20) as r:
