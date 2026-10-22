@@ -315,6 +315,9 @@ def check(key, price, h1, m15, as_of):
         except Exception as e:
             msg += f", swissquote CORS check failed ({e})"
     print(msg + (f"; outsized candles (>8x median range): {odd}" if odd else "; no outsized candles"))
+    span = lambda t: datetime.fromtimestamp(t, timezone.utc).strftime("%H:%M")
+    print(key, "last 15m candles (UTC open/high/low/close):",
+          "; ".join(f"{span(t)} {o:.2f}/{h:.2f}/{l:.2f}/{c:.2f}" for t, o, h, l, c in m15[-6:]))
 
 
 
