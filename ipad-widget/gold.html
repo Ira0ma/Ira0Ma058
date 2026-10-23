@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="f79d429154">
+<meta name="build" content="8475c622e7">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -248,7 +248,18 @@ canvas.dragging{cursor:grabbing}
 .tfgrid button.fibbest{box-shadow:0 0 0 1px rgba(255,214,102,.7)}
 /* 今効いているフィボナッチの知らせ：目にやさしい、ゆっくりした光り方（3.2秒、明るさの幅は小さく） */
 .fibnow{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:6px 0;padding:7px 10px;border:1px solid rgba(255,214,102,.55);border-radius:10px;background:#16130b;font-size:11.5px;color:#e8d9a8;animation:fibglow 3.2s ease-in-out infinite}
-.fibnow[hidden]{display:none}.fibnow b{color:#ffd666;font-size:12.5px}.fibnow .seg{padding:4px 10px;font-size:11px;margin-left:auto}
+.fibnow[hidden]{display:none}
+/* GMMAのクロスの知らせ（フィボと同じく、ゆっくり光る） */
+.gmmanow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:6px 0;padding:7px 10px;border:1px solid #34404c;border-radius:10px;background:#0d1217;font-size:11.5px;color:#c9d2db}
+.gmmanow[hidden]{display:none}.gmmanow .gx{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.gmmanow .gx.up b{color:#42d59c}.gmmanow .gx.down b{color:#ff6969}.gmmanow .seg{padding:3px 9px;font-size:11px}
+.gmmanow.golden{border-color:rgba(66,213,156,.6);animation:gxglowU 3.2s ease-in-out infinite}.gmmanow.dead{border-color:rgba(255,105,105,.6);animation:gxglowD 3.2s ease-in-out infinite}
+.gmmanow .gxhint{width:100%;font-size:10.5px;color:var(--muted)}
+@keyframes gxglowU{0%,100%{box-shadow:0 0 0 0 rgba(66,213,156,0)}50%{box-shadow:0 0 10px 1px rgba(66,213,156,.35)}}
+@keyframes gxglowD{0%,100%{box-shadow:0 0 0 0 rgba(255,105,105,0)}50%{box-shadow:0 0 10px 1px rgba(255,105,105,.35)}}
+@media (prefers-reduced-motion:reduce){.gmmanow{animation:none!important}}
+.tfgrid .gxtag{font-style:normal;font-size:9px;font-weight:800;margin-left:2px}.tfgrid .gxtag.up{color:#42d59c}.tfgrid .gxtag.down{color:#ff6969}
+.tfgrid button.cur .gxtag{color:#101114}.fibnow b{color:#ffd666;font-size:12.5px}.fibnow .seg{padding:4px 10px;font-size:11px;margin-left:auto}
 @keyframes fibglow{0%,100%{box-shadow:0 0 0 0 rgba(255,214,102,0)}50%{box-shadow:0 0 10px 1px rgba(255,214,102,.35)}}
 @media (prefers-reduced-motion:reduce){.fibnow{animation:none}}
 .tfgrid button.cur{background:linear-gradient(180deg,#e6c973,#b5872d);border-color:#b5872d;color:#101114}
@@ -444,6 +455,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button></div>
     <div id="lvList" class="lvlist" role="group" aria-label="水平線を1本ずつ消す・戻す" hidden></div>
     <div id="fibNow" class="fibnow" role="status" hidden></div>
+    <div id="gmmaNow" class="gmmanow" role="status" hidden></div>
     <div class="chartwrap"><canvas id="chart"></canvas><canvas id="chartBlink" aria-hidden="true"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
     <canvas id="rsi" aria-label="RSI(14)"></canvas>
     <div id="chartInfo" class="chartinfo">--</div>
@@ -1353,7 +1365,7 @@ function renderTfGrid(){
     const st=sd?'<span class="'+(sd>0?'up':'down')+'">ST'+(sd>0?'▲':'▼')+'</span>':'';
     const fb=bestFib();
     return '<button type="button" data-tf="'+tf+'" class="'+(tf===state.tf?'cur':'')+(fb&&fb.tf===tf?' fibbest':'')+'" aria-pressed="'+(tf===state.tf)+'" title="'+esc(TF_NAME[tf]+'：'+DOW_NAME[d.kind])+'">'+
-      '<b>'+tf.toUpperCase()+(fb&&fb.tf===tf?'<i class="fibstar">★</i>':'')+'</b><small><span class="'+dowCls(d.kind)+'">'+DOW_SHORT[d.kind]+'</span> '+st+'</small></button>';
+      '<b>'+tf.toUpperCase()+(fb&&fb.tf===tf?'<i class="fibstar">★</i>':'')+(gmmaCross(tf)?'<i class="gxtag '+(gmmaCross(tf).kind==='golden'?'up">GC':'down">DC')+'</i>':'')+'</b><small><span class="'+dowCls(d.kind)+'">'+DOW_SHORT[d.kind]+'</span> '+st+'</small></button>';
   }).join('');
 }
 
@@ -1419,6 +1431,37 @@ const SMA_COLOR='#f4f6f8';  // 120SMA（H1）・20SMA（M15）
 const EMAS=[{key:'e10',len:10,color:'#ff8fd1',w:1.4},{key:'e20',len:20,color:'#ff8c2e',w:1.4},{key:'e80',len:80,color:'#a8e05f',w:1.6},{key:'e200',len:200,color:'#3d8bff',w:2}];
 // GMMA（複合型移動平均線）：短期組 EMA3〜15（青）と長期組 EMA30〜60（赤）の帯。短期組が長期組の上なら上昇、下なら下降、重なっていれば向きでゴールデン／デッドクロス
 const GMMA_S=[3,5,8,10,12,15],GMMA_L=[30,35,40,45,50,60],GMMA_SC='#5cc8ff',GMMA_LC='#ff6b6b';
+// 時間足ごとのGMMAのクロス：短期組と長期組が重なっていて、3本前より短期組の平均が長期組へ上がってきていればゴールデンクロス、
+// 下がってきていればデッドクロス（チャート下の判定と同じ）。i＝短期組と長期組の平均が入れ替わった足（なければ最新の足）
+let gmxCache={k:'',v:{}};
+function gmmaCross(tf){
+  const k=Object.keys(TFS).map(t=>(state[t]||[]).length+':'+((state[t]||[]).at(-1)?.c)).join('|');
+  if(gmxCache.k!==k)gmxCache={k,v:{}};
+  if(tf in gmxCache.v)return gmxCache.v[tf];
+  const B=state[tf]||[],n=B.length;let r=null;
+  if(n>=80){
+    const S=GMMA_S.map(p=>emaSeries(B,p)),L=GMMA_L.map(p=>emaSeries(B,p));
+    const at=j=>{const sv=S.map(v=>v[j]),lv=L.map(v=>v[j]);return sv.concat(lv).some(x=>x==null)?null:{sv,lv,gap:sv.reduce((a,b)=>a+b,0)/6-lv.reduce((a,b)=>a+b,0)/6}};
+    const now=at(n-1),prev=at(n-4);
+    if(now&&prev){
+      const over=Math.min(...now.sv)<=Math.max(...now.lv)&&Math.max(...now.sv)>=Math.min(...now.lv);
+      if(over){
+        let i=n-1;for(let j=n-1;j>n-30&&j>0;j--){const a=at(j),b=at(j-1);if(a&&b&&Math.sign(a.gap)!==Math.sign(b.gap)){i=j;break}}
+        r={kind:now.gap>=prev.gap?'golden':'dead',i,t:B[i].t,gap:now.gap};
+      }
+    }
+  }
+  gmxCache.v[tf]=r;return r;
+}
+const GMX_NAME={golden:'ゴールデンクロス',dead:'デッドクロス'};
+function renderGmmaNow(){
+  const el=$('gmmaNow'),list=Object.keys(TFS).map(tf=>({tf,x:gmmaCross(tf)})).filter(o=>o.x);
+  el.hidden=!list.length;if(!list.length)return;
+  const part=kind=>{const l=list.filter(o=>o.x.kind===kind);return l.length?`<span class="gx ${kind==='golden'?'up':'down'}"><b>GMMA ${GMX_NAME[kind]}中</b>：${l.map(o=>`<button type="button" class="seg${o.tf===state.tf?' active':''}" data-tf="${o.tf}">${TF_NAME[o.tf]}</button>`).join('')}</span>`:''};
+  const cur=gmmaCross(state.tf);
+  el.className='gmmanow '+(cur?cur.kind:'');
+  el.innerHTML=part('golden')+part('dead')+(cur&&!(state.maOn.gmmaS&&state.maOn.gmmaL)?'<span class="gxhint">「GMMA短期」「GMMA長期」をオンにすると、チャートでクロスの線が点滅します</span>':'');
+}
 // 各移動平均の表示・非表示（端末ごとに保存）
 const MA_BTNS=[{key:'sma',color:SMA_COLOR,label:()=>smaLen()+'SMA'}].concat(EMAS.map(m=>({key:m.key,color:m.color,label:()=>m.len+'EMA'})),
   [{key:'st',color:'linear-gradient(90deg,#42d59c 50%,#ff6969 50%)',label:()=>'スーパートレンド'},
@@ -2154,7 +2197,7 @@ function drawChart(){
   // 各水準は細い点線、止まった線だけ実線。0%・100%は短い目印だけ。強い水平線と重なる水準は線を省き名前だけ残す
   // フィボナッチは表示中の時間足の足で引く（時間足を切り替えると、その時間足の波で引き直す）。名前に時間足を付ける
   const fib=state.maOn.fib?fibonacci(source,DOW_K[state.tf]||4):null,fibTag=state.tf.toUpperCase()+' ';
-  renderFibNow();  // 価格が動くたびに「今効いているフィボナッチ」も更新
+  renderFibNow();renderGmmaNow();  // 価格が動くたびに「今効いているフィボナッチ」「GMMAのクロス」も更新
   const fbest=bestFib(),fibOnR=fbest&&fbest.tf===state.tf&&fib&&!fib.prov?fbest.lv.r:null;  // 表示中の時間足が一番効いているなら、その水準を点滅
   if(fib){
     // 波の終点が右端に近い（伸びている最中など）ときは、線が短くなりすぎないよう波の始点から引く
@@ -2207,10 +2250,24 @@ function drawChart(){
       ctx.fillStyle='#fff';ctx.textBaseline='middle';ctx.fillText(txt,x(i),by+8);
     }
   }
+  const swingBoxes=[];  // GMMAのクロス・高値安値・パターンの名前の場所（フィボの名前・ほかのラベルがよける）
   // GMMA：12本を細く薄く（長期組を先に、短期組を上に）
   const gmS=state.maOn.gmmaS,gmL=state.maOn.gmmaL;
   const gm=gmS||gmL?{s:GMMA_S.map(n=>emaSeries(source,n).slice(startIdx,endIdx)),l:GMMA_L.map(n=>emaSeries(source,n).slice(startIdx,endIdx))}:null;
   if(gm){ctx.globalAlpha=.6;if(gmL)gm.l.forEach(v=>drawLine(v,GMMA_LC,.8));if(gmS)gm.s.forEach(v=>drawLine(v,GMMA_SC,.8));ctx.globalAlpha=1}
+  // GMMAがクロス中：両方の組を表示しているときは、点滅用のキャンバスに束を重ねて点滅させ、入れ替わった足に「GC／DC」の印
+  const gx=gmmaCross(state.tf);let gxMark=null;
+  if(gx&&gm&&gmS&&gmL){
+    const bline=(vals,color)=>{bl.strokeStyle=color;bl.lineWidth=1.1;bl.beginPath();let b0=false;vals.forEach((val,i)=>{if(val==null)return;if(!b0){bl.moveTo(x(i),y(val));b0=true}else bl.lineTo(x(i),y(val))});bl.stroke()};
+    gm.l.forEach(v=>bline(v,GMMA_LC));gm.s.forEach(v=>bline(v,GMMA_SC));
+    const xi=source.findIndex(b=>b.t===gx.t)-startIdx;
+    if(xi>=0&&xi<bars.length){
+      const vs=gm.s.concat(gm.l).map(v=>v[xi]).filter(v=>v!=null),yy=y(vs.reduce((a,b)=>a+b,0)/vs.length),up=gx.kind==='golden',col=up?'#42d59c':'#ff6969';
+      const txt=up?'GC ゴールデンクロス':'DC デッドクロス';ctx.font='bold 10px -apple-system,sans-serif';
+      const tw=ctx.measureText(txt).width+8,lx=Math.min(Math.max(P.l+2,x(xi)-tw/2),W-P.r-tw-2),ly=up?yy+14:yy-28;
+      gxMark={x:x(xi),yy,lx,ly,tw,col,txt};swingBoxes.push({x:lx,y:ly,w:tw,h:14});  // 印はほかの線を引いたあとに書く。フィボの名前などがよける
+    }
+  }
   const emas=EMAS.filter(m=>state.maOn[m.key]).map(m=>({...m,vals:emaSeries(source,m.len).slice(startIdx,endIdx)}));
   emas.forEach(m=>drawLine(m.vals,m.color,m.w));
   // トレンドライン：始点の山・谷から右端（右側の空白を含む）まで延長
@@ -2220,7 +2277,6 @@ function drawChart(){
     ctx.strokeStyle=t.kind==='up'?TL_UP:TL_DOWN;ctx.lineWidth=t.touches>=4?1.4:1;  // 接点4つ以上は少し太く
     ctx.beginPath();ctx.moveTo(x(g0-startIdx),y(t.p1));ctx.lineTo(x(g1-startIdx),y(t.p1+t.slope*(g1-g0)));ctx.stroke();
   });
-  const swingBoxes=[];  // 高値・安値ラベルやパターンの安値の名前の場所（フィボの名前・ほかのラベルがよける）
   const dow=dowTrend(source,DOW_K[state.tf]||4);
   // 左上のダウ理論の表示（「表示をリセット」ボタンが出ているときはその下）の場所も、高値・安値ラベルがよける
   const dowDy=(v.off||v.count||v.yOff||v.yZoom!==1)?30:0,dowTxt=dow.kind!=='none'?state.tf.toUpperCase()+' ダウ理論：'+DOW_NAME[dow.kind]:'';
@@ -2321,6 +2377,12 @@ function drawChart(){
     }
   }
   drawLowLabels();
+  if(gxMark){const g=gxMark;  // GMMAのクロスの印（入れ替わった足の点と名前）
+    ctx.fillStyle=g.col;ctx.beginPath();ctx.arc(g.x,g.yy,3.5,0,Math.PI*2);ctx.fill();
+    ctx.font='bold 10px -apple-system,sans-serif';ctx.fillStyle='rgba(12,17,22,.9)';ctx.fillRect(g.lx,g.ly,g.tw,14);ctx.strokeStyle=g.col;ctx.lineWidth=.8;ctx.strokeRect(g.lx+.5,g.ly+.5,g.tw-1,13);
+    ctx.fillStyle=g.col;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(g.txt,g.lx+4,g.ly+7);
+    bl.clearRect(g.lx,g.ly,g.tw,14);  // 点滅している束が名前の上にかからないように
+  }
   // フィボの名前と価格：チャートの右端（価格目盛りの手前）に右寄せで小さく。0%・100%以外の各線、重なるものは止まった線・半値を優先して省く
   if(fib){
     const used=[];
@@ -2693,6 +2755,7 @@ $('autoBtn').onclick=()=>{
 };
 $('tfGrid').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)});
 $('fibNow').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)});
+$('gmmaNow').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)});
 $('maToggles').addEventListener('click',e=>{
   const btn=e.target.closest('[data-ma]');if(!btn)return;
   const k=btn.dataset.ma;state.maOn[k]=!state.maOn[k];lsSet(LSP+'ma',JSON.stringify(state.maOn));renderMaToggles();renderTfGrid();renderFibNow();drawChart();
