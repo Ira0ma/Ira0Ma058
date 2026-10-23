@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="9136aad4e0">
+<meta name="build" content="120ff09aae">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -239,6 +239,8 @@ canvas.dragging{cursor:grabbing}
 /* ===== risk ===== */
 .dirlabel{font-size:12px;margin:8px 0 0;color:var(--muted)}
 .brokerrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+#brokerSeg{flex:1;min-width:0}#brokerSeg .seg{flex:1;min-width:0;border-radius:12px;padding:6px 8px;line-height:1.3;display:grid;gap:1px;text-align:center}
+#brokerSeg .seg b{font-size:12.5px}#brokerSeg .seg small{font-size:10px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .form.lotrow{grid-template-columns:1fr auto;align-items:end}
 .form.lotrow .seg{padding:9px 12px;white-space:nowrap}
 #lotManual:not(:placeholder-shown){border-color:#8a6f32;background:#16130b}
@@ -423,8 +425,8 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <div class="cardhead"><div><div class="title">リスク・ロット計算</div><div class="sub">ライブ価格とM15 ATRからSL/TPを算出</div></div><span class="tag">RISK</span></div>
     <div class="brokerrow"><span class="sub">口座</span>
       <div class="segmented" id="brokerSeg">
-        <button class="seg" data-broker="xm">XM 1000倍</button>
-        <button class="seg" data-broker="xs">XS 2000倍</button>
+        <button class="seg" data-broker="xm"><b>XM KIWAMI極</b><small>1000倍</small></button>
+        <button class="seg" data-broker="xs"><b>XS プロ</b><small>2000倍</small></button>
       </div>
     </div>
     <div class="segmented" id="dirSeg">
@@ -751,8 +753,7 @@ function loadBroker(){
   const b=BROKERS[state.broker];
   $('contract').value=lsGet(brokerKey('contract'),state.broker==='xm'?lsGet(LSP+'contract',b.contract):b.contract);
   $('leverage').value=lsGet(brokerKey('lev'),b.lev);
-  const sp=lsGet(brokerKey('spread'),INSTR.spread[state.broker]);
-  $('spread').value=sp===OLD_SPREAD[state.broker][INSTR.key]?INSTR.spread[state.broker]:sp;
+  $('spread').value=savedSpread(state.broker);
   $('sprNote').textContent='スプレッドの初期値は'+b.name+' '+b.acct+'口座の'+b.src+'です（'+INSTR.spread[state.broker]+'pips）。早朝や指標発表の前後は広がるので、MT5で見た値に直してください。';
   setSegActive('#brokerSeg .seg','broker',state.broker);
   updateBrokerLabels();
@@ -761,8 +762,13 @@ function updateBrokerLabels(){
   document.querySelectorAll('#brokerSeg .seg').forEach(btn=>{
     const k=btn.dataset.broker,b=BROKERS[k];
     const lev=k===state.broker?$('leverage').value:lsGet(LSP+k+'_lev',b.lev);
-    btn.textContent=b.name+' '+(n(lev)||b.lev)+'倍';
+    const spr=k===state.broker?$('spread').value:savedSpread(k);
+    btn.innerHTML='<b>'+b.name+' '+b.acct+'</b><small>'+(n(lev)||b.lev)+'倍・スプレッド '+(n(spr)||0)+'</small>';
   });
+}
+function savedSpread(k){  // 口座ごとに保存したスプレッド（以前の初期値のままなら今の初期値）
+  const sp=lsGet(LSP+k+'_spread',INSTR.spread[k]);
+  return sp===OLD_SPREAD[k][INSTR.key]?INSTR.spread[k]:sp;
 }
 function loadPrefs(){
   Object.entries(PREFS).forEach(([id,[k,d]])=>$(id).value=lsGet(k,d));
