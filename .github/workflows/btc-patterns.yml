@@ -1,0 +1,57 @@
+name: BTC/USD chart-pattern backtest (M15/H1, 2018-2026)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/amazon-affiliate-articles]
+    paths: ["research/btc_patterns.py", ".github/workflows/btc-patterns.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-patterns
+  cancel-in-progress: true
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy numba
+      - name: Restore downloaded Binance files
+        uses: actions/cache@v4
+        with:
+          path: binance
+          key: binance-btcusdt-15m-2018-2026-09
+      - name: Download
+        run: cd research && python3 btc_patterns.py ../binance download
+
+  backtest:
+    needs: download
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        pattern: [db, ihs]
+        side: ["1", "-1"]
+        tf: [m15, h1]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy numba
+      - name: Restore downloaded Binance files
+        uses: actions/cache/restore@v4
+        with:
+          path: binance
+          key: binance-btcusdt-15m-2018-2026-09
+          fail-on-cache-miss: true
+      - name: Backtest
+        run: cd research && python3 btc_patterns.py ../binance ${{ matrix.pattern }} ${{ matrix.side }} ${{ matrix.tf }}
