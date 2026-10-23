@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="e02f756de2">
+<meta name="build" content="86966ab78a">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -95,6 +95,7 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .change{margin-top:7px;font-size:13px;font-weight:700}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:11px}
 .dxybox[hidden]{display:none}
+#cupRow[hidden]{display:none}
 .dxybox{margin-top:10px;background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:10px 11px;font-size:11.5px;display:grid;gap:7px}
 .dxybox .dh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 8px}.dxybox .dh b{white-space:nowrap}
 .dxybox .dh b{font-size:13px}.dxybox .dh span{color:var(--muted)}
@@ -522,11 +523,17 @@ const INSTRUMENTS={
     dp:3,pip:0.01,minTp:30,pipNote:'1pips＝0.01円',momTh:0.03,slMin:0.05,tolMin:.02,unit:'通貨',contract:'100000',patterns:true,
     brokerNote:'ドル円の1lotは多くの業者で10万通貨です。ご自身の口座の取引条件で確認してください。',
     dist:v=>(v/0.01).toFixed(1)+'pips',
-    footer:'データ: Coinbase（ドル円の最新レート）／GitHub Actionsで定期取得したYahoo Finance足（チャート・価格）・Forex Factory（経済指標）。'}
+    footer:'データ: Coinbase（ドル円の最新レート）／GitHub Actionsで定期取得したYahoo Finance足（チャート・価格）・Forex Factory（経済指標）。'},
+  btc:{key:'btc',site:'btc',title:'BTCUSD',label:'BTC / USD',short:'BTC',name:'ビットコイン',asset:'BTC',sub:'BTC/USD専用｜24時間自動更新｜iPad・iPhone・Android対応',
+    dp:2,pip:1,minTp:300,pipNote:'1pips＝$1',momTh:20,slMin:40,tolMin:10,unit:'BTC',contract:'1',patterns:false,
+    brokerNote:'XMのBTCUSDは1lot＝1BTCです。XSの契約量・スプレッドはご自身の口座の取引条件で確認してください。',
+    dist:v=>'$'+fmt(v,0),
+    footer:'データ: Coinbase・Kraken・OKX（BTCのリアルタイム価格）／GitHub Actionsで定期取得したYahoo Finance足（チャート）・Forex Factory（経済指標）。'}
 };
-const INSTR=INSTRUMENTS[window.INSTR_KEY||(/usdjpy/i.test(location.pathname)?'usdjpy':'gold')];
-const IS_GOLD=INSTR.key==='gold';
-const LSP=IS_GOLD?'gold_':'usdjpy_';  // 端末に保存する設定は銘柄ごとに分ける
+const INSTR=INSTRUMENTS[window.INSTR_KEY||(/usdjpy/i.test(location.pathname)?'usdjpy':/btc/i.test(location.pathname)?'btc':'gold')];
+const IS_GOLD=INSTR.key==='gold',IS_FX=INSTR.key==='usdjpy',IS_BTC=INSTR.key==='btc';
+const ASSET=INSTR.asset||'金';  // 文中の銘柄の呼び名（DXY相関・発言の影響）
+const LSP=INSTR.key+'_';  // 端末に保存する設定は銘柄ごとに分ける
 // 画面の銘柄名・単位などの文言を設定に合わせる
 (function applyInstrText(){
   const t=(id,v)=>{const el=$(id);if(el)el.textContent=v};
@@ -534,7 +541,13 @@ const LSP=IS_GOLD?'gold_':'usdjpy_';  // 端末に保存する設定は銘柄ご
   t('h1Sym',INSTR.title);t('subTitle',INSTR.sub);t('miniSym',INSTR.short);t('instrLabel',INSTR.label);
   t('chartTitle',INSTR.title+'チャート');t('contractLabel','1lot契約量('+INSTR.unit+')');t('brokerNote',INSTR.brokerNote);
   t('relBtn',INSTR.name+'関連');t('minTpLabel',INSTR.minTp);t('footerSrc',INSTR.footer);
-  if(!IS_GOLD){
+  if(IS_BTC){
+    const logo=document.querySelector('.logo');if(logo){logo.textContent='₿';logo.style.fontSize='20px'}
+    t('stat5Label','円換算 / BTC');
+    t('nextSub','ビットコインに影響する米国指標｜端末の時刻で表示');
+    t('nextScope','米国の物価・雇用・景気・FRB関連の指標が対象です（金利の見通しでBTCも大きく動きます）。');
+  }
+  if(IS_FX){
     const logo=document.querySelector('.logo');if(logo){logo.textContent='$¥';logo.style.fontSize='15px'}
     t('stat4Label','ドル指数 DXY');t('stat5Label','円指数 JXY');
     t('nextSub','ドル円に影響する米国・日本の指標｜端末の時刻で表示');
@@ -802,11 +815,19 @@ const GOLD_WS=[
    parse:m=>Array.isArray(m)&&Array.isArray(m[1])?(m[1][0]+m[1][2])/2:0},
   {name:'Kraken PAXG',url:'wss://ws.kraken.com/v2',sub:{method:'subscribe',params:{channel:'ticker',symbol:['PAXG/USD']}},
    parse:m=>m?.channel==='ticker'&&m.data?.[0]?(m.data[0].bid+m.data[0].ask)/2:0}];
+const BTC_WS=[
+  {name:'Coinbase',url:'wss://ws-feed.exchange.coinbase.com',sub:{type:'subscribe',product_ids:['BTC-USD'],channels:['ticker']},
+   parse:m=>m?.type==='ticker'&&+m.best_bid&&+m.best_ask?(+m.best_bid+ +m.best_ask)/2:0},
+  {name:'Kraken',url:'wss://ws.kraken.com/v2',sub:{method:'subscribe',params:{channel:'ticker',symbol:['BTC/USD']}},
+   parse:m=>m?.channel==='ticker'&&m.data?.[0]?(m.data[0].bid+m.data[0].ask)/2:0},
+  {name:'OKX',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'tickers',instId:'BTC-USDT'}]},ping:'ping',
+   parse:m=>{const d=m?.data?.[0];return d&&+d.bidPx&&+d.askPx?(+d.bidPx+ +d.askPx)/2:0}}];
 const FX_WS=[{name:'GMO FX',url:'wss://forex-api.coin.z.com/ws/public/v1',sub:{command:'subscribe',channel:'ticker',symbol:'USD_JPY'},
    parse:m=>m?.symbol==='USD_JPY'&&+m.bid?+m.bid:0}];
-function liveFresh(){return LIVE.raw&&Date.now()-LIVE.rawAt<15000&&(!IS_GOLD||LIVE.offs.length)}
+function liveFresh(){return LIVE.raw&&Date.now()-LIVE.rawAt<15000&&(!IS_GOLD||LIVE.offs.length)}  // BTCは補正なし（配信がそのまま米ドル建ての現物）
 function liveOffset(){
-  if(!IS_GOLD)return n(siteCache.d?.instruments?.usdjpy?.liveOffsetGmo);
+  if(IS_FX)return n(siteCache.d?.instruments?.usdjpy?.liveOffsetGmo);
+  if(IS_BTC)return 0;
   const o=[...LIVE.offs].sort((a,b)=>a-b);return o.length?o[o.length>>1]:0;
 }
 // 30秒ごとの現物価格が来たら、そのときの配信値との差を記録（最新20件の中央値で補正）
@@ -816,7 +837,7 @@ function liveCalibrate(spot){
   LIVE.offs.push(d);if(LIVE.offs.length>20)LIVE.offs.shift();
 }
 function startLive(){
-  const list=IS_GOLD?GOLD_WS:FX_WS,src=list[LIVE.tries%list.length];
+  const list=IS_GOLD?GOLD_WS:IS_BTC?BTC_WS:FX_WS,src=list[LIVE.tries%list.length];
   let ws,ping=0,got=false;
   try{ws=new WebSocket(src.url)}catch{return retryLive()}
   LIVE.ws=ws;
@@ -834,12 +855,12 @@ function startLive(){
 function retryLive(){clearTimeout(LIVE.timer);LIVE.timer=setTimeout(startLive,Math.min(30000,2000*(1+LIVE.tries)))}
 function onLiveTick(){
   if(!liveFresh()||!state.spot)return;
-  const px=Math.round((LIVE.raw-liveOffset())*(IS_GOLD?100:1000))/(IS_GOLD?100:1000);
-  if(Math.abs(px-state.spot.price)>(IS_GOLD?30:0.5))return;  // 補正前の大きな食い違いは使わない
+  const sc=IS_FX?1000:100,px=Math.round((LIVE.raw-liveOffset())*sc)/sc;
+  if(Math.abs(px-state.spot.price)>(IS_GOLD?30:IS_BTC?state.spot.price*0.02:0.5))return;  // 補正前の大きな食い違いは使わない
   state.prevPrice=state.spot.price;
   state.spot={...state.spot,price:px,asof:Date.now(),freshness:'fresh'};
-  state.src.spot='リアルタイム（'+LIVE.src+(IS_GOLD?'・現物に補正':'・売値')+'）';
-  if(!IS_GOLD)state.fx=px;else if(state.fx)state.goldJpy=px*state.fx;
+  state.src.spot='リアルタイム（'+LIVE.src+(IS_GOLD?'・現物に補正':IS_FX?'・売値':'')+'）';
+  if(IS_FX)state.fx=px;else if(state.fx)state.goldJpy=px*state.fx;
   updateRolling(px);mergeSpotAll(px,Date.now());
   // 配信の値を1分足として1時間分覚えておく（サイトの足は約9分遅れなので、読み直したときにこの分を重ね直す）
   const mt=Math.floor(Date.now()/60000)*60000,mb=LIVE.mins.at(-1);
@@ -851,11 +872,15 @@ function onLiveTick(){
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!LIVE.ws)startLive()});
 // ゴールド：サイトの足は約10分遅れの先物を現物に換算したもの。その空白を、XAUTの1分足（OKX、1時間分）を
 // 現物に補正して埋める。急な動きの最中でも、直近の足が実際の値動きに近くなる。1分ごと
+// BTC：サイトの足は定期取得（最大40分ほど前まで）なので、その後の分をOKXのBTC-USDTの1分足（100分）で埋める。
+// USDTと米ドルのわずかな差は、配信と重なる分の終値の差（中央値）で合わせる
 async function fillRecentGold(){
-  if(!IS_GOLD||!LIVE.offs.length)return;
+  if(IS_FX||(IS_GOLD&&!LIVE.offs.length))return;
   try{
-    const d=await getJSON('https://www.okx.com/api/v5/market/candles?instId=XAUT-USDT&bar=1m&limit=60',8000);
-    const asOf=toMs(siteCache.d?.instruments?.gold?.asOf)||0,off=liveOffset(),r2=v=>Math.round((n(v)-off)*100)/100;
+    const d=await getJSON('https://www.okx.com/api/v5/market/candles?instId='+(IS_BTC?'BTC-USDT':'XAUT-USDT')+'&bar=1m&limit='+(IS_BTC?100:60),8000);
+    let off=liveOffset();
+    if(IS_BTC){const mine=new Map(LIVE.mins.map(m=>[m.t,m.c])),df=(d?.data||[]).filter(x=>mine.has(n(x[0]))).map(x=>n(x[4])-mine.get(n(x[0]))).sort((a,b)=>a-b);off=df.length?df[df.length>>1]:0}
+    const asOf=toMs(siteCache.d?.instruments?.[INSTR.site]?.asOf)||0,r2=v=>Math.round((n(v)-off)*100)/100;
     const rows=(d?.data||[]).map(x=>({t:n(x[0]),h:r2(x[2]),l:r2(x[3]),c:r2(x[4])})).filter(x=>x.t>asOf&&x.h&&x.l).sort((a,b)=>a.t-b.t);
     if(!rows.length)return;
     const have=new Map(LIVE.mins.map(m=>[m.t,m]));
@@ -875,8 +900,39 @@ async function refreshSpotFx(){
   if(!px)throw new Error('USDJPY price missing');
   return {px,asof,src};
 }
+// BTC：Coinbaseの現物価格（ブラウザから直接）→ サイトのmarket.json（定期取得）
+async function refreshSpotBtc(){
+  let px=0,asof=Date.now(),src='';
+  try{const d=await getJSON('https://api.coinbase.com/v2/prices/BTC-USD/spot',8000);px=n(d?.data?.amount);if(px)src='Coinbase'}catch{}
+  if(!px){const g=(await getSite()).instruments.btc;px=n(g.price);asof=toMs(g.asOf)||Date.now();src='サイト（定期取得）'}
+  if(!px)throw new Error('BTC price missing');
+  return {px,asof,src};
+}
 async function refreshSpot(){
-  if(!IS_GOLD){
+  if(IS_BTC){
+    try{
+      const fx=await refreshFx();
+      if(liveFresh()&&state.spot){
+        if(fx)state.goldJpy=state.spot.price*fx;
+        state.health.spot=true;state.lastOk=Date.now();state.nextSpot=Date.now()+INTERVALS.spot;setStatus('live','LIVE');showError('');return;
+      }
+      const {px,asof,src}=await refreshSpotBtc();
+      state.src.spot=src;
+      state.prevPrice=state.spot?.price??null;
+      state.spot={price:px,asof,freshness:Date.now()-asof>10*60000?'stale':'fresh',age:0};
+      if(fx)state.goldJpy=px*fx;
+      updateRolling(px);mergeSpotAll(px,asof);
+      state.health.spot=true;state.lastOk=Date.now();state.nextSpot=Date.now()+INTERVALS.spot;
+      saveCache();setStatus('live','LIVE');showError('');renderAll();flashPrice();
+    }catch(e){
+      state.health.spot=false;
+      setStatus(state.lastOk?'live':'error',state.lastOk?'キャッシュ表示中':'接続再試行中');
+      showError(INSTR.name+'の価格を再接続しています（15秒後に自動再試行）。');
+      state.nextSpot=Date.now()+15000;
+    }
+    return;
+  }
+  if(IS_FX){
     try{
       const {px,asof,src}=await refreshSpotFx();
       if(liveFresh()){  // リアルタイム配信が生きている間は、その値を使い続ける（30秒ごとの取得は控え）
@@ -1076,7 +1132,7 @@ async function refreshCalendar(){
     ev.forEach(e=>{const k=known.get(evKey(e)+'|'+e.title);if(k&&!e.actual){e.actual=k.actual;e.actualAt=k.actualAt}});
     if(fc&&fc.length){mergeActuals(ev,fc);state.src.calendar='サイト（Forex Factory）＋Finance Calendar（結果）'}
     state.events=ev;applyLiveResults();
-    try{const nw=await getJSON(SITE+'news.json?t='+Math.floor(Date.now()/60000));state.talk=(nw.items||[]).filter(i=>(i.pages||[]).includes(INSTR.key));state.talkAt=nw.updated*1000}catch{}
+    try{const nw=await getJSON(SITE+'news.json?t='+Math.floor(Date.now()/60000));state.talk=(nw.items||[]).filter(i=>(i.pages||[]).includes(IS_BTC?'gold':INSTR.key))/* BTCは金と同じ米国の発言 */;state.talkAt=nw.updated*1000}catch{}
     state.health.calendar=true;
     state.calendarAt=Date.now();
     const hot=calendarHot();
@@ -1342,7 +1398,7 @@ function cupHandle(){
    しきい値は XAU/USD 10年分（2016〜2025年）のバックテスト（research/pattern_backtest.py）で、2016〜2022年で選び
    2023〜2025年でも勝ち越した設定。k＝山・谷を決める前後の足の本数、sep＝谷と谷の間隔（本数）、tol＝谷（肩）の高さの差の許容（形の高さ比）、
    dep＝形の高さ（ATR倍）、useSma＝H1 120SMAと同じ向きのときだけ、prior＝形の前に反対方向の動きがあったこと、wait＝最後の谷からブレイクまでの本数。 */
-const PATTERNS=IS_GOLD?[
+const PATTERNS=IS_BTC?[]:IS_GOLD?[
   // 10年の成績（1回あたりの損益は損切り幅=1、2016〜2022年／2023〜2025年）
   {id:'db',tf:'m15',dir:1,name:'ダブルボトム',entry:true,   // 287回・勝率64%・+0.11（+0.11／+0.10）・PF1.30
     p:{k:2,sepMin:20,sepMax:120,tol:0.2,depMin:3,depMax:20,useSma:1,prior:1,wait:25}},
@@ -1534,7 +1590,7 @@ function calcRisk(){
   autoRisk();
   const capital=n($('capital').value),rp=n($('riskPct').value),entry=n($('entry').value),stop=n($('stop').value),target=n($('target').value);
   // fx＝値動き1あたりの円換算（ゴールドはドル建てなのでドル円、ドル円は円建てなので1）
-  const contract=n($('contract').value)||n(INSTR.contract), fx=IS_GOLD?(state.fx||0):1;
+  const contract=n($('contract').value)||n(INSTR.contract), fx=IS_FX?1:(state.fx||0);
   const maxLoss=capital*rp/100,sl=Math.abs(entry-stop),tp=Math.abs(target-entry);
   const lot=fx&&sl?((maxLoss/fx)/(sl*contract)):0;
   const riskStep=Math.floor(lot*100)/100;
@@ -1609,9 +1665,9 @@ const JPY_KEYS=['boj','monetary policy','policy rate','outlook report','press co
   'average cash earnings','household spending','unemployment rate','retail sales','trade balance','pmi'];
 function goldRelevant(e){  // 表示中の銘柄に影響する指標か（ゴールド＝米国指標、ドル円＝米国＋日本の指標）
   const t=String(e.title).toLowerCase();
-  if(e.speech)return e.speech.rel==='both'||(e.speech.rel==='jpy'&&!IS_GOLD);
+  if(e.speech)return e.speech.rel==='both'||(e.speech.rel==='jpy'&&IS_FX);
   if(e.currency==='USD')return GOLD_KEYS.some(k=>t.includes(k));
-  if(e.currency==='JPY'&&!IS_GOLD)return JPY_KEYS.some(k=>t.includes(k));
+  if(e.currency==='JPY'&&IS_FX)return JPY_KEYS.some(k=>t.includes(k));
   return false;
 }
 function matchesFilter(e){
@@ -1720,17 +1776,17 @@ function corrLabel(r){
 }
 // How to use the three readings, shown under them
 const DXY_GUIDE=`<div class="dxyguide"><h4>DXYの使い分け</h4>
-<dl><dt>1週間（H1）</dt><dd><b>基本の判断に使う</b>。−0.5以下なら「ドル高＝金安」が効いている状態で、DXYの向きを金の方向の確認に使えます。0付近ならDXYは判断材料から外します。</dd>
+<dl><dt>1週間（H1）</dt><dd><b>基本の判断に使う</b>。−0.5以下なら「ドル高＝${ASSET}安」が効いている状態で、DXYの向きを${ASSET}の方向の確認に使えます。0付近ならDXYは判断材料から外します。</dd>
 <dt>1日（H1）</dt><dd><b>変化の早期発見</b>。1週間と大きく違うときは、指標や要人発言でいつもの関係が崩れている合図です。1日の値だけで判断しないこと。</dd>
 <dt>1か月（H4）</dt><dd><b>大きな流れ（背景）の確認</b>。1週間と同じ向きなら、その関係は当面続きやすいと考えます。</dd>
-<dt>分足</dt><dd>相関は当てになりません（市場ごとの反応のずれで0に近づくため）。指標・発言の瞬間に、DXYと金が逆に跳ねたかを目で確かめる程度にします。</dd></dl>
+<dt>分足</dt><dd>相関は当てになりません（市場ごとの反応のずれで0に近づくため）。指標・発言の瞬間に、DXYと${ASSET}が逆に跳ねたかを目で確かめる程度にします。</dd></dl>
 <h4>エントリー前の確認手順</h4>
 <ol><li>1週間の値で、いまドルと逆相関かどうかを見る。</li>
 <li>逆相関なら、DXYの向きがエントリーと合うか確認する。<b>買いはドル安</b>、<b>売りはドル高</b>なら追い風。逆なら見送りか、ロットを控えめに。</li>
 <li>1日の値が1週間から大きくずれていたら（注意書きが出たら）、落ち着くまで様子見。</li></ol>
 <div class="warn">※相関は「これまで一緒にどう動いたか」を示すだけで、先の値動きを予測するものではありません。</div></div>`;
 function renderDxy(){
-  const el=$('dxyBox');if(!IS_GOLD){el.hidden=true;return}
+  const el=$('dxyBox');if(IS_FX){el.hidden=true;return}
   const dx=siteCache.d?.instruments?.dxy;if(!dx?.candles?.['1h']||state.h1.length<30){el.hidden=true;return}
   const hour=t=>Math.floor(t/3600);
   const rows=[['1日（H1）',...pairedReturns(state.h1,dx.candles['1h'],hour,24)],['1週間（H1）',...pairedReturns(state.h1,dx.candles['1h'],hour,120)],
@@ -1738,13 +1794,13 @@ function renderDxy(){
   const chg=dx.prevClose?(dx.price/dx.prevClose-1)*100:0,dir=chg>0.05?'ドル高':chg<-0.05?'ドル安':'横ばい';
   const r1=rows[0][1],rw=rows[1][1];
   let note;
-  if(r1!=null&&r1<=-0.3)note=`いまは<b>ドルと逆向き</b>に動きやすい状態です。DXYが${dir==='ドル高'?'上がっている（ドル高）ので、金には<b>逆風</b>':dir==='ドル安'?'下がっている（ドル安）ので、金には<b>追い風</b>':'横ばいなので、ドル要因の影響は小さめ'}です。`;
-  else if(r1!=null&&r1>=0.3)note='いまはドルと<b>同じ向き</b>に動いています。リスク回避（有事の買い）など、ドル以外の材料で金が動いている可能性があります。';
-  else note='いまはドルとの連動が<b>弱い</b>状態です。金はドル以外の材料（金利・リスク・需給）で動いています。';
+  if(r1!=null&&r1<=-0.3)note=`いまは<b>ドルと逆向き</b>に動きやすい状態です。DXYが${dir==='ドル高'?'上がっている（ドル高）ので、${ASSET}には<b>逆風</b>':dir==='ドル安'?'下がっている（ドル安）ので、${ASSET}には<b>追い風</b>':'横ばいなので、ドル要因の影響は小さめ'}です。`;
+  else if(r1!=null&&r1>=0.3)note=`いまはドルと<b>同じ向き</b>に動いています。${IS_BTC?'リスク回避（株安）や暗号資産そのものの材料':'リスク回避（有事の買い）など、ドル以外の材料'}で${ASSET}が動いている可能性があります。`;
+  else note=`いまはドルとの連動が<b>弱い</b>状態です。${ASSET}はドル以外の材料（${IS_BTC?'株・リスク・需給':'金利・リスク・需給'}）で動いています。`;
   if(rw!=null&&r1!=null&&Math.abs(r1-rw)>0.5)note+=` 1週間の関係（${rw.toFixed(2)}）から大きく変わっているので注意。`;
   el.innerHTML=`<div class="dh"><b>DXY（ドル指数）との相関</b><span>DXY ${fmt(dx.price,2)}（${chg>=0?'+':''}${chg.toFixed(2)}%・${dir}）</span></div>`+
     rows.map(([lb,r])=>{const [tx,cl]=corrLabel(r);return `<div class="dxyrow"><span class="lb">${lb}</span><span class="dxybar">${r==null?'':`<i style="left:${(1+r)*50}%"></i>`}</span><span class="v ${cl}">${r==null?'--':(r>0?'+':'')+r.toFixed(2)} ${tx}</span></div>`}).join('')+
-    `<div class="dxynote">${note}<br>（−1に近いほど「ドル高＝金安」がはっきり。金とドルはふだん逆相関です）</div>`+DXY_GUIDE;
+    `<div class="dxynote">${note}<br>（−1に近いほど「ドル高＝${ASSET}安」がはっきり。${ASSET}とドルはふだん逆相関です）</div>`+DXY_GUIDE;
   el.hidden=false;
 }
 function renderSnapshot(){
@@ -1773,10 +1829,10 @@ function renderSnapshot(){
   $('goldChange').className='change '+(pct>=0?'up':'down');
   $('goldFresh').textContent=(state.spot.freshness==='stale'?'⚠ 遅延データ':'LIVE')+'｜'+localTime(state.spot.asof)+(state.src.spot?'｜'+state.src.spot:'');
   $('dayHigh').textContent=d.hi?fmt(d.hi):'--';$('dayLow').textContent=d.lo?fmt(d.lo):'--';$('dayRange').textContent=d.hi&&d.lo?INSTR.dist(d.hi-d.lo):'--';
-  if(IS_GOLD){
+  if(!IS_FX){
     $('usdjpy').textContent=state.fx?fmt(state.fx,3):'--';
     $('goldJpy').textContent=state.goldJpy?yen(state.goldJpy):(state.fx?yen(state.spot.price*state.fx):'--');
-  }else{  // ドル円版：ドル指数と円指数を表示
+  }else{  // ドル円版：ドル指数と円指数を表示（BTC版は上と同じくドル円と円換算）
     const x=state.extra||{};
     $('usdjpy').textContent=x.dxy?fmt(x.dxy,2):'--';
     $('goldJpy').textContent=x.jxy?fmt(x.jxy,2):'--';
@@ -2106,7 +2162,7 @@ async function refreshLiveTalk(){
       const rm=title.match(FJ_RESULT);
       if(rm){const rt=Math.floor(Date.parse(it.querySelector('pubDate')?.textContent||'')/1000);if(rt)res.push({t:rt,name:rm[1],actual:rm[2],forecast:rm[3],previous:rm[4]});return}
       const w=LIVE_WHO.find(x=>x[0].test(title));if(!w)return;
-      if(w[2]==='usdjpy'&&IS_GOLD)return;
+      if(w[2]==='usdjpy'&&!IS_FX)return;
       const t=Math.floor(Date.parse(it.querySelector('pubDate')?.textContent||'')/1000);if(!t)return;
       const tone=liveTone(title,w[3]),eff=LIVE_EFFECT[w[3]+'|'+tone]||['',''];
       out.push({t,title,source:'FinancialJuice（速報）',link:it.querySelector('link')?.textContent||'https://www.financialjuice.com/',who:w[1],tone,usdjpy:eff[0],gold:eff[1],live:true});
@@ -2117,7 +2173,7 @@ async function refreshLiveTalk(){
 }
 // 要人発言ニュース：見出し・時刻・誰の発言か・トーン・ふつう起きやすい値動き
 const TONE_JA={hawkish:['タカ派','hawk'],dovish:['ハト派','dove'],intervention:['介入警戒','intv']};
-function talkEffect(i){return IS_GOLD?[i.gold,i.usdjpy].filter(Boolean).join('・'):i.usdjpy}
+function talkEffect(i){return IS_GOLD?[i.gold,i.usdjpy].filter(Boolean).join('・'):IS_BTC?[i.gold&&i.gold.replace('金','BTC'),i.usdjpy].filter(Boolean).join('・'):i.usdjpy}
 function allTalk(){return liveTalk.concat(state.talk||[]).sort((a,b)=>b.t-a.t)}
 function renderTalk(){
   const all=allTalk(),list=all.slice(0,10),now=Date.now();
@@ -2194,15 +2250,16 @@ function surprise(e){
 // 判定：米国の良い結果＝ドル高（ドル円↑・金↓）、日本の良い結果＝円高（ドル円↓、金への影響は小さい）
 function releaseEffect(e,s){
   if(!s)return null;
-  const flat={usdjpy:['→','flat'],gold:['→','flat'],head:'予想どおりで影響は限定的',lv:s.lv};
+  const flat={usdjpy:['→','flat'],gold:['→','flat'],btc:['→','flat'],head:'予想どおりで影響は限定的',lv:s.lv};
   if(!s.good)return flat;
   const up=['↑','up'],dn=['↓','down'];
-  if(e.currency==='USD')return s.good>0?{usdjpy:up,gold:dn,head:'ドル高材料',lv:s.lv}:{usdjpy:dn,gold:up,head:'ドル安材料',lv:s.lv};
-  if(e.currency==='JPY')return s.good>0?{usdjpy:dn,gold:['影響小','flat'],head:'円高材料',lv:s.lv}:{usdjpy:up,gold:['影響小','flat'],head:'円安材料',lv:s.lv};
+  // BTCは米国の結果に金と同じ向きで反応しやすい（ドル高・金利高で売られる）
+  if(e.currency==='USD')return s.good>0?{usdjpy:up,gold:dn,btc:dn,head:'ドル高材料',lv:s.lv}:{usdjpy:dn,gold:up,btc:up,head:'ドル安材料',lv:s.lv};
+  if(e.currency==='JPY')return s.good>0?{usdjpy:dn,gold:['影響小','flat'],btc:['影響小','flat'],head:'円高材料',lv:s.lv}:{usdjpy:up,gold:['影響小','flat'],btc:['影響小','flat'],head:'円安材料',lv:s.lv};
   return null;
 }
 function effChips(ef){
-  const c=[['ドル円',ef.usdjpy,'usdjpy'],['金',ef.gold,'gold']].sort((a,b)=>(b[2]===INSTR.key)-(a[2]===INSTR.key));
+  const c=[['ドル円',ef.usdjpy,'usdjpy'],IS_BTC?['BTC',ef.btc,'btc']:['金',ef.gold,'gold']].sort((a,b)=>(b[2]===INSTR.key)-(a[2]===INSTR.key));
   return c.map(([n,[t,k]])=>`<span class="chip ${k}">${n} ${t}</span>`).join('')+`<span class="why">${esc(ef.head)}${ef.lv?'（サプライズ'+SURPRISE_JA[ef.lv]+'）':''}</span>`;
 }
 // 発表後の実際の値動き（このページの銘柄）：発表時刻を含む5分足の始値から現在値まで
@@ -2215,7 +2272,7 @@ function renderResults(){
   const now=Date.now(),hot=releaseHot();
   const list=state.events.filter(e=>!e.speech&&goldRelevant(e)&&e.ts<=now&&e.ts>now-12*3600000).sort((a,b)=>b.ts-a.ts).slice(0,4);
   let html=`<div class="rh"><b>発表結果と影響の判定</b><span><span class="livedot"></span>速報を${hot?'5秒':'45秒'}ごとに確認</span></div>`;
-  if(!list.length)html+='<div class="sub">直近12時間に発表された対象指標はありません。発表されると数秒〜数十秒で、ここに結果とドル円・金への影響の判定が出ます。</div>';
+  if(!list.length)html+='<div class="sub">直近12時間に発表された対象指標はありません。発表されると数秒〜数十秒で、ここに結果とドル円・'+ASSET+'への影響の判定が出ます。</div>';
   list.forEach(e=>{
     const head=`<div class="rt"><span>${esc(hhmm(e.ts))}　${esc(e.currency)}｜${esc(evTitle(e))}</span><span class="star ${e.impact==='High'?'high':'medium'}">${stars(e)}</span></div>`;
     if(!e.actual){
@@ -2228,7 +2285,7 @@ function renderResults(){
     let react='';
     const mv=now-e.ts<3*3600000?reactionSince(e):null;
     if(mv!=null){
-      const exp=ef?ef[INSTR.key][1]:'flat',got=mv>0?'up':'down',th=IS_GOLD?2:0.05;
+      const exp=ef?ef[INSTR.key][1]:'flat',got=mv>0?'up':'down',th=IS_GOLD?2:IS_BTC?50:0.05;
       const odd=exp!=='flat'&&Math.abs(mv)>=th&&exp!==got;
       react=`<div class="react ${odd?'warn':''}">発表後の${INSTR.name}の動き：${mv>=0?'+':'−'}${esc(INSTR.dist(Math.abs(mv)))}${odd?'｜判定と逆向き（織り込み済み、または他の材料が優勢の可能性）':''}</div>`;
     }
@@ -2287,7 +2344,7 @@ function renderAll(){
   renderChecks(risk,reb);updateCaution();
   $('lastUpdate').textContent=state.lastOk?localTime(state.lastOk):'--';
   const S=state.src,ok=(k,v)=>v?`${k} ✓ ${v}`:`${k} ✕ 未接続`;
-  $('srcLine').textContent='データ接続状況：'+[ok('価格',S.spot),ok('チャート',S.chart)].concat(IS_GOLD?[ok('ドル円',S.fx)]:[],[ok('経済指標',S.calendar)]).join('　');
+  $('srcLine').textContent='データ接続状況：'+[ok('価格',S.spot),ok('チャート',S.chart)].concat(!IS_FX?[ok('ドル円',S.fx)]:[],[ok('経済指標',S.calendar)]).join('　');
   updateNotice();
 }
 

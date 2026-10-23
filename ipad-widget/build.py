@@ -22,10 +22,20 @@ fx_build = hashlib.sha1(fx.encode()).hexdigest()[:10]
 fx = fx.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name="build" content="%s">\n' % fx_build, 1)
 here.joinpath("usdjpy.html").write_text(fx, encoding="utf-8")
 
+# btc.html: the same page again, as BTC/USD
+bt = re.sub(r'<meta name="build" content="[^"]*">\n', "", gold)
+bt = bt.replace("<title>GOLD Trade Dashboard</title>", "<title>BTCUSD Trade Dashboard</title>", 1)
+bt = bt.replace('<meta name="apple-mobile-web-app-title" content="GOLD">', '<meta name="apple-mobile-web-app-title" content="BTCUSD">', 1)
+bt = bt.replace("<script>\nconst $ = id =>", "<script>window.INSTR_KEY='btc';</script>\n<script>\nconst $ = id =>", 1)
+bt_build = hashlib.sha1(bt.encode()).hexdigest()[:10]
+bt = bt.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name="build" content="%s">\n' % bt_build, 1)
+here.joinpath("btc.html").write_text(bt, encoding="utf-8")
+
 body = here.joinpath("index.html").read_text(encoding="utf-8").split("\n", 2)[2]  # drop <title> and claude meta
-# the sheets always open the current GOLD / USDJPY pages, and a new one also refreshes the desk
+# the sheets always open the current GOLD / USDJPY / BTCUSD pages, and a new one also refreshes the desk
 body = body.replace('src: "gold.html"', 'src: "gold.html?v=%s"' % gold_build).replace('src: "usdjpy.html"', 'src: "usdjpy.html?v=%s"' % fx_build)
-build = hashlib.sha1((body + gold_build + fx_build).encode()).hexdigest()[:10]
+body = body.replace('src: "btc.html"', 'src: "btc.html?v=%s"' % bt_build)
+build = hashlib.sha1((body + gold_build + fx_build + bt_build).encode()).hexdigest()[:10]
 head = """<!doctype html>
 <html lang="ja">
 <head>

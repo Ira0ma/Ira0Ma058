@@ -44,9 +44,9 @@ JXY_BASKET = {"JPY=X": 108.6, "EURJPY=X": 121.6, "GBPJPY=X": 143.8, "AUDJPY=X": 
 TF_FETCH = [("1m", "1m", "5d"), ("5m", "5m", "5d"), ("15m", "15m", "5d"), ("1h", "60m", "1y"), ("1d", "1d", "1y"), ("1w", "1wk", "5y"), ("1mo", "1mo", "10y")]
 # Markets that trade nearly 24 hours roll their day at 17:00 New York (the FX convention MT4/TradingView use).
 # Their daily candles, previous close and pivots are rebuilt from hourly data on that boundary.
-# Bitcoin keeps the UTC day; VIX keeps its exchange close.
+# Bitcoin follows the same server days (MT4/MT5 cut every chart there, weekends included); VIX keeps its exchange close.
 NY = ZoneInfo("America/New_York")
-UTC_DAY = {"btc", "vix"}
+UTC_DAY = {"vix"}
 
 
 def ny_day(t):
@@ -378,7 +378,7 @@ def jxy_series(fixture):
 
 COINBASE = "https://api.coinbase.com/v2/exchange-rates?currency=USD"
 SQ = "https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/"
-CHECK = {"gold": "XAU/USD", "usdjpy": "USD/JPY"}  # dashboard instruments: log a sanity check each run
+CHECK = {"gold": "XAU/USD", "usdjpy": "USD/JPY", "btc": "BTC/USD"}  # dashboard instruments: log a sanity check each run
 
 
 def check(key, price, h1, m15, as_of):

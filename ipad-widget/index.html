@@ -271,7 +271,8 @@ body {
 #pdots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.3); }
 #pdots i.on { background: rgba(255,255,255,.9); }
 /* GOLD dashboard: opens full-screen over the desk; closing keeps it loaded so it reopens instantly */
-.dash-open { position: absolute; left: 22px; right: 12px; bottom: 18px; z-index: 1; display: flex; gap: 8px; }
+.dash-open { position: absolute; left: 18px; right: 10px; bottom: 18px; z-index: 1; display: flex; gap: 6px; }
+.dash-open .gold-open { padding: 7px 10px; gap: 4px; font-size: 12.5px; }  /* three dashboards: GOLD, ドル円, BTC */
 .gold-open { white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: 13px; font-weight: 700; color: #14100a; background: var(--gold); border: 0; border-radius: 999px; padding: 7px 14px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.45); }
 .mkt.entry-buy, .mkt.entry-sell { animation: entryPulse 1.3s ease-in-out infinite; border-radius: 16px; }
 .mkt.entry-buy { --pulse: rgba(67,210,127,.55); --tint: rgba(67,210,127,.16); }
@@ -325,6 +326,7 @@ html:not(.flow) #flow { display: none; }
     <div class="dash-open">
       <button class="gold-open" data-sheet="gold" type="button" aria-haspopup="dialog" aria-label="GOLD分析を開く">GOLD <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
       <button class="gold-open" data-sheet="usdjpy" type="button" aria-haspopup="dialog" aria-label="ドル円分析を開く">ドル円 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+      <button class="gold-open" data-sheet="btc" type="button" aria-haspopup="dialog" aria-label="BTC分析を開く">BTC <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
     </div>
   </section>
 
@@ -593,7 +595,8 @@ html:not(.flow) #flow { display: none; }
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
     gold: { src: "gold.html", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html", title: "ドル円分析" }
+    usdjpy: { src: "usdjpy.html", title: "ドル円分析" },
+    btc: { src: "btc.html", title: "BTC分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -1008,6 +1011,10 @@ html:not(.flow) #flow { display: none; }
       { url: "wss://api-pub.bitfinex.com/ws/2", sub: { event: "subscribe", channel: "ticker", symbol: "tXAUT:USD" },
       parse: function (m) { return m && m[1] && m[1].length > 2 ? (m[1][0] + m[1][2]) / 2 : 0; } },
       { url: "wss://ws.kraken.com/v2", sub: { method: "subscribe", params: { channel: "ticker", symbol: ["PAXG/USD"] } },
+      parse: function (m) { var d = m && m.channel === "ticker" && m.data && m.data[0]; return d ? (d.bid + d.ask) / 2 : 0; } }],
+    btc: [{ url: "wss://ws-feed.exchange.coinbase.com", sub: { type: "subscribe", product_ids: ["BTC-USD"], channels: ["ticker"] },
+      parse: function (m) { return m && m.type === "ticker" && +m.best_bid && +m.best_ask ? (+m.best_bid + +m.best_ask) / 2 : 0; } },
+      { url: "wss://ws.kraken.com/v2", sub: { method: "subscribe", params: { channel: "ticker", symbol: ["BTC/USD"] } },
       parse: function (m) { var d = m && m.channel === "ticker" && m.data && m.data[0]; return d ? (d.bid + d.ask) / 2 : 0; } }]
   };
   var live = {};
@@ -1018,6 +1025,7 @@ html:not(.flow) #flow { display: none; }
   function liveOffset(key) {
     var L = live[key];
     if (key === "usdjpy") { var m = market && (market.instruments || market).usdjpy; return m ? +m.liveOffsetGmo || 0 : 0; }
+    if (key === "btc") return 0;  // BTC: the feeds quote the spot price itself
     var o = L.offs.slice().sort(function (a, b) { return a - b; });
     return o.length ? o[o.length >> 1] : 0;
   }
@@ -1030,9 +1038,9 @@ html:not(.flow) #flow { display: none; }
     var L = live[key];
     if (!liveFresh(key) || Date.now() - L.drawn < 500) return;
     L.drawn = Date.now();
-    var px = Math.round((L.raw - liveOffset(key)) * (key === "gold" ? 100 : 1000)) / (key === "gold" ? 100 : 1000);
+    var sc = key === "usdjpy" ? 1000 : 100, px = Math.round((L.raw - liveOffset(key)) * sc) / sc;
     markets.forEach(function (mk) {
-      if (mk.key !== key || !mk.price || Math.abs(px - mk.price) > (key === "gold" ? 30 : 0.5)) return;
+      if (mk.key !== key || !mk.price || Math.abs(px - mk.price) > (key === "gold" ? 30 : key === "btc" ? mk.price * 0.02 : 0.5)) return;
       mk.asOf = Date.now() / 1000; mk.applyLive(px);
     });
   }
@@ -1174,7 +1182,7 @@ html:not(.flow) #flow { display: none; }
       b.type = "button"; b.dataset.key = k;
       b.innerHTML = INST[k].label + "<small>" + (INST[k].pickName || INST[k].name) + "</small>";
       b.addEventListener("click", function () {
-        picks[i] = k; try { localStorage.setItem(PICK_KEY, JSON.stringify(picks)); } catch (e) {}
+        picks[i] = k; if (k === "btc") ensureSheet("btc"); try { localStorage.setItem(PICK_KEY, JSON.stringify(picks)); } catch (e) {}
         picker.hidden = true; mk.setInst(k); refreshPoints(); loadPrices();
       });
       list.appendChild(b);
@@ -1937,7 +1945,8 @@ html:not(.flow) #flow { display: none; }
   // X's script is slow and third-party: start it only after the page itself has finished loading
   if (document.readyState === "complete") loadX(); else window.addEventListener("load", loadX);
   // start both dashboards in the background so their entry calls reach the desk
-  var preload = function () { setTimeout(function () { ensureSheet("gold"); ensureSheet("usdjpy"); }, 1500); };
+  // BTC only while a market panel shows it (three dashboards at once weigh on an iPad)
+  var preload = function () { setTimeout(function () { ensureSheet("gold"); ensureSheet("usdjpy"); if (picks.indexOf("btc") >= 0) ensureSheet("btc"); }, 1500); };
   if (document.readyState === "complete") preload(); else window.addEventListener("load", preload);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); loadCalendar(); loadMarket(); loadReport(); eqHistory(); } });
   setInterval(loadWeather, 30 * 60000);
