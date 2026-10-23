@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="5a53cd9847">
+<meta name="build" content="df9bc8664b">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -223,8 +223,9 @@ canvas{display:block;width:100%;height:340px;background:linear-gradient(180deg,#
 canvas.dragging{cursor:grabbing}
 /* 強い水平線（3回以上止まった線）だけを重ねたキャンバスで点滅させる */
 /* 目にやさしく：3.2秒でゆっくり、明るさの幅は小さく（消えずに半分ほど暗くなるだけ） */
-#chartBlink{position:absolute;inset:0;width:100%;height:100%;background:none;border:0;pointer-events:none;animation:srblink 3.2s ease-in-out infinite}
-@keyframes srblink{0%,100%{opacity:1}50%{opacity:.45}}
+#chartBlink{position:absolute;inset:0;width:100%;height:100%;background:none;border:0;pointer-events:none;animation:srblink 2.4s ease-in-out infinite}
+/* 目にやさしく、でも分かりやすく：2.4秒でゆっくり光が強まって弱まる（チカチカしない。消えても本体の線は残る） */
+@keyframes srblink{0%,100%{opacity:1}50%{opacity:0}}
 @media (prefers-reduced-motion:reduce){#chartBlink{animation:none}}
 .chartreset{position:absolute;left:10px;top:10px;z-index:1;font-size:11px;font-weight:800;color:#101114;background:var(--gold);border-radius:999px;padding:5px 11px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .charthint{font-size:10px;color:var(--muted);margin-top:4px}
@@ -2220,8 +2221,15 @@ function drawChart(){
   levels.forEach(l=>{
     if(l.price<min||l.price>max)return;
     const yy=Math.round(y(l.price))+.5,col=l.kind==='r'?'255,105,105':'66,213,156',strong=l.touches>=3,g=strong?bl:ctx;
-    g.strokeStyle=`rgba(${col},${strong?.95:.7})`;g.lineWidth=strong?1.2:.8;
-    g.beginPath();g.moveTo(P.l,yy);g.lineTo(W-P.r,yy);g.stroke();
+    if(strong){
+      // 強い線：本体の線は消えずに残し、点滅用のキャンバスに光の帯と明るい線を重ねて、ゆっくり浮かび上がらせる
+      ctx.strokeStyle=`rgba(${col},.55)`;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();
+      bl.strokeStyle=`rgba(${col},.16)`;bl.lineWidth=6;bl.beginPath();bl.moveTo(P.l,yy);bl.lineTo(W-P.r,yy);bl.stroke();
+      bl.strokeStyle=`rgba(${col},1)`;bl.lineWidth=1.8;bl.beginPath();bl.moveTo(P.l,yy);bl.lineTo(W-P.r,yy);bl.stroke();
+      return;
+    }
+    ctx.strokeStyle=`rgba(${col},.7)`;ctx.lineWidth=.8;
+    ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();
   });
   // フィボナッチ（ローソク足より先に描いて、足や他の線の下に敷く）：波の終点Bから右端まで。38.2〜61.8%は薄い帯、
   // 各水準は細い点線、止まった線だけ実線。0%・100%は短い目印だけ。強い水平線と重なる水準は線を省き名前だけ残す
