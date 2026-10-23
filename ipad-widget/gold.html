@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="009d2caa80">
+<meta name="build" content="d24b0d3df2">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -214,6 +214,10 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 body.chartfull{overflow:hidden}
 canvas{display:block;width:100%;height:340px;background:linear-gradient(180deg,#0c1116,#0e151c);border:1px solid #222c36;border-radius:13px;touch-action:none;cursor:grab}
 canvas.dragging{cursor:grabbing}
+/* 強い水平線（3回以上止まった線）だけを重ねたキャンバスで点滅させる */
+#chartBlink{position:absolute;inset:0;width:100%;height:100%;background:none;border:0;pointer-events:none;animation:srblink 1.6s ease-in-out infinite}
+@keyframes srblink{0%,100%{opacity:1}50%{opacity:.15}}
+@media (prefers-reduced-motion:reduce){#chartBlink{animation:none}}
 .chartreset{position:absolute;left:10px;top:10px;z-index:1;font-size:11px;font-weight:800;color:#101114;background:var(--gold);border-radius:999px;padding:5px 11px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .charthint{font-size:10px;color:var(--muted);margin-top:4px}
 .chartinfo{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted);margin-top:8px;min-height:16px}
@@ -414,7 +418,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <div class="tfcap">時間足｜下段＝ダウ理論のトレンドとST（スーパートレンド）の向き</div>
     <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
     <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button></div>
-    <div class="chartwrap"><canvas id="chart"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
+    <div class="chartwrap"><canvas id="chart"></canvas><canvas id="chartBlink" aria-hidden="true"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
     <canvas id="rsi" aria-label="RSI(14)"></canvas>
     <div id="chartInfo" class="chartinfo">--</div>
     <div class="charthint">ドラッグで左右（過去へ・右側に空白）・上下に移動／ピンチ・ホイールで拡大縮小／右端の価格目盛りを上下ドラッグで縦の拡大縮小／ダブルタップでリセット</div>
@@ -1984,6 +1988,7 @@ function drawChart(){
   const bars=source.slice(startIdx,endIdx);
   if(!bars.length||!W){
     ctx.fillStyle='#93a0ad';ctx.font='14px sans-serif';ctx.fillText('チャートデータ接続中...',20,34);
+    {const b=sizeCanvas($('chartBlink'));b.ctx.clearRect(0,0,b.W,b.H)}
     $('chartInfo').textContent='--';state.chartGeo=null;return;
   }
   const len=smaLen(),sm=smaSeries(source,len).slice(startIdx,endIdx);
@@ -2019,11 +2024,13 @@ function drawChart(){
 
   ctx.save();ctx.beginPath();ctx.rect(P.l,P.t,W-P.l-P.r,H-P.t-P.b);ctx.clip();
   // H1の強い水平線（H1・M15どちらの表示にも引く）
+  // 強い線（3回以上止まった）は点滅用のキャンバスに引く
+  const bl=sizeCanvas($('chartBlink')).ctx;bl.clearRect(0,0,W,H);
   levels.forEach(l=>{
     if(l.price<min||l.price>max)return;
-    const yy=Math.round(y(l.price))+.5,col=l.kind==='r'?'255,105,105':'66,213,156';
-    ctx.strokeStyle=`rgba(${col},${l.touches>=3?.95:.7})`;ctx.lineWidth=l.touches>=3?1.2:.8;
-    ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();
+    const yy=Math.round(y(l.price))+.5,col=l.kind==='r'?'255,105,105':'66,213,156',strong=l.touches>=3,g=strong?bl:ctx;
+    g.strokeStyle=`rgba(${col},${strong?.95:.7})`;g.lineWidth=strong?1.2:.8;
+    g.beginPath();g.moveTo(P.l,yy);g.lineTo(W-P.r,yy);g.stroke();
   });
   // フィボナッチ（ローソク足より先に描いて、足や他の線の下に敷く）：波の終点Bから右端まで。38.2〜61.8%は薄い帯、
   // 各水準は細い点線、止まった線だけ実線。0%・100%は短い目印だけ。強い水平線と重なる水準は線を省き名前だけ残す
