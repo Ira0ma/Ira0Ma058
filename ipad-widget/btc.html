@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="64e7cb76a1">
+<meta name="build" content="2a246d2fec">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1356,11 +1356,14 @@ function emaSeries(bars,len){
 // チャートに重ねる移動平均（H1・M15共通のEMAと、時間足ごとのSMA）
 const SMA_COLOR='#f4f6f8';  // 120SMA（H1）・20SMA（M15）
 const EMAS=[{key:'e10',len:10,color:'#ff8fd1',w:1.4},{key:'e20',len:20,color:'#ff8c2e',w:1.4},{key:'e200',len:200,color:'#3d8bff',w:2}];
+// GMMA（複合型移動平均線）：短期組 EMA3〜15（青）と長期組 EMA30〜60（赤）の帯。短期組が長期組の上なら上昇、下なら下降
+const GMMA_S=[3,5,8,10,12,15],GMMA_L=[30,35,40,45,50,60],GMMA_SC='#5cc8ff',GMMA_LC='#ff6b6b';
 // 各移動平均の表示・非表示（端末ごとに保存）
 const MA_BTNS=[{key:'sma',color:SMA_COLOR,label:()=>smaLen()+'SMA'}].concat(EMAS.map(m=>({key:m.key,color:m.color,label:()=>m.len+'EMA'})),
   [{key:'st',color:'linear-gradient(90deg,#42d59c 50%,#ff6969 50%)',label:()=>'スーパートレンド'},
    {key:'rsi',color:'#b48cff',label:()=>'RSI(14)'},
-   {key:'fib',color:FIB_COLOR,label:()=>'フィボナッチ'}],
+   {key:'fib',color:FIB_COLOR,label:()=>'フィボナッチ'},
+   {key:'gmma',color:`linear-gradient(90deg,${GMMA_SC} 50%,${GMMA_LC} 50%)`,label:()=>'GMMA',off:true}],
   IS_GOLD?[{key:'big',color:'#ffb547',label:()=>'大口決済の兆候'}]:[]);
 // スーパートレンド（TradingViewの標準と同じ：ATR10（RMA）×3、中心は(高値+安値)/2）。上昇中は線が足の下（緑）、下降中は上（赤）
 const ST_LEN=10,ST_MULT=3;
@@ -1381,7 +1384,7 @@ function superTrend(bars){
   return {line,dir};
 }
 function loadMaOn(){let o={};try{o=JSON.parse(lsGet(LSP+'ma','{}'))||{}}catch{}
-  state.maOn=Object.fromEntries(MA_BTNS.map(b=>[b.key,o[b.key]!==false]))}
+  state.maOn=Object.fromEntries(MA_BTNS.map(b=>[b.key,b.key in o?o[b.key]!==false:!b.off]))}  // offの線は最初は非表示
 function renderMaToggles(){
   $('maToggles').innerHTML=MA_BTNS.map(b=>`<button type="button" class="seg${state.maOn[b.key]?' on':''}" data-ma="${b.key}" aria-pressed="${state.maOn[b.key]}"><i style="background:${b.color}"></i>${b.label()}</button>`).join('');
 }
@@ -2098,6 +2101,9 @@ function drawChart(){
       ctx.fillStyle='#fff';ctx.textBaseline='middle';ctx.fillText(txt,x(i),by+8);
     }
   }
+  // GMMA：12本を細く薄く（長期組を先に、短期組を上に）
+  const gm=state.maOn.gmma?{s:GMMA_S.map(n=>emaSeries(source,n).slice(startIdx,endIdx)),l:GMMA_L.map(n=>emaSeries(source,n).slice(startIdx,endIdx))}:null;
+  if(gm){ctx.globalAlpha=.6;gm.l.forEach(v=>drawLine(v,GMMA_LC,.8));gm.s.forEach(v=>drawLine(v,GMMA_SC,.8));ctx.globalAlpha=1}
   const emas=EMAS.filter(m=>state.maOn[m.key]).map(m=>({...m,vals:emaSeries(source,m.len).slice(startIdx,endIdx)}));
   emas.forEach(m=>drawLine(m.vals,m.color,m.w));
   // トレンドライン：始点の山・谷から右端（右側の空白を含む）まで延長
@@ -2198,6 +2204,9 @@ function drawChart(){
     `<span>始 <b>${fmt(b.o)}</b></span><span>高 <b>${fmt(b.h)}</b></span><span>安 <b>${fmt(b.l)}</b></span><span>終 <b class="${b.c>=b.o?'up':'down'}">${fmt(b.c)}</b></span>`+
     (state.maOn.sma?`<span class="legend"><i style="background:${SMA_COLOR}"></i>${len}SMA <b>${sv==null?'--':fmt(sv)}</b></span>`:'')+
     (state.maOn.st&&stl[hi??bars.length-1]!=null?`<span class="legend"><i style="background:${std[hi??bars.length-1]>0?'#42d59c':'#ff6969'}"></i>スーパートレンド ${std[hi??bars.length-1]>0?'上昇':'下降'} <b>${fmt(stl[hi??bars.length-1])}</b></span>`:'')+
+    (gm?(()=>{const j=hi??bars.length-1,sv=gm.s.map(v=>v[j]),lv=gm.l.map(v=>v[j]);if(sv.concat(lv).some(v=>v==null))return '';
+      const sLo=Math.min(...sv),sHi=Math.max(...sv),lLo=Math.min(...lv),lHi=Math.max(...lv),st=sLo>lHi?'<b class="up">上昇</b>（短期組が上）':sHi<lLo?'<b class="down">下降</b>（短期組が下）':'<b>交差中</b>（短期組と長期組が重なる）';
+      return `<span class="legend"><i style="background:${GMMA_SC}"></i>GMMA短期 <b>${fmt(sLo)}〜${fmt(sHi)}</b></span><span class="legend"><i style="background:${GMMA_LC}"></i>GMMA長期 <b>${fmt(lLo)}〜${fmt(lHi)}</b></span><span class="legend"><i style="background:linear-gradient(90deg,${GMMA_SC} 50%,${GMMA_LC} 50%)"></i>GMMA ${st}</span>`})():'')+
     emas.map(m=>{const ev=m.vals[hi??bars.length-1];return `<span class="legend"><i style="background:${m.color}"></i>${m.len}EMA <b>${ev==null?'--':fmt(ev)}</b></span>`}).join('')+
     tls.map(t=>`<span class="legend"><i style="background:${t.kind==='up'?TL_UP:TL_DOWN}"></i>${t.kind==='up'?'上昇':'下降'}トレンドライン <b>${fmt(t.p1+t.slope*(endIdx-1-t.i1))}</b>（接点${t.touches}）</span>`).join('')+
     tags.map(({l})=>`<span class="legend"><i style="background:${l.kind==='r'?'#ff6969':'#42d59c'}"></i>${l.kind==='r'?'抵抗線':'支持線'}${l.tf!=='h1'?'（'+l.tf.toUpperCase()+'）':''}${l.touches>=3?'★':''} <b>${fmt(l.price)}</b></span>`).join('')+
