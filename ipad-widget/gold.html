@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="3502cf481e">
+<meta name="build" content="b743b9bc44">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1238,7 +1238,9 @@ function dowTrend(src,k){
 const dowCls=k=>k==='up'||k==='upt'?'up':k==='down'||k==='downt'?'down':k==='upx'||k==='downx'?'warn':'';
 // フィボナッチ・リトレースメント（表示中の時間足で自動）：直近の山・谷から、ATRの3倍以上動いた上昇（下降）の波を探し、
 // その後の押し（戻り）が23.6〜100%の範囲にあるものを候補にする。押しの底（戻りの天井）がフィボの線（ATRの0.3倍か
-// 波の4%以内）で止まって反発しているものを「はまっている」とみなして優先し、次に新しい波・大きな波を選ぶ
+// 波の4%以内）で止まって反発しているものを「はまっている」とみなして優先し、次に新しい波・大きな波を選ぶ。
+// 波がまだ伸びている（今の足が高値・安値を更新中、または押しが23.6%未満）ときは、その波で「暫定」として引き、
+// 次の押し目（戻り）の目安にする。高値・安値を更新するたびに引き直し、押しが23.6%を超えたら通常の表示に変わる
 const FIB_COLOR='#e8c35a',FIB_LV=[0,.236,.382,.5,.618,.786,1];
 const FIB_NAME=r=>r===0?'0%':r===1?'100%':(r*100).toFixed(1).replace(/\.0$/,'')+'%';
 function fibonacci(src,k){
@@ -1252,12 +1254,15 @@ function fibonacci(src,k){
   const price=state.spot?.price??src[N-1].c,out=[];
   const leg=(iA,dir)=>{  // dir>0：安値Aからの上昇の波、dir<0：高値Aからの下降の波
     let iB=iA;for(let j=iA+1;j<N;j++)if(dir>0?src[j].h>src[iB].h:src[j].l<src[iB].l)iB=j;
-    if(iB===iA||iB>=N-1)return;
+    if(iB===iA)return;
     const pA=dir>0?src[iA].l:src[iA].h,pB=dir>0?src[iB].h:src[iB].l,rng=Math.abs(pB-pA);
     if(rng<a*3)return;
-    let iC=iB+1;for(let j=iB+1;j<N;j++)if(dir>0?src[j].l<src[iC].l:src[j].h>src[iC].h)iC=j;
-    const pC=dir>0?src[iC].l:src[iC].h,deep=Math.abs(pB-pC)/rng,cur=(dir>0?pB-price:price-pB)/rng;
-    if(deep<.236||deep>=1||cur<0)return;
+    let iC=Math.min(iB+1,N-1);for(let j=iB+1;j<N;j++)if(dir>0?src[j].l<src[iC].l:src[j].h>src[iC].h)iC=j;
+    const pC=iB>=N-1?pB:dir>0?src[iC].l:src[iC].h,cur=Math.max(0,(dir>0?pB-price:price-pB)/rng),deep=Math.max(Math.abs(pB-pC)/rng,cur);  // 最新の価格は足より新しいことがある
+    if(deep>=1)return;
+    if(iB>=N-1||deep<.236){  // 伸びている最中：暫定。始点は新しい山・谷ほど優先（今の波の起点）
+      out.push({dir,iA,pA,iB,pB,iC,pC,rng,deep,cur,hit:null,held:false,bounce:0,prov:true,score:.5+iA/N});return;
+    }
     const tol=Math.max(a*.3,rng*.04),near=FIB_LV.slice(1,6).map(r=>({r,d:Math.abs(pC-(pB-dir*rng*r))})).sort((x,y)=>x.d-y.d)[0];
     const hit=near.d<=tol?near.r:null,bounce=(dir>0?price-pC:pC-price)/rng,held=hit!=null&&bounce>=.1&&iC<N-1;
     const score=(held?3:hit!=null?1.5:0)+(Math.abs(deep-.5)<.06?.5:0)+iB/N+Math.min(rng/a,12)*.05;
@@ -1267,7 +1272,7 @@ function fibonacci(src,k){
   if(!out.length)return null;
   const f=out.sort((x,y)=>y.score-x.score)[0];
   f.levels=FIB_LV.map(r=>({r,p:f.pB-f.dir*f.rng*r}));
-  f.half=Math.abs(f.deep-.5)<=.06;  // 押し（戻り）の深さが半値前後まで来た
+  f.half=!f.prov&&Math.abs(f.deep-.5)<=.06;  // 押し（戻り）の深さが半値前後まで来た
   return f;
 }
 // 時間足の切り替えボタン（各ボタンの下段に、その時間足のダウ理論トレンドとスーパートレンドの向き）
@@ -2014,9 +2019,11 @@ function drawChart(){
   // 各水準は細い点線、止まった線だけ実線。0%・100%は短い目印だけ。強い水平線と重なる水準は線を省き名前だけ残す
   const fib=state.maOn.fib?fibonacci(source,DOW_K[state.tf]||4):null;
   if(fib){
-    const xs=x(Math.max(fib.iB-startIdx,0)),xe=x(bars.length-1+blank),lvp=r=>fib.levels.find(l=>l.r===r).p;
+    // 波の終点が右端に近い（伸びている最中など）ときは、線が短くなりすぎないよう波の始点から引く
+    const xe=x(bars.length-1+blank),xb=x(Math.max(fib.iB-startIdx,0)),xs=xe-xb<140?x(Math.max(fib.iA-startIdx,0)):xb,lvp=r=>fib.levels.find(l=>l.r===r).p;
+    fib.xs=xs;
     const z1=y(lvp(.382)),z2=y(lvp(.618));
-    ctx.fillStyle='rgba(232,195,90,.07)';ctx.fillRect(xs,Math.min(z1,z2),xe-xs,Math.abs(z2-z1));
+    ctx.fillStyle=`rgba(232,195,90,${fib.prov?.045:.07})`;ctx.fillRect(xs,Math.min(z1,z2),xe-xs,Math.abs(z2-z1));
     if(fib.iA>=startIdx){ctx.setLineDash([2,4]);ctx.strokeStyle='rgba(232,195,90,.35)';ctx.lineWidth=1;
       ctx.beginPath();ctx.moveTo(x(fib.iA-startIdx),y(fib.pA));ctx.lineTo(x(fib.iB-startIdx),y(fib.pB));ctx.stroke()}
     fib.levels.forEach(lv=>{
@@ -2024,7 +2031,7 @@ function drawChart(){
       const yy=Math.round(y(lv.p))+.5,on=lv.r===fib.hit;
       if(lv.r===0||lv.r===1){ctx.setLineDash([]);ctx.strokeStyle='rgba(232,195,90,.6)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(xs,yy);ctx.lineTo(xs+14,yy);ctx.stroke();return}
       if(!on&&levels.some(l=>Math.abs(y(l.price)-yy)<4))return;  // 水平線と重なる
-      ctx.setLineDash(on?[]:[3,5]);ctx.strokeStyle=on?'rgba(255,214,102,.85)':`rgba(232,195,90,${lv.r===.5?.5:.32})`;ctx.lineWidth=on?1.6:1;
+      ctx.setLineDash(on?[]:fib.prov?[2,6]:[3,5]);ctx.strokeStyle=on?'rgba(255,214,102,.85)':`rgba(232,195,90,${(lv.r===.5?.5:.32)*(fib.prov?.7:1)})`;ctx.lineWidth=on?1.6:1;
       ctx.beginPath();ctx.moveTo(xs,yy);ctx.lineTo(xe,yy);ctx.stroke();
     });
     ctx.setLineDash([]);
@@ -2120,14 +2127,15 @@ function drawChart(){
   }
   // フィボの名前：線の始まり（波の終点）の上に小さく。止まった線・半値・38.2%・61.8%だけ、重なるものは省く
   if(fib){
-    const xs=Math.max(x(Math.max(fib.iB-startIdx,0)),P.l+2)+16,used=[];
+    const xs=Math.max(fib.xs,P.l+2)+16,xmax=x(bars.length-1+blank),used=[];
     ctx.font='bold 9.5px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='bottom';
     fib.levels.filter(lv=>[fib.hit,.5,.382,.618].includes(lv.r)&&lv.p>=min&&lv.p<=max)
       .sort((p1,p2)=>(p2.r===fib.hit)-(p1.r===fib.hit)||(p2.r===.5)-(p1.r===.5)).forEach(lv=>{  // 止まった線、半値、その他の順に場所を取る
       const yy=y(lv.p);if(used.some(u=>Math.abs(u-yy)<14))return;used.push(yy);
-      const on=lv.r===fib.hit,txt=FIB_NAME(lv.r)+(lv.r===.5?' 半値':'')+(on?(fib.held?' 反発':' 到達'):''),tw=ctx.measureText(txt).width;
-      ctx.fillStyle='rgba(13,18,23,.72)';ctx.fillRect(xs-2,yy-12,tw+4,11);
-      ctx.fillStyle=on?'#ffd666':'rgba(232,195,90,.9)';ctx.fillText(txt,xs,yy-1);
+      const on=lv.r===fib.hit,txt=(fib.prov&&lv.r===.5?'暫定 ':'')+FIB_NAME(lv.r)+(lv.r===.5?' 半値':'')+(on?(fib.held?' 反発':' 到達'):''),tw=ctx.measureText(txt).width;
+      const lx=Math.min(xs,xmax-tw-6);
+      ctx.fillStyle='rgba(13,18,23,.72)';ctx.fillRect(lx-2,yy-12,tw+4,11);
+      ctx.fillStyle=on?'#ffd666':'rgba(232,195,90,.9)';ctx.fillText(txt,lx,yy-1);
     });
   }
   ctx.textBaseline='middle';
@@ -2162,7 +2170,8 @@ function drawChart(){
     emas.map(m=>{const ev=m.vals[hi??bars.length-1];return `<span class="legend"><i style="background:${m.color}"></i>${m.len}EMA <b>${ev==null?'--':fmt(ev)}</b></span>`}).join('')+
     tls.map(t=>`<span class="legend"><i style="background:${t.kind==='up'?TL_UP:TL_DOWN}"></i>${t.kind==='up'?'上昇':'下降'}トレンドライン <b>${fmt(t.p1+t.slope*(endIdx-1-t.i1))}</b>（接点${t.touches}）</span>`).join('')+
     tags.map(({l})=>`<span class="legend"><i style="background:${l.kind==='r'?'#ff6969':'#42d59c'}"></i>${l.kind==='r'?'抵抗線':'支持線'} <b>${fmt(l.price)}</b></span>`).join('')+
-    (fib?`<span class="legend"><i style="background:${FIB_COLOR}"></i>フィボナッチ（直近の${fib.dir>0?'上昇':'下降'}の${fib.dir>0?'押し':'戻り'}） 今 <b>${Math.round(fib.cur*100)}%</b>（最深 ${Math.round(fib.deep*100)}%${fib.half?'・半値戻し':''}）${fib.hit!=null?`｜${FIB_NAME(fib.hit)}（${fmt(fib.levels.find(l=>l.r===fib.hit).p)}）で${fib.held?'反発':'到達'}`:''}</span>`:'')+
+    (fib&&fib.prov?`<span class="legend"><i style="background:${FIB_COLOR}"></i>暫定フィボナッチ（${fib.dir>0?'上昇':'下降'}中・次の${fib.dir>0?'押し目':'戻り'}の目安） 38.2% <b>${fmt(fib.levels.find(l=>l.r===.382).p)}</b>・半値 <b>${fmt(fib.levels.find(l=>l.r===.5).p)}</b>・61.8% <b>${fmt(fib.levels.find(l=>l.r===.618).p)}</b></span>`:'')+
+    (fib&&!fib.prov?`<span class="legend"><i style="background:${FIB_COLOR}"></i>フィボナッチ（直近の${fib.dir>0?'上昇':'下降'}の${fib.dir>0?'押し':'戻り'}） 今 <b>${Math.round(fib.cur*100)}%</b>（最深 ${Math.round(fib.deep*100)}%${fib.half?'・半値戻し':''}）${fib.hit!=null?`｜${FIB_NAME(fib.hit)}（${fmt(fib.levels.find(l=>l.r===fib.hit).p)}）で${fib.held?'反発':'到達'}`:''}</span>`:'')+
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
   $('chartMeta').textContent=TF_NAME[state.tf]+'（'+state.tf.toUpperCase()+'）/ '+len+'SMA'+' / 10・20・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
   $('chartReset').hidden=!(v.off||v.count||v.yOff||v.yZoom!==1);
