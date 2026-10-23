@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="86966ab78a">
+<meta name="build" content="eb44cbe82a">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -525,7 +525,7 @@ const INSTRUMENTS={
     dist:v=>(v/0.01).toFixed(1)+'pips',
     footer:'データ: Coinbase（ドル円の最新レート）／GitHub Actionsで定期取得したYahoo Finance足（チャート・価格）・Forex Factory（経済指標）。'},
   btc:{key:'btc',site:'btc',title:'BTCUSD',label:'BTC / USD',short:'BTC',name:'ビットコイン',asset:'BTC',sub:'BTC/USD専用｜24時間自動更新｜iPad・iPhone・Android対応',
-    dp:2,pip:1,minTp:300,pipNote:'1pips＝$1',momTh:20,slMin:40,tolMin:10,unit:'BTC',contract:'1',patterns:false,
+    dp:2,pip:1,minTp:300,pipNote:'1pips＝$1',momTh:20,slMin:40,tolMin:10,unit:'BTC',contract:'1',patterns:true,
     brokerNote:'XMのBTCUSDは1lot＝1BTCです。XSの契約量・スプレッドはご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,0),
     footer:'データ: Coinbase・Kraken・OKX（BTCのリアルタイム価格）／GitHub Actionsで定期取得したYahoo Finance足（チャート）・Forex Factory（経済指標）。'}
@@ -1398,7 +1398,24 @@ function cupHandle(){
    しきい値は XAU/USD 10年分（2016〜2025年）のバックテスト（research/pattern_backtest.py）で、2016〜2022年で選び
    2023〜2025年でも勝ち越した設定。k＝山・谷を決める前後の足の本数、sep＝谷と谷の間隔（本数）、tol＝谷（肩）の高さの差の許容（形の高さ比）、
    dep＝形の高さ（ATR倍）、useSma＝H1 120SMAと同じ向きのときだけ、prior＝形の前に反対方向の動きがあったこと、wait＝最後の谷からブレイクまでの本数。 */
-const PATTERNS=IS_BTC?[]:IS_GOLD?[
+const PATTERNS=IS_BTC?[
+  // BTC：research/btc_patterns.py（Binanceの15分足 2018〜2026年、2018〜2023年で選び2024〜2026年で確認）。
+  // 金と同じ売買ルール（利確＝ネックラインからパターンの高さ分、損切りは形の外）。成績は1回あたりの損益（損切り幅=1、
+  // スプレッド0.03%込み）。ダブルボトム（買い）はどの設定も優位性がほぼゼロのため入れていない
+  {id:'ihs',tf:'h1',dir:1,name:'逆三尊',entry:true,        // 71回・勝率51%・+0.27（+0.22／+0.39）・PF1.57・9年中7年プラス
+    p:{k:5,sepMin:20,sepMax:120,tol:0.05,depMin:3,depMax:20,useSma:0,prior:0,wait:10}},
+  {id:'ihs',tf:'h1',dir:-1,name:'三尊',entry:true,         // 140回・勝率48%・+0.20（+0.14／+0.35）・PF1.41
+    p:{k:3,sepMin:10,sepMax:80,tol:0.05,depMin:3,depMax:20,useSma:1,prior:1,wait:25}},
+  {id:'ihs',tf:'m15',dir:1,name:'逆三尊',entry:true,       // 312回・勝率44%・+0.12（+0.13／+0.11）・PF1.21
+    p:{k:5,sepMin:20,sepMax:120,tol:0.2,depMin:1.5,depMax:10,useSma:1,prior:1,wait:25}},
+  {id:'db',tf:'h1',dir:-1,name:'ダブルトップ',entry:true,   // 84回・勝率61%・+0.07（+0.07／+0.08）・PF1.22
+    p:{k:5,sepMin:10,sepMax:80,tol:0.05,depMin:1.5,depMax:10,useSma:0,prior:0,wait:25}},
+  // 15分足の三尊・ダブルトップ（売り）は両期間ともわずかにプラスだが小さく年ごとのぶれが大きいので、表示のみ
+  {id:'ihs',tf:'m15',dir:-1,name:'三尊',entry:false,       // 374回・+0.07（+0.07／+0.08）・PF1.11
+    p:{k:2,sepMin:20,sepMax:120,tol:0.05,depMin:1.5,depMax:30,useSma:1,prior:1,wait:10}},
+  {id:'db',tf:'m15',dir:-1,name:'ダブルトップ',entry:false, // 210回・+0.05（+0.05／+0.04）・PF1.12
+    p:{k:3,sepMin:20,sepMax:120,tol:0.05,depMin:3,depMax:20,useSma:0,prior:1,wait:25}},
+]:IS_GOLD?[
   // 10年の成績（1回あたりの損益は損切り幅=1、2016〜2022年／2023〜2025年）
   {id:'db',tf:'m15',dir:1,name:'ダブルボトム',entry:true,   // 287回・勝率64%・+0.11（+0.11／+0.10）・PF1.30
     p:{k:2,sepMin:20,sepMax:120,tol:0.2,depMin:3,depMax:20,useSma:1,prior:1,wait:25}},
