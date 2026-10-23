@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="15fe21cd67">
+<meta name="build" content="ea5b176a6d">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2177,6 +2177,35 @@ function drawChart(){
     ctx.strokeStyle=t.kind==='up'?TL_UP:TL_DOWN;ctx.lineWidth=t.touches>=4?1.4:1;  // 接点4つ以上は少し太く
     ctx.beginPath();ctx.moveTo(x(g0-startIdx),y(t.p1));ctx.lineTo(x(g1-startIdx),y(t.p1+t.slope*(g1-g0)));ctx.stroke();
   });
+  const swingBoxes=[];  // 高値・安値ラベルやパターンの安値の名前の場所（フィボの名前・ほかのラベルがよける）
+  const dow=dowTrend(source,DOW_K[state.tf]||4);
+  // 左上のダウ理論の表示（「表示をリセット」ボタンが出ているときはその下）の場所も、高値・安値ラベルがよける
+  const dowDy=(v.off||v.count||v.yOff||v.yZoom!==1)?30:0,dowTxt=dow.kind!=='none'?state.tf.toUpperCase()+' ダウ理論：'+DOW_NAME[dow.kind]:'';
+  if(dowTxt){ctx.font='bold 12px -apple-system,sans-serif';swingBoxes.push({x:P.l+4,y:P.t+2+dowDy,w:ctx.measureText(dowTxt).width+12,h:20})}
+  // パターンの安値（売りは高値）＝損切りの基準：ダブルボトムはボトム、三尊・逆三尊は右肩、カップは取っ手。細い点線と名前・価格
+  const patLow=(x0,xe,pt,name)=>{
+    if(pt.stop<min||pt.stop>max)return;
+    const col=pt.dir>0?'66,213,156':'255,105,105',yy=Math.round(y(pt.stop))+.5;
+    ctx.strokeStyle=`rgba(${col},.75)`;ctx.lineWidth=.9;ctx.setLineDash([2,3]);
+    ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(xe,yy);ctx.stroke();ctx.setLineDash([]);
+    lowLabels.push({x0,yy,col,dir:pt.dir,txt:name+' '+fmt(pt.stop,IS_BTC?0:INSTR.dp)+'・損切り目安'});  // 名前は線を全部引いたあとに書く
+  };
+  const lowLabels=[];
+  // パターンの安値の名前：ほかのラベルと重なるなら線の反対側へ、それでも重なるなら右へずらす
+  const drawLowLabels=()=>lowLabels.forEach(L=>{
+    ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';
+    const tw=ctx.measureText(L.txt).width+8,x1=Math.min(Math.max(P.l+2,L.x0+4),W-P.r-tw-2);
+    // 重なる面積（0なら空いている）。線のすぐ下（売りは上）→反対側→少し離れた所の順に、左から右へ探して一番重ならない所に置く
+    const cover=(lx,ly)=>swingBoxes.reduce((t,b)=>t+Math.max(0,Math.min(lx+tw,b.x+b.w)-Math.max(lx,b.x))*Math.max(0,Math.min(ly+7,b.y+b.h)-Math.max(ly-7,b.y)),0);
+    let lx=x1,ly=L.dir>0?L.yy+10:L.yy-10,best=Infinity;
+    search:for(const dy of L.dir>0?[10,-10,25,-25]:[-10,10,-25,25]){
+      const yc=L.yy+dy;if(yc-7<P.t||yc+7>H-P.b)continue;
+      for(let x=x1;x<=W-P.r-tw-2;x+=24){const c=cover(x,yc);if(c<best){best=c;lx=x;ly=yc}if(!c)break search}
+    }
+    ctx.fillStyle='rgba(12,17,22,.88)';ctx.fillRect(lx,ly-7,tw,14);
+    ctx.fillStyle=`rgba(${L.col},1)`;ctx.fillText(L.txt,lx+4,ly);
+    swingBoxes.push({x:lx,y:ly-7,w:tw,h:14});
+  });
   // チャートパターン：表示中の時間足の形について、形の始まりから今までネックライン（点線）と名前。カップは底に印
   chartPatterns().filter(p=>p.tf===state.tf&&p.id!=='cup').forEach(pt=>{
     const i0=source.findIndex(b=>b.t===pt.t0);if(i0<0||pt.neck<min||pt.neck>max)return;
@@ -2184,15 +2213,12 @@ function drawChart(){
     ctx.strokeStyle=`rgba(${col},.9)`;ctx.lineWidth=1.1;ctx.setLineDash([6,4]);
     ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(xe,yy);ctx.stroke();ctx.setLineDash([]);
     ctx.fillStyle=`rgba(${col},1)`;ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline=pt.dir>0?'top':'bottom';
-    ctx.fillText(pt.label.replace(/^(15分足|1時間足)/,'')+(pt.state==='breakout'?' ブレイク':' 形成中'),Math.max(P.l+2,x0)+4,yy+(pt.dir>0?4:-4));
+    {const t=pt.label.replace(/^(15分足|1時間足)/,'')+(pt.state==='breakout'?' ブレイク':' 形成中'),tx=Math.max(P.l+2,x0)+4;
+     ctx.fillText(t,tx,yy+(pt.dir>0?4:-4));swingBoxes.push({x:tx,y:pt.dir>0?yy+4:yy-18,w:ctx.measureText(t).width,h:14})}
+    patLow(x0,xe,pt,pt.id==='db'?(pt.dir>0?'ボトム安値':'トップ高値'):(pt.dir>0?'右肩安値':'右肩高値'));
   });
   // ダウ理論の判定に使った直近の山・谷に印（高値↑＝切り上げ、↓＝切り下げ）と、左上に判定
-  const dow=dowTrend(source,DOW_K[state.tf]||4);
   ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='center';
-  const swingBoxes=[];  // 高値・安値ラベルの場所（フィボの名前をよける）
-  // 左上のダウ理論の表示（「表示をリセット」ボタンが出ているときはその下）の場所も、高値・安値ラベルがよける
-  const dowDy=(v.off||v.count||v.yOff||v.yZoom!==1)?30:0,dowTxt=dow.kind!=='none'?state.tf.toUpperCase()+' ダウ理論：'+DOW_NAME[dow.kind]:'';
-  if(dowTxt){ctx.font='bold 12px -apple-system,sans-serif';swingBoxes.push({x:P.l+4,y:P.t+2+dowDy,w:ctx.measureText(dowTxt).width+12,h:20})}
   // 直近・前回の高値・安値の印と価格（「直近高値・安値」「前回高値・安値」ボタンで別々に消せる。ダウ理論の判定は表示したまま）
   [['highs',-1],['lows',1]].forEach(([key,sd])=>dow[key].forEach((pv,n)=>{
     if(!state.maOn[n?'swingN':'swingP'])return;
@@ -2247,10 +2273,13 @@ function drawChart(){
       ctx.strokeStyle=`rgba(${col},.9)`;ctx.lineWidth=1.1;ctx.setLineDash([6,4]);
       ctx.beginPath();ctx.moveTo(x(xl),yy);ctx.lineTo(x(xe),yy);ctx.stroke();ctx.setLineDash([]);
       ctx.fillStyle=`rgba(${col},1)`;ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline=cup.dir>0?'top':'bottom';  // 名前はカップの内側に書く
-      ctx.fillText((cup.dir>0?'カップ&ハンドル':'逆カップ&ハンドル')+(cup.state==='breakout'?' ブレイク':' 形成中'),Math.max(P.l+2,x(xl))+4,yy+(cup.dir>0?4:-4));
+      {const t=(cup.dir>0?'カップ&ハンドル':'逆カップ&ハンドル')+(cup.state==='breakout'?' ブレイク':' 形成中'),tx=Math.max(P.l+2,x(xl))+4;
+       ctx.fillText(t,tx,yy+(cup.dir>0?4:-4));swingBoxes.push({x:tx,y:cup.dir>0?yy+4:yy-18,w:ctx.measureText(t).width,h:14})}
       if(xb!=null){const yb=y(cup.bottom);ctx.beginPath();ctx.arc(x(xb),yb+(cup.dir>0?6:-6),3,0,Math.PI*2);ctx.fill()}
+      {const xr=ix(cup.tr);patLow(x(xr!=null?xr:xl),x(xe),cup,cup.dir>0?'取っ手安値':'取っ手高値')}  // 取っ手（右の縁から先）の部分に
     }
   }
+  drawLowLabels();
   // フィボの名前と価格：チャートの右端（価格目盛りの手前）に右寄せで小さく。0%・100%以外の各線、重なるものは止まった線・半値を優先して省く
   if(fib){
     const used=[];
