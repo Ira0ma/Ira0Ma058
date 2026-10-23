@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="5a53cd9847">
+<meta name="build" content="40e4469bfd">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1464,21 +1464,11 @@ function gmmaCross(tf){
 const GMX_NAME={golden:'ゴールデンクロス',dead:'デッドクロス'};
 function renderGmmaNow(){
   const el=$('gmmaNow'),list=Object.keys(TFS).map(tf=>({tf,x:gmmaCross(tf)})).filter(o=>o.x);
-  gmmaPost(list);
   el.hidden=!list.length;if(!list.length){gmxSeen=new Set();return}
   const g=list.some(o=>o.x.kind==='golden'),d=list.some(o=>o.x.kind==='dead');
   el.className='gmmanow '+(g&&!d?'golden':d&&!g?'dead':'golden');
   el.innerHTML=list.map(o=>`<button type="button" class="gxrow ${o.x.kind==='golden'?'up':'down'}${o.tf===state.tf?' cur':''}" data-tf="${o.tf}"><b>${TF_NAME[o.tf]} GMMA ${GMX_NAME[o.x.kind]}中</b></button>`).join('');
   gmmaToast(list);
-}
-// トレードデスクの中で動いているときは、今クロス中の時間足を（変わったときに）デスクへ知らせる。デスクは右下の欄に並べる
-let gmxPosted='';
-function gmmaPost(list){
-  if(window.parent===window)return;
-  const msg={type:'dash-gmma',key:INSTR.key,name:INSTR.short==='XAU'?'GOLD':INSTR.short==='USDJPY'?'ドル円':INSTR.short,
-    list:list.map(o=>({tf:o.tf,tfName:TF_NAME[o.tf],kind:o.x.kind}))};
-  const k=JSON.stringify(msg.list);if(k===gmxPosted)return;gmxPosted=k;
-  try{window.parent.postMessage(msg,'*')}catch{}
 }
 // 新しくクロスが始まった時間足を、画面の下に通知（ページを開いたときは今のクロスを1回だけ）
 let gmxSeen=null;
@@ -2722,7 +2712,7 @@ function renderAll(){
   renderSnapshot();
   const reb=renderRebound();
   drawChart();renderEvents();renderNext();renderResults();
-  renderGmmaNow();  // チャートが見えていない（デスクの裏で動いている）ときも、GMMAのクロスを確かめて知らせる
+  renderGmmaNow();  // チャートが見えていないときも、GMMAのクロスの知らせを最新にする
   const risk=calcRisk();
   renderChecks(risk,reb);updateCaution();
   $('lastUpdate').textContent=state.lastOk?localTime(state.lastOk):'--';
@@ -2771,8 +2761,6 @@ $('autoBtn').onclick=()=>{
   scheduler();
 };
 $('tfGrid').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)});
-// トレードデスクの通知をタップしたとき：その時間足を表示する
-window.addEventListener('message',e=>{if(e.source===window.parent&&e.data&&e.data.type==='desk-settf'&&TF_NAME[e.data.tf])setTf(e.data.tf)});
 $('fibNow').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)});
 $('gmmaNow').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)});
 $('maToggles').addEventListener('click',e=>{
