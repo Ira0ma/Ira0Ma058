@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="312bbf67c6">
+<meta name="build" content="bd39a85091">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1440,21 +1440,13 @@ function cupHandle(){
    dep＝形の高さ（ATR倍）、useSma＝H1 120SMAと同じ向きのときだけ、prior＝形の前に反対方向の動きがあったこと、wait＝最後の谷からブレイクまでの本数。 */
 const PATTERNS=IS_BTC?[
   // BTC：research/btc_patterns.py（Binanceの15分足 2018〜2026年、2018〜2023年で選び2024〜2026年で確認）。
-  // 金と同じ売買ルール（利確＝ネックラインからパターンの高さ分、損切りは形の外）。成績は1回あたりの損益（損切り幅=1、
-  // スプレッド0.03%込み）。ダブルボトム（買い）はどの設定も優位性がほぼゼロのため入れていない
-  {id:'ihs',tf:'h1',dir:1,name:'逆三尊',entry:true,        // 71回・勝率51%・+0.27（+0.22／+0.39）・PF1.57・9年中7年プラス
-    p:{k:5,sepMin:20,sepMax:120,tol:0.05,depMin:3,depMax:20,useSma:0,prior:0,wait:10}},
-  {id:'ihs',tf:'h1',dir:-1,name:'三尊',entry:true,         // 140回・勝率48%・+0.20（+0.14／+0.35）・PF1.41
-    p:{k:3,sepMin:10,sepMax:80,tol:0.05,depMin:3,depMax:20,useSma:1,prior:1,wait:25}},
-  {id:'ihs',tf:'m15',dir:1,name:'逆三尊',entry:true,       // 312回・勝率44%・+0.12（+0.13／+0.11）・PF1.21
-    p:{k:5,sepMin:20,sepMax:120,tol:0.2,depMin:1.5,depMax:10,useSma:1,prior:1,wait:25}},
-  {id:'db',tf:'h1',dir:-1,name:'ダブルトップ',entry:true,   // 84回・勝率61%・+0.07（+0.07／+0.08）・PF1.22
-    p:{k:5,sepMin:10,sepMax:80,tol:0.05,depMin:1.5,depMax:10,useSma:0,prior:0,wait:25}},
-  // 15分足の三尊・ダブルトップ（売り）は両期間ともわずかにプラスだが小さく年ごとのぶれが大きいので、表示のみ
-  {id:'ihs',tf:'m15',dir:-1,name:'三尊',entry:false,       // 374回・+0.07（+0.07／+0.08）・PF1.11
-    p:{k:2,sepMin:20,sepMax:120,tol:0.05,depMin:1.5,depMax:30,useSma:1,prior:1,wait:10}},
-  {id:'db',tf:'m15',dir:-1,name:'ダブルトップ',entry:false, // 210回・+0.05（+0.05／+0.04）・PF1.12
-    p:{k:3,sepMin:20,sepMax:120,tol:0.05,depMin:3,depMax:20,useSma:0,prior:1,wait:25}},
+  // 「逆行が少なく、よく伸びる」ものだけ：両期間で1回あたり+0.12R以上・PF1.3以上、逆行が損切り幅の3割未満で済んだ
+  // 割合が20%以上、損切り幅の2倍以上伸びた割合が30%以上（両期間とも）。満たしたのは1時間足の逆三尊だけで、
+  // 利確をネックラインから形の高さの2倍に置いた方が成績が良い。三尊・ダブルトップ（1時間足）は伸びか逆行の浅さがわずかに
+  // 届かず、15分足の逆三尊はPF1.21・逆行が深く、ダブルボトムはどの設定も優位性がないため外した
+  {id:'ihs',tf:'h1',dir:1,name:'逆三尊',entry:true,tpMult:2,  // 72回・勝率46%・+0.32R（+0.25／+0.49）・PF1.64・
+    // 逆行0.3R未満で済む25%・2R以上伸びる35%・3R以上18%・9年中7年プラス
+    p:{k:5,sepMin:20,sepMax:120,tol:0.05,depMin:1.5,depMax:30,useSma:0,prior:0,wait:10}},
 ]:IS_GOLD?[
   // 10年の成績（1回あたりの損益は損切り幅=1、2016〜2022年／2023〜2025年）
   {id:'db',tf:'m15',dir:1,name:'ダブルボトム',entry:true,   // 287回・勝率64%・+0.11（+0.11／+0.10）・PF1.30
@@ -1548,7 +1540,7 @@ function chartPatterns(){
     if(!r||(cfg.minH&&r.height<cfg.minH))continue;
     const d=cfg.dir;
     out.push({id:cfg.id,tf:cfg.tf,dir:d,label:(cfg.tf==='h1'?'1時間足':'15分足')+cfg.name,state:r.state,neck:d*r.neck,stop:d*r.stop,
-      height:r.height,target:d*(r.neck+r.height),t0:r.t0,atr:a,useSma:cfg.p.useSma,entry:cfg.entry,tpFixed:cfg.tpFixed,
+      height:r.height,target:d*(r.neck+r.height*(cfg.tpMult||1)),tpMult:cfg.tpMult,t0:r.t0,atr:a,useSma:cfg.p.useSma,entry:cfg.entry,tpFixed:cfg.tpFixed,
       slSrc:(cfg.id==='db'?(d>0?'ボトム':'トップ'):'右肩')+'の'+(d>0?'安値':'高値')+'の外'});
   }
   patCache={k,v:out};return out;
@@ -1594,12 +1586,12 @@ const PIP=INSTR.pip, MIN_TP_PIPS=INSTR.minTp;
 function tradePlan(dir,cup){
   if(!state.spot)return null;
   const entry=state.spot.price;
-  // チャートパターン：損切りは形の最後の安値（売りは高値）の少し外（その時間足のATR×0.2）、利確はネックラインから形の高さ分
+  // チャートパターン：損切りは形の最後の安値（売りは高値）の少し外（その時間足のATR×0.2）、利確はネックラインから形の高さ分（BTCの逆三尊は検証どおり2倍）
   if(cup){
     const buf=(cup.atr||currentAtr()||0)*0.2, slDist=Math.max(Math.abs(entry-(cup.stop-cup.dir*buf)),INSTR.slMin);
     const tp=cup.tpFixed?entry+dir*cup.tpFixed:cup.target;  // ドル円は検証どおり+30pips固定
     const sl=entry-dir*slDist, tpPips=Math.max(0,dir*(tp-entry))/PIP, slPips=slDist/PIP;
-    return {dir,entry,tp,sl,tpPips,slPips,rr:tpPips/slPips,tpSrc:cup.tpFixed?cup.label+'：10年検証の利確（+'+Math.round(cup.tpFixed/PIP)+'pips）':cup.label+'の高さ分',slSrc:cup.slSrc};
+    return {dir,entry,tp,sl,tpPips,slPips,rr:tpPips/slPips,tpSrc:cup.tpFixed?cup.label+'：10年検証の利確（+'+Math.round(cup.tpFixed/PIP)+'pips）':cup.label+(cup.tpMult>1?'の高さ'+cup.tpMult+'倍（検証どおり）':'の高さ分'),slSrc:cup.slSrc};
   }
   const a=currentAtr()||Math.max(entry*0.0012,INSTR.slMin*1.5);
   const slDist=Math.max(a*(n($('slMult').value)||1.2),INSTR.slMin);
