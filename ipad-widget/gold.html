@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="d15de20ba8">
+<meta name="build" content="f68caaa10b">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2220,8 +2220,10 @@ function drawChart(){
     const txt=state.tf.toUpperCase()+' ダウ理論：'+DOW_NAME[dow.kind],c=dowCls(dow.kind);
     ctx.font='bold 12px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='top';
     const tw=ctx.measureText(txt).width;
-    ctx.fillStyle='rgba(13,18,23,.85)';ctx.fillRect(P.l+4,P.t+2,tw+12,20);
-    ctx.fillStyle=c==='up'?'#42d59c':c==='down'?'#ff6969':c==='warn'?'#ffb547':'#c9d2db';ctx.fillText(txt,P.l+10,P.t+6);
+    // 「表示をリセット」ボタン（左上）が出ているときは、その下に書いて重ならないようにする
+    const dy=(v.off||v.count||v.yOff||v.yZoom!==1)?30:0;
+    ctx.fillStyle='rgba(13,18,23,.85)';ctx.fillRect(P.l+4,P.t+2+dy,tw+12,20);
+    ctx.fillStyle=c==='up'?'#42d59c':c==='down'?'#ff6969':c==='warn'?'#ffb547':'#c9d2db';ctx.fillText(txt,P.l+10,P.t+6+dy);
   }
   // 大口決済の兆候（ゴールド）：足の外側に印
   const bigs=IS_GOLD&&state.maOn.big&&!['w1','mn'].includes(state.tf)?bigMoves(source).filter(m=>m.i>=startIdx&&m.i<endIdx):[];
