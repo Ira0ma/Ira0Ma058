@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="f1ac5b5d31">
+<meta name="build" content="06dba354fc">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -164,7 +164,11 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .plrow span{font-size:11px;color:var(--muted)}
 .plrow b{font-size:15px;text-align:right}
 .plrow em{grid-column:1/-1;font-style:normal;font-size:10px;color:var(--muted);text-align:right}
-.plrow.tp b{color:var(--green)}.plrow.sl b{color:var(--red)}
+.plrow.tp b{color:var(--green)}
+/* 利確の時間足：15分足＝水色（早めの利確）、1時間足＝緑（本命の利確） */
+.tf15{color:#5cc8ff}.tf60{color:var(--green)}.reason .tf15,.reason .tf60{font-weight:700}
+.tp15row{margin-left:14px;padding:5px 9px}.tp15row>span{font-size:11px}
+.plrow.tp15 b{color:#5cc8ff}.plrow span b{font-size:12px;text-align:left}.plrow.sl b{color:var(--red)}
 .plfoot{font-size:10px;color:var(--muted);text-align:right;margin-top:4px}
 .nextev{background:#0d1217;border:1px solid #232d37;border-radius:13px;padding:12px}
 .nextev.alert{border-color:#6c4f16;background:#22190c}
@@ -401,7 +405,8 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
         <div class="reason"><span>① H1 120SMA</span><b id="reasonSma">--</b></div>
         <div class="reason"><span>② H1モメンタム(3本)</span><b id="reasonMom">--</b></div>
         <div class="reason"><span>③ 当日レンジ位置</span><b id="reasonRange">--</b></div>
-        <div class="reason"><span>④ 利確余地（<span id="minTpLabel">50</span>pips以上）</span><b id="reasonTp">--</b></div>
+        <div class="reason"><span>④ 利確余地・<b class="tf60">1時間足</b>（<span id="minTpLabel">50</span>pips以上）</span><b id="reasonTp">--</b></div>
+        <div class="reason tp15row"><span>└ 利確余地・<b class="tf15">15分足</b>（参考・早めの利確）</span><b id="reasonTp15">--</b></div>
         <div class="reason" id="cupRow" hidden><span>⑤ チャートパターン</span><b id="reasonCup">--</b></div>
       </div>
       <div id="patList" class="patlist" hidden></div>
@@ -1634,7 +1639,17 @@ function calcSignal(){
 const PIP=INSTR.pip, MIN_TP_PIPS=INSTR.minTp;
 // 売買プラン：エントリー＝現在値。損切り＝M15 ATR×倍率（最低2ドル）。
 // 利確＝進む方向でいちばん近いH1水平線（5pips以上先）。線がなければ損切り幅×目標RR。
+// 一番近い水平線の利確（エントリーから5pips以上先）。15分足は早めの利確、1時間足は本命の利確
+function levelTarget(lvs,dir,entry){
+  const lv=lvs.filter(l=>dir>0?l.price>entry+5*PIP:l.price<entry-5*PIP).sort((x,y)=>Math.abs(x.price-entry)-Math.abs(y.price-entry))[0];
+  return lv?{price:lv.price,pips:Math.abs(lv.price-entry)/PIP,touches:lv.touches}:null;
+}
 function tradePlan(dir,cup){
+  const pl=tradePlan0(dir,cup);
+  if(pl){pl.tp15=levelTarget(srLevels(state.m15),dir,pl.entry);pl.tp60=levelTarget(h1Levels(),dir,pl.entry)}
+  return pl;
+}
+function tradePlan0(dir,cup){
   if(!state.spot)return null;
   const entry=state.spot.price;
   // チャートパターン：損切りは形の最後の安値（売りは高値）の少し外（その時間足のATR×0.2）、利確はネックラインから形の高さ分（BTCの逆三尊は検証どおり2倍）
@@ -1953,8 +1968,12 @@ function renderSnapshot(){
   }else{setReason('reasonSma','H1待ち',0);setReason('reasonMom','H1待ち',0)}
   if(d.hi&&d.lo){const mid=(d.hi+d.lo)/2;setReason('reasonRange',state.spot.price>=mid?'上半分（+1）':'下半分（−1）',state.spot.price>=mid?1:-1)}
   else setReason('reasonRange','取得中',0);
-  if(s.plan)setReason('reasonTp',Math.round(s.plan.tpPips)+'pips'+(s.plan.tpPips>=MIN_TP_PIPS?'（OK）':'（不足）'),s.plan.tpPips>=MIN_TP_PIPS?(s.sig==='BUY'?1:-1):0);
+  if(s.plan)setReason('reasonTp',Math.round(s.plan.tpPips)+'pips'+(s.plan.tpSrc==='H1水平線'?'（'+fmt(s.plan.tp)+'）':'')+(s.plan.tpPips>=MIN_TP_PIPS?' OK':' 不足'),s.plan.tpPips>=MIN_TP_PIPS?(s.sig==='BUY'?1:-1):0);
   else setReason('reasonTp',s.ready?'方向が決まると計算':'取得中',0);
+  // 15分足の利確は参考表示（エントリー判定は1時間足のまま）
+  const t15=s.plan&&s.plan.tp15;
+  setReason('reasonTp15',!s.plan?(s.ready?'方向が決まると計算':'取得中'):t15?Math.round(t15.pips)+'pips（'+fmt(t15.price)+'）'+(t15.pips>=MIN_TP_PIPS?' OK':' 基準未満'):'15分足の線なし',0);
+  $('reasonTp15').classList.add('tf15');
   if(INSTR.patterns){
     $('cupRow').hidden=false;
     const ps=s.pats||[],br=ps.filter(p=>p.state==='breakout'),fm=ps.filter(p=>p.state==='forming');
@@ -1984,7 +2003,10 @@ function renderPlan(s){
   const row=(k,v,sub,cls='')=>`<div class="plrow ${cls}"><span>${k}</span><b>${v}</b><em>${sub}</em></div>`;
   box.innerHTML=`<div class="plhead">${s.entry?(pl.dir>0?'買い':'売り')+'エントリー プラン':'参考プラン（エントリー条件未達）'}</div>`+
     row('エントリーポイント',fmt(pl.entry),'現在値（成行）')+
-    row('利確目安',fmt(pl.tp),'+'+Math.round(pl.tpPips)+'pips｜'+pl.tpSrc,'tp')+
+    // 15分足の利確（本命より手前にあるときだけ）→ 本命の利確（1時間足の線、またはパターン・RR）
+    (pl.tp15&&pl.tp15.pips<pl.tpPips-1?row('利確① <b class="tf15">15分足</b>',fmt(pl.tp15.price),'+'+Math.round(pl.tp15.pips)+'pips｜15分足の水平線（早めの利確・一部決済の目安）','tp15'):'')+
+    row(pl.tpSrc==='H1水平線'?'利確② <b class="tf60">1時間足</b>':'利確目安',fmt(pl.tp),'+'+Math.round(pl.tpPips)+'pips｜'+(pl.tpSrc==='H1水平線'?'1時間足の水平線（本命の利確）':pl.tpSrc),'tp')+
+    (pl.tpSrc!=='H1水平線'&&pl.tp60?row('参考 <b class="tf60">1時間足</b>',fmt(pl.tp60.price),'+'+Math.round(pl.tp60.pips)+'pips｜1時間足の水平線','tp'):'')+
     row('損切り目安',fmt(pl.sl),'−'+Math.round(pl.slPips)+'pips｜'+(pl.slSrc||'M15 ATR×'+(n($('slMult').value)||1.2)),'sl')+
     `<div class="plfoot">RR ${pl.rr.toFixed(2)}｜${INSTR.pipNote}</div>`;
 }
