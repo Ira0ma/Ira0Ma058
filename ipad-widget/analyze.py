@@ -439,6 +439,14 @@ def tf_check(key, candles):
     off = {tf: (round(h - ref[0], 5), round(l - ref[1], 5)) for tf, (h, l) in ranges.items()
            if ref and (abs(h - ref[0]) > tol or abs(l - ref[1]) > tol)}
     span = lambda t: datetime.fromtimestamp(t, timezone.utc).strftime("%m-%d %H:%M")
+    if off:  # which hours the 15m candles miss, and how many 15m candles each has
+        why = []
+        for r in candles["1h"]:
+            if start <= r[0] < end:
+                q = [x for x in candles["15m"] if r[0] <= x[0] < r[0] + 3600]
+                if q and (abs(max(x[2] for x in q) - r[2]) > tol or abs(min(x[3] for x in q) - r[3]) > tol):
+                    why.append(f"{span(r[0])} 1h {r[2]:.2f}/{r[3]:.2f} vs {len(q)}x15m {max(x[2] for x in q):.2f}/{min(x[3] for x in q):.2f}")
+        print(key, "timeframe mismatch hours:", "; ".join(why) or "none hour by hour")
     print(key, f"timeframe check {span(start)}..{span(end)} UTC: 1h high/low {ref},",
           f"compared {sorted(ranges)};", f"mismatch (high, low vs 1h) {off}" if off else "all agree",
           f"; broken candles {dict((k, v) for k, v in bad.items() if v)}" if any(bad.values()) else "; no broken candles")
@@ -525,6 +533,25 @@ def shift_by_gaps(rows, seconds, samples):
         r[1:] = [v + g for v in r[1:]]
 
 
+def fill_gaps(rows, finer, sec):
+    """Add the candles missing from rows (Yahoo now and then leaves a 15m candle out) where all the finer
+    candles of that period are there, built from them."""
+    if len(finer) < 2 or not rows:
+        return
+    step = finer[1][0] - finer[0][0]
+    have, groups = {r[0] for r in rows}, {}
+    for r in finer:
+        if r[0] >= rows[0][0]:
+            groups.setdefault(r[0] - r[0] % sec, []).append(r)
+    add = [[k, g[0][1], max(x[2] for x in g), min(x[3] for x in g), g[-1][4]] + list(g[-1][5:])
+           for k, g in groups.items() if k not in have and len(g) >= sec // step and k + sec <= finer[-1][0]]
+    if add:
+        print("filled", len(add), f"missing {sec // 60}m candles from finer ones:",
+              ", ".join(datetime.fromtimestamp(r[0], timezone.utc).strftime("%m-%d %H:%M") for r in add[-6:]))
+        rows.extend(add)
+        rows.sort(key=lambda r: r[0])
+
+
 def widen_hours(h1, *finer, sec=3600):
     """Yahoo's hour candles sometimes miss an extreme its 5- and 15-minute candles of the same hour show
     (gold 22 Oct 16:00 UTC: the 1h low sat 1.55 above the 15m low), so 1h/4h disagreed with 5m-30m on
@@ -589,6 +616,7 @@ def one(key, sym, spot_sym, fixture, prev=None):
                 for r in rows:
                     r[1:] = [v + shift for v in r[1:]]
         adjusted = shift is not None
+    fill_gaps(m15, m5, 900)  # a 15m candle Yahoo left out is built from its three 5m candles
     widen_hours(m15, m5, sec=900)  # first the 15m candles from 5m, then the hours from both
     widen_hours(h1, m5, m15)
     last = (m1 or m15 or h1)[-1]
