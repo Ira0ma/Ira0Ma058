@@ -391,12 +391,18 @@ def check(key, price, h1, m15, as_of):
            for r in h1[-48:] + m15[-96:] if r[2] - r[3] > 8 * med]
     age = (time.time() - as_of) / 60 - 1  # minutes since the latest 1-minute candle closed (Yahoo's futures run late)
     msg = f"{key} check: today high {hi:.3f} low {lo:.3f} ({len(day)} H1 bars), last {price:.3f} (data ~{max(age, 0):.0f} min old)"
-    try:
-        feed = get_json(f"https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/{CHECK[key]}")
-        mids = sorted((p["bid"] + p["ask"]) / 2 for q in feed for p in q.get("spreadProfilePrices", [])[:1])
-        msg += f", swissquote {mids[len(mids) // 2]:.3f}"
-    except Exception as e:
-        msg += f", swissquote unavailable ({e})"
+    if key == "btc":  # Swissquote has no BTC quote: set it against Coinbase, the BTC page's price source
+        try:
+            msg += f", coinbase {float(get_json('https://api.coinbase.com/v2/prices/BTC-USD/spot')['data']['amount']):.3f}"
+        except Exception as e:
+            msg += f", coinbase unavailable ({e})"
+    else:
+        try:
+            feed = get_json(f"https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/{CHECK[key]}")
+            mids = sorted((p["bid"] + p["ask"]) / 2 for q in feed for p in q.get("spreadProfilePrices", [])[:1])
+            msg += f", swissquote {mids[len(mids) // 2]:.3f}"
+        except Exception as e:
+            msg += f", swissquote unavailable ({e})"
     if key == "usdjpy":  # the USD/JPY page's live price sources, side by side
         try:
             msg += f", coinbase {float(get_json(COINBASE)['data']['rates']['JPY']):.3f}"
