@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="ff23831703">
+<meta name="build" content="309e29b30d">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1487,6 +1487,7 @@ function cupHandle(){
         if(hHigh>hr+depth*0.1||pull<depth*0.1||pull>depth*0.33)continue;
         const line=Math.max(hr,hHigh);  // ブレイクの基準＝右の縁とハンドルの高い方
         if(P>line+depth*0.5)continue;  // もう大きく進んだあと
+        if(P<hLow)continue;  // 取っ手の安値を割った（売りは高値を超えた）＝否定
         found.push({dir,state:P>line?'breakout':'forming',line:dir*line,handleLow:dir*hLow,bottom:dir*B[bi].l,depth,
           target:dir*(line+depth),tl:bars[l].t,tb:bars[bi].t,tr:bars[r].t,len:cup.length,hlen:handle.length,
           id:'cup',tf:'m15',label:'15分足'+(dir>0?'カップウィズハンドル':'逆カップウィズハンドル'),neck:dir*line,stop:dir*hLow,
@@ -1563,6 +1564,8 @@ function detectDB(B,P,a,p){
       if(p.prior&&hiOf(B,Math.max(0,aa-p.sepMax),aa-1).v<neck)continue;
       let broke=false;for(let q=b+1;q<i;q++)if(B[q].c>neck){broke=true;break}
       if(broke||P>neck+height*0.5)continue;
+      if(loOf(B,b+1,i)<low-1e-9||P<low)continue;  // 底を割った（売りは天井を超えた）＝否定
+
       return {state:P>neck?'breakout':'forming',neck,stop:low,height,t0:B[aa].t};
     }
   }return null;
@@ -1584,6 +1587,7 @@ function detectIHS(B,P,a,p){
         const nk=q=>h2.v+sl*(q-h2.i);
         let broke=false;for(let q=rs+1;q<i;q++)if(B[q].c>nk(q)){broke=true;break}
         if(broke||P>nk(i)+height*0.5)continue;
+        if(loOf(B,rs+1,i)<B[rs].l-1e-9||P<B[rs].l)continue;  // 右肩の安値を割った（売りは高値を超えた）＝否定
         return {state:P>nk(i)?'breakout':'forming',neck:nk(i),stop:B[rs].l,height,t0:B[ls].t};
       }
     }
@@ -2182,16 +2186,17 @@ function drawChart(){
   // 左上のダウ理論の表示（「表示をリセット」ボタンが出ているときはその下）の場所も、高値・安値ラベルがよける
   const dowDy=(v.off||v.count||v.yOff||v.yZoom!==1)?30:0,dowTxt=dow.kind!=='none'?state.tf.toUpperCase()+' ダウ理論：'+DOW_NAME[dow.kind]:'';
   if(dowTxt){ctx.font='bold 12px -apple-system,sans-serif';swingBoxes.push({x:P.l+4,y:P.t+2+dowDy,w:ctx.measureText(dowTxt).width+12,h:20})}
-  // パターンの安値（売りは高値）＝損切りの基準：ダブルボトムはボトム、三尊・逆三尊は右肩、カップは取っ手。細い点線と名前・価格
+  // カップウィズハンドルの取っ手の一番下（逆カップは一番上）：細い点線と名前・価格
   const patLow=(x0,xe,pt,name)=>{
     if(pt.stop<min||pt.stop>max)return;
     const col=pt.dir>0?'66,213,156':'255,105,105',yy=Math.round(y(pt.stop))+.5;
     ctx.strokeStyle=`rgba(${col},.75)`;ctx.lineWidth=.9;ctx.setLineDash([2,3]);
     ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(xe,yy);ctx.stroke();ctx.setLineDash([]);
-    lowLabels.push({x0,yy,col,dir:pt.dir,txt:name+' '+fmt(pt.stop,IS_BTC?0:INSTR.dp)+'・損切り目安'});  // 名前は線を全部引いたあとに書く
+    lowLabels.push({x0,yy,col,dir:pt.dir,txt:name+' '+fmt(pt.stop,IS_BTC?0:INSTR.dp)});  // 名前は線を全部引いたあとに書く
   };
+  const pxt=v=>fmt(v,IS_BTC?0:INSTR.dp);
   const lowLabels=[];
-  // パターンの安値の名前：ほかのラベルと重なるなら線の反対側へ、それでも重なるなら右へずらす
+  // ネックラインと取っ手の名前・価格：ほかのラベルと重なるなら線の反対側へ、それでも重なるなら右へずらす
   const drawLowLabels=()=>lowLabels.forEach(L=>{
     ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';
     const tw=ctx.measureText(L.txt).width+8,x1=Math.min(Math.max(P.l+2,L.x0+4),W-P.r-tw-2);
@@ -2206,16 +2211,14 @@ function drawChart(){
     ctx.fillStyle=`rgba(${L.col},1)`;ctx.fillText(L.txt,lx+4,ly);
     swingBoxes.push({x:lx,y:ly-7,w:tw,h:14});
   });
-  // チャートパターン：表示中の時間足の形について、形の始まりから今までネックライン（点線）と名前。カップは底に印
+  // チャートパターン：表示中の時間足の形について、形の始まりから今までネックライン（点線）と名前・価格。カップは底に印。
+  // 形が否定された（買いの形なら底・右肩の安値を割った、売りの形なら高値を超えた）ものは検出されなくなり、線も消える
   chartPatterns().filter(p=>p.tf===state.tf&&p.id!=='cup').forEach(pt=>{
     const i0=source.findIndex(b=>b.t===pt.t0);if(i0<0||pt.neck<min||pt.neck>max)return;
     const col=pt.dir>0?'66,213,156':'255,105,105',yy=y(pt.neck),x0=x(i0-startIdx),xe=x(bars.length-1+blank);
     ctx.strokeStyle=`rgba(${col},.9)`;ctx.lineWidth=1.1;ctx.setLineDash([6,4]);
     ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(xe,yy);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle=`rgba(${col},1)`;ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline=pt.dir>0?'top':'bottom';
-    {const t=pt.label.replace(/^(15分足|1時間足)/,'')+(pt.state==='breakout'?' ブレイク':' 形成中'),tx=Math.max(P.l+2,x0)+4;
-     ctx.fillText(t,tx,yy+(pt.dir>0?4:-4));swingBoxes.push({x:tx,y:pt.dir>0?yy+4:yy-18,w:ctx.measureText(t).width,h:14})}
-    patLow(x0,xe,pt,pt.id==='db'?(pt.dir>0?'ボトム安値':'トップ高値'):(pt.dir>0?'右肩安値':'右肩高値'));
+    lowLabels.push({x0,yy,col,dir:pt.dir,txt:pt.label.replace(/^(15分足|1時間足)/,'')+' ネックライン '+pxt(pt.neck)+(pt.state==='breakout'?' ブレイク':' 形成中')});
   });
   // ダウ理論の判定に使った直近の山・谷に印（高値↑＝切り上げ、↓＝切り下げ）と、左上に判定
   ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='center';
@@ -2273,10 +2276,9 @@ function drawChart(){
       ctx.strokeStyle=`rgba(${col},.9)`;ctx.lineWidth=1.1;ctx.setLineDash([6,4]);
       ctx.beginPath();ctx.moveTo(x(xl),yy);ctx.lineTo(x(xe),yy);ctx.stroke();ctx.setLineDash([]);
       ctx.fillStyle=`rgba(${col},1)`;ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline=cup.dir>0?'top':'bottom';  // 名前はカップの内側に書く
-      {const t=(cup.dir>0?'カップ&ハンドル':'逆カップ&ハンドル')+(cup.state==='breakout'?' ブレイク':' 形成中'),tx=Math.max(P.l+2,x(xl))+4;
-       ctx.fillText(t,tx,yy+(cup.dir>0?4:-4));swingBoxes.push({x:tx,y:cup.dir>0?yy+4:yy-18,w:ctx.measureText(t).width,h:14})}
+      lowLabels.push({x0:x(xl),yy,col,dir:cup.dir,txt:(cup.dir>0?'カップ&ハンドル':'逆カップ&ハンドル')+' ネックライン '+pxt(cup.line)+(cup.state==='breakout'?' ブレイク':' 形成中')});
       if(xb!=null){const yb=y(cup.bottom);ctx.beginPath();ctx.arc(x(xb),yb+(cup.dir>0?6:-6),3,0,Math.PI*2);ctx.fill()}
-      {const xr=ix(cup.tr);patLow(x(xr!=null?xr:xl),x(xe),cup,cup.dir>0?'取っ手安値':'取っ手高値')}  // 取っ手（右の縁から先）の部分に
+      {const xr=ix(cup.tr);patLow(x(xr!=null?xr:xl),x(xe),cup,cup.dir>0?'取っ手の安値':'取っ手の高値')}  // 取っ手（右の縁から先）の部分に
     }
   }
   drawLowLabels();
