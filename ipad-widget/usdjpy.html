@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="c279490ce8">
+<meta name="build" content="15fe21cd67">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2174,7 +2174,7 @@ function drawChart(){
   const tls=state.showTrend?trendLines(source):[];
   tls.forEach(t=>{
     const g0=t.i1,g1=endIdx-1+blank+1;
-    ctx.strokeStyle=t.kind==='up'?TL_UP:TL_DOWN;ctx.lineWidth=t.touches>=4?2.4:1.8;
+    ctx.strokeStyle=t.kind==='up'?TL_UP:TL_DOWN;ctx.lineWidth=t.touches>=4?1.4:1;  // 接点4つ以上は少し太く
     ctx.beginPath();ctx.moveTo(x(g0-startIdx),y(t.p1));ctx.lineTo(x(g1-startIdx),y(t.p1+t.slope*(g1-g0)));ctx.stroke();
   });
   // チャートパターン：表示中の時間足の形について、形の始まりから今までネックライン（点線）と名前。カップは底に印
@@ -2190,6 +2190,9 @@ function drawChart(){
   const dow=dowTrend(source,DOW_K[state.tf]||4);
   ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='center';
   const swingBoxes=[];  // 高値・安値ラベルの場所（フィボの名前をよける）
+  // 左上のダウ理論の表示（「表示をリセット」ボタンが出ているときはその下）の場所も、高値・安値ラベルがよける
+  const dowDy=(v.off||v.count||v.yOff||v.yZoom!==1)?30:0,dowTxt=dow.kind!=='none'?state.tf.toUpperCase()+' ダウ理論：'+DOW_NAME[dow.kind]:'';
+  if(dowTxt){ctx.font='bold 12px -apple-system,sans-serif';swingBoxes.push({x:P.l+4,y:P.t+2+dowDy,w:ctx.measureText(dowTxt).width+12,h:20})}
   // 直近・前回の高値・安値の印と価格（「直近高値・安値」「前回高値・安値」ボタンで別々に消せる。ダウ理論の判定は表示したまま）
   [['highs',-1],['lows',1]].forEach(([key,sd])=>dow[key].forEach((pv,n)=>{
     if(!state.maOn[n?'swingN':'swingP'])return;
@@ -2208,8 +2211,8 @@ function drawChart(){
     // ほかの高値・安値ラベルと重なるなら、点から離れる向きにずらし、だめなら横へ
     const over=()=>swingBoxes.find(b=>top<b.y+b.h+2&&top+bh+2>b.y&&cx-tw/2<b.x+b.w+2&&cx+tw/2+2>b.x);
     for(let k=0,o;k<4&&(o=over());k++){
-      const t2=sd<0?o.y-bh-2:o.y+o.h+2;
-      if(t2>=P.t+1&&t2+bh<=H-P.b-1)top=t2;else cx=Math.max(P.l+tw/2+1,o.x-tw/2-3);
+      const t2=sd<0?o.y-bh-2:o.y+o.h+2,t3=sd<0?o.y+o.h+2:o.y-bh-2,inb=t=>t>=P.t+1&&t+bh<=H-P.b-1;
+      if(inb(t2))top=t2;else if(inb(t3))top=t3;else cx=Math.max(P.l+tw/2+1,o.x-tw/2-3);
     }
     swingBoxes.push({x:cx-tw/2,y:top,w:tw,h:bh});
     ctx.fillStyle='rgba(12,17,22,.82)';ctx.beginPath();ctx.roundRect?ctx.roundRect(cx-tw/2,top,tw,bh,4):ctx.rect(cx-tw/2,top,tw,bh);ctx.fill();
@@ -2218,11 +2221,11 @@ function drawChart(){
     ctx.font='bold 10.5px -apple-system,sans-serif';ctx.fillStyle='#e6edf3';ctx.fillText(price,cx,top+13);
   }));
   if(dow.kind!=='none'){
-    const txt=state.tf.toUpperCase()+' ダウ理論：'+DOW_NAME[dow.kind],c=dowCls(dow.kind);
+    const txt=dowTxt,c=dowCls(dow.kind);
     ctx.font='bold 12px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='top';
     const tw=ctx.measureText(txt).width;
     // 「表示をリセット」ボタン（左上）が出ているときは、その下に書いて重ならないようにする
-    const dy=(v.off||v.count||v.yOff||v.yZoom!==1)?30:0;
+    const dy=dowDy;
     ctx.fillStyle='rgba(13,18,23,.85)';ctx.fillRect(P.l+4,P.t+2+dy,tw+12,20);
     ctx.fillStyle=c==='up'?'#42d59c':c==='down'?'#ff6969':c==='warn'?'#ffb547':'#c9d2db';ctx.fillText(txt,P.l+10,P.t+6+dy);
   }
