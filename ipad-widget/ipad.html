@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#06070b">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="564d2392d2">
+<meta name="build" content="ad57d7e3fe">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -243,16 +243,36 @@ body {
 
 /* calendar */
 /* X feed (みんなのFX) */
-#xfeed { left: 667px; top: 604px; width: 517px; height: 202px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+#xfeed { left: 667px; top: 604px; width: 517px; height: 202px; padding: 12px 16px 12px; display: flex; flex-direction: column; gap: 7px; }
 .x-head { display: flex; align-items: center; gap: 10px; }
 .x-logo { width: 30px; height: 30px; border-radius: 50%; background: #000; display: grid; place-items: center; box-shadow: 0 0 0 1px rgba(255,255,255,.15); flex: none; }
 .x-head .who { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
 .x-head .who b { font-size: 14px; font-weight: 600; }
 .x-head .who span { font-size: 11.5px; color: var(--ink-3); }
 .x-open { margin-left: auto; font-size: 12px; font-weight: 600; color: #14100a; background: var(--gold); border-radius: 999px; padding: 5px 12px; text-decoration: none; white-space: nowrap; }
-.x-body { flex: 1; min-height: 0; overflow: hidden; border-radius: 10px; position: relative; }
+.x-body { flex: 0 1 auto; min-height: 0; max-height: 100%; overflow: hidden; border-radius: 10px; position: relative; }
 .x-body a.twitter-timeline { font-size: 12.5px; color: var(--ink-3); text-decoration: none; }
-.x-fallback { font-size: 12.5px; line-height: 1.7; color: var(--ink-2); padding: 6px 2px; }
+.x-fallback { font-size: 12px; line-height: 1.6; color: var(--ink-2); padding: 2px; }
+/* GMMA cross notices from the dashboards, in the X card's spare space */
+.x-gmma { flex: 1 0 auto; border-top: 1px solid var(--glass-line); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.x-gmma .gh { display: flex; align-items: center; gap: 7px; }
+.x-gmma .gh b { font-size: 13px; font-weight: 600; color: var(--ink); }
+.x-gmma .gh .gi { width: 18px; height: 10px; border-radius: 2px; background: linear-gradient(180deg, #5cc8ff 0 45%, transparent 45% 55%, #ff6b6b 55%); opacity: .9; flex: none; }
+.x-gmma .gh small { font-size: 11px; color: var(--ink-3); }
+.x-gmma .gh .gt { margin-left: auto; font-size: 11px; color: var(--ink-3); }
+/* on/off switch for the notices (saved on the device; off at first) */
+.gx-sw { font: inherit; font-size: 11px; font-weight: 700; min-width: 46px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--glass-line); background: rgba(13,18,23,.6); color: var(--ink-3); cursor: pointer; }
+.gx-sw[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: #14100a; }
+.x-gmma.off { flex: none; } .x-gmma.off .gl, .x-gmma.off .gt { display: none; } .x-gmma.off .gx-sw { margin-left: auto; }
+#xfeed.gx-off .x-body { flex: 1; }
+.x-gmma .gl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 6px; max-height: 88px; overflow-y: auto; }
+.x-gmma .none { grid-column: 1 / -1; font-size: 12px; color: var(--ink-3); padding: 4px 0; }
+.gx-chip { font: inherit; font-size: 11.5px; font-weight: 700; padding: 4px 8px; border-radius: 8px; background: rgba(13,18,23,.6); border: 1px solid; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+.gx-chip.up { color: #42d59c; border-color: rgba(66,213,156,.6); } .gx-chip.down { color: #ff6969; border-color: rgba(255,105,105,.6); }
+.gx-chip.new.up { animation: gxnewU 3.2s ease-in-out infinite; } .gx-chip.new.down { animation: gxnewD 3.2s ease-in-out infinite; }
+@keyframes gxnewU { 0%,100% { background: rgba(66,213,156,.04); } 50% { background: rgba(66,213,156,.2); } }
+@keyframes gxnewD { 0%,100% { background: rgba(255,105,105,.04); } 50% { background: rgba(255,105,105,.2); } }
+@media (prefers-reduced-motion: reduce) { .gx-chip.new { animation: none; } }
 #cal { left: 667px; top: 329px; width: 517px; height: 261px; padding: 14px 16px; display: grid; grid-template-columns: 1fr 1px 1fr; gap: 14px; }
 #cal .sep { background: var(--glass-line); }
 .month { min-width: 0; }
@@ -316,6 +336,11 @@ html:not(.flow) #flow { display: none; }
 .flow #markets { height: auto; grid-template-columns: 1fr; grid-template-rows: auto 1px auto 1px auto; }
 .flow #markets .sep { margin: 0 22px; }
 .flow #cal { height: auto; grid-template-columns: 1fr; grid-template-rows: auto 1px auto; }
+.flow #xfeed { height: auto; min-height: 202px; }  /* the narrow card grows for the X note and the GMMA notices */
+.flow #xfeed .x-body { flex: none; }
+.flow .x-gmma .gl { max-height: none; grid-template-columns: 1fr; }
+.flow .x-gmma .gh small { display: none; }
+.x-gmma .gh b, .x-gmma .gh .gt, .x-gmma .gh small { white-space: nowrap; }
 
 @media (prefers-reduced-motion: reduce) { .mkt .price { transition: none; } }
 </style>
@@ -460,8 +485,9 @@ html:not(.flow) #flow { display: none; }
     </div>
     <div class="x-body">
       <a class="twitter-timeline" data-theme="dark" data-chrome="noheader nofooter noborders transparent" data-height="140" data-dnt="true" data-lang="ja" href="https://twitter.com/Min_FX?ref_src=twsrc%5Etfw">@Min_FX のポストを読み込んでいます…</a>
-      <div class="x-fallback" hidden>この端末では X の投稿を表示できませんでした。X の埋め込みは、X にログインしていない端末やアプリの中では表示されないことがあります。<br>右上の「X で開く」から、@Min_FX の最新ポストを確認できます。</div>
+      <div class="x-fallback" hidden>この端末では X の投稿を表示できません。右上の「X で開く」から確認できます。</div>
     </div>
+    <div class="x-gmma" aria-live="polite"><div class="gh"><i class="gi"></i><b>GMMA クロス通知</b><small>GOLD・ドル円・BTC</small><span class="gt" id="xGmmaTime"></span><button type="button" class="gx-sw" id="gxSw" aria-pressed="false">オフ</button></div><div class="gl" id="xGmma"><span class="none">データ待ち…</span></div></div>
   </section>
 
   <!-- calendar -->
@@ -613,9 +639,9 @@ html:not(.flow) #flow { display: none; }
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=5b23fe7b95", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=40e4469bfd", title: "ドル円分析" },
-    btc: { src: "btc.html?v=afdc1b9c33", title: "BTC分析" }
+    gold: { src: "gold.html?v=17a7006efc", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=5a53cd9847", title: "ドル円分析" },
+    btc: { src: "btc.html?v=94f6c00fe8", title: "BTC分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -652,14 +678,65 @@ html:not(.flow) #flow { display: none; }
   var entryState = {};
   window.addEventListener("message", function (e) {
     var d = e.data;
-    if (!d || (d.type !== "dash-signal" && d.type !== "dash-chartfull") || !SHEETS[d.key] || !SHEETS[d.key].el) return;
+    if (!d || (d.type !== "dash-signal" && d.type !== "dash-chartfull" && d.type !== "dash-gmma") || !SHEETS[d.key] || !SHEETS[d.key].el) return;
     if (e.source !== SHEETS[d.key].el.querySelector("iframe").contentWindow) return;  // only our own dashboards
     // While a dashboard shows its chart full screen, its own "back" button sits where ours does: hide ours
     if (d.type === "dash-chartfull") { SHEETS[d.key].el.querySelector(".dash-close").hidden = !!d.on; return; }
+    if (d.type === "dash-gmma") { gmmaToasts(d); return; }
     var was = entryState[d.key] && entryState[d.key].entry;
     entryState[d.key] = d; paintEntries();
     if (d.entry && !was) chime(d.sig === "BUY");  // a new entry call: sound once
   });
+  /* GMMA cross notices: each dashboard running in the background reports the timeframes now in a cross
+     (e.g. "GOLD 5分足 GMMA ゴールデンクロス中"); they are listed in the X card's spare space, a cross that
+     started in the last 10 minutes glows, a failed or finished one drops out, and a tap opens that
+     dashboard on that timeframe. */
+  var gmmaNow = {}, gmmaFirst = {}, gmmaOn = false;
+  try { gmmaOn = localStorage.getItem("desk_gmma") === "1"; } catch (e) {}
+  function setGmmaOn(on) {
+    gmmaOn = on; try { localStorage.setItem("desk_gmma", on ? "1" : "0"); } catch (e) {}
+    var sw = document.getElementById("gxSw"), box = document.querySelector(".x-gmma");
+    if (sw) { sw.textContent = on ? "オン" : "オフ"; sw.setAttribute("aria-pressed", String(on)); sw.title = on ? "タップで通知をオフ" : "タップで通知をオン"; }
+    if (box) box.classList.toggle("off", !on);
+    var xf = document.getElementById("xfeed"); if (xf) xf.classList.toggle("gx-off", !on);
+    paintGmma();
+  }
+  document.getElementById("gxSw").addEventListener("click", function () { setGmmaOn(!gmmaOn); });
+  function gmmaToasts(d) {
+    var now = Date.now(), had = gmmaNow[d.key] ? gmmaNow[d.key].list : null;
+    (d.list || []).forEach(function (o) {
+      var id = d.key + ":" + o.tf + ":" + o.kind;
+      if (!gmmaFirst[id]) gmmaFirst[id] = had ? now : now - 1;  // crosses already running when the desk opened count as new once
+    });
+    gmmaNow[d.key] = { name: d.name, list: d.list || [] };
+    paintGmma();
+  }
+  function paintGmma() {
+    var box = document.getElementById("xGmma"); if (!box || !gmmaOn) return;
+    var now = Date.now(), items = [];
+    ["gold", "usdjpy", "btc"].forEach(function (k) {
+      var g = gmmaNow[k]; if (!g) return;
+      g.list.forEach(function (o) { items.push({ key: k, name: g.name, o: o, t: gmmaFirst[k + ":" + o.tf + ":" + o.kind] || now }); });
+    });
+    var live = {}; items.forEach(function (it) { live[it.key + ":" + it.o.tf + ":" + it.o.kind] = 1; });
+    Object.keys(gmmaFirst).forEach(function (id) { if (!live[id]) delete gmmaFirst[id]; });  // a cross that failed or ended starts fresh next time
+    items.sort(function (a, b) { return b.t - a.t; });
+    box.innerHTML = "";
+    if (!items.length) { box.innerHTML = '<span class="none">' + (Object.keys(gmmaNow).length ? "いまクロス中の時間足はありません" : "データ待ち…") + "</span>"; }
+    items.forEach(function (it) {
+      var b = document.createElement("button"); b.type = "button";
+      b.className = "gx-chip " + (it.o.kind === "golden" ? "up" : "down") + (now - it.t < 10 * 60000 ? " new" : "");
+      b.textContent = it.name + " " + it.o.tfName + " GMMA " + (it.o.kind === "golden" ? "ゴールデンクロス" : "デッドクロス") + "中";
+      b.addEventListener("click", function () {
+        openDash(it.key, b);
+        try { SHEETS[it.key].el.querySelector("iframe").contentWindow.postMessage({ type: "desk-settf", tf: it.o.tf }, "*"); } catch (err) {}
+      });
+      box.appendChild(b);
+    });
+    var tm = document.getElementById("xGmmaTime"); if (tm) { var d = new Date(); tm.textContent = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") + " 時点"; }
+  }
+  setInterval(paintGmma, 60000);  // the glow of a new cross fades after 10 minutes
+  setGmmaOn(gmmaOn);
   function paintEntries() {
     if (!markets) return;
     markets.forEach(function (mk) {
@@ -1971,7 +2048,8 @@ html:not(.flow) #flow { display: none; }
   if (document.readyState === "complete") loadX(); else window.addEventListener("load", loadX);
   // start both dashboards in the background so their entry calls reach the desk
   // BTC only while a market panel shows it (three dashboards at once weigh on an iPad)
-  var preload = function () { setTimeout(function () { ensureSheet("gold"); ensureSheet("usdjpy"); if (picks.indexOf("btc") >= 0) ensureSheet("btc"); }, 1500); };
+  // all three run in the background so their entry calls and GMMA crosses reach the desk
+  var preload = function () { setTimeout(function () { ensureSheet("gold"); ensureSheet("usdjpy"); ensureSheet("btc"); }, 1500); };
   if (document.readyState === "complete") preload(); else window.addEventListener("load", preload);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); loadCalendar(); loadMarket(); loadReport(); eqHistory(); } });
   setInterval(loadWeather, 30 * 60000);
