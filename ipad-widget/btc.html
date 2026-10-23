@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="3bb37c865f">
+<meta name="build" content="08cda2295a">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2011,6 +2011,25 @@ function drawChart(){
     ctx.strokeStyle=`rgba(${col},${l.touches>=3?.95:.7})`;ctx.lineWidth=l.touches>=3?2:1.2;
     ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();
   });
+  // フィボナッチ（ローソク足より先に描いて、足や他の線の下に敷く）：波の終点Bから右端まで。38.2〜61.8%は薄い帯、
+  // 各水準は細い点線、止まった線だけ実線。0%・100%は短い目印だけ。強い水平線と重なる水準は線を省き名前だけ残す
+  const fib=state.maOn.fib?fibonacci(source,DOW_K[state.tf]||4):null;
+  if(fib){
+    const xs=x(Math.max(fib.iB-startIdx,0)),xe=x(bars.length-1+blank),lvp=r=>fib.levels.find(l=>l.r===r).p;
+    const z1=y(lvp(.382)),z2=y(lvp(.618));
+    ctx.fillStyle='rgba(232,195,90,.07)';ctx.fillRect(xs,Math.min(z1,z2),xe-xs,Math.abs(z2-z1));
+    if(fib.iA>=startIdx){ctx.setLineDash([2,4]);ctx.strokeStyle='rgba(232,195,90,.35)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(x(fib.iA-startIdx),y(fib.pA));ctx.lineTo(x(fib.iB-startIdx),y(fib.pB));ctx.stroke()}
+    fib.levels.forEach(lv=>{
+      if(lv.p<min||lv.p>max)return;
+      const yy=Math.round(y(lv.p))+.5,on=lv.r===fib.hit;
+      if(lv.r===0||lv.r===1){ctx.setLineDash([]);ctx.strokeStyle='rgba(232,195,90,.6)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(xs,yy);ctx.lineTo(xs+14,yy);ctx.stroke();return}
+      if(!on&&levels.some(l=>Math.abs(y(l.price)-yy)<4))return;  // 水平線と重なる
+      ctx.setLineDash(on?[]:[3,5]);ctx.strokeStyle=on?'rgba(255,214,102,.85)':`rgba(232,195,90,${lv.r===.5?.5:.32})`;ctx.lineWidth=on?1.6:1;
+      ctx.beginPath();ctx.moveTo(xs,yy);ctx.lineTo(xe,yy);ctx.stroke();
+    });
+    ctx.setLineDash([]);
+  }
   const cw=Math.max(1,step*.62);
   bars.forEach((b,i)=>{
     const up=b.c>=b.o,col=up?'#42d59c':'#ff6969',xx=x(i);
@@ -2051,30 +2070,6 @@ function drawChart(){
     ctx.strokeStyle=t.kind==='up'?TL_UP:TL_DOWN;ctx.lineWidth=t.touches>=4?2.4:1.8;
     ctx.beginPath();ctx.moveTo(x(g0-startIdx),y(t.p1));ctx.lineTo(x(g1-startIdx),y(t.p1+t.slope*(g1-g0)));ctx.stroke();
   });
-  // フィボナッチ：波の始点（0%＝波の終点B、100%＝始点A）から右端まで各水準を引き、押し目・戻りが止まった線は太く
-  const fib=state.maOn.fib?fibonacci(source,DOW_K[state.tf]||4):null;
-  if(fib){
-    const xa=x(Math.max(fib.iA-startIdx,0)),xe=x(bars.length-1+blank);
-    ctx.setLineDash([3,4]);ctx.strokeStyle='rgba(232,195,90,.55)';ctx.lineWidth=1;
-    if(fib.iA>=startIdx){ctx.beginPath();ctx.moveTo(x(fib.iA-startIdx),y(fib.pA));ctx.lineTo(x(fib.iB-startIdx),y(fib.pB));ctx.stroke()}
-    ctx.setLineDash([]);
-    const shown=fib.levels.filter(lv=>lv.p>=min&&lv.p<=max);
-    shown.forEach(lv=>{
-      const on=lv.r===fib.hit,mid=lv.r===.5,yy=Math.round(y(lv.p))+.5;
-      ctx.strokeStyle=on?'rgba(255,214,102,.98)':`rgba(232,195,90,${mid?.75:.45})`;ctx.lineWidth=on?2.2:mid?1.4:1;
-      if(lv.r===0||lv.r===1)ctx.setLineDash([2,3]);
-      ctx.beginPath();ctx.moveTo(xa,yy);ctx.lineTo(xe,yy);ctx.stroke();ctx.setLineDash([]);
-    });
-    // 名前は右端（価格の目盛りの手前）に、重なる分は省いて書く（止まった線と半値は必ず書く）
-    ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='right';ctx.textBaseline='middle';
-    const must=lv=>lv.r===fib.hit||lv.r===.5,used=[];
-    [...shown.filter(must),...shown.filter(lv=>!must(lv))].forEach(lv=>{
-      const yy=y(lv.p);if(used.some(u=>Math.abs(u-yy)<12))return;used.push(yy);
-      const on=lv.r===fib.hit,txt=FIB_NAME(lv.r)+(lv.r===.5?' 半値':'')+(on?(fib.held?' 反発':' 到達'):''),tw=ctx.measureText(txt).width;
-      ctx.fillStyle='rgba(13,18,23,.8)';ctx.fillRect(W-P.r-tw-10,yy-7,tw+8,14);
-      ctx.fillStyle=on?'#ffd666':'rgba(232,195,90,.95)';ctx.fillText(txt,W-P.r-6,yy);
-    });
-  }
   // チャートパターン：表示中の時間足の形について、形の始まりから今までネックライン（点線）と名前。カップは底に印
   chartPatterns().filter(p=>p.tf===state.tf&&p.id!=='cup').forEach(pt=>{
     const i0=source.findIndex(b=>b.t===pt.t0);if(i0<0||pt.neck<min||pt.neck>max)return;
@@ -2123,6 +2118,18 @@ function drawChart(){
       ctx.fillText((cup.dir>0?'カップ&ハンドル':'逆カップ&ハンドル')+(cup.state==='breakout'?' ブレイク':' 形成中'),Math.max(P.l+2,x(xl))+4,yy+(cup.dir>0?4:-4));
       if(xb!=null){const yb=y(cup.bottom);ctx.beginPath();ctx.arc(x(xb),yb+(cup.dir>0?6:-6),3,0,Math.PI*2);ctx.fill()}
     }
+  }
+  // フィボの名前：線の始まり（波の終点）の上に小さく。止まった線・半値・38.2%・61.8%だけ、重なるものは省く
+  if(fib){
+    const xs=Math.max(x(Math.max(fib.iB-startIdx,0)),P.l+2)+16,used=[];
+    ctx.font='bold 9.5px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='bottom';
+    fib.levels.filter(lv=>[fib.hit,.5,.382,.618].includes(lv.r)&&lv.p>=min&&lv.p<=max)
+      .sort((p1,p2)=>(p2.r===fib.hit)-(p1.r===fib.hit)||(p2.r===.5)-(p1.r===.5)).forEach(lv=>{  // 止まった線、半値、その他の順に場所を取る
+      const yy=y(lv.p);if(used.some(u=>Math.abs(u-yy)<14))return;used.push(yy);
+      const on=lv.r===fib.hit,txt=FIB_NAME(lv.r)+(lv.r===.5?' 半値':'')+(on?(fib.held?' 反発':' 到達'):''),tw=ctx.measureText(txt).width;
+      ctx.fillStyle='rgba(13,18,23,.72)';ctx.fillRect(xs-2,yy-12,tw+4,11);
+      ctx.fillStyle=on?'#ffd666':'rgba(232,195,90,.9)';ctx.fillText(txt,xs,yy-1);
+    });
   }
   ctx.textBaseline='middle';
   ctx.restore();
