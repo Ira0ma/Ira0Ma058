@@ -530,15 +530,27 @@ def widen_hours(h1, *finer, sec=3600):
     (gold 22 Oct 16:00 UTC: the 1h low sat 1.55 above the 15m low), so 1h/4h disagreed with 5m-30m on
     the charts. Each hour is widened to the highs and lows of its finer candles. The same goes for 15m
     candles against 5m (gold 23 Oct: an hour widened by a 5m low left the 15m/30m low 1.15 above it)."""
-    ext = {}
+    ext, full = {}, set()
     for rows in finer:
+        if len(rows) > 1:
+            tail = rows[-50:]
+            step = min((b[0] - a[0] for a, b in zip(tail, tail[1:]) if b[0] > a[0]), default=sec)
+            cnt = {}
+            for r in rows:
+                k = r[0] - r[0] % sec
+                cnt[k] = cnt.get(k, 0) + 1
+            full |= {k for k, c in cnt.items() if c >= sec // step}  # every finer candle of the period is there
         for r in rows:
             k = r[0] - r[0] % sec
             e = ext.get(k)
             ext[k] = (max(r[2], e[0]), min(r[3], e[1])) if e else (r[2], r[3])
     for r in h1:
         e = ext.get(r[0])
-        if e:
+        if e and r[0] in full:
+            # a complete set of finer candles is the more detailed record: the period takes exactly their
+            # extremes (gold 23 Oct 14:00 UTC: the 1h low sat 1.35 below every 5m and 15m low of that hour)
+            r[2], r[3] = e
+        elif e:
             r[2], r[3] = max(r[2], e[0]), min(r[3], e[1])
 
 
