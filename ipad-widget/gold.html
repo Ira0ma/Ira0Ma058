@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="df3114b77d">
+<meta name="build" content="10ad9eb700">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1306,8 +1306,20 @@ function renderTfGrid(){
 
 // H1の強い水平線：H1の山・谷（前後3本より高い／低い足）を集め、ATRの0.35倍以内に重なるものを1本にまとめる。
 // 2回以上反応した価格帯だけを残し、現在値より上を抵抗、下を支持として強い順に最大3本ずつ選ぶ。
-function h1Levels(){
-  const bars=state.h1;if(bars.length<30)return [];
+function h1Levels(){return srLevels(state.h1)}
+// 表示中の時間足の水平線：H1の線に、その時間足で3回以上止まった強い線を足す（H1の線と近いものはまとめて強い方の回数にする）
+function chartLevels(){
+  const lv=h1Levels().map(l=>({...l,tf:'h1'}));
+  if(state.tf==='h1')return lv;
+  const bars=state[state.tf]||[],tol=Math.max(INSTR.tolMin,(atr(bars,14)||1)*.35);
+  srLevels(bars).filter(l=>l.touches>=3).forEach(l=>{
+    const m=lv.find(h=>Math.abs(h.price-l.price)<=tol);
+    if(m)m.touches=Math.max(m.touches,l.touches);else lv.push({...l,tf:state.tf});
+  });
+  return lv;
+}
+function srLevels(bars){
+  if(!bars||bars.length<30)return [];
   const k=3,a=atr(bars,14)||1,tol=Math.max(INSTR.tolMin,a*.35),n=bars.length,piv=[];
   for(let i=k;i<n-k;i++){
     let isH=true,isL=true;
@@ -2000,8 +2012,8 @@ function drawChart(){
   const P={l:8,r:66,t:12,b:24},step=(W-P.l-P.r)/(bars.length+blank);
   const x=i=>P.l+step*(i+.5),y=v=>P.t+(max-v)*(H-P.t-P.b)/(max-min);
 
-  // H1の強い水平線と、右の目盛りに出す価格タグの位置（現在値タグと重ならないよう上下にずらし、タグ同士も16pxあける）
-  const levels=state.showLevels?h1Levels():[];
+  // 強い水平線（H1と表示中の時間足）と、右の目盛りに出す価格タグの位置（現在値タグと重ならないよう上下にずらし、タグ同士も16pxあける）
+  const levels=state.showLevels?chartLevels():[];
   const spotY=state.spot&&state.spot.price>=min&&state.spot.price<=max?y(state.spot.price):null;
   const tags=levels.filter(l=>l.price>=min&&l.price<=max).map(l=>({l,yy:y(l.price)}));
   if(spotY==null){
@@ -2024,8 +2036,8 @@ function drawChart(){
   for(let i=every-1;i<bars.length;i+=every)ctx.fillText(barLabel(bars[i].t,isH1),x(i),H-P.b+13);
 
   ctx.save();ctx.beginPath();ctx.rect(P.l,P.t,W-P.l-P.r,H-P.t-P.b);ctx.clip();
-  // H1の強い水平線（H1・M15どちらの表示にも引く）
-  // 強い線（3回以上止まった）は点滅用のキャンバスに引く
+  // 水平線：H1の線はどの時間足にも引き、表示中の時間足の強い線も足す
+  // 強い線（どの時間足でも3回以上止まった）は点滅用のキャンバスに引く
   const bl=sizeCanvas($('chartBlink')).ctx;bl.clearRect(0,0,W,H);
   levels.forEach(l=>{
     if(l.price<min||l.price>max)return;
@@ -2187,7 +2199,7 @@ function drawChart(){
     (state.maOn.st&&stl[hi??bars.length-1]!=null?`<span class="legend"><i style="background:${std[hi??bars.length-1]>0?'#42d59c':'#ff6969'}"></i>スーパートレンド ${std[hi??bars.length-1]>0?'上昇':'下降'} <b>${fmt(stl[hi??bars.length-1])}</b></span>`:'')+
     emas.map(m=>{const ev=m.vals[hi??bars.length-1];return `<span class="legend"><i style="background:${m.color}"></i>${m.len}EMA <b>${ev==null?'--':fmt(ev)}</b></span>`}).join('')+
     tls.map(t=>`<span class="legend"><i style="background:${t.kind==='up'?TL_UP:TL_DOWN}"></i>${t.kind==='up'?'上昇':'下降'}トレンドライン <b>${fmt(t.p1+t.slope*(endIdx-1-t.i1))}</b>（接点${t.touches}）</span>`).join('')+
-    tags.map(({l})=>`<span class="legend"><i style="background:${l.kind==='r'?'#ff6969':'#42d59c'}"></i>${l.kind==='r'?'抵抗線':'支持線'} <b>${fmt(l.price)}</b></span>`).join('')+
+    tags.map(({l})=>`<span class="legend"><i style="background:${l.kind==='r'?'#ff6969':'#42d59c'}"></i>${l.kind==='r'?'抵抗線':'支持線'}${l.tf!=='h1'?'（'+l.tf.toUpperCase()+'）':''}${l.touches>=3?'★':''} <b>${fmt(l.price)}</b></span>`).join('')+
     (fib&&fib.prov?`<span class="legend"><i style="background:${FIB_COLOR}"></i>暫定フィボナッチ（${fib.dir>0?'上昇':'下降'}中・次の${fib.dir>0?'押し目':'戻り'}の目安） 38.2% <b>${fmt(fib.levels.find(l=>l.r===.382).p)}</b>・半値 <b>${fmt(fib.levels.find(l=>l.r===.5).p)}</b>・61.8% <b>${fmt(fib.levels.find(l=>l.r===.618).p)}</b></span>`:'')+
     (fib&&!fib.prov?`<span class="legend"><i style="background:${FIB_COLOR}"></i>フィボナッチ（直近の${fib.dir>0?'上昇':'下降'}の${fib.dir>0?'押し':'戻り'}） 今 <b>${Math.round(fib.cur*100)}%</b>（最深 ${Math.round(fib.deep*100)}%${fib.half?'・半値戻し':''}）${fib.hit!=null?`｜${FIB_NAME(fib.hit)}（${fmt(fib.levels.find(l=>l.r===fib.hit).p)}）で${fib.held?'反発':'到達'}`:''}</span>`:'')+
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
