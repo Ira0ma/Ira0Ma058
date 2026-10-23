@@ -230,26 +230,30 @@ body {
 
 /* calendar */
 /* X feed (みんなのFX) */
-#xfeed { left: 667px; top: 604px; width: 517px; height: 202px; padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+#xfeed { left: 667px; top: 604px; width: 517px; height: 202px; padding: 12px 16px 12px; display: flex; flex-direction: column; gap: 7px; }
 .x-head { display: flex; align-items: center; gap: 10px; }
 .x-logo { width: 30px; height: 30px; border-radius: 50%; background: #000; display: grid; place-items: center; box-shadow: 0 0 0 1px rgba(255,255,255,.15); flex: none; }
 .x-head .who { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
 .x-head .who b { font-size: 14px; font-weight: 600; }
 .x-head .who span { font-size: 11.5px; color: var(--ink-3); }
 .x-open { margin-left: auto; font-size: 12px; font-weight: 600; color: #14100a; background: var(--gold); border-radius: 999px; padding: 5px 12px; text-decoration: none; white-space: nowrap; }
-.x-body { flex: 1; min-height: 0; overflow: hidden; border-radius: 10px; position: relative; }
+.x-body { flex: 0 1 auto; min-height: 0; max-height: 100%; overflow: hidden; border-radius: 10px; position: relative; }
 .x-body a.twitter-timeline { font-size: 12.5px; color: var(--ink-3); text-decoration: none; }
 .x-fallback { font-size: 12px; line-height: 1.6; color: var(--ink-2); padding: 2px; }
 /* GMMA cross notices from the dashboards, in the X card's spare space */
-.x-gmma { flex: none; border-top: 1px solid var(--glass-line); padding-top: 7px; display: flex; flex-direction: column; gap: 5px; }
-.x-gmma .gh { font-size: 11px; color: var(--ink-3); display: flex; justify-content: space-between; }
-.x-gmma .gl { display: flex; flex-wrap: wrap; gap: 4px 5px; max-height: 76px; overflow-y: auto; }
-.x-gmma .none { font-size: 12px; color: var(--ink-3); }
-.gx-chip { font: inherit; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: rgba(13,18,23,.6); border: 1px solid; cursor: pointer; }
+.x-gmma { flex: 1 0 auto; border-top: 1px solid var(--glass-line); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.x-gmma .gh { display: flex; align-items: center; gap: 7px; }
+.x-gmma .gh b { font-size: 13px; font-weight: 600; color: var(--ink); }
+.x-gmma .gh .gi { width: 18px; height: 10px; border-radius: 2px; background: linear-gradient(180deg, #5cc8ff 0 45%, transparent 45% 55%, #ff6b6b 55%); opacity: .9; flex: none; }
+.x-gmma .gh small { font-size: 11px; color: var(--ink-3); }
+.x-gmma .gh .gt { margin-left: auto; font-size: 11px; color: var(--ink-3); }
+.x-gmma .gl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 6px; max-height: 88px; overflow-y: auto; }
+.x-gmma .none { grid-column: 1 / -1; font-size: 12px; color: var(--ink-3); padding: 4px 0; }
+.gx-chip { font: inherit; font-size: 11.5px; font-weight: 700; padding: 4px 8px; border-radius: 8px; background: rgba(13,18,23,.6); border: 1px solid; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; }
 .gx-chip.up { color: #42d59c; border-color: rgba(66,213,156,.6); } .gx-chip.down { color: #ff6969; border-color: rgba(255,105,105,.6); }
 .gx-chip.new.up { animation: gxnewU 3.2s ease-in-out infinite; } .gx-chip.new.down { animation: gxnewD 3.2s ease-in-out infinite; }
-@keyframes gxnewU { 0%,100% { box-shadow: 0 0 0 0 rgba(66,213,156,0); } 50% { box-shadow: 0 0 9px 1px rgba(66,213,156,.45); } }
-@keyframes gxnewD { 0%,100% { box-shadow: 0 0 0 0 rgba(255,105,105,0); } 50% { box-shadow: 0 0 9px 1px rgba(255,105,105,.45); } }
+@keyframes gxnewU { 0%,100% { background: rgba(66,213,156,.04); } 50% { background: rgba(66,213,156,.2); } }
+@keyframes gxnewD { 0%,100% { background: rgba(255,105,105,.04); } 50% { background: rgba(255,105,105,.2); } }
 @media (prefers-reduced-motion: reduce) { .gx-chip.new { animation: none; } }
 #cal { left: 667px; top: 329px; width: 517px; height: 261px; padding: 14px 16px; display: grid; grid-template-columns: 1fr 1px 1fr; gap: 14px; }
 #cal .sep { background: var(--glass-line); }
@@ -316,7 +320,9 @@ html:not(.flow) #flow { display: none; }
 .flow #cal { height: auto; grid-template-columns: 1fr; grid-template-rows: auto 1px auto; }
 .flow #xfeed { height: auto; min-height: 202px; }  /* the narrow card grows for the X note and the GMMA notices */
 .flow #xfeed .x-body { flex: none; }
-.flow .x-gmma .gl { max-height: none; }
+.flow .x-gmma .gl { max-height: none; grid-template-columns: 1fr; }
+.flow .x-gmma .gh small { display: none; }
+.x-gmma .gh b, .x-gmma .gh .gt, .x-gmma .gh small { white-space: nowrap; }
 
 @media (prefers-reduced-motion: reduce) { .mkt .price { transition: none; } }
 </style>
@@ -462,7 +468,7 @@ html:not(.flow) #flow { display: none; }
       <a class="twitter-timeline" data-theme="dark" data-chrome="noheader nofooter noborders transparent" data-height="140" data-dnt="true" data-lang="ja" href="https://twitter.com/Min_FX?ref_src=twsrc%5Etfw">@Min_FX のポストを読み込んでいます…</a>
       <div class="x-fallback" hidden>この端末では X の投稿を表示できません。右上の「X で開く」から確認できます。</div>
     </div>
-    <div class="x-gmma" aria-live="polite"><div class="gh"><span>GMMA クロス通知（GOLD・ドル円・BTC）</span><span id="xGmmaTime"></span></div><div class="gl" id="xGmma"><span class="none">データ待ち…</span></div></div>
+    <div class="x-gmma" aria-live="polite"><div class="gh"><i class="gi"></i><b>GMMA クロス通知</b><small>GOLD・ドル円・BTC</small><span class="gt" id="xGmmaTime"></span></div><div class="gl" id="xGmma"><span class="none">データ待ち…</span></div></div>
   </section>
 
   <!-- calendar -->
