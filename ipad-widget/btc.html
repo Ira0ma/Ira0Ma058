@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="18b21a7258">
+<meta name="build" content="f1ac5b5d31">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -221,6 +221,12 @@ canvas.dragging{cursor:grabbing}
 @media (prefers-reduced-motion:reduce){#chartBlink{animation:none}}
 .chartreset{position:absolute;left:10px;top:10px;z-index:1;font-size:11px;font-weight:800;color:#101114;background:var(--gold);border-radius:999px;padding:5px 11px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .charthint{font-size:10px;color:var(--muted);margin-top:4px}
+.lvlist{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:6px;font-size:11px;color:var(--muted)}
+.lvlist[hidden]{display:none}
+.lvchip{display:inline-flex;align-items:center;gap:4px;background:#121820;color:#d5dde5;border:1px solid var(--c);border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
+.lvchip i{width:10px;height:2px;border-radius:1px;background:var(--c)}
+.lvchip.off{border-color:#34404c;color:#6f7c88;text-decoration:line-through}.lvchip.off i{opacity:.35}
+.lvchip.all{border-color:rgba(232,195,90,.7);color:var(--gold2);background:#16130b}
 .chartinfo{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted);margin-top:8px;min-height:16px}
 .chartinfo b{color:var(--text);font-weight:700}
 .levelinfo{margin-top:4px}
@@ -419,6 +425,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <div class="tfcap">時間足｜下段＝ダウ理論のトレンドとST（スーパートレンド）の向き</div>
     <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
     <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button></div>
+    <div id="lvList" class="lvlist" role="group" aria-label="水平線を1本ずつ消す・戻す" hidden></div>
     <div class="chartwrap"><canvas id="chart"></canvas><canvas id="chartBlink" aria-hidden="true"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
     <canvas id="rsi" aria-label="RSI(14)"></canvas>
     <div id="chartInfo" class="chartinfo">--</div>
@@ -1308,6 +1315,15 @@ function renderTfGrid(){
 // H1の強い水平線：H1の山・谷（前後3本より高い／低い足）を集め、ATRの0.35倍以内に重なるものを1本にまとめる。
 // 2回以上反応した価格帯だけを残し、現在値より上を抵抗、下を支持として強い順に最大3本ずつ選ぶ。
 function h1Levels(){return srLevels(state.h1)}
+// 1本ずつ消した水平線（価格で覚える。足の更新で線の価格が少し動いても同じ線とみなす）
+let hiddenLv=[];try{hiddenLv=JSON.parse(lsGet(LSP+'hidden_lv','[]'))||[]}catch{}
+const LV_TOL=INSTR.tolMin*2;
+const lvHidden=l=>hiddenLv.some(p=>Math.abs(p-l.price)<=LV_TOL);
+function toggleLv(price){
+  const i=hiddenLv.findIndex(p=>Math.abs(p-price)<=LV_TOL);
+  if(i>=0)hiddenLv.splice(i,1);else hiddenLv.push(+price);
+  lsSet(LSP+'hidden_lv',JSON.stringify(hiddenLv));drawChart();
+}
 // 表示中の時間足の水平線：H1の線に、その時間足で3回以上止まった強い線を足す（H1の線と近いものはまとめて強い方の回数にする）
 function chartLevels(){
   const lv=h1Levels().map(l=>({...l,tf:'h1'}));
@@ -2008,7 +2024,7 @@ function drawChart(){
   if(!bars.length||!W){
     ctx.fillStyle='#93a0ad';ctx.font='14px sans-serif';ctx.fillText('チャートデータ接続中...',20,34);
     {const b=sizeCanvas($('chartBlink'));b.ctx.clearRect(0,0,b.W,b.H)}
-    $('chartInfo').textContent='--';state.chartGeo=null;return;
+    $('chartInfo').textContent='--';$('lvList').hidden=true;state.chartGeo=null;return;
   }
   const len=smaLen(),sm=smaSeries(source,len).slice(startIdx,endIdx);
   const vals=bars.flatMap((b,i)=>sm[i]==null?[b.h,b.l]:[b.h,b.l,sm[i]]);
@@ -2019,7 +2035,7 @@ function drawChart(){
   const x=i=>P.l+step*(i+.5),y=v=>P.t+(max-v)*(H-P.t-P.b)/(max-min);
 
   // 強い水平線（H1と表示中の時間足）と、右の目盛りに出す価格タグの位置（現在値タグと重ならないよう上下にずらし、タグ同士も16pxあける）
-  const levels=state.showLevels?chartLevels():[];
+  const allLv=state.showLevels?chartLevels():[],levels=allLv.filter(l=>!lvHidden(l));
   const spotY=state.spot&&state.spot.price>=min&&state.spot.price<=max?y(state.spot.price):null;
   const tags=levels.filter(l=>l.price>=min&&l.price<=max).map(l=>({l,yy:y(l.price)}));
   if(spotY==null){
@@ -2203,6 +2219,12 @@ function drawChart(){
     ctx.strokeStyle='rgba(245,215,126,.45)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x(hi),P.t);ctx.lineTo(x(hi),H-P.b);ctx.stroke();
   }
   const b=bars[hi??bars.length-1],sv=sm[hi??bars.length-1];
+  // 水平線を1本ずつ消す・戻すボタン（表示範囲の線、上から価格順）
+  const inView=allLv.filter(l=>l.price>=min&&l.price<=max).sort((a,b)=>b.price-a.price);
+  $('lvList').hidden=!inView.length;
+  $('lvList').innerHTML=inView.length?'<span>水平線</span>'+inView.map(l=>{const off=lvHidden(l);
+    return `<button type="button" class="lvchip${off?' off':''}" data-lv="${l.price}" aria-pressed="${!off}" style="--c:${l.kind==='r'?'#ff6969':'#42d59c'}" title="${off?'タップで戻す':'タップで消す'}"><i></i>${fmt(l.price)}${l.touches>=3?'★':''}${l.tf!=='h1'?' '+l.tf.toUpperCase():''}</button>`}).join('')+
+    (inView.some(lvHidden)?'<button type="button" class="lvchip all" data-lv="all" style="--c:rgba(232,195,90,.7)">すべて戻す</button>':''):'';
   $('chartInfo').innerHTML=`<span>${hi==null?'最新足':'選択足'} <b>${esc(barLabel(b.t,isH1))}</b></span>`+
     `<span>始 <b>${fmt(b.o)}</b></span><span>高 <b>${fmt(b.h)}</b></span><span>安 <b>${fmt(b.l)}</b></span><span>終 <b class="${b.c>=b.o?'up':'down'}">${fmt(b.c)}</b></span>`+
     (state.maOn.sma?`<span class="legend"><i style="background:${SMA_COLOR}"></i>${len}SMA <b>${sv==null?'--':fmt(sv)}</b></span>`:'')+
@@ -2533,6 +2555,7 @@ $('maToggles').addEventListener('click',e=>{
   const k=btn.dataset.ma;state.maOn[k]=!state.maOn[k];lsSet(LSP+'ma',JSON.stringify(state.maOn));renderMaToggles();drawChart();
 });
 $('tlBtn').onclick=()=>{state.showTrend=!state.showTrend;$('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);savePrefs();drawChart()};
+$('lvList').onclick=e=>{const b=e.target.closest('.lvchip');if(!b)return;if(b.dataset.lv==='all'){hiddenLv=[];lsSet(LSP+'hidden_lv','[]');drawChart()}else toggleLv(+b.dataset.lv)};
 $('lvBtn').onclick=()=>{state.showLevels=!state.showLevels;$('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);savePrefs();drawChart()};
 document.querySelectorAll('#dirSeg .seg').forEach(b=>b.onclick=()=>{
   state.dir=b.dataset.dir;setSegActive('#dirSeg .seg','dir',state.dir);savePrefs();renderAll();
