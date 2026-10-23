@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="120ff09aae">
+<meta name="build" content="42308741d9">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2023,7 +2023,7 @@ function drawChart(){
   levels.forEach(l=>{
     if(l.price<min||l.price>max)return;
     const yy=Math.round(y(l.price))+.5,col=l.kind==='r'?'255,105,105':'66,213,156';
-    ctx.strokeStyle=`rgba(${col},${l.touches>=3?.95:.7})`;ctx.lineWidth=l.touches>=3?2:1.2;
+    ctx.strokeStyle=`rgba(${col},${l.touches>=3?.95:.7})`;ctx.lineWidth=l.touches>=3?1.2:.8;
     ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();
   });
   // フィボナッチ（ローソク足より先に描いて、足や他の線の下に敷く）：波の終点Bから右端まで。38.2〜61.8%は薄い帯、
@@ -2091,7 +2091,7 @@ function drawChart(){
   chartPatterns().filter(p=>p.tf===state.tf&&p.id!=='cup').forEach(pt=>{
     const i0=source.findIndex(b=>b.t===pt.t0);if(i0<0||pt.neck<min||pt.neck>max)return;
     const col=pt.dir>0?'66,213,156':'255,105,105',yy=y(pt.neck),x0=x(i0-startIdx),xe=x(bars.length-1+blank);
-    ctx.strokeStyle=`rgba(${col},.9)`;ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
+    ctx.strokeStyle=`rgba(${col},.9)`;ctx.lineWidth=1.1;ctx.setLineDash([6,4]);
     ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(xe,yy);ctx.stroke();ctx.setLineDash([]);
     ctx.fillStyle=`rgba(${col},1)`;ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline=pt.dir>0?'top':'bottom';
     ctx.fillText(pt.label.replace(/^(15分足|1時間足)/,'')+(pt.state==='breakout'?' ブレイク':' 形成中'),Math.max(P.l+2,x0)+4,yy+(pt.dir>0?4:-4));
@@ -2129,7 +2129,7 @@ function drawChart(){
     const xl=ix(cup.tl),xb=ix(cup.tb),xe=bars.length-1+blank;
     if(xl!=null&&cup.line>=min&&cup.line<=max){
       const col=cup.dir>0?'66,213,156':'255,105,105',yy=y(cup.line);
-      ctx.strokeStyle=`rgba(${col},.9)`;ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
+      ctx.strokeStyle=`rgba(${col},.9)`;ctx.lineWidth=1.1;ctx.setLineDash([6,4]);
       ctx.beginPath();ctx.moveTo(x(xl),yy);ctx.lineTo(x(xe),yy);ctx.stroke();ctx.setLineDash([]);
       ctx.fillStyle=`rgba(${col},1)`;ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline=cup.dir>0?'top':'bottom';  // 名前はカップの内側に書く
       ctx.fillText((cup.dir>0?'カップ&ハンドル':'逆カップ&ハンドル')+(cup.state==='breakout'?' ブレイク':' 形成中'),Math.max(P.l+2,x(xl))+4,yy+(cup.dir>0?4:-4));
