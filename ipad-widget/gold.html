@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="8475c622e7">
+<meta name="build" content="d09a610b79">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -254,12 +254,19 @@ canvas.dragging{cursor:grabbing}
 .gmmanow[hidden]{display:none}.gmmanow .gx{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
 .gmmanow .gx.up b{color:#42d59c}.gmmanow .gx.down b{color:#ff6969}.gmmanow .seg{padding:3px 9px;font-size:11px}
 .gmmanow.golden{border-color:rgba(66,213,156,.6);animation:gxglowU 3.2s ease-in-out infinite}.gmmanow.dead{border-color:rgba(255,105,105,.6);animation:gxglowD 3.2s ease-in-out infinite}
-.gmmanow .gxhint{width:100%;font-size:10.5px;color:var(--muted)}
+.gmmanow .gxrow{background:none;border:1px solid #34404c;border-radius:999px;padding:4px 11px;font:inherit;font-size:12px;cursor:pointer}
+.gmmanow .gxrow.up{border-color:rgba(66,213,156,.55);color:#42d59c}.gmmanow .gxrow.down{border-color:rgba(255,105,105,.55);color:#ff6969}
+.gmmanow .gxrow.cur{background:#16201b}.gmmanow .gxrow.down.cur{background:#211416}
+/* 通知：画面の下に数秒出る（タップでその時間足へ） */
+.gxtoasts{position:fixed;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:6px;z-index:60;pointer-events:none;padding:0 16px}
+.gxtoast{pointer-events:auto;font:inherit;font-size:13px;font-weight:800;padding:10px 16px;border-radius:12px;background:#0d1217;border:1px solid;box-shadow:0 6px 20px rgba(0,0,0,.5);cursor:pointer;animation:gxin .35s ease-out}
+.gxtoast.up{color:#42d59c;border-color:rgba(66,213,156,.7)}.gxtoast.down{color:#ff6969;border-color:rgba(255,105,105,.7)}
+@keyframes gxin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.gxtoast{animation:none}}
 @keyframes gxglowU{0%,100%{box-shadow:0 0 0 0 rgba(66,213,156,0)}50%{box-shadow:0 0 10px 1px rgba(66,213,156,.35)}}
 @keyframes gxglowD{0%,100%{box-shadow:0 0 0 0 rgba(255,105,105,0)}50%{box-shadow:0 0 10px 1px rgba(255,105,105,.35)}}
 @media (prefers-reduced-motion:reduce){.gmmanow{animation:none!important}}
-.tfgrid .gxtag{font-style:normal;font-size:9px;font-weight:800;margin-left:2px}.tfgrid .gxtag.up{color:#42d59c}.tfgrid .gxtag.down{color:#ff6969}
-.tfgrid button.cur .gxtag{color:#101114}.fibnow b{color:#ffd666;font-size:12.5px}.fibnow .seg{padding:4px 10px;font-size:11px;margin-left:auto}
+.fibnow b{color:#ffd666;font-size:12.5px}.fibnow .seg{padding:4px 10px;font-size:11px;margin-left:auto}
 @keyframes fibglow{0%,100%{box-shadow:0 0 0 0 rgba(255,214,102,0)}50%{box-shadow:0 0 10px 1px rgba(255,214,102,.35)}}
 @media (prefers-reduced-motion:reduce){.fibnow{animation:none}}
 .tfgrid button.cur{background:linear-gradient(180deg,#e6c973,#b5872d);border-color:#b5872d;color:#101114}
@@ -456,6 +463,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <div id="lvList" class="lvlist" role="group" aria-label="水平線を1本ずつ消す・戻す" hidden></div>
     <div id="fibNow" class="fibnow" role="status" hidden></div>
     <div id="gmmaNow" class="gmmanow" role="status" hidden></div>
+    <div id="gxToasts" class="gxtoasts" aria-live="polite"></div>
     <div class="chartwrap"><canvas id="chart"></canvas><canvas id="chartBlink" aria-hidden="true"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
     <canvas id="rsi" aria-label="RSI(14)"></canvas>
     <div id="chartInfo" class="chartinfo">--</div>
@@ -1365,7 +1373,7 @@ function renderTfGrid(){
     const st=sd?'<span class="'+(sd>0?'up':'down')+'">ST'+(sd>0?'▲':'▼')+'</span>':'';
     const fb=bestFib();
     return '<button type="button" data-tf="'+tf+'" class="'+(tf===state.tf?'cur':'')+(fb&&fb.tf===tf?' fibbest':'')+'" aria-pressed="'+(tf===state.tf)+'" title="'+esc(TF_NAME[tf]+'：'+DOW_NAME[d.kind])+'">'+
-      '<b>'+tf.toUpperCase()+(fb&&fb.tf===tf?'<i class="fibstar">★</i>':'')+(gmmaCross(tf)?'<i class="gxtag '+(gmmaCross(tf).kind==='golden'?'up">GC':'down">DC')+'</i>':'')+'</b><small><span class="'+dowCls(d.kind)+'">'+DOW_SHORT[d.kind]+'</span> '+st+'</small></button>';
+      '<b>'+tf.toUpperCase()+(fb&&fb.tf===tf?'<i class="fibstar">★</i>':'')+'</b><small><span class="'+dowCls(d.kind)+'">'+DOW_SHORT[d.kind]+'</span> '+st+'</small></button>';
   }).join('');
 }
 
@@ -1431,8 +1439,8 @@ const SMA_COLOR='#f4f6f8';  // 120SMA（H1）・20SMA（M15）
 const EMAS=[{key:'e10',len:10,color:'#ff8fd1',w:1.4},{key:'e20',len:20,color:'#ff8c2e',w:1.4},{key:'e80',len:80,color:'#a8e05f',w:1.6},{key:'e200',len:200,color:'#3d8bff',w:2}];
 // GMMA（複合型移動平均線）：短期組 EMA3〜15（青）と長期組 EMA30〜60（赤）の帯。短期組が長期組の上なら上昇、下なら下降、重なっていれば向きでゴールデン／デッドクロス
 const GMMA_S=[3,5,8,10,12,15],GMMA_L=[30,35,40,45,50,60],GMMA_SC='#5cc8ff',GMMA_LC='#ff6b6b';
-// 時間足ごとのGMMAのクロス：短期組と長期組が重なっていて、3本前より短期組の平均が長期組へ上がってきていればゴールデンクロス、
-// 下がってきていればデッドクロス（チャート下の判定と同じ）。i＝短期組と長期組の平均が入れ替わった足（なければ最新の足）
+// 時間足ごとのGMMAのクロス：短期組と長期組が重なっている間だけ。重なる前に短期組が下にいればゴールデンクロス、上にいればデッドクロスの途中。
+// 3本前と比べて短期組がその向きに進んでいなければ（戻ってきたら）失敗とみなして出さない。束が離れたら終わり
 let gmxCache={k:'',v:{}};
 function gmmaCross(tf){
   const k=Object.keys(TFS).map(t=>(state[t]||[]).length+':'+((state[t]||[]).at(-1)?.c)).join('|');
@@ -1442,13 +1450,12 @@ function gmmaCross(tf){
   if(n>=80){
     const S=GMMA_S.map(p=>emaSeries(B,p)),L=GMMA_L.map(p=>emaSeries(B,p));
     const at=j=>{const sv=S.map(v=>v[j]),lv=L.map(v=>v[j]);return sv.concat(lv).some(x=>x==null)?null:{sv,lv,gap:sv.reduce((a,b)=>a+b,0)/6-lv.reduce((a,b)=>a+b,0)/6}};
+    const ov=o=>Math.min(...o.sv)<=Math.max(...o.lv)&&Math.max(...o.sv)>=Math.min(...o.lv);
     const now=at(n-1),prev=at(n-4);
-    if(now&&prev){
-      const over=Math.min(...now.sv)<=Math.max(...now.lv)&&Math.max(...now.sv)>=Math.min(...now.lv);
-      if(over){
-        let i=n-1;for(let j=n-1;j>n-30&&j>0;j--){const a=at(j),b=at(j-1);if(a&&b&&Math.sign(a.gap)!==Math.sign(b.gap)){i=j;break}}
-        r={kind:now.gap>=prev.gap?'golden':'dead',i,t:B[i].t,gap:now.gap};
-      }
+    if(now&&prev&&ov(now)){
+      let side=0;for(let j=n-2;j>=Math.max(0,n-80);j--){const o=at(j);if(!o)break;if(!ov(o)){side=Math.min(...o.sv)>Math.max(...o.lv)?1:-1;break}}  // 重なる前の位置
+      const kind=side<0?'golden':side>0?'dead':null,move=now.gap-prev.gap;
+      if(kind&&(kind==='golden'?move>0:move<0))r={kind,t:B[n-1].t,gap:now.gap};
     }
   }
   gmxCache.v[tf]=r;return r;
@@ -1457,10 +1464,22 @@ const GMX_NAME={golden:'ゴールデンクロス',dead:'デッドクロス'};
 function renderGmmaNow(){
   const el=$('gmmaNow'),list=Object.keys(TFS).map(tf=>({tf,x:gmmaCross(tf)})).filter(o=>o.x);
   el.hidden=!list.length;if(!list.length)return;
-  const part=kind=>{const l=list.filter(o=>o.x.kind===kind);return l.length?`<span class="gx ${kind==='golden'?'up':'down'}"><b>GMMA ${GMX_NAME[kind]}中</b>：${l.map(o=>`<button type="button" class="seg${o.tf===state.tf?' active':''}" data-tf="${o.tf}">${TF_NAME[o.tf]}</button>`).join('')}</span>`:''};
-  const cur=gmmaCross(state.tf);
-  el.className='gmmanow '+(cur?cur.kind:'');
-  el.innerHTML=part('golden')+part('dead')+(cur&&!(state.maOn.gmmaS&&state.maOn.gmmaL)?'<span class="gxhint">「GMMA短期」「GMMA長期」をオンにすると、チャートでクロスの線が点滅します</span>':'');
+  const g=list.some(o=>o.x.kind==='golden'),d=list.some(o=>o.x.kind==='dead');
+  el.className='gmmanow '+(g&&!d?'golden':d&&!g?'dead':'golden');
+  el.innerHTML=list.map(o=>`<button type="button" class="gxrow ${o.x.kind==='golden'?'up':'down'}${o.tf===state.tf?' cur':''}" data-tf="${o.tf}"><b>${TF_NAME[o.tf]} GMMA ${GMX_NAME[o.x.kind]}中</b></button>`).join('');
+  gmmaToast(list);
+}
+// 新しくクロスが始まった時間足を、画面の下に通知（ページを開いたときは今のクロスを1回だけ）
+let gmxSeen=null;
+function gmmaToast(list){
+  const now=new Set(list.map(o=>o.tf+':'+o.x.kind));
+  const fresh=gmxSeen?list.filter(o=>!gmxSeen.has(o.tf+':'+o.x.kind)):list;
+  gmxSeen=now;
+  fresh.forEach(o=>{
+    const t=document.createElement('button');t.type='button';t.className='gxtoast '+(o.x.kind==='golden'?'up':'down');
+    t.textContent=TF_NAME[o.tf]+' GMMA '+GMX_NAME[o.x.kind]+'中';t.onclick=()=>{setTf(o.tf);t.remove()};
+    $('gxToasts').appendChild(t);setTimeout(()=>t.remove(),9000);
+  });
 }
 // 各移動平均の表示・非表示（端末ごとに保存）
 const MA_BTNS=[{key:'sma',color:SMA_COLOR,label:()=>smaLen()+'SMA'}].concat(EMAS.map(m=>({key:m.key,color:m.color,label:()=>m.len+'EMA'})),
@@ -2255,19 +2274,6 @@ function drawChart(){
   const gmS=state.maOn.gmmaS,gmL=state.maOn.gmmaL;
   const gm=gmS||gmL?{s:GMMA_S.map(n=>emaSeries(source,n).slice(startIdx,endIdx)),l:GMMA_L.map(n=>emaSeries(source,n).slice(startIdx,endIdx))}:null;
   if(gm){ctx.globalAlpha=.6;if(gmL)gm.l.forEach(v=>drawLine(v,GMMA_LC,.8));if(gmS)gm.s.forEach(v=>drawLine(v,GMMA_SC,.8));ctx.globalAlpha=1}
-  // GMMAがクロス中：両方の組を表示しているときは、点滅用のキャンバスに束を重ねて点滅させ、入れ替わった足に「GC／DC」の印
-  const gx=gmmaCross(state.tf);let gxMark=null;
-  if(gx&&gm&&gmS&&gmL){
-    const bline=(vals,color)=>{bl.strokeStyle=color;bl.lineWidth=1.1;bl.beginPath();let b0=false;vals.forEach((val,i)=>{if(val==null)return;if(!b0){bl.moveTo(x(i),y(val));b0=true}else bl.lineTo(x(i),y(val))});bl.stroke()};
-    gm.l.forEach(v=>bline(v,GMMA_LC));gm.s.forEach(v=>bline(v,GMMA_SC));
-    const xi=source.findIndex(b=>b.t===gx.t)-startIdx;
-    if(xi>=0&&xi<bars.length){
-      const vs=gm.s.concat(gm.l).map(v=>v[xi]).filter(v=>v!=null),yy=y(vs.reduce((a,b)=>a+b,0)/vs.length),up=gx.kind==='golden',col=up?'#42d59c':'#ff6969';
-      const txt=up?'GC ゴールデンクロス':'DC デッドクロス';ctx.font='bold 10px -apple-system,sans-serif';
-      const tw=ctx.measureText(txt).width+8,lx=Math.min(Math.max(P.l+2,x(xi)-tw/2),W-P.r-tw-2),ly=up?yy+14:yy-28;
-      gxMark={x:x(xi),yy,lx,ly,tw,col,txt};swingBoxes.push({x:lx,y:ly,w:tw,h:14});  // 印はほかの線を引いたあとに書く。フィボの名前などがよける
-    }
-  }
   const emas=EMAS.filter(m=>state.maOn[m.key]).map(m=>({...m,vals:emaSeries(source,m.len).slice(startIdx,endIdx)}));
   emas.forEach(m=>drawLine(m.vals,m.color,m.w));
   // トレンドライン：始点の山・谷から右端（右側の空白を含む）まで延長
@@ -2377,12 +2383,7 @@ function drawChart(){
     }
   }
   drawLowLabels();
-  if(gxMark){const g=gxMark;  // GMMAのクロスの印（入れ替わった足の点と名前）
-    ctx.fillStyle=g.col;ctx.beginPath();ctx.arc(g.x,g.yy,3.5,0,Math.PI*2);ctx.fill();
-    ctx.font='bold 10px -apple-system,sans-serif';ctx.fillStyle='rgba(12,17,22,.9)';ctx.fillRect(g.lx,g.ly,g.tw,14);ctx.strokeStyle=g.col;ctx.lineWidth=.8;ctx.strokeRect(g.lx+.5,g.ly+.5,g.tw-1,13);
-    ctx.fillStyle=g.col;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(g.txt,g.lx+4,g.ly+7);
-    bl.clearRect(g.lx,g.ly,g.tw,14);  // 点滅している束が名前の上にかからないように
-  }
+
   // フィボの名前と価格：チャートの右端（価格目盛りの手前）に右寄せで小さく。0%・100%以外の各線、重なるものは止まった線・半値を優先して省く
   if(fib){
     const used=[];
@@ -2437,7 +2438,11 @@ function drawChart(){
       const sLo=Math.min(...sv),sHi=Math.max(...sv),lLo=Math.min(...lv),lHi=Math.max(...lv),avg=v=>v.reduce((t,x)=>t+x,0)/v.length,gap=k=>{const a=gm.s.map(v=>v[k]),b=gm.l.map(v=>v[k]);return a.concat(b).some(x=>x==null)?null:avg(a)-avg(b)};
       // 束が重なっているときは、3本前より短期組が長期組へ上がってきていればゴールデンクロス、下がってきていればデッドクロス
       const g0=gap(j),g1=gap(Math.max(0,j-3))??g0;
-      const st=sLo>lHi?'<b class="up">上昇</b>（短期組が上）':sHi<lLo?'<b class="down">下降</b>（短期組が下）':g0>=g1?'<b class="up">ゴールデンクロス</b>（短期組が長期組を上抜け中）':'<b class="down">デッドクロス</b>（短期組が長期組を下抜け中）';
+      // 最新の足ではお知らせ欄と同じ判定（クロスの途中で短期組が戻ってきたら「失敗」）
+      const cx=hi==null?gmmaCross(state.tf):null;
+      const st=sLo>lHi?'<b class="up">上昇</b>（短期組が上）':sHi<lLo?'<b class="down">下降</b>（短期組が下）':
+        hi==null?(cx?(cx.kind==='golden'?'<b class="up">ゴールデンクロス</b>（短期組が長期組を上抜け中）':'<b class="down">デッドクロス</b>（短期組が長期組を下抜け中）'):'<b>クロス失敗・様子見</b>（短期組が戻ってきている）'):
+        g0>=g1?'<b class="up">ゴールデンクロス</b>（短期組が長期組を上抜け中）':'<b class="down">デッドクロス</b>（短期組が長期組を下抜け中）';
       // 上昇・下降・クロスの判定は短期と長期の両方を表示しているときだけ
       return (gmS?`<span class="legend"><i style="background:${GMMA_SC}"></i>GMMA短期 <b>${fmt(sLo)}〜${fmt(sHi)}</b></span>`:'')+(gmL?`<span class="legend"><i style="background:${GMMA_LC}"></i>GMMA長期 <b>${fmt(lLo)}〜${fmt(lHi)}</b></span>`:'')+
         (gmS&&gmL?`<span class="legend"><i style="background:linear-gradient(90deg,${GMMA_SC} 50%,${GMMA_LC} 50%)"></i>GMMA ${st}</span>`:'')})():'')+
