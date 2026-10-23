@@ -533,12 +533,19 @@ def shift_by_gaps(rows, seconds, samples):
         r[1:] = [v + g for v in r[1:]]
 
 
+def usual_step(rows, default):
+    """The usual spacing of a series' candles (the live last candle sits off it, e.g. 18:01 after 18:00)."""
+    tail = rows[-50:]
+    diffs = [b[0] - a[0] for a, b in zip(tail, tail[1:]) if b[0] > a[0]]
+    return max(set(diffs), key=diffs.count) if diffs else default
+
+
 def fill_gaps(rows, finer, sec):
     """Add the candles missing from rows (Yahoo now and then leaves a 15m candle out) where all the finer
     candles of that period are there, built from them."""
     if len(finer) < 2 or not rows:
         return
-    step = finer[1][0] - finer[0][0]
+    step = usual_step(finer, sec)
     have, groups = {r[0] for r in rows}, {}
     for r in finer:
         if r[0] >= rows[0][0]:
@@ -560,8 +567,7 @@ def widen_hours(h1, *finer, sec=3600):
     ext, full = {}, set()
     for rows in finer:
         if len(rows) > 1:
-            tail = rows[-50:]
-            step = min((b[0] - a[0] for a, b in zip(tail, tail[1:]) if b[0] > a[0]), default=sec)
+            step = usual_step(rows, sec)
             cnt = {}
             for r in rows:
                 k = r[0] - r[0] % sec
