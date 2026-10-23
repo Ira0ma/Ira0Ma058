@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="17cb305515">
+<meta name="build" content="f61ecb0601">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -516,17 +516,17 @@ const $ = id => document.getElementById(id);
 /* 銘柄ごとの設定。同じページを usdjpy.html として配信すると USD/JPY 版になる（build.py が生成） */
 const INSTRUMENTS={
   gold:{key:'gold',site:'gold',title:'GOLD',label:'XAU / USD',short:'XAU',name:'ゴールド',sub:'XAU/USD専用｜自動更新｜iPad・iPhone・Android対応',
-    dp:2,pip:0.1,minTp:50,pipNote:'1pips＝$0.10',momTh:0.8,slMin:2,tolMin:.5,unit:'oz',contract:'100',cupHandle:true,patterns:true,spread:{xm:'2.3',xs:'1.2'},
+    dp:2,pip:0.1,minTp:50,pipNote:'1pips＝$0.10',momTh:0.8,slMin:2,tolMin:.5,unit:'oz',contract:'100',cupHandle:true,patterns:true,spread:{xm:'2.3',xs:'1.4'},
     brokerNote:'XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,2),
     footer:'データ: Gold API・XAUS（GOLD価格）／GitHub Actionsで定期取得したYahoo Finance足（チャート）・Forex Factory（経済指標）／Frankfurter（USD/JPY補助）。'},
   usdjpy:{key:'usdjpy',site:'usdjpy',title:'USDJPY',label:'USD / JPY',short:'USDJPY',name:'ドル円',sub:'USD/JPY専用｜自動更新｜iPad・iPhone・Android対応',
-    dp:3,pip:0.01,minTp:30,pipNote:'1pips＝0.01円',momTh:0.03,slMin:0.05,tolMin:.02,unit:'通貨',contract:'100000',patterns:true,spread:{xm:'1.6',xs:'0.8'},
+    dp:3,pip:0.01,minTp:30,pipNote:'1pips＝0.01円',momTh:0.03,slMin:0.05,tolMin:.02,unit:'通貨',contract:'100000',patterns:true,spread:{xm:'1.6',xs:'0.9'},
     brokerNote:'ドル円の1lotは多くの業者で10万通貨です。ご自身の口座の取引条件で確認してください。',
     dist:v=>(v/0.01).toFixed(1)+'pips',
     footer:'データ: Coinbase（ドル円の最新レート）／GitHub Actionsで定期取得したYahoo Finance足（チャート・価格）・Forex Factory（経済指標）。'},
   btc:{key:'btc',site:'btc',title:'BTCUSD',label:'BTC / USD',short:'BTC',name:'ビットコイン',asset:'BTC',sub:'BTC/USD専用｜24時間自動更新｜iPad・iPhone・Android対応',
-    dp:2,pip:1,minTp:300,pipNote:'1pips＝$1',momTh:20,slMin:40,tolMin:10,unit:'BTC',contract:'1',patterns:true,spread:{xm:'60',xs:'36'},
+    dp:2,pip:1,minTp:300,pipNote:'1pips＝$1',momTh:20,slMin:40,tolMin:10,unit:'BTC',contract:'1',patterns:true,spread:{xm:'60',xs:'23.6'},
     brokerNote:'XMのBTCUSDは1lot＝1BTCです。XSの契約量・スプレッドはご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,0),
     footer:'データ: Coinbase・Kraken・OKX（BTCのリアルタイム価格）／GitHub Actionsで定期取得したYahoo Finance足（チャート）・Forex Factory（経済指標）。'}
@@ -742,15 +742,17 @@ function loadCache(){
 const PREFS={capital:[LSP+'capital','100000'],riskPct:[LSP+'risk_pct','1.0'],lotManual:[LSP+'lot_manual',''],
   slMult:[LSP+'sl_mult','1.2'],rrTarget:[LSP+'rr','2.0']};
 // 口座ごとの初期値（契約量oz・レバレッジ）。変更した値は口座ごとに保存
-// スプレッドの初期値は口座タイプ（XM KIWAMI極・XS プロ）の平均の目安。MT5で見た値に直せる
-const BROKERS={xm:{name:'XM',acct:'KIWAMI極',contract:INSTR.contract,lev:'1000'},xs:{name:'XS',acct:'プロ',contract:INSTR.contract,lev:'2000'}};
+// スプレッドの初期値：XM KIWAMI極は比較記事の平均、XS プロはMT5の気配値で見た値（2026/10/23 20:23、XAUUSDp 14・USDJPYp 9・BTCUSDp 2360ポイント）
+const BROKERS={xm:{name:'XM',acct:'KIWAMI極',src:'平均の目安',contract:INSTR.contract,lev:'1000'},xs:{name:'XS',acct:'プロ',src:'MT5で見た値（10/23 20:23）',contract:INSTR.contract,lev:'2000'}};
+const OLD_SPREAD={gold:'1.2',usdjpy:'0.8',btc:'36'};  // XSの以前の初期値。保存がこの値のままなら新しい初期値にする
 function brokerKey(k){return LSP+state.broker+'_'+k}
 function loadBroker(){
   const b=BROKERS[state.broker];
   $('contract').value=lsGet(brokerKey('contract'),state.broker==='xm'?lsGet(LSP+'contract',b.contract):b.contract);
   $('leverage').value=lsGet(brokerKey('lev'),b.lev);
-  $('spread').value=lsGet(brokerKey('spread'),INSTR.spread[state.broker]);
-  $('sprNote').textContent='スプレッドの初期値は'+b.name+' '+b.acct+'口座の平均の目安です（'+INSTR.spread[state.broker]+'pips）。早朝や指標発表の前後は広がるので、MT5で見た値に直してください。';
+  const sp=lsGet(brokerKey('spread'),INSTR.spread[state.broker]);
+  $('spread').value=state.broker==='xs'&&sp===OLD_SPREAD[INSTR.key]?INSTR.spread.xs:sp;
+  $('sprNote').textContent='スプレッドの初期値は'+b.name+' '+b.acct+'口座の'+b.src+'です（'+INSTR.spread[state.broker]+'pips）。早朝や指標発表の前後は広がるので、MT5で見た値に直してください。';
   setSegActive('#brokerSeg .seg','broker',state.broker);
   updateBrokerLabels();
 }
