@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="d24b0d3df2">
+<meta name="build" content="df3114b77d">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -215,8 +215,9 @@ body.chartfull{overflow:hidden}
 canvas{display:block;width:100%;height:340px;background:linear-gradient(180deg,#0c1116,#0e151c);border:1px solid #222c36;border-radius:13px;touch-action:none;cursor:grab}
 canvas.dragging{cursor:grabbing}
 /* 強い水平線（3回以上止まった線）だけを重ねたキャンバスで点滅させる */
-#chartBlink{position:absolute;inset:0;width:100%;height:100%;background:none;border:0;pointer-events:none;animation:srblink 1.6s ease-in-out infinite}
-@keyframes srblink{0%,100%{opacity:1}50%{opacity:.15}}
+/* 目にやさしく：3.2秒でゆっくり、明るさの幅は小さく（消えずに半分ほど暗くなるだけ） */
+#chartBlink{position:absolute;inset:0;width:100%;height:100%;background:none;border:0;pointer-events:none;animation:srblink 3.2s ease-in-out infinite}
+@keyframes srblink{0%,100%{opacity:1}50%{opacity:.45}}
 @media (prefers-reduced-motion:reduce){#chartBlink{animation:none}}
 .chartreset{position:absolute;left:10px;top:10px;z-index:1;font-size:11px;font-weight:800;color:#101114;background:var(--gold);border-radius:999px;padding:5px 11px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .charthint{font-size:10px;color:var(--muted);margin-top:4px}
@@ -2142,16 +2143,16 @@ function drawChart(){
       if(xb!=null){const yb=y(cup.bottom);ctx.beginPath();ctx.arc(x(xb),yb+(cup.dir>0?6:-6),3,0,Math.PI*2);ctx.fill()}
     }
   }
-  // フィボの名前と価格：線の始まり（波の終点）の上に小さく。0%・100%以外の各線、重なるものは止まった線・半値を優先して省く
+  // フィボの名前と価格：チャートの右端（価格目盛りの手前）に右寄せで小さく。0%・100%以外の各線、重なるものは止まった線・半値を優先して省く
   if(fib){
-    const xs=Math.max(fib.xs,P.l+2)+16,xmax=x(bars.length-1+blank),used=[];
+    const used=[];
     ctx.font='bold 9.5px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='bottom';
     fib.levels.filter(lv=>lv.r>0&&lv.r<1&&lv.p>=min&&lv.p<=max)
       .sort((p1,p2)=>(p2.r===fib.hit)-(p1.r===fib.hit)||(p2.r===.5)-(p1.r===.5)||([.382,.618].includes(p2.r))-([.382,.618].includes(p1.r))).forEach(lv=>{  // 止まった線、半値、38.2・61.8%、その他の順に場所を取る
       const yy=y(lv.p);if(used.some(u=>Math.abs(u-yy)<12))return;used.push(yy);  // 文字の高さ11pxが重ならない間隔
       const on=lv.r===fib.hit,txt=(fib.prov&&lv.r===.5?'暫定 ':'')+FIB_NAME(lv.r)+(lv.r===.5?' 半値':'')+(on?(fib.held?' 反発':' 到達'):'')+'  '+fmt(lv.p,IS_BTC?0:INSTR.dp),tw=ctx.measureText(txt).width;
-      const lx=Math.min(xs,xmax-tw-6);
-      ctx.fillStyle='rgba(13,18,23,.72)';ctx.fillRect(lx-2,yy-12,tw+4,11);
+      const lx=W-P.r-tw-6;
+      ctx.fillStyle='rgba(13,18,23,.9)';ctx.fillRect(lx-3,yy-12,tw+6,11);  // 右端は最新の足に重なるので背景を濃く
       ctx.fillStyle=on?'#ffd666':'rgba(232,195,90,.9)';ctx.fillText(txt,lx,yy-1);
     });
   }
