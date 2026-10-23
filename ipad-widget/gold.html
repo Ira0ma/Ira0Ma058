@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="d09a610b79">
+<meta name="build" content="06b862ed5f">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1475,6 +1475,8 @@ function gmmaToast(list){
   const now=new Set(list.map(o=>o.tf+':'+o.x.kind));
   const fresh=gmxSeen?list.filter(o=>!gmxSeen.has(o.tf+':'+o.x.kind)):list;
   gmxSeen=now;
+  // トレードデスクの中で動いているときは、デスクにも知らせる（デスクが画面の下に通知を出す）
+  if(fresh.length&&window.parent!==window)try{window.parent.postMessage({type:'dash-gmma',key:INSTR.key,name:INSTR.short==='XAU'?'GOLD':INSTR.short==='USDJPY'?'ドル円':INSTR.short,list:fresh.map(o=>({tf:o.tf,tfName:TF_NAME[o.tf],kind:o.x.kind}))},'*')}catch{}
   fresh.forEach(o=>{
     const t=document.createElement('button');t.type='button';t.className='gxtoast '+(o.x.kind==='golden'?'up':'down');
     t.textContent=TF_NAME[o.tf]+' GMMA '+GMX_NAME[o.x.kind]+'中';t.onclick=()=>{setTf(o.tf);t.remove()};
@@ -2454,7 +2456,7 @@ function drawChart(){
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
   $('chartMeta').textContent=TF_NAME[state.tf]+'（'+state.tf.toUpperCase()+'）/ '+len+'SMA'+' / 10・20・80・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
   $('chartReset').hidden=!(v.off||v.count||v.yOff||v.yZoom!==1);
-  renderTfGrid();renderFibNow();
+  renderTfGrid();renderFibNow();renderGmmaNow();
   state.chartGeo={P,step,n:bars.length,W,H,priceSpan:max-min,plotH:H-P.t-P.b};
   drawRsi(source,startIdx,endIdx,bars.length,P,step,hi);
   const lastBig=bigs.at(-1);
@@ -2711,6 +2713,7 @@ function renderAll(){
   renderSnapshot();
   const reb=renderRebound();
   drawChart();renderEvents();renderNext();renderResults();
+  renderGmmaNow();  // チャートが見えていない（デスクの裏で動いている）ときも、GMMAのクロスを確かめて知らせる
   const risk=calcRisk();
   renderChecks(risk,reb);updateCaution();
   $('lastUpdate').textContent=state.lastOk?localTime(state.lastOk):'--';
@@ -2747,7 +2750,7 @@ function scheduler(){
 function setSegActive(sel,attr,val){document.querySelectorAll(sel).forEach(b=>b.classList.toggle('active',b.dataset[attr]===val))}
 function setTf(tf){
   state.tf=tf;state.hover=null;resetView();renderMaToggles();
-  renderTfGrid();renderFibNow();
+  renderTfGrid();renderFibNow();renderGmmaNow();
   savePrefs();drawChart();
 }
 
@@ -2759,11 +2762,13 @@ $('autoBtn').onclick=()=>{
   scheduler();
 };
 $('tfGrid').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)});
+// トレードデスクの通知をタップしたとき：その時間足を表示する
+window.addEventListener('message',e=>{if(e.source===window.parent&&e.data&&e.data.type==='desk-settf'&&TF_NAME[e.data.tf])setTf(e.data.tf)});
 $('fibNow').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)});
 $('gmmaNow').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)});
 $('maToggles').addEventListener('click',e=>{
   const btn=e.target.closest('[data-ma]');if(!btn)return;
-  const k=btn.dataset.ma;state.maOn[k]=!state.maOn[k];lsSet(LSP+'ma',JSON.stringify(state.maOn));renderMaToggles();renderTfGrid();renderFibNow();drawChart();
+  const k=btn.dataset.ma;state.maOn[k]=!state.maOn[k];lsSet(LSP+'ma',JSON.stringify(state.maOn));renderMaToggles();renderTfGrid();renderFibNow();renderGmmaNow();drawChart();
 });
 $('tlBtn').onclick=()=>{state.showTrend=!state.showTrend;$('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);savePrefs();drawChart()};
 $('lvList').onclick=e=>{const b=e.target.closest('.lvchip');if(!b)return;if(b.dataset.lv==='all'){hiddenLv=[];lsSet(LSP+'hidden_lv','[]');drawChart()}else toggleLv(+b.dataset.lv)};
@@ -2891,7 +2896,7 @@ if('IntersectionObserver' in window){
 loadPrefs();
 setSegActive('#dirSeg .seg','dir',state.dir);
 setSegActive('[data-ev]','ev',state.evFilter);
-renderTfGrid();renderFibNow();
+renderTfGrid();renderFibNow();renderGmmaNow();
 renderMaToggles();
 $('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);
 $('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);
