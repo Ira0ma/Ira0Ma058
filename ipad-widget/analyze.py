@@ -525,14 +525,15 @@ def shift_by_gaps(rows, seconds, samples):
         r[1:] = [v + g for v in r[1:]]
 
 
-def widen_hours(h1, *finer):
+def widen_hours(h1, *finer, sec=3600):
     """Yahoo's hour candles sometimes miss an extreme its 5- and 15-minute candles of the same hour show
     (gold 22 Oct 16:00 UTC: the 1h low sat 1.55 above the 15m low), so 1h/4h disagreed with 5m-30m on
-    the charts. Each hour is widened to the highs and lows of its finer candles."""
+    the charts. Each hour is widened to the highs and lows of its finer candles. The same goes for 15m
+    candles against 5m (gold 23 Oct: an hour widened by a 5m low left the 15m/30m low 1.15 above it)."""
     ext = {}
     for rows in finer:
         for r in rows:
-            k = r[0] - r[0] % 3600
+            k = r[0] - r[0] % sec
             e = ext.get(k)
             ext[k] = (max(r[2], e[0]), min(r[3], e[1])) if e else (r[2], r[3])
     for r in h1:
@@ -576,6 +577,7 @@ def one(key, sym, spot_sym, fixture, prev=None):
                 for r in rows:
                     r[1:] = [v + shift for v in r[1:]]
         adjusted = shift is not None
+    widen_hours(m15, m5, sec=900)  # first the 15m candles from 5m, then the hours from both
     widen_hours(h1, m5, m15)
     last = (m1 or m15 or h1)[-1]
     price, as_of = last[4], last[0]  # the freshest close and when it traded
