@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#06070b">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="4d28a49025">
+<meta name="build" content="aa860b54e3">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -595,8 +595,8 @@ html:not(.flow) #flow { display: none; }
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=468f5a59eb", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=a02a966d9a", title: "ドル円分析" }
+    gold: { src: "gold.html?v=0752629c55", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=e02f756de2", title: "ドル円分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -1465,13 +1465,28 @@ html:not(.flow) #flow { display: none; }
       .replace(/ Speaks$/, " 発言");
     return (CC[e.country] ? CC[e.country] + "・" : "") + t;
   }
-  /* A trader's "today" runs from 6:00 to 6:00 the next morning (around the New York close),
-     so late-night US releases such as an FOMC decision at 3:00 belong to the evening before. */
-  var DAY_START_H = 6;
+  /* A trader's "today" runs from the New York close (17:00 New York) to the next one, as the broker's
+     daily candle does: 6:00 JST while the US is on summer time, 7:00 JST in US winter, switching by itself.
+     So late-night US releases such as an FOMC decision at 3:00 belong to the evening before. */
+  var NY_FMT = null;
+  try { NY_FMT = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric" }); } catch (e) {}
+  function nyOffsetMin(d) {  // New York's offset from UTC in minutes (-240 summer, -300 winter)
+    if (NY_FMT && NY_FMT.formatToParts) {
+      var p = {};
+      NY_FMT.formatToParts(d).forEach(function (x) { p[x.type] = +x.value; });
+      var v = Math.round((Date.UTC(p.year, p.month - 1, p.day, p.hour % 24, p.minute) - Math.floor(d.getTime() / 60000) * 60000) / 60000);
+      if (!isNaN(v)) return v;
+    }
+    var y = d.getUTCFullYear(), mar = new Date(Date.UTC(y, 2, 8)), nov = new Date(Date.UTC(y, 10, 1));  // fallback: US rule
+    mar.setUTCDate(8 + (7 - mar.getUTCDay()) % 7); nov.setUTCDate(1 + (7 - nov.getUTCDay()) % 7);
+    var t = d.getTime();
+    return t >= mar.getTime() + 7 * 3600000 && t < nov.getTime() + 6 * 3600000 ? -240 : -300;
+  }
   function tradingDay(now) {
-    var start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), DAY_START_H);
-    if (now < start) start.setDate(start.getDate() - 1);
-    var end = new Date(start); end.setDate(end.getDate() + 1);
+    var off = nyOffsetMin(now) * 60000, ny = new Date(now.getTime() + off);  // New York wall clock in UTC fields
+    var roll = Date.UTC(ny.getUTCFullYear(), ny.getUTCMonth(), ny.getUTCDate(), 17);
+    if (ny.getTime() < roll) roll -= 86400000;
+    var start = new Date(roll - off), end = new Date(start.getTime() + 86400000);
     return { start: start, end: end };
   }
   function renderIndicators() {

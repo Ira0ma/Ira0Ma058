@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="468f5a59eb">
+<meta name="build" content="0752629c55">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -586,6 +586,8 @@ function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&l
 function lsGet(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch{return d}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch{}}
 function todayKey(){return new Date().toLocaleDateString('sv-SE')}
+// 取引日（ブローカーの日足と同じくNY 17時で切り替え）：米国夏時間は日本時間6時、冬時間は7時に自動で切り替わる
+function tradeDayKey(ms=Date.now()){try{return new Date(ms+7*3600000).toLocaleDateString('sv-SE',{timeZone:'America/New_York'})}catch{return new Date(ms-6*3600000).toLocaleDateString('sv-SE')}}
 function localTime(ms){
   if(!ms)return '--';
   return new Date(ms).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
@@ -762,7 +764,7 @@ function savePrefs(){
 }
 
 function updateRolling(price){
-  const key=todayKey();
+  const key=tradeDayKey();
   if(state.rolling.date!==key){
     state.rolling={date:key,open:price,high:price,low:price};
   }else{
@@ -1274,8 +1276,8 @@ function atr(bars,len=14){
 }
 function dayBars(){
   if(!state.m15.length)return [];
-  const key=todayKey();
-  const today=state.m15.filter(b=>new Date(b.t).toLocaleDateString('sv-SE')===key);
+  const key=tradeDayKey();
+  const today=state.m15.filter(b=>tradeDayKey(b.t)===key);
   return today.length?today:state.m15.slice(-96);
 }
 function dayHL(){
