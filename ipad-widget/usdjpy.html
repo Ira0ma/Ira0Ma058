@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="269a196043">
+<meta name="build" content="093afb454a">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1376,7 +1376,7 @@ function emaSeries(bars,len){
 }
 // チャートに重ねる移動平均（H1・M15共通のEMAと、時間足ごとのSMA）
 const SMA_COLOR='#f4f6f8';  // 120SMA（H1）・20SMA（M15）
-const EMAS=[{key:'e10',len:10,color:'#ff8fd1',w:1.4},{key:'e20',len:20,color:'#ff8c2e',w:1.4},{key:'e200',len:200,color:'#3d8bff',w:2}];
+const EMAS=[{key:'e10',len:10,color:'#ff8fd1',w:1.4},{key:'e20',len:20,color:'#ff8c2e',w:1.4},{key:'e80',len:80,color:'#a8e05f',w:1.6},{key:'e200',len:200,color:'#3d8bff',w:2}];
 // GMMA（複合型移動平均線）：短期組 EMA3〜15（青）と長期組 EMA30〜60（赤）の帯。短期組が長期組の上なら上昇、下なら下降、重なっていれば向きでゴールデン／デッドクロス
 const GMMA_S=[3,5,8,10,12,15],GMMA_L=[30,35,40,45,50,60],GMMA_SC='#5cc8ff',GMMA_LC='#ff6b6b';
 // 各移動平均の表示・非表示（端末ごとに保存）
@@ -2166,13 +2166,31 @@ function drawChart(){
   // ダウ理論の判定に使った直近の山・谷に印（高値↑＝切り上げ、↓＝切り下げ）と、左上に判定
   const dow=dowTrend(source,DOW_K[state.tf]||4);
   ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='center';
+  const swingBoxes=[];  // 高値・安値ラベルの場所（フィボの名前をよける）
   [['highs',-1],['lows',1]].forEach(([key,sd])=>dow[key].forEach((pv,n)=>{
     const xi=pv.i-startIdx;if(xi<0||xi>=bars.length)return;
     const yy=y(pv.p)+sd*9,up=n?pv.p>dow[key][0].p:null;
-    ctx.fillStyle=up==null?'#93a0ad':up?'#42d59c':'#ff6969';
-    ctx.beginPath();ctx.arc(x(xi),y(pv.p),2.5,0,Math.PI*2);ctx.fill();
-    ctx.textBaseline=sd<0?'bottom':'top';
-    ctx.fillText((n?'直近':'前回')+(key==='highs'?'高値':'安値')+(up==null?'':up?'↑':'↓'),x(xi),yy+(sd<0?3:-3));
+    const col=up==null?'#93a0ad':up?'#42d59c':'#ff6969';
+    ctx.fillStyle=col;ctx.beginPath();ctx.arc(x(xi),y(pv.p),2.5,0,Math.PI*2);ctx.fill();
+    // 名前と価格の2行を、薄暗い下地の上に（高値は点の上、安値は点の下。左右の端ではみ出さないよう寄せる）
+    const name=(n?'直近':'前回')+(key==='highs'?'高値':'安値')+(up==null?'':up?'↑':'↓'),price=fmt(pv.p,IS_BTC?0:INSTR.dp);
+    ctx.font='bold 10px -apple-system,sans-serif';
+    const tw=Math.max(ctx.measureText(name).width,ctx.measureText(price).width)+8,bh=25;
+    let cx=Math.min(Math.max(x(xi),P.l+tw/2+1),W-P.r-tw/2-1);const py=y(pv.p);
+    let top=sd<0?yy+3-bh:yy-3;
+    if(top<P.t+1)top=py+6;else if(top+bh>H-P.b-1)top=py-6-bh;  // 上下の端に入りきらなければ点の反対側へ
+    top=Math.max(P.t+1,Math.min(top,H-P.b-bh-1));
+    // ほかの高値・安値ラベルと重なるなら、点から離れる向きにずらし、だめなら横へ
+    const over=()=>swingBoxes.find(b=>top<b.y+b.h+2&&top+bh+2>b.y&&cx-tw/2<b.x+b.w+2&&cx+tw/2+2>b.x);
+    for(let k=0,o;k<4&&(o=over());k++){
+      const t2=sd<0?o.y-bh-2:o.y+o.h+2;
+      if(t2>=P.t+1&&t2+bh<=H-P.b-1)top=t2;else cx=Math.max(P.l+tw/2+1,o.x-tw/2-3);
+    }
+    swingBoxes.push({x:cx-tw/2,y:top,w:tw,h:bh});
+    ctx.fillStyle='rgba(12,17,22,.82)';ctx.beginPath();ctx.roundRect?ctx.roundRect(cx-tw/2,top,tw,bh,4):ctx.rect(cx-tw/2,top,tw,bh);ctx.fill();
+    ctx.strokeStyle=col;ctx.globalAlpha=.45;ctx.lineWidth=.8;ctx.stroke();ctx.globalAlpha=1;
+    ctx.textBaseline='top';ctx.fillStyle=col;ctx.fillText(name,cx,top+2);
+    ctx.font='bold 10.5px -apple-system,sans-serif';ctx.fillStyle='#e6edf3';ctx.fillText(price,cx,top+13);
   }));
   if(dow.kind!=='none'){
     const txt=state.tf.toUpperCase()+' ダウ理論：'+DOW_NAME[dow.kind],c=dowCls(dow.kind);
@@ -2211,7 +2229,9 @@ function drawChart(){
       .sort((p1,p2)=>(p2.r===fib.hit)-(p1.r===fib.hit)||(p2.r===.5)-(p1.r===.5)||([.382,.618].includes(p2.r))-([.382,.618].includes(p1.r))).forEach(lv=>{  // 止まった線、半値、38.2・61.8%、その他の順に場所を取る
       const yy=y(lv.p);if(used.some(u=>Math.abs(u-yy)<12))return;used.push(yy);  // 文字の高さ11pxが重ならない間隔
       const on=lv.r===fib.hit,txt=(fib.prov&&lv.r===.5?'暫定 ':'')+FIB_NAME(lv.r)+(lv.r===.5?' 半値':'')+(on?(fib.held?' 反発':' 到達'):'')+'  '+fmt(lv.p,IS_BTC?0:INSTR.dp),tw=ctx.measureText(txt).width;
-      const lx=W-P.r-tw-6;
+      let lx=W-P.r-tw-6;
+      // 高値・安値ラベルと重なるなら、重ならなくなるまでその左へ
+      for(let k=0,hit;k<4&&(hit=swingBoxes.find(b=>yy-12<b.y+b.h&&yy-1>b.y&&lx-3<b.x+b.w&&lx+tw+3>b.x));k++)lx=Math.max(P.l+2,hit.x-tw-6);
       ctx.fillStyle='rgba(13,18,23,.9)';ctx.fillRect(lx-3,yy-12,tw+6,11);  // 右端は最新の足に重なるので背景を濃く
       ctx.fillStyle=on?'#ffd666':'rgba(232,195,90,.9)';ctx.fillText(txt,lx,yy-1);
     });
@@ -2265,7 +2285,7 @@ function drawChart(){
     (fib&&fib.prov?`<span class="legend"><i style="background:${FIB_COLOR}"></i>暫定フィボナッチ（${fib.dir>0?'上昇':'下降'}中・次の${fib.dir>0?'押し目':'戻り'}の目安） 38.2% <b>${fmt(fib.levels.find(l=>l.r===.382).p)}</b>・半値 <b>${fmt(fib.levels.find(l=>l.r===.5).p)}</b>・61.8% <b>${fmt(fib.levels.find(l=>l.r===.618).p)}</b></span>`:'')+
     (fib&&!fib.prov?`<span class="legend"><i style="background:${FIB_COLOR}"></i>フィボナッチ（直近の${fib.dir>0?'上昇':'下降'}の${fib.dir>0?'押し':'戻り'}） 今 <b>${Math.round(fib.cur*100)}%</b>（最深 ${Math.round(fib.deep*100)}%${fib.half?'・半値戻し':''}）${fib.hit!=null?`｜${FIB_NAME(fib.hit)}（${fmt(fib.levels.find(l=>l.r===fib.hit).p)}）で${fib.held?'反発':'到達'}`:''}</span>`:'')+
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
-  $('chartMeta').textContent=TF_NAME[state.tf]+'（'+state.tf.toUpperCase()+'）/ '+len+'SMA'+' / 10・20・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
+  $('chartMeta').textContent=TF_NAME[state.tf]+'（'+state.tf.toUpperCase()+'）/ '+len+'SMA'+' / 10・20・80・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
   $('chartReset').hidden=!(v.off||v.count||v.yOff||v.yZoom!==1);
   renderTfGrid();
   state.chartGeo={P,step,n:bars.length,W,H,priceSpan:max-min,plotH:H-P.t-P.b};
