@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="c7b5d15aa6">
+<meta name="build" content="367ef7e0c2">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -230,7 +230,6 @@ canvas.dragging{cursor:grabbing}
 .charthint{font-size:10px;color:var(--muted);margin-top:4px}
 .lvlist{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:6px;font-size:11px;color:var(--muted)}
 .lvlist[hidden]{display:none}
-.fibtf .seg{padding:4px 9px;font-size:11px}.fibtf .seg.active{border-color:rgba(232,195,90,.8);color:var(--gold2);background:#16130b}
 .lvchip{display:inline-flex;align-items:center;gap:4px;background:#121820;color:#d5dde5;border:1px solid var(--c);border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
 .lvchip i{width:10px;height:2px;border-radius:1px;background:var(--c)}
 .lvchip.off{border-color:#34404c;color:#6f7c88;text-decoration:line-through}.lvchip.off i{opacity:.35}
@@ -437,7 +436,6 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
     <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button></div>
     <div id="lvList" class="lvlist" role="group" aria-label="水平線を1本ずつ消す・戻す" hidden></div>
-    <div id="fibTfRow" class="lvlist fibtf" role="group" aria-label="フィボナッチの時間足" hidden><span>フィボナッチの時間足</span></div>
     <div class="chartwrap"><canvas id="chart"></canvas><canvas id="chartBlink" aria-hidden="true"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
     <canvas id="rsi" aria-label="RSI(14)"></canvas>
     <div id="chartInfo" class="chartinfo">--</div>
@@ -804,7 +802,6 @@ function loadPrefs(){
   state.showTrend=lsGet(LSP+'trend','1')==='1';
   loadMaOn();
   state.broker=BROKERS[lsGet(LSP+'broker','xm')]?lsGet(LSP+'broker','xm'):'xm';
-  {const f=lsGet(LSP+'fib_tf','auto');state.fibTf=f==='auto'||['m5','m15','m30','h1','h4','d1','w1','mn'].includes(f)?f:'auto'}  // フィボナッチの時間足
   {const b=lsGet(LSP+'tp_basis','h1');state.tpBasis=['h1','m15','both'].includes(b)?b:'h1'}  // 利確判定の基準（端末に保存）
   loadBroker();
 }
@@ -1420,12 +1417,6 @@ function loadMaOn(){let o={};try{o=JSON.parse(lsGet(LSP+'ma','{}'))||{}}catch{}
   if('swing' in o){o.swingN??=o.swing;o.swingP??=o.swing}  // 以前の「高値・安値」ボタン（1つ）の設定を直近・前回の両方に引き継ぐ
   if('gmma' in o){o.gmmaS??=o.gmma;o.gmmaL??=o.gmma}  // 以前のGMMAボタン（1つ）の設定を短期・長期の両方に引き継ぐ
   state.maOn=Object.fromEntries(MA_BTNS.map(b=>[b.key,b.key in o?o[b.key]!==false:!b.off]))}  // offの線は最初は非表示
-// フィボナッチを引く時間足（表示中の足、またはM5〜MNのどれか）
-function renderFibTf(){
-  const row=$('fibTfRow');row.hidden=!state.maOn.fib;if(row.hidden)return;
-  row.innerHTML='<span>フィボナッチの時間足</span>'+[['auto','表示中の足']].concat(Object.keys(TF_NAME).map(k=>[k,k.toUpperCase()]))
-    .map(([k,l])=>`<button type="button" class="seg${state.fibTf===k?' active':''}" data-ftf="${k}" aria-pressed="${state.fibTf===k}">${l}</button>`).join('');
-}
 function renderMaToggles(){
   $('maToggles').innerHTML=MA_BTNS.map(b=>`<button type="button" class="seg${state.maOn[b.key]?' on':''}" data-ma="${b.key}" aria-pressed="${state.maOn[b.key]}"><i style="background:${b.color}"></i>${b.label()}</button>`).join('');
 }
@@ -2127,14 +2118,8 @@ function drawChart(){
   });
   // フィボナッチ（ローソク足より先に描いて、足や他の線の下に敷く）：波の終点Bから右端まで。38.2〜61.8%は薄い帯、
   // 各水準は細い点線、止まった線だけ実線。0%・100%は短い目印だけ。強い水平線と重なる水準は線を省き名前だけ残す
-  // フィボナッチ：選んだ時間足の足で引き、ほかの時間足のときは波の始点・終点を表示中の足の時刻に合わせる
-  const fibTf=state.fibTf==='auto'||!state[state.fibTf]?state.tf:state.fibTf,fibOther=fibTf!==state.tf;
-  const fib=state.maOn.fib?fibonacci(state[fibTf]||source,DOW_K[fibTf]||4):null;
-  if(fib&&fibOther){
-    const fs=state[fibTf],at=t=>{let j=-1;for(let q=0;q<source.length&&source[q].t<=t;q++)j=q;return j};
-    fib.iA=at(fs[fib.iA].t);fib.iB=Math.max(at(fs[fib.iB].t),0);
-  }
-  const fibTag=fibOther?fibTf.toUpperCase()+' ':'';
+  // フィボナッチは表示中の時間足の足で引く（時間足を切り替えると、その時間足の波で引き直す）。名前に時間足を付ける
+  const fib=state.maOn.fib?fibonacci(source,DOW_K[state.tf]||4):null,fibTag=state.tf.toUpperCase()+' ';
   if(fib){
     // 波の終点が右端に近い（伸びている最中など）ときは、線が短くなりすぎないよう波の始点から引く
     const xe=x(bars.length-1+blank),xb=x(Math.max(fib.iB-startIdx,0)),xs=xe-xb<140?x(Math.max(fib.iA-startIdx,0)):xb,lvp=r=>fib.levels.find(l=>l.r===r).p;
@@ -2671,10 +2656,9 @@ $('autoBtn').onclick=()=>{
 $('tfGrid').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)});
 $('maToggles').addEventListener('click',e=>{
   const btn=e.target.closest('[data-ma]');if(!btn)return;
-  const k=btn.dataset.ma;state.maOn[k]=!state.maOn[k];lsSet(LSP+'ma',JSON.stringify(state.maOn));renderMaToggles();renderFibTf();drawChart();
+  const k=btn.dataset.ma;state.maOn[k]=!state.maOn[k];lsSet(LSP+'ma',JSON.stringify(state.maOn));renderMaToggles();drawChart();
 });
 $('tlBtn').onclick=()=>{state.showTrend=!state.showTrend;$('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);savePrefs();drawChart()};
-$('fibTfRow').onclick=e=>{const b=e.target.closest('.seg');if(!b)return;state.fibTf=b.dataset.ftf;lsSet(LSP+'fib_tf',state.fibTf);renderFibTf();drawChart()};
 $('lvList').onclick=e=>{const b=e.target.closest('.lvchip');if(!b)return;if(b.dataset.lv==='all'){hiddenLv=[];lsSet(LSP+'hidden_lv','[]');drawChart()}else toggleLv(+b.dataset.lv)};
 $('lvBtn').onclick=()=>{state.showLevels=!state.showLevels;$('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);savePrefs();drawChart()};
 document.querySelectorAll('#dirSeg .seg').forEach(b=>b.onclick=()=>{
@@ -2801,7 +2785,7 @@ loadPrefs();
 setSegActive('#dirSeg .seg','dir',state.dir);
 setSegActive('[data-ev]','ev',state.evFilter);
 renderTfGrid();
-renderMaToggles();renderFibTf();
+renderMaToggles();
 $('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);
 $('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);
 loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(scheduler,1000);
