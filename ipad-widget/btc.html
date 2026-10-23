@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="2a246d2fec">
+<meta name="build" content="6474637c91">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1356,7 +1356,7 @@ function emaSeries(bars,len){
 // チャートに重ねる移動平均（H1・M15共通のEMAと、時間足ごとのSMA）
 const SMA_COLOR='#f4f6f8';  // 120SMA（H1）・20SMA（M15）
 const EMAS=[{key:'e10',len:10,color:'#ff8fd1',w:1.4},{key:'e20',len:20,color:'#ff8c2e',w:1.4},{key:'e200',len:200,color:'#3d8bff',w:2}];
-// GMMA（複合型移動平均線）：短期組 EMA3〜15（青）と長期組 EMA30〜60（赤）の帯。短期組が長期組の上なら上昇、下なら下降
+// GMMA（複合型移動平均線）：短期組 EMA3〜15（青）と長期組 EMA30〜60（赤）の帯。短期組が長期組の上なら上昇、下なら下降、重なっていれば向きでゴールデン／デッドクロス
 const GMMA_S=[3,5,8,10,12,15],GMMA_L=[30,35,40,45,50,60],GMMA_SC='#5cc8ff',GMMA_LC='#ff6b6b';
 // 各移動平均の表示・非表示（端末ごとに保存）
 const MA_BTNS=[{key:'sma',color:SMA_COLOR,label:()=>smaLen()+'SMA'}].concat(EMAS.map(m=>({key:m.key,color:m.color,label:()=>m.len+'EMA'})),
@@ -2205,7 +2205,10 @@ function drawChart(){
     (state.maOn.sma?`<span class="legend"><i style="background:${SMA_COLOR}"></i>${len}SMA <b>${sv==null?'--':fmt(sv)}</b></span>`:'')+
     (state.maOn.st&&stl[hi??bars.length-1]!=null?`<span class="legend"><i style="background:${std[hi??bars.length-1]>0?'#42d59c':'#ff6969'}"></i>スーパートレンド ${std[hi??bars.length-1]>0?'上昇':'下降'} <b>${fmt(stl[hi??bars.length-1])}</b></span>`:'')+
     (gm?(()=>{const j=hi??bars.length-1,sv=gm.s.map(v=>v[j]),lv=gm.l.map(v=>v[j]);if(sv.concat(lv).some(v=>v==null))return '';
-      const sLo=Math.min(...sv),sHi=Math.max(...sv),lLo=Math.min(...lv),lHi=Math.max(...lv),st=sLo>lHi?'<b class="up">上昇</b>（短期組が上）':sHi<lLo?'<b class="down">下降</b>（短期組が下）':'<b>交差中</b>（短期組と長期組が重なる）';
+      const sLo=Math.min(...sv),sHi=Math.max(...sv),lLo=Math.min(...lv),lHi=Math.max(...lv),avg=v=>v.reduce((t,x)=>t+x,0)/v.length,gap=k=>{const a=gm.s.map(v=>v[k]),b=gm.l.map(v=>v[k]);return a.concat(b).some(x=>x==null)?null:avg(a)-avg(b)};
+      // 束が重なっているときは、3本前より短期組が長期組へ上がってきていればゴールデンクロス、下がってきていればデッドクロス
+      const g0=gap(j),g1=gap(Math.max(0,j-3))??g0;
+      const st=sLo>lHi?'<b class="up">上昇</b>（短期組が上）':sHi<lLo?'<b class="down">下降</b>（短期組が下）':g0>=g1?'<b class="up">ゴールデンクロス</b>（短期組が長期組を上抜け中）':'<b class="down">デッドクロス</b>（短期組が長期組を下抜け中）';
       return `<span class="legend"><i style="background:${GMMA_SC}"></i>GMMA短期 <b>${fmt(sLo)}〜${fmt(sHi)}</b></span><span class="legend"><i style="background:${GMMA_LC}"></i>GMMA長期 <b>${fmt(lLo)}〜${fmt(lHi)}</b></span><span class="legend"><i style="background:linear-gradient(90deg,${GMMA_SC} 50%,${GMMA_LC} 50%)"></i>GMMA ${st}</span>`})():'')+
     emas.map(m=>{const ev=m.vals[hi??bars.length-1];return `<span class="legend"><i style="background:${m.color}"></i>${m.len}EMA <b>${ev==null?'--':fmt(ev)}</b></span>`}).join('')+
     tls.map(t=>`<span class="legend"><i style="background:${t.kind==='up'?TL_UP:TL_DOWN}"></i>${t.kind==='up'?'上昇':'下降'}トレンドライン <b>${fmt(t.p1+t.slope*(endIdx-1-t.i1))}</b>（接点${t.touches}）</span>`).join('')+
