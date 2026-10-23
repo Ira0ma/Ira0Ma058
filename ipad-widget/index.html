@@ -201,6 +201,16 @@ body {
 .wx-hours .h { font-size: 11.5px; color: var(--ink-3); }
 .wx-hours svg { width: 26px; height: 22px; margin: 6px auto 4px; display: block; }
 .wx-hours .d { font-size: 13.5px; font-weight: 500; }
+/* earthquake alert over the hourly row (P2P地震情報: JMA quake reports and earthquake early warnings) */
+.wx-eq { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 1; min-height: 84px; border-radius: 12px; padding: 8px 30px 8px 11px; background: rgba(42,28,8,.96); border: 1px solid rgba(245,192,74,.7); box-shadow: 0 4px 18px rgba(0,0,0,.55); display: flex; flex-direction: column; justify-content: center; gap: 2px; cursor: pointer; }
+.wx-eq.warn { background: rgba(70,10,10,.97); border-color: var(--up-red); animation: eqPulse 1.1s ease-in-out infinite; }
+@keyframes eqPulse { 50% { box-shadow: 0 0 0 3px rgba(255,106,92,.55), 0 4px 18px rgba(0,0,0,.55); } }
+@media (prefers-reduced-motion: reduce) { .wx-eq.warn { animation: none; } }
+.wx-eq b { font-size: 13px; color: #f5c04a; }
+.wx-eq.warn b { color: #ff8a7e; }
+.wx-eq span { font-size: 12px; color: var(--ink); line-height: 1.45; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wx-eq small { font-size: 11px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wx-eq button { position: absolute; top: 4px; right: 4px; font: inherit; font-size: 13px; line-height: 1; color: var(--ink-2); background: none; border: 0; padding: 4px 6px; cursor: pointer; }
 
 /* quote */
 #quote { left: 352px; top: 536px; width: 305px; height: 270px; }
@@ -398,6 +408,7 @@ html:not(.flow) #flow { display: none; }
       <div class="wx-hl num">最高 <span data-wx="hi">26</span>°<br>最低 <span data-wx="lo">18</span>°</div>
     </div>
     <div class="wx-hours num" data-wx="hours"></div>
+    <div class="wx-eq" id="wx-eq" role="alert" hidden><button type="button" aria-label="地震情報を閉じる">✕</button><b></b><span></span><small></small></div>
     <div class="wx-panel" hidden>
       <div class="wx-ph"><span>天気の場所</span><button type="button" class="wx-close">閉じる</button></div>
       <button type="button" class="wx-gps"><svg width="10" height="12" viewBox="0 0 10 12"><path d="M5 11.2S1 7.2 1 4.6a4 4 0 0 1 8 0c0 2.6-4 6.6-4 6.6z" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="5" cy="4.6" r="1.4" fill="currentColor"/></svg>現在地を使う</button>
@@ -1274,6 +1285,91 @@ html:not(.flow) #flow { display: none; }
       });
   }
 
+  /* ---------- earthquakes ----------
+     P2P地震情報 relays JMA's reports: a WebSocket pushes them as they are issued, and the history API
+     (read on launch and every 2 minutes) covers the moments the socket is down. Shown over the weather
+     card's hourly row with a sound: an earthquake early warning (緊急地震速報・警報) at once, and a quake
+     report of 震度3 or more, or with a tsunami advisory, for 30 minutes. A tap closes it. */
+  var EQ_API = "https://api.p2pquake.net/v2/history?codes=551&codes=556&limit=10", EQ_WS = "wss://api.p2pquake.net/v2/ws";
+  var EQ_SHOW = 30 * 60000, EQ_MIN_SCALE = 30;
+  var EQ_SCALE = { 10: "1", 20: "2", 30: "3", 40: "4", 45: "5弱", 50: "5強", 55: "6弱", 60: "6強", 70: "7" };
+  var EQ_TSUNAMI = { None: "この地震による津波の心配はありません", Unknown: "津波の有無は調査中です", Checking: "津波の有無は調査中です",
+    NonEffective: "若干の海面変動の可能性（被害の心配なし）", Watch: "津波注意報が出ています", Warning: "津波警報が出ています" };
+  var eqShown = null, eqClosed = "", eqWs = null, eqRetry = 0, eqStart = Date.now();
+  try { eqClosed = localStorage.getItem("desk_eq_closed") || ""; } catch (e) {}
+  function eqTime(s) { return s ? Date.parse(s.replace(/\//g, "-").replace(" ", "T").replace(/\.\d+$/, "") + "+09:00") : NaN; }
+  function eqHm(t) { var d = new Date(t); return d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2); }
+  function eqRead(m) {  // -> { id, at, warn, head, line, note } or null when it is not worth an alert
+    if (m.code === 556) {  // earthquake early warning (warning level: strong shaking expected)
+      if (m.test || m.cancelled) return m.cancelled ? { id: "eew" + (m.issue && m.issue.eventId), cancel: true } : null;
+      var h = (m.earthquake && m.earthquake.hypocenter) || {}, at = eqTime(m.earthquake && m.earthquake.originTime) || eqTime(m.time);
+      var prefs = [];
+      (m.areas || []).forEach(function (a) { if (a.pref && prefs.indexOf(a.pref) < 0) prefs.push(a.pref); });
+      return { id: "eew" + (m.issue && m.issue.eventId), at: at, warn: true, head: "緊急地震速報（警報）" + eqHm(at),
+        line: (h.name || "震源 調査中") + (h.magnitude > 0 ? "　M" + h.magnitude : "") + "　強い揺れに警戒",
+        note: prefs.length ? "対象：" + prefs.slice(0, 6).join("・") : "" };
+    }
+    if (m.code !== 551 || !m.earthquake) return null;
+    var q = m.earthquake, hy = q.hypocenter || {}, t = eqTime(q.time), ts = q.domesticTsunami;
+    var tsunami = ts === "Watch" || ts === "Warning";
+    if (!(q.maxScale >= EQ_MIN_SCALE) && !tsunami) return null;
+    var place = hy.name || "震源 調査中", mag = hy.magnitude > 0 ? "　M" + hy.magnitude : "", dep = hy.depth > 0 ? "　深さ" + hy.depth + "km" : hy.depth === 0 ? "　ごく浅い" : "";
+    return { id: "q" + q.time, at: t, warn: tsunami || q.maxScale >= 50, head: "地震 " + eqHm(t) + "　最大震度" + (EQ_SCALE[q.maxScale] || "--"),
+      line: place + mag + dep, note: EQ_TSUNAMI[ts] || "" };
+  }
+  function eqAlarm(warn) {  // follows the desk's sound setting
+    var g = SOUND[soundIdx].g, ac = g && audio();
+    if (!ac) return;
+    var t0 = ac.currentTime + 0.02, n = warn ? 6 : 2;
+    for (var i = 0; i < n; i++) {
+      var o = ac.createOscillator(), v = ac.createGain(), t = t0 + i * 0.3;
+      o.type = "square"; o.frequency.value = i % 2 ? 660 : 880;
+      v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(g * 0.6, t + 0.01); v.gain.setValueAtTime(g * 0.6, t + 0.2); v.gain.linearRampToValueAtTime(0, t + 0.24);
+      o.connect(v); v.connect(ac.destination); o.start(t); o.stop(t + 0.26);
+    }
+  }
+  function eqPaint() {
+    var el = document.getElementById("wx-eq"), e = eqShown;
+    var on = !!e && Date.now() - e.at < EQ_SHOW && e.id !== eqClosed;
+    el.hidden = !on;
+    if (!on) return;
+    el.classList.toggle("warn", !!e.warn);
+    el.querySelector("b").textContent = "⚠ " + e.head;
+    el.querySelector("span").textContent = e.line;
+    el.querySelector("small").textContent = e.note;
+  }
+  function eqTake(m, live) {
+    var e = eqRead(m);
+    if (!e) return;
+    if (e.cancel) { if (eqShown && eqShown.id === e.id) { eqShown = null; eqPaint(); } return; }
+    if (!(Date.now() - e.at < EQ_SHOW)) return;
+    var fresh = !eqShown || eqShown.id !== e.id;
+    if (eqShown && !fresh && !live) return;  // the history repeats what is already shown
+    if (eqShown && fresh && eqShown.at > e.at) return;  // keep the newest quake
+    var louder = !eqShown || fresh || (e.warn && !eqShown.warn);
+    eqShown = e; eqPaint();
+    // sound for what arrives during the visit (not for a quake already some minutes old at launch)
+    if (louder && e.id !== eqClosed && (live || Date.now() - e.at < 10 * 60000 || e.at > eqStart - 60000)) eqAlarm(e.warn);
+  }
+  function eqHistory() {
+    if (!window.fetch) return;
+    fetch(EQ_API).then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (list) { list.slice().reverse().forEach(function (m) { eqTake(m, false); }); })
+      .catch(function () {});
+  }
+  function eqConnect() {
+    if (!window.WebSocket) return;
+    try { eqWs = new WebSocket(EQ_WS); } catch (e) { return; }
+    eqWs.onopen = function () { eqRetry = 0; };
+    eqWs.onmessage = function (ev) { try { eqTake(JSON.parse(ev.data), true); } catch (e) {} };
+    eqWs.onclose = function () { eqWs = null; setTimeout(eqConnect, Math.min(60000, 3000 * Math.pow(2, eqRetry++))); };
+  }
+  document.getElementById("wx-eq").addEventListener("click", function () {
+    if (!eqShown) return;
+    eqClosed = eqShown.id; try { localStorage.setItem("desk_eq_closed", eqClosed); } catch (e) {}
+    eqPaint();
+  });
+
   /* ---------- calendar ---------- */
   var HOL = "2026-01-01 2026-01-12 2026-02-11 2026-02-23 2026-03-20 2026-04-29 2026-05-03 2026-05-04 2026-05-05 2026-05-06 2026-07-20 2026-08-11 2026-09-21 2026-09-22 2026-09-23 2026-10-12 2026-11-03 2026-11-23 " +
             "2027-01-01 2027-01-11 2027-02-11 2027-02-23 2027-03-21 2027-03-22 2027-04-29 2027-05-03 2027-05-04 2027-05-05 2027-07-19 2027-08-11 2027-09-20 2027-09-23 2027-10-11 2027-11-03 2027-11-23";
@@ -1829,6 +1925,7 @@ html:not(.flow) #flow { display: none; }
     document.querySelector("[data-wx-main]").innerHTML = "";
   }
   tickClock(); renderCal(); bg.start(); layout(); loadWeather(); loadPrices();
+  eqHistory(); eqConnect(); setInterval(eqHistory, 2 * 60000); setInterval(eqPaint, 30000);
   if (loc.gps) locate(loadWeather, function () {});
   setInterval(loadPrices, 60000);
   liveWatch(); setInterval(liveWatch, 5000);
@@ -1842,7 +1939,7 @@ html:not(.flow) #flow { display: none; }
   // start both dashboards in the background so their entry calls reach the desk
   var preload = function () { setTimeout(function () { ensureSheet("gold"); ensureSheet("usdjpy"); }, 1500); };
   if (document.readyState === "complete") preload(); else window.addEventListener("load", preload);
-  document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); loadCalendar(); loadMarket(); loadReport(); } });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); loadCalendar(); loadMarket(); loadReport(); eqHistory(); } });
   setInterval(loadWeather, 30 * 60000);
   var lastDay = new Date().getDate(), lastMonth = new Date().getMonth();
   setInterval(function () {
