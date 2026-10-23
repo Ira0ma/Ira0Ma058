@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="208f69793c">
+<meta name="build" content="d15de20ba8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1389,7 +1389,8 @@ const MA_BTNS=[{key:'sma',color:SMA_COLOR,label:()=>smaLen()+'SMA'}].concat(EMAS
   [{key:'st',color:'linear-gradient(90deg,#42d59c 50%,#ff6969 50%)',label:()=>'スーパートレンド'},
    {key:'rsi',color:'#b48cff',label:()=>'RSI(14)'},
    {key:'fib',color:FIB_COLOR,label:()=>'フィボナッチ'},
-   {key:'swing',color:'linear-gradient(90deg,#42d59c 50%,#ff6969 50%)',label:()=>'高値・安値'},
+   {key:'swingN',color:'linear-gradient(90deg,#42d59c 50%,#ff6969 50%)',label:()=>'直近高値・安値'},
+   {key:'swingP',color:'#93a0ad',label:()=>'前回高値・安値'},
    {key:'gmmaS',color:GMMA_SC,label:()=>'GMMA短期',off:true},
    {key:'gmmaL',color:GMMA_LC,label:()=>'GMMA長期',off:true}],
   IS_GOLD?[{key:'big',color:'#ffb547',label:()=>'大口決済の兆候'}]:[]);
@@ -1412,6 +1413,7 @@ function superTrend(bars){
   return {line,dir};
 }
 function loadMaOn(){let o={};try{o=JSON.parse(lsGet(LSP+'ma','{}'))||{}}catch{}
+  if('swing' in o){o.swingN??=o.swing;o.swingP??=o.swing}  // 以前の「高値・安値」ボタン（1つ）の設定を直近・前回の両方に引き継ぐ
   if('gmma' in o){o.gmmaS??=o.gmma;o.gmmaL??=o.gmma}  // 以前のGMMAボタン（1つ）の設定を短期・長期の両方に引き継ぐ
   state.maOn=Object.fromEntries(MA_BTNS.map(b=>[b.key,b.key in o?o[b.key]!==false:!b.off]))}  // offの線は最初は非表示
 function renderMaToggles(){
@@ -2187,8 +2189,9 @@ function drawChart(){
   const dow=dowTrend(source,DOW_K[state.tf]||4);
   ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='center';
   const swingBoxes=[];  // 高値・安値ラベルの場所（フィボの名前をよける）
-  // 直近・前回の高値・安値の印と価格（「高値・安値」ボタンで消せる。ダウ理論の判定は表示したまま）
-  if(state.maOn.swing)[['highs',-1],['lows',1]].forEach(([key,sd])=>dow[key].forEach((pv,n)=>{
+  // 直近・前回の高値・安値の印と価格（「直近高値・安値」「前回高値・安値」ボタンで別々に消せる。ダウ理論の判定は表示したまま）
+  [['highs',-1],['lows',1]].forEach(([key,sd])=>dow[key].forEach((pv,n)=>{
+    if(!state.maOn[n?'swingN':'swingP'])return;
     const xi=pv.i-startIdx;if(xi<0||xi>=bars.length)return;
     const yy=y(pv.p)+sd*9,up=n?pv.p>dow[key][0].p:null;
     const col=up==null?'#93a0ad':up?'#42d59c':'#ff6969';
