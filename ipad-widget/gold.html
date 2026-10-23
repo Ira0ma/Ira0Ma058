@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="5f70ca4250">
+<meta name="build" content="17cb305515">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -245,6 +245,7 @@ canvas.dragging{cursor:grabbing}
 .dirlabel b{font-size:14px}
 .form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
 .form.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.form .wide{grid-column:1/-1}
 .form label{font-size:11px;color:var(--muted)}
 .inlinecheck{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:10px}
 .inlinecheck input{width:18px;height:18px;margin:0;accent-color:var(--gold)}
@@ -448,7 +449,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div class="result key"><span>想定利益</span><strong id="profitYen">--</strong><em id="rr">RR --</em></div>
       <div class="result"><span>SL幅</span><strong id="slDist">--</strong></div>
       <div class="result"><span>TP幅</span><strong id="tpDist">--</strong></div>
-      <div class="result"><span>M15 ATR14</span><strong id="atrVal">--</strong></div>
+      <div class="result"><span>スプレッド</span><strong id="sprVal">--</strong><em id="sprSub">--</em></div>
       <div class="result"><span>必要証拠金</span><strong id="marginYen">--</strong><em id="marginSub">--</em></div>
       <div class="result"><span>証拠金維持率</span><strong id="marginLevel">--</strong><em>口座資金 ÷ 必要証拠金</em></div>
       <div class="result"><span>証拠金での最大</span><strong id="maxLot">--</strong><em id="maxLotSub">--</em></div>
@@ -462,8 +463,9 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
         <label>レバレッジ（倍）<input id="leverage" type="number" inputmode="numeric" value="1000"></label>
         <label>SL = ATR ×<input id="slMult" type="number" step="0.1" inputmode="decimal" value="1.2"></label>
         <label>目標RR<input id="rrTarget" type="number" step="0.1" inputmode="decimal" value="2.0"></label>
+        <label class="wide">スプレッド（pips・<span id="sprPipNote">1pips＝$0.10</span>）<input id="spread" type="number" step="0.1" min="0" inputmode="decimal"></label>
       </div>
-      <div class="autonote">契約量とレバレッジは、選んだ口座（XM／XS）ごとに保存されます。<span id="brokerNote">XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。</span>口座残高が増えると上限レバレッジが下がる業者もあるため、その場合はレバレッジ欄を変更してください。</div>
+      <div class="autonote">契約量・レバレッジ・スプレッドは、選んだ口座（XM／XS）ごとに保存されます。<span id="sprNote"></span><span id="brokerNote">XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。</span>口座残高が増えると上限レバレッジが下がる業者もあるため、その場合はレバレッジ欄を変更してください。</div>
     </details>
     <div id="atrNote" class="autonote">--</div>
   </section>
@@ -514,17 +516,17 @@ const $ = id => document.getElementById(id);
 /* 銘柄ごとの設定。同じページを usdjpy.html として配信すると USD/JPY 版になる（build.py が生成） */
 const INSTRUMENTS={
   gold:{key:'gold',site:'gold',title:'GOLD',label:'XAU / USD',short:'XAU',name:'ゴールド',sub:'XAU/USD専用｜自動更新｜iPad・iPhone・Android対応',
-    dp:2,pip:0.1,minTp:50,pipNote:'1pips＝$0.10',momTh:0.8,slMin:2,tolMin:.5,unit:'oz',contract:'100',cupHandle:true,patterns:true,
+    dp:2,pip:0.1,minTp:50,pipNote:'1pips＝$0.10',momTh:0.8,slMin:2,tolMin:.5,unit:'oz',contract:'100',cupHandle:true,patterns:true,spread:{xm:'2.3',xs:'1.2'},
     brokerNote:'XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,2),
     footer:'データ: Gold API・XAUS（GOLD価格）／GitHub Actionsで定期取得したYahoo Finance足（チャート）・Forex Factory（経済指標）／Frankfurter（USD/JPY補助）。'},
   usdjpy:{key:'usdjpy',site:'usdjpy',title:'USDJPY',label:'USD / JPY',short:'USDJPY',name:'ドル円',sub:'USD/JPY専用｜自動更新｜iPad・iPhone・Android対応',
-    dp:3,pip:0.01,minTp:30,pipNote:'1pips＝0.01円',momTh:0.03,slMin:0.05,tolMin:.02,unit:'通貨',contract:'100000',patterns:true,
+    dp:3,pip:0.01,minTp:30,pipNote:'1pips＝0.01円',momTh:0.03,slMin:0.05,tolMin:.02,unit:'通貨',contract:'100000',patterns:true,spread:{xm:'1.6',xs:'0.8'},
     brokerNote:'ドル円の1lotは多くの業者で10万通貨です。ご自身の口座の取引条件で確認してください。',
     dist:v=>(v/0.01).toFixed(1)+'pips',
     footer:'データ: Coinbase（ドル円の最新レート）／GitHub Actionsで定期取得したYahoo Finance足（チャート・価格）・Forex Factory（経済指標）。'},
   btc:{key:'btc',site:'btc',title:'BTCUSD',label:'BTC / USD',short:'BTC',name:'ビットコイン',asset:'BTC',sub:'BTC/USD専用｜24時間自動更新｜iPad・iPhone・Android対応',
-    dp:2,pip:1,minTp:300,pipNote:'1pips＝$1',momTh:20,slMin:40,tolMin:10,unit:'BTC',contract:'1',patterns:true,
+    dp:2,pip:1,minTp:300,pipNote:'1pips＝$1',momTh:20,slMin:40,tolMin:10,unit:'BTC',contract:'1',patterns:true,spread:{xm:'60',xs:'36'},
     brokerNote:'XMのBTCUSDは1lot＝1BTCです。XSの契約量・スプレッドはご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,0),
     footer:'データ: Coinbase・Kraken・OKX（BTCのリアルタイム価格）／GitHub Actionsで定期取得したYahoo Finance足（チャート）・Forex Factory（経済指標）。'}
@@ -538,7 +540,7 @@ const LSP=INSTR.key+'_';  // 端末に保存する設定は銘柄ごとに分け
   const t=(id,v)=>{const el=$(id);if(el)el.textContent=v};
   document.title=INSTR.title+' Trade Dashboard';
   t('h1Sym',INSTR.title);t('subTitle',INSTR.sub);t('miniSym',INSTR.short);t('instrLabel',INSTR.label);
-  t('chartTitle',INSTR.title+'チャート');t('contractLabel','1lot契約量('+INSTR.unit+')');t('brokerNote',INSTR.brokerNote);
+  t('chartTitle',INSTR.title+'チャート');t('sprPipNote',INSTR.pipNote);t('contractLabel','1lot契約量('+INSTR.unit+')');t('brokerNote',INSTR.brokerNote);
   t('relBtn',INSTR.name+'関連');t('minTpLabel',INSTR.minTp);t('footerSrc',INSTR.footer);
   if(IS_BTC){
     const logo=document.querySelector('.logo');if(logo){logo.textContent='₿';logo.style.fontSize='20px'}
@@ -740,12 +742,15 @@ function loadCache(){
 const PREFS={capital:[LSP+'capital','100000'],riskPct:[LSP+'risk_pct','1.0'],lotManual:[LSP+'lot_manual',''],
   slMult:[LSP+'sl_mult','1.2'],rrTarget:[LSP+'rr','2.0']};
 // 口座ごとの初期値（契約量oz・レバレッジ）。変更した値は口座ごとに保存
-const BROKERS={xm:{name:'XM',contract:INSTR.contract,lev:'1000'},xs:{name:'XS',contract:INSTR.contract,lev:'2000'}};
+// スプレッドの初期値は口座タイプ（XM KIWAMI極・XS プロ）の平均の目安。MT5で見た値に直せる
+const BROKERS={xm:{name:'XM',acct:'KIWAMI極',contract:INSTR.contract,lev:'1000'},xs:{name:'XS',acct:'プロ',contract:INSTR.contract,lev:'2000'}};
 function brokerKey(k){return LSP+state.broker+'_'+k}
 function loadBroker(){
   const b=BROKERS[state.broker];
   $('contract').value=lsGet(brokerKey('contract'),state.broker==='xm'?lsGet(LSP+'contract',b.contract):b.contract);
   $('leverage').value=lsGet(brokerKey('lev'),b.lev);
+  $('spread').value=lsGet(brokerKey('spread'),INSTR.spread[state.broker]);
+  $('sprNote').textContent='スプレッドの初期値は'+b.name+' '+b.acct+'口座の平均の目安です（'+INSTR.spread[state.broker]+'pips）。早朝や指標発表の前後は広がるので、MT5で見た値に直してください。';
   setSegActive('#brokerSeg .seg','broker',state.broker);
   updateBrokerLabels();
 }
@@ -772,7 +777,7 @@ function savePrefs(){
   Object.entries(PREFS).forEach(([id,[k]])=>lsSet(k,$(id).value));
   lsSet(LSP+'auto_risk',$('autoRisk').checked?'1':'0');
   lsSet(LSP+'dir',state.dir);lsSet(LSP+'ev_filter',state.evFilter);lsSet(LSP+'tf',state.tf);lsSet(LSP+'levels',state.showLevels?'1':'0');lsSet(LSP+'trend',state.showTrend?'1':'0');
-  lsSet(LSP+'broker',state.broker);lsSet(brokerKey('contract'),$('contract').value);lsSet(brokerKey('lev'),$('leverage').value);
+  lsSet(LSP+'broker',state.broker);lsSet(brokerKey('contract'),$('contract').value);lsSet(brokerKey('lev'),$('leverage').value);lsSet(brokerKey('spread'),$('spread').value);
   updateBrokerLabels();
 }
 
@@ -1640,7 +1645,10 @@ function calcRisk(){
   // fx＝値動き1あたりの円換算（ゴールドはドル建てなのでドル円、ドル円は円建てなので1）
   const contract=n($('contract').value)||n(INSTR.contract), fx=IS_FX?1:(state.fx||0);
   const maxLoss=capital*rp/100,sl=Math.abs(entry-stop),tp=Math.abs(target-entry);
-  const lot=fx&&sl?((maxLoss/fx)/(sl*contract)):0;
+  // スプレッド：チャートの価格から約定するので、損切りまでの損失は SL幅＋スプレッド、利確の利益は TP幅−スプレッド
+  const sprPips=Math.max(n($('spread').value),0),spr=sprPips*INSTR.pip;
+  const slEff=sl?sl+spr:0,tpEff=Math.max(tp-spr,0);
+  const lot=fx&&slEff?((maxLoss/fx)/(slEff*contract)):0;
   const riskStep=Math.floor(lot*100)/100;
   // 証拠金：1lotあたり＝契約量×価格（円換算）÷レバレッジ
   const lev=n($('leverage').value)||1,price=entry||state.spot?.price||0;
@@ -1654,7 +1662,7 @@ function calcRisk(){
   let useLot,profit;
   if(manual>0){
     useLot=manual;
-    const loss=fx?sl*contract*manual*fx:0;profit=fx?tp*contract*manual*fx:0;
+    const loss=fx?slEff*contract*manual*fx:0;profit=fx?tpEff*contract*manual*fx:0;
     $('riskYen').textContent=loss?yen(loss):'--';
     $('riskSub').textContent=loss&&capital?'資金の'+(loss/capital*100).toFixed(2)+'%（SL到達時）':'SL到達時';
     $('riskSub').className=capital&&loss/capital*100>rp?'warn':'';
@@ -1664,10 +1672,10 @@ function calcRisk(){
     $('lotLabel').textContent='入力ロット';$('lossLabel').textContent='想定損失';
   }else{
     // XM・XSとも注文は0.01lot刻み：目安ロットは許容リスク以内に収まる0.01刻みの値（最小0.01lot）
-    useLot=Math.max(lotStep,0.01);profit=fx?tp*contract*useLot*fx:0;
-    const minLoss=fx?sl*contract*0.01*fx:0;
+    useLot=Math.max(lotStep,0.01);profit=fx?tpEff*contract*useLot*fx:0;
+    const minLoss=fx?slEff*contract*0.01*fx:0;
     $('riskYen').textContent=yen(maxLoss);
-    $('riskSub').textContent='資金の'+rp+'%';$('riskSub').className='';
+    $('riskSub').textContent='資金の'+rp+'%'+(spr?'（スプレッド込み）':'');$('riskSub').className='';
     $('lotSize').textContent=lot?useLot.toFixed(2):'--';
     $('lotRound').textContent=!lot?'--':limited?'証拠金の上限に合わせた値':lotStep>=0.01?'0.01刻み・リスク'+yen(maxLoss)+'以内':
       '最小ロット。損失'+yen(minLoss)+'（資金の'+(capital?(minLoss/capital*100).toFixed(2):'--')+'%）';
@@ -1684,16 +1692,18 @@ function calcRisk(){
   $('slDist').textContent=sl?INSTR.dist(sl):'--';
   $('tpDist').textContent=tp?INSTR.dist(tp):'--';
   $('profitYen').textContent=profit?yen(profit):'--';
-  $('rr').textContent='RR '+(sl?(tp/sl).toFixed(2):'--');
-  $('atrVal').textContent=state.m15.length?INSTR.dist(currentAtr()):'--';
+  $('rr').textContent='RR '+(sl?(tp/sl).toFixed(2):'--')+(sl&&spr?'（実質 '+(tpEff/slEff).toFixed(2)+'）':'');
+  const sprCost=fx?spr*contract*useLot*fx:0;
+  $('sprVal').textContent=spr?(sprCost?yen(sprCost):'--'):'0';
+  $('sprSub').textContent=sprPips.toFixed(1)+'pips・'+BROKERS[state.broker].name+' '+BROKERS[state.broker].acct+'｜'+useLot.toFixed(2)+' lot';
 
   const dirTxt=isBuy?'<b class="up">買い（BUY）</b>':'<b class="down">売り（SELL）</b>';
   const why=state.dir==='auto'?(state.signal==='WAIT'?'シグナルWAIT中のため買い想定':'シグナル連動'):'手動指定';
   $('dirLabel').innerHTML='想定方向：'+dirTxt+' <span class="sub">｜'+why+'</span>';
-  $('settingsSum').textContent='口座設定（'+BROKERS[state.broker].name+' '+lev+'倍・'+yen(capital)+'・リスク'+rp+'%・'+contract.toLocaleString('ja-JP')+INSTR.unit+'/lot）';
-  $('atrNote').textContent=$('autoRisk').checked
+  $('settingsSum').textContent='口座設定（'+BROKERS[state.broker].name+' '+lev+'倍・'+yen(capital)+'・リスク'+rp+'%・'+contract.toLocaleString('ja-JP')+INSTR.unit+'/lot・スプレッド'+sprPips.toFixed(1)+'pips）';
+  $('atrNote').textContent=(state.m15.length?'M15 ATR14 '+INSTR.dist(currentAtr())+'｜':'')+($('autoRisk').checked
     ?'自動SL = ATR×'+(n($('slMult').value)||1.2)+'（最低'+INSTR.dist(INSTR.slMin)+'）／TP = SL×'+(n($('rrTarget').value)||2)+(state.m15.length?'':'｜M15データ待ちのため価格の0.12%で代用')
-    :'手入力モード：エントリー・SL・TPを自由に入力できます。';
+    :'手入力モード：エントリー・SL・TPを自由に入力できます。')+(spr?'｜ロット・損失・利益はスプレッド'+sprPips.toFixed(1)+'pips込み':'');
   return manual>0?{lot:manual,lotStep:manual,sl}:{lot,lotStep,sl};
 }
 
@@ -2488,7 +2498,7 @@ document.querySelectorAll('#brokerSeg .seg').forEach(b=>b.onclick=()=>{
   savePrefs();state.broker=b.dataset.broker;loadBroker();savePrefs();renderAll();
 });
 $('lotClear').onclick=()=>{$('lotManual').value='';savePrefs();const r=calcRisk();renderChecks(r)};
-['capital','riskPct','lotManual','contract','leverage','slMult','rrTarget','entry','stop','target'].forEach(id=>$(id).addEventListener('input',()=>{savePrefs();const r=calcRisk();renderChecks(r)}));
+['capital','riskPct','lotManual','contract','leverage','spread','slMult','rrTarget','entry','stop','target'].forEach(id=>$(id).addEventListener('input',()=>{savePrefs();const r=calcRisk();renderChecks(r)}));
 $('autoRisk').addEventListener('change',()=>{savePrefs();const r=calcRisk();renderChecks(r)});
 $('checks').addEventListener('change',e=>{
   const id=e.target.dataset.check;if(!id)return;
