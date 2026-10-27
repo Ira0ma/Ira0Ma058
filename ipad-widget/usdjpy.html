@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="525c44d502">
+<meta name="build" content="fb7a88c12e">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -893,6 +893,17 @@ async function getSite(){
   siteCache={t:Date.now(),d};return d;
 }
 function siteBars(rows){return (rows||[]).map(r=>({t:toMs(r[0]),o:n(r[1]),h:n(r[2]),l:n(r[3]),c:n(r[4])})).filter(b=>b.t&&b.c)}
+// 最後の足が区切り（5分・15分・30分・1時間）からずれていたら（データ元の最新値が「今の分」の足として付いてくる）、
+// その区切りの足にまとめる。そのままだと1本だけの足ができ、次からの足も区切りがずれる
+function fixTail(bars,minutes){
+  if(bars.length<1||!minutes||minutes>60)return bars;
+  const ms=minutes*60000,last=bars.at(-1),b=last.t-last.t%ms;
+  if(b===last.t)return bars;
+  const prev=bars.at(-2);
+  if(prev&&prev.t===b){prev.h=Math.max(prev.h,last.h);prev.l=Math.min(prev.l,last.l);prev.c=last.c;if(last.v)prev.v=(prev.v||0)+last.v;bars.pop()}
+  else last.t=b;
+  return bars;
+}
 // 最新価格を直近の足に反映（チャートと判定をリアルタイムに保つ）
 // 先物のままのローソク足を、先物とスポットの差だけ平行移動する（XM・XSの価格はスポット）
 function alignSiteBars(spot){
@@ -1241,6 +1252,7 @@ async function refreshCharts(){
       state.h1=hb;state.m15=mb;for(const tf of ['m5','m30','h4','d1','w1','mn'])state[tf]=siteBars(g[TFS[tf].site]);
       // 先物の出来高（ゴールドのみ）。足と同じ並び
       const vol=inst.volume||{};for(const tf in TFS){const vv=vol[TFS[tf].site];if(vv&&vv.length===state[tf].length)state[tf].forEach((b,i)=>{b.v=vv[i]})}
+      for(const tf of ['m5','m15','m30','h1'])fixTail(state[tf],TFS[tf].min);
       state.health.h1=state.health.m15=true;changed=true;state.src.chart='サイト';
       // サイトの金のローソク足は先物（GC=F）をスポット価格に合わせたもの。合わせられなかった回は、ここでライブのスポット価格に合わせる
       state.siteUnadjusted=IS_GOLD&&inst.spotAdjusted===false;

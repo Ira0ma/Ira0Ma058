@@ -175,6 +175,22 @@ def yahoo(symbol, interval, rng, fixture=None):
         v = (q.get("volume") or [None] * (i + 1))[i]
         if v:
             vol[t] = v
+    # Yahoo ends intraday series with the latest quote stamped at the current minute (e.g. 12:04 after the 12:00
+    # candle). Fold it into the candle it belongs to, or start that candle on its boundary, so no extra one-tick
+    # candle appears and later candles stay on the quarter-hours / hours.
+    sec = {"1m": 60, "2m": 120, "5m": 300, "15m": 900, "30m": 1800, "60m": 3600, "90m": 5400, "1h": 3600}.get(interval)
+    if sec and rows:
+        t, o, h, l, c = rows[-1]
+        b = t - t % sec
+        if b != t:
+            if len(rows) >= 2 and rows[-2][0] == b:
+                p = rows[-2]
+                p[2], p[3], p[4] = max(p[2], h), min(p[3], l), c
+                rows.pop()
+            else:
+                rows[-1][0] = b
+            if t in vol:
+                vol[b] = vol.get(b, 0) + vol.pop(t)
     VOLUME[(symbol, interval)] = vol
     return rows
 
