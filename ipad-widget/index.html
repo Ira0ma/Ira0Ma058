@@ -59,7 +59,7 @@ body {
 
 /* clock */
 #clock { left: 27px; top: 35px; width: 241px; height: 276px; }
-#clock .content { position: relative; padding: 22px 22px; }
+#clock .content { position: relative; padding: 40px 22px 22px; }  /* room at the top for the 通知 and sound buttons */
 .sound-btn { position: absolute; right: 12px; top: 12px; z-index: 2; display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 11px; font-weight: 700; color: var(--ink); background: rgba(0,0,0,.35); border: 1px solid var(--glass-line); border-radius: 999px; padding: 4px 9px; cursor: pointer; }
 .notify-btn { position: absolute; left: 12px; top: 12px; z-index: 2; display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 11px; font-weight: 700; color: var(--ink-3); background: rgba(0,0,0,.35); border: 1px solid var(--glass-line); border-radius: 999px; padding: 4px 9px; cursor: pointer; }
 .notify-btn[aria-pressed="true"] { color: #14100a; background: var(--gold); border-color: var(--gold); }
@@ -72,7 +72,7 @@ body {
 .sound-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 #clock .time { font-family: var(--display); font-size: 70px; font-weight: 300; letter-spacing: -.02em; line-height: 1; }
 #clock .date { font-size: 21px; font-weight: 500; margin-top: 8px; }
-#clock .note { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); margin-top: 16px; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+#clock .note { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); margin-top: 12px; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
 
 /* markets */
 #markets { left: 281px; top: 35px; width: 903px; height: 276px; display: grid; grid-template-columns: 1fr 1px 1fr 1px 1fr; }  /* ドル円・ゴールド・BTC */
@@ -237,7 +237,7 @@ body {
 #clock .q-text { font-family: var(--mincho); font-size: 15px; font-weight: 600; line-height: 1.55; letter-spacing: .04em; color: var(--ink); white-space: pre-line; overflow-wrap: anywhere; margin-top: 12px; max-height: 72px; overflow: hidden; }
 #clock .q-text.small { font-size: 13.5px; }
 #clock .q-text.xsmall { font-size: 12px; line-height: 1.5; }
-.q-edit { position: absolute; right: 12px; top: 104px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 11.5px; color: var(--ink-2); background: rgba(0,0,0,.35); border: 1px solid var(--glass-line); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+.q-edit { position: absolute; right: 12px; top: 124px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 11.5px; color: var(--ink-2); background: rgba(0,0,0,.35); border: 1px solid var(--glass-line); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
 .q-edit:hover, .q-edit:focus-visible { color: var(--gold); }
 .q-panel { position: absolute; inset: 10px; z-index: 2; background: rgba(14,16,22,.97); border: 1px solid var(--glass-line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 .q-panel textarea { flex: 1; resize: none; font-family: var(--mincho); font-size: 16px; line-height: 1.6; color: var(--ink); background: rgba(255,255,255,.05); border: 1px solid var(--glass-line); border-radius: 10px; padding: 10px; -webkit-user-select: text; user-select: text; }
