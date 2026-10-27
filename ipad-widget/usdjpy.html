@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="335ba21728">
+<meta name="build" content="a519d2531e">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -151,6 +151,12 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .al-sw i{position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#8796a5;transition:left .15s}
 .al-sw[aria-pressed="true"]{background:#2f6fe4;border-color:#3d7bf0}.al-sw[aria-pressed="true"] i{left:21px;background:#fff}
 .alerthist{margin-top:10px;font-size:12px}.alerthist b{display:block;margin-bottom:4px}.alerthist .sub div{padding:3px 0;border-bottom:1px solid #1a222b}
+.smcguide summary{font-size:12px}
+.smcg{font-size:12px;line-height:1.7;color:#cbd6e0;padding-bottom:10px}.smcg p{margin:6px 0}
+.smcg dl{margin:6px 0;display:grid;gap:4px}.smcg dt{font-weight:900;font-size:13px;margin-top:4px}.smcg dt small{font-weight:600;font-size:10.5px;color:var(--muted);margin-left:6px}
+.smcg dt.bos{color:#5cc8ff}.smcg dt.choch{color:#ffd166}.smcg dd{margin:0 0 0 2px}
+.smcex{background:#0a0e12;border:1px solid #232d36;border-radius:9px;padding:8px 10px;margin:8px 0}.smcex b{display:block;font-size:11px;color:var(--muted)}
+.smcg .up{color:#42d59c;font-weight:700}.smcg .down{color:#ff6969;font-weight:700}.smcg ul{margin:4px 0;padding-left:1.2em}
 .gxtoast.al{color:#ffd57a;border-color:rgba(255,213,122,.7)}
 .stat{background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:9px 10px;min-width:0}
 .stat span{display:block;color:var(--muted);font-size:10px}.stat b{display:block;font-size:14px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -581,7 +587,28 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <div id="techH1" class="techlist"></div>
     <div class="cardhead" style="margin-top:14px"><div><div class="title">CHOCH / BOS（M15）</div><div class="sub">構造の転換と高値・安値の更新（終値で判定）</div></div><span class="tag">M15</span></div>
     <div id="smcBox" class="techlist"></div>
-    <div class="autonote">BOS＝今の流れの向きに直近の山（谷）を終値で抜けた（流れの継続）。CHOCH＝逆向きに抜けた（流れが変わった可能性）。</div>
+    <details class="smcguide" id="smcGuide">
+      <summary>CHOCH・BOS とは？（説明）</summary>
+      <div class="smcg">
+        <p>どちらも、チャートの<b>山（高値）と谷（安値）を、ローソク足の終値が抜けたかどうか</b>で、今の流れを読むための言葉です。</p>
+        <dl>
+          <dt class="bos">BOS<small>ボス／Break of Structure（構造のブレイク）</small></dt>
+          <dd>今の流れと<b>同じ向き</b>に、直近の山（谷）を抜けたこと。上昇中に高値を更新したら「上方BOS」、下降中に安値を更新したら「下方BOS」。<b>流れがまだ続いている</b>合図です。</dd>
+          <dt class="choch">CHOCH<small>チョック／Change of Character（性格の変化）</small></dt>
+          <dd>今の流れと<b>逆の向き</b>に、直近の山（谷）を抜けたこと。下降中に直近の高値を上に抜けたら「上昇転換」、上昇中に直近の安値を下に抜けたら「下降転換」。<b>流れが変わり始めたかもしれない</b>合図です。</dd>
+        </dl>
+        <div class="smcex">
+          <div><b>例：上昇の流れ</b>高値 → 押し → <span class="up">高値を更新（上方BOS）</span> → 押し → <span class="down">直前の安値を割る（下降転換のCHOCH）</span></div>
+        </div>
+        <p><b>使い方の目安</b></p>
+        <ul>
+          <li>BOSが続いている間は、その向きの押し目買い（戻り売り）を考える。</li>
+          <li>CHOCHが出たら、今のポジションの利確・撤退を考え、新しい向きの<b>BOS</b>が出るまで様子を見る（CHOCHだけでは転換が確定しないことも多い）。</li>
+          <li>上の時間足（H1・H4）の流れと同じ向きのCHOCH・BOSほど信頼しやすい。総合判定と合わせて見てください。</li>
+        </ul>
+        <p class="sub">このダッシュボードでは15分足（M15）で、前後3本より高い（低い）足を山（谷）とし、終値で抜けたときに判定しています。ひげだけで抜けたものは数えません。</p>
+      </div>
+    </details>
   </section>
 
   <!-- ===== アラート ===== -->
@@ -2154,8 +2181,8 @@ const ALERT_DEF=[
   {k:'price',name:'価格到達',desc:'指定した価格に届いたら（届いた価格は自動で消えます）'},
   {k:'gmma',name:'GMMAクロス',desc:'どれかの時間足でゴールデン／デッドクロスが始まったら',def:true},
   {k:'sma',name:'120SMA接近',desc:'H1の120SMAまでH1 ATRの0.3倍以内に近づいたら',def:true},
-  {k:'choch',name:'CHOCH',desc:'M15で構造の転換が出たら',def:true},
-  {k:'bos',name:'BOS',desc:'M15で高値・安値を更新したら'},
+  {k:'choch',name:'CHOCH（流れの転換）',desc:'M15で、今の流れと逆向きに直近の山・谷を終値で抜けたら',def:true},
+  {k:'bos',name:'BOS（流れの継続）',desc:'M15で、今の流れの向きに高値・安値を終値で更新したら'},
   {k:'ev30',name:'重要経済指標30分前',desc:'★★★の関連指標の30分前',def:true},
   {k:'score',name:'条件一致度のしきい値',desc:'総合判定の一致度がしきい値以上になったら'},
   {k:'talk',name:'要人発言・関連報道',desc:'タカ派・ハト派・介入警戒の見出しが新しく出たら'},
