@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="debbf5324d">
+<meta name="build" content="721fa7afad">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -122,6 +122,36 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .kl.s{background:rgba(66,213,156,.07);border-color:rgba(66,213,156,.35)}.kl.s b{color:#5fe0ad}
 .kl b .kl-none{font-size:11px;font-weight:500;color:var(--muted)}
 .kl.now{background:rgba(80,140,255,.1);border-color:rgba(80,140,255,.45)}.kl.now b{color:#9cc0ff}
+.mtfscore{border-radius:14px;padding:12px 14px;border:1px solid #2a3440;background:#0f141a}
+.mtfscore.up{border-color:rgba(66,213,156,.5);background:linear-gradient(180deg,rgba(66,213,156,.08),rgba(66,213,156,.02))}
+.mtfscore.down{border-color:rgba(255,105,105,.5);background:linear-gradient(180deg,rgba(255,105,105,.09),rgba(255,105,105,.02))}
+.ms-main{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.ms-main small{display:block;font-size:11px;color:var(--muted)}.ms-main small i{font-style:normal;font-size:9.5px;margin-left:4px}
+.ms-main b{display:block;font-size:24px;font-weight:900;margin-top:2px}
+.mtfscore.up .ms-main b,.mtfscore.up .ms-num{color:#42d59c}.mtfscore.down .ms-main b,.mtfscore.down .ms-num{color:#ff6969}
+.ms-num{font-size:40px;font-weight:900;line-height:1;text-align:right;font-variant-numeric:tabular-nums}.ms-num small{font-size:10px;font-weight:600;text-align:right}
+.ms-tfs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.ms-tfs button{font:inherit;color:#d5dde5;background:#0c1116;border:1px solid #2c3742;border-radius:10px;padding:6px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px}
+.ms-tfs button span{font-size:11px;font-weight:700}.ms-tfs button b{font-size:20px;line-height:1.1}.ms-tfs button small{font-size:10.5px}
+.ms-tfs .up b,.ms-tfs .up small,.mt-r .up{color:#42d59c}.ms-tfs .down b,.ms-tfs .down small,.mt-r .down{color:#ff6969}.ms-tfs .flat b{color:#ffd166}
+.mtftable{margin-top:10px;font-size:12.5px}
+.mt-h,.mt-r{display:grid;grid-template-columns:.8fr 1.3fr 1fr .8fr 1.1fr;gap:6px;padding:7px 4px;border-bottom:1px solid #1e2730;align-items:center}
+.mt-h{font-size:10.5px;color:var(--muted);padding-top:0}.mt-r>span:first-child{font-weight:700}
+.techlist{display:grid}
+.tl{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 2px;border-bottom:1px solid #1e2730;font-size:12.5px;align-items:center}
+.tl>span{color:#cbd6e0}.tl b{text-align:right;font-weight:700}.tl em{grid-column:1/-1;text-align:right;font-style:normal;font-size:11px;color:var(--muted)}
+.tl .up,.tl i.up{color:#42d59c}.tl .down,.tl i.down{color:#ff6969}.tl i{font-style:normal;font-weight:700}
+i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,156,.12);border-radius:6px;padding:1px 6px;margin-left:4px}
+.alertgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.al-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:10px 12px}
+.al-row b{display:block;font-size:13px}.al-row small{display:block;font-size:10.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+.al-in{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}.al-in label{font-size:11px;color:#cbd6e0;display:flex;align-items:center;gap:4px}
+.al-in input{width:92px;font:inherit;font-size:12px;color:#eef3f7;background:#0a0e12;border:1px solid #2c3742;border-radius:7px;padding:4px 6px}
+.al-sw{flex:none;width:44px;height:26px;border-radius:999px;border:1px solid #2c3742;background:#1a222b;position:relative;cursor:pointer;padding:0}
+.al-sw i{position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#8796a5;transition:left .15s}
+.al-sw[aria-pressed="true"]{background:#2f6fe4;border-color:#3d7bf0}.al-sw[aria-pressed="true"] i{left:21px;background:#fff}
+.alerthist{margin-top:10px;font-size:12px}.alerthist b{display:block;margin-bottom:4px}.alerthist .sub div{padding:3px 0;border-bottom:1px solid #1a222b}
+.gxtoast.al{color:#ffd57a;border-color:rgba(255,213,122,.7)}
 .stat{background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:9px 10px;min-width:0}
 .stat span{display:block;color:var(--muted);font-size:10px}.stat b{display:block;font-size:14px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .signal{padding:12px;text-align:center;border-radius:14px;font-size:30px;font-weight:950;letter-spacing:.08em}
@@ -352,10 +382,12 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 
 @media(max-width:1100px){
  .s4,.s5,.s7,.s8{grid-column:span 12}
+ .alertgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
  .hero{grid-template-columns:1fr 1fr}
  .hero>.hero-next{grid-column:1/-1;border-left:0;padding-left:0}
 }
 @media(max-width:720px){
+ .alertgrid{grid-template-columns:1fr}
  .shell{padding-left:10px;padding-right:10px}
  .hero{grid-template-columns:1fr;gap:14px}
  .hero>div+div{border-left:0;padding-left:0;border-top:1px solid #222b35;padding-top:14px}
@@ -405,7 +437,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 </div>
 
 <nav class="quicknav">
-  <a href="#secOverview">概要</a><a href="#secChart">チャート</a><a href="#secRisk">ロット計算</a><a href="#secNews">経済指標</a><a href="#secCheck">チェック</a>
+  <a href="#secOverview">概要</a><a href="#secChart">チャート</a><a href="#secRisk">ロット計算</a><a href="#secMtf">総合判定</a><a href="#secTech">テクニカル詳細</a><a href="#secAlert">アラート</a><a href="#secNews">経済指標</a><a href="#secCheck">チェック</a>
 </nav>
 
 <div id="notice" class="notice"></div>
@@ -533,6 +565,30 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div class="autonote">契約量・レバレッジ・スプレッドは、選んだ口座（XM／XS）ごとに保存されます。<span id="sprNote"></span><span id="brokerNote">XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。</span>口座残高が増えると上限レバレッジが下がる業者もあるため、その場合はレバレッジ欄を変更してください。</div>
     </details>
     <div id="atrNote" class="autonote">--</div>
+  </section>
+
+  <!-- ===== 総合判定・マルチタイムフレーム ===== -->
+  <section id="secMtf" class="panel s7">
+    <div class="cardhead"><div><div class="title">総合判定・マルチタイムフレーム</div><div class="sub">ルールベース｜ダウ理論・スーパートレンド・GMMA・RSIを時間足ごとに集計</div></div><span class="tag">SCORE</span></div>
+    <div id="mtfScore" class="mtfscore"></div>
+    <div id="mtfTable" class="mtftable"></div>
+    <div class="autonote">各時間足で4条件（ダウ理論・スーパートレンド・GMMA・RSI）が買い・売りのどちらにそろっているかを数え、H4・H1は3倍、M15は2倍、M5は1倍の重みで平均したものが一致度です。25未満は様子見。矢印やボタンをタップするとその時間足のチャートに切り替わります。売買の指示ではなく目安です。</div>
+  </section>
+
+  <!-- ===== テクニカル詳細・CHOCH/BOS ===== -->
+  <section id="secTech" class="panel s5">
+    <div class="cardhead"><div><div class="title">テクニカル詳細（H1）</div><div class="sub">120SMAとGMMAの状態</div></div><span class="tag">H1</span></div>
+    <div id="techH1" class="techlist"></div>
+    <div class="cardhead" style="margin-top:14px"><div><div class="title">CHOCH / BOS（M15）</div><div class="sub">構造の転換と高値・安値の更新（終値で判定）</div></div><span class="tag">M15</span></div>
+    <div id="smcBox" class="techlist"></div>
+    <div class="autonote">BOS＝今の流れの向きに直近の山（谷）を終値で抜けた（流れの継続）。CHOCH＝逆向きに抜けた（流れが変わった可能性）。</div>
+  </section>
+
+  <!-- ===== アラート ===== -->
+  <section id="secAlert" class="panel s12">
+    <div class="cardhead"><div><div class="title">アラート・通知設定</div><div class="sub">オンにした条件がそろうと、画面の下に通知を出して音で知らせます（この端末に銘柄ごとに保存）</div></div><span class="tag">ALERT</span></div>
+    <div id="alertList" class="alertgrid"></div>
+    <div class="alerthist"><b>最近の通知</b><div id="alertHist" class="sub">まだありません</div></div>
   </section>
 
   <!-- ===== 経済指標 ===== -->
@@ -1542,7 +1598,9 @@ function gmmaToast(list){
   const now=new Set(list.map(o=>o.tf+':'+o.x.kind));
   const fresh=gmxSeen?list.filter(o=>!gmxSeen.has(o.tf+':'+o.x.kind)):list;
   gmxSeen=now;
-  if(mktClosed)return;  // 休場中は新しい通知を出さない
+  if(mktClosed||!alertCfg.gmma)return;  // 休場中・アラートでオフのときは新しい通知を出さない
+  fresh.forEach(o=>{alertHist.unshift({kind:'gmma',text:TF_NAME[o.tf]+' GMMA '+GMX_NAME[o.x.kind]+'中',t:Date.now()});if(alertHist.length>10)alertHist.length=10});
+  if(fresh.length){renderAlertHist();if(window.parent===window)alertBeep()}
   fresh.forEach(o=>{
     const t=document.createElement('button');t.type='button';t.className='gxtoast '+(o.x.kind==='golden'?'up':'down');
     t.textContent=TF_NAME[o.tf]+' GMMA '+GMX_NAME[o.x.kind]+'中';t.onclick=()=>{setTf(o.tf);t.remove()};
@@ -1993,6 +2051,190 @@ function upcomingEvent(){
   return state.events.find(e=>goldRelevant(e)&&e.ts+cautionWindow(e)[1]*60000>=now&&(state.evFilter!=='high'||e.impact==='High'))||null;
 }
 function stars(e){return e.impact==='High'?'★★★':e.impact==='Medium'?'★★':'★'}
+
+/* ---------- 総合判定（ルールベース）・マルチタイムフレーム ----------
+   H4・H1・M15・M5のそれぞれで、ダウ理論・スーパートレンド・GMMA（短期組が長期組の上で上向き＝買い）・RSI（55以上＝買い、45以下＝売り）の
+   4条件を＋1／−1／0で数え、平均（−1〜＋1）をその時間足の向きにする。H4・H1は3倍、M15は2倍、M5は1倍の重みで平均し、
+   その大きさ×100を「一致度」、＋0.25以上を買い優勢、−0.25以下を売り優勢、その間を様子見とする */
+const MTF_TFS=['h4','h1','m15','m5'],MTF_W={h4:3,h1:3,m15:2,m5:1};
+// GMMAの状態：短期組・長期組の平均の向き（3本前と比べ、ATRの5％未満の動きは横ばい）、短期組が上か、束の幅が広がっているか
+function gmmaState(B){
+  const n=B.length;if(n<80)return null;
+  const S=GMMA_S.map(p=>emaSeries(B,p)),L=GMMA_L.map(p=>emaSeries(B,p));
+  const avg=(G,j)=>{const v=G.map(x=>x[j]);return v.some(x=>x==null)?null:v.reduce((a,b)=>a+b,0)/v.length};
+  const s0=avg(S,n-1),s3=avg(S,n-4),l0=avg(L,n-1),l3=avg(L,n-4),s5=avg(S,n-6),l5=avg(L,n-6);
+  if([s0,s3,l0,l3,s5,l5].some(x=>x==null))return null;
+  const flat=(atr(B,14)||1)*.05,sd=s0-s3>flat?1:s0-s3<-flat?-1:0,ld=l0-l3>flat*.6?1:l0-l3<-flat*.6?-1:0;
+  const sv=S.map(x=>x[n-1]),lv=L.map(x=>x[n-1]),ov=Math.min(...sv)<=Math.max(...lv)&&Math.max(...sv)>=Math.min(...lv);
+  const w0=Math.abs(s0-l0),w5=Math.abs(s5-l5);
+  return {sd,ld,above:s0>l0,spread:ov?'重なり（もみ合い）':w0>w5*1.1?'拡散':w0<w5*.9?'収束':'横ばい'};
+}
+let mtfCache={};
+function mtfRow(tf){
+  const B=state[tf]||[],k=B.length+':'+(B.at(-1)?.t)+':'+(B.at(-1)?.c);
+  if(mtfCache[tf]&&mtfCache[tf].k===k)return mtfCache[tf].v;
+  let v=null;
+  if(B.length>=80){
+    const dk=dowTrend(B,DOW_K[tf]).kind,dow=dk==='up'||dk==='upt'?1:dk==='down'||dk==='downt'?-1:0;
+    const st=superTrend(B).dir.at(-1)||0,g=gmmaState(B),gm=g?(g.above&&g.sd>0?1:!g.above&&g.sd<0?-1:0):0;
+    const rsi=rsiSeries(B).at(-1),rv=rsi==null?0:rsi>=55?1:rsi<=45?-1:0,s=(dow+st+gm+rv)/4;
+    v={tf,dk,g,rsi,s,arrow:'',judge:s>=.5?'上昇':s<=-.5?'下降':'レンジ',cls:s>=.25?'up':s<=-.25?'down':'flat'};
+    v.arrow=s>=.5?'↑':s>=.25?'↗':s<=-.5?'↓':s<=-.25?'↘':'→';
+  }
+  mtfCache[tf]={k,v};return v;
+}
+function mtfScore(){
+  const rows=MTF_TFS.map(mtfRow);let sw=0,sv=0;
+  rows.forEach((r,i)=>{if(r){sw+=MTF_W[MTF_TFS[i]];sv+=MTF_W[MTF_TFS[i]]*r.s}});
+  if(!sw)return null;
+  const avg=sv/sw,dir=avg>=.25?1:avg<=-.25?-1:0;
+  return {rows,avg,dir,score:Math.round(Math.abs(avg)*100),label:dir>0?'買い優勢':dir<0?'売り優勢':'様子見'};
+}
+function renderMtf(){
+  const m=mtfScore(),el=$('mtfScore');
+  if(!m){el.className='mtfscore';el.innerHTML='<div class="sub">データ取得中...</div>';$('mtfTable').innerHTML='';return null}
+  el.className='mtfscore '+(m.dir>0?'up':m.dir<0?'down':'flat');
+  el.innerHTML=`<div class="ms-main"><div><small>総合判定 <i>ルールベース</i></small><b>${m.dir>0?'↗':m.dir<0?'↘':'→'} ${m.label}</b></div><div class="ms-num">${m.score}<small>一致度 /100</small></div></div>`+
+    `<div class="ms-tfs">${m.rows.map((r,i)=>`<button type="button" data-tf="${MTF_TFS[i]}" class="${r?r.cls:''}"><span>${MTF_TFS[i].toUpperCase()}</span><b>${r?r.arrow:'—'}</b><small>${r?r.judge:'—'}</small></button>`).join('')}</div>`;
+  const gdir=g=>!g?'—':g.sd>0?'<span class="up">上向き</span>':g.sd<0?'<span class="down">下向き</span>':'横ばい';
+  $('mtfTable').innerHTML='<div class="mt-h"><span>時間足</span><span>トレンド</span><span>GMMA</span><span>RSI</span><span>判定</span></div>'+
+    m.rows.map((r,i)=>r?`<div class="mt-r"><span>${MTF_TFS[i].toUpperCase()}</span><span class="${dowCls(r.dk)}">${DOW_SHORT[r.dk]}</span><span>${gdir(r.g)}</span><span>${r.rsi==null?'—':r.rsi.toFixed(1)}</span><span class="${r.cls}">${r.arrow} ${r.judge}</span></div>`:
+      `<div class="mt-r"><span>${MTF_TFS[i].toUpperCase()}</span><span class="sub">データ不足</span><span></span><span></span><span></span></div>`).join('');
+  scorePost(m);
+  return m;
+}
+// トレードデスクの中で動いているときは、総合判定（一致度と時間足ごとの矢印）をデスクへ知らせる
+let scorePosted='';
+function scorePost(m){
+  if(window.parent===window)return;
+  const msg={type:'dash-score',key:INSTR.key,score:m.score,dir:m.dir,label:m.label,tfs:m.rows.map((r,i)=>({tf:MTF_TFS[i].toUpperCase(),arrow:r?r.arrow:'—',cls:r?r.cls:''}))};
+  const j=JSON.stringify(msg);if(j===scorePosted)return;scorePosted=j;
+  try{window.parent.postMessage(msg,'*')}catch{}
+}
+
+/* ---------- テクニカル詳細（H1）と CHOCH / BOS（M15） ----------
+   CHOCH・BOS：M15の山・谷（前後3本より高い／低い足）を順に追い、終値が直近の山を上抜けたら上方向、谷を下抜けたら下方向。
+   それまでの流れと同じ向きならBOS（高値・安値の更新＝継続）、逆向きならCHOCH（構造の転換）とする */
+let smcCache={k:'',v:null};
+function smcM15(){
+  const B=state.m15||[],k=B.length+':'+(B.at(-1)?.t)+':'+(B.at(-1)?.c);
+  if(smcCache.k===k)return smcCache.v;
+  const K=3;let hi=null,lo=null,trend=0,choch=null,bos=null;
+  for(let i=2*K;i<B.length;i++){
+    const j=i-K;let isH=true,isL=true;
+    for(let q=j-K;q<=j+K;q++){if(q===j)continue;if(B[q].h>B[j].h)isH=false;if(B[q].l<B[j].l)isL=false}
+    if(isH)hi={p:B[j].h,broken:false};if(isL)lo={p:B[j].l,broken:false};
+    const c=B[i].c;
+    if(hi&&!hi.broken&&c>hi.p){hi.broken=true;const e={dir:1,t:B[i].t,p:hi.p};if(trend<0)choch=e;else bos=e;trend=1}
+    else if(lo&&!lo.broken&&c<lo.p){lo.broken=true;const e={dir:-1,t:B[i].t,p:lo.p};if(trend>0)choch=e;else bos=e;trend=-1}
+  }
+  smcCache={k,v:{trend,choch,bos}};return smcCache.v;
+}
+function whenLabel(t){const d=new Date(t);return (d.toDateString()===new Date().toDateString()?'':(d.getMonth()+1)+'/'+d.getDate()+' ')+hhmm(t)}
+function renderTech(){
+  const B=state.h1||[],px=state.spot?.price??B.at(-1)?.c,row=(k,v,x='')=>`<div class="tl"><span>${k}</span><b>${v}</b>${x?`<em>${x}</em>`:''}</div>`;
+  if(B.length<130||!px)$('techH1').innerHTML='<div class="sub">データ取得中...</div>';
+  else{
+    const sma=smaSeries(B,120).at(-1),g=gmmaState(B),gx=gmmaCross('h1'),dir=d=>d>0?'<span class="up">上向き</span>':d<0?'<span class="down">下向き</span>':'横ばい';
+    $('techH1').innerHTML=row('120SMA',fmt(sma),px>=sma?`<i class="up">上に位置</i> ${INSTR.dist(px-sma)}`:`<i class="down">下に位置</i> ${INSTR.dist(sma-px)}`)+
+      (g?row('GMMA（短期）',dir(g.sd))+row('GMMA（長期）',dir(g.ld))+row('拡散状態',g.spread):'')+
+      row('クロス',gx?`<span class="${gx.kind==='golden'?'up':'down'}">${GMX_NAME[gx.kind]}中</span>`:'なし');
+  }
+  const sm=smcM15(),ev=(e,up,dn)=>e?`<span class="${e.dir>0?'up':'down'}">${e.dir>0?up:dn}</span>`:'まだ出ていません';
+  $('smcBox').innerHTML=row('現在の構造',sm.trend>0?'<span class="up">上昇（高値・安値切り上げ）</span>':sm.trend<0?'<span class="down">下降（高値・安値切り下げ）</span>':'—')+
+    row('CHOCH',ev(sm.choch,'上昇転換','下降転換'),sm.choch?fmt(sm.choch.p)+' <i class="time">'+whenLabel(sm.choch.t)+'</i>':'')+
+    row('BOS',ev(sm.bos,'上方（高値更新）','下方（安値更新）'),sm.bos?fmt(sm.bos.p)+' <i class="time">'+whenLabel(sm.bos.t)+'</i>':'');
+}
+
+/* ---------- アラート・通知設定（この端末に銘柄ごとに保存） ----------
+   条件がそろった瞬間に、画面の下に通知を出して音を鳴らす（トレードデスクの中ではデスク側に通知を出す）。
+   ページを開いた時点ですでにそろっている条件は鳴らさない（価格到達と指標30分前は除く） */
+const ALERT_DEF=[
+  {k:'price',name:'価格到達',desc:'指定した価格に届いたら（届いた価格は自動で消えます）'},
+  {k:'gmma',name:'GMMAクロス',desc:'どれかの時間足でゴールデン／デッドクロスが始まったら',def:true},
+  {k:'sma',name:'120SMA接近',desc:'H1の120SMAまでH1 ATRの0.3倍以内に近づいたら',def:true},
+  {k:'choch',name:'CHOCH',desc:'M15で構造の転換が出たら',def:true},
+  {k:'bos',name:'BOS',desc:'M15で高値・安値を更新したら'},
+  {k:'ev30',name:'重要経済指標30分前',desc:'★★★の関連指標の30分前',def:true},
+  {k:'score',name:'条件一致度のしきい値',desc:'総合判定の一致度がしきい値以上になったら'},
+  {k:'talk',name:'要人発言・関連報道',desc:'タカ派・ハト派・介入警戒の見出しが新しく出たら'},
+  {k:'sound',name:'通知音',desc:'通知のときに音を鳴らす（ページを1回タップした後から鳴ります）',def:true}];
+let alertCfg={};try{alertCfg=JSON.parse(lsGet(LSP+'alerts','{}'))||{}}catch{}
+ALERT_DEF.forEach(d=>{if(!(d.k in alertCfg))alertCfg[d.k]=!!d.def});
+if(alertCfg.above==null)alertCfg.above='';if(alertCfg.below==null)alertCfg.below='';if(!alertCfg.thr)alertCfg.thr=70;
+function saveAlerts(){lsSet(LSP+'alerts',JSON.stringify(alertCfg))}
+function renderAlerts(){
+  $('alertList').innerHTML=ALERT_DEF.map(d=>{
+    const extra=d.k==='price'?`<div class="al-in"><label>上 <input type="number" inputmode="decimal" step="any" data-al="above" value="${esc(alertCfg.above)}" placeholder="${state.spot?fmt(state.spot.price).replace(/,/g,''):''}"></label><label>下 <input type="number" inputmode="decimal" step="any" data-al="below" value="${esc(alertCfg.below)}"></label></div>`:
+      d.k==='score'?`<div class="al-in"><label>一致度 <input type="number" inputmode="numeric" min="10" max="100" step="5" data-al="thr" value="${esc(alertCfg.thr)}"> 以上</label></div>`:'';
+    return `<div class="al-row"><div><b>${d.name}</b><small>${d.desc}</small>${extra}</div><button type="button" class="al-sw" data-alk="${d.k}" aria-pressed="${!!alertCfg[d.k]}" aria-label="${d.name}"><i></i></button></div>`;
+  }).join('');
+}
+const alertHist=[];
+function renderAlertHist(){
+  $('alertHist').innerHTML=alertHist.length?alertHist.map(a=>`<div><i class="time">${hhmm(a.t)}</i> ${esc(a.text)}</div>`).join(''):'まだありません';
+}
+let alCtx=null;
+document.addEventListener('pointerdown',()=>{try{alCtx=alCtx||new (window.AudioContext||window.webkitAudioContext)();alCtx.resume&&alCtx.resume()}catch{}},{passive:true});
+function alertBeep(){
+  if(!alCtx||!alertCfg.sound)return;
+  const t0=alCtx.currentTime+.02;
+  [880,660].forEach((f,i)=>{const o=alCtx.createOscillator(),v=alCtx.createGain(),t=t0+i*.18;o.type='sine';o.frequency.value=f;
+    v.gain.setValueAtTime(0,t);v.gain.linearRampToValueAtTime(.18,t+.02);v.gain.exponentialRampToValueAtTime(.0001,t+.4);o.connect(v);v.connect(alCtx.destination);o.start(t);o.stop(t+.45)});
+}
+function pushAlert(kind,text,tf){
+  alertHist.unshift({kind,text,t:Date.now()});if(alertHist.length>10)alertHist.length=10;
+  renderAlertHist();
+  if(window.parent!==window){  // デスクの中：通知はデスクに出す（GMMAはデスクの通知欄があるので送らない）
+    if(kind!=='gmma')try{window.parent.postMessage({type:'dash-alert',key:INSTR.key,kind,text},'*')}catch{}
+    return;
+  }
+  const t=document.createElement('button');t.type='button';t.className='gxtoast al';
+  t.textContent='🔔 '+text;t.onclick=()=>{if(tf)setTf(tf);t.remove()};
+  $('gxToasts').appendChild(t);setTimeout(()=>t.remove(),12000);
+  alertBeep();
+}
+const AL={init:false,smaNear:false,choch:null,bos:null,ev:new Set(),scoreDir:0,talk:null};
+function checkAlerts(m){
+  const px=state.spot?.price;if(!px)return;
+  const first=!AL.init;AL.init=true;
+  const fire=(k,text,tf)=>{if(!first&&alertCfg[k]&&!mktClosed)pushAlert(k,text,tf)};
+  // 価格到達：届いたら、その価格を消す（両方消えたらオフ）
+  if(alertCfg.price&&!mktClosed){
+    const a=n(alertCfg.above),b=n(alertCfg.below);let ch=false;
+    if(((a&&px>=a)||(b&&px<=b))&&$('alertList').contains(document.activeElement))document.activeElement.blur();  // 入力中の欄の変更を先に確定させてから消す
+    if(a&&px>=a){pushAlert('price',`価格到達：${fmt(a)} 以上（今 ${fmt(px)}）`);alertCfg.above='';ch=true}
+    if(b&&px<=b){pushAlert('price',`価格到達：${fmt(b)} 以下（今 ${fmt(px)}）`);alertCfg.below='';ch=true}
+    if(ch){if(!alertCfg.above&&!alertCfg.below)alertCfg.price=false;saveAlerts();renderAlerts()}
+  }
+  // 120SMA接近：ATRの0.3倍以内に入ったら1回。ATRの1倍以上離れたら次の接近に備える
+  const H=state.h1||[];
+  if(H.length>=130){
+    const sma=smaSeries(H,120).at(-1),a=atr(H,14)||0,d=Math.abs(px-sma);
+    if(a&&d<=a*.3){if(!AL.smaNear){AL.smaNear=true;fire('sma',`H1 120SMA（${fmt(sma)}）に接近・差 ${INSTR.dist(d)}`,'h1')}}
+    else if(d>a)AL.smaNear=false;
+  }
+  // CHOCH・BOS（M15）：新しく出たら
+  const sm=smcM15(),ck=sm.choch?sm.choch.t:0,bk=sm.bos?sm.bos.t:0;
+  if(ck!==AL.choch){AL.choch=ck;if(ck)fire('choch',`M15 CHOCH ${sm.choch.dir>0?'上昇転換':'下降転換'}（${fmt(sm.choch.p)}）`,'m15')}
+  if(bk!==AL.bos){AL.bos=bk;if(bk)fire('bos',`M15 BOS ${sm.bos.dir>0?'上方・高値更新':'下方・安値更新'}（${fmt(sm.bos.p)}）`,'m15')}
+  // 重要経済指標の30分前（ページを開いたのが30分前より後でも、発表前なら1回知らせる）
+  const now=Date.now();
+  (state.events||[]).filter(e=>e.impact==='High'&&goldRelevant(e)&&now>=e.ts-30*60000&&now<e.ts).forEach(e=>{
+    const id=evKey(e);if(AL.ev.has(id))return;AL.ev.add(id);
+    if(alertCfg.ev30&&!mktClosed)pushAlert('ev30',`あと${Math.max(1,Math.round((e.ts-now)/60000))}分：${evTitle(e)}（${hhmm(e.ts)}発表）`);
+  });
+  // 条件一致度：しきい値以上になったら（向きが変わったときも）。しきい値より10下がったら次に備える
+  if(m){
+    const thr=n(alertCfg.thr)||70;
+    if(m.dir&&m.score>=thr){if(AL.scoreDir!==m.dir){AL.scoreDir=m.dir;fire('score',`総合判定 ${m.label}・一致度 ${m.score}（しきい値 ${thr}）`)}}
+    else if(m.score<thr-10)AL.scoreDir=0;
+  }
+  // 要人発言：トーンの付いた見出しが新しく出たら
+  const hot=allTalk().filter(i=>i.tone&&now-i.t*1000<3600000),keys=hot.map(i=>i.link||i.title);
+  if(AL.talk){hot.forEach((i,x)=>{if(!AL.talk.has(keys[x]))fire('talk',`🎤 ${i.who}：${i.title}${TONE_JA[i.tone]?'（'+TONE_JA[i.tone][0]+'）':''}`)})}
+  AL.talk=new Set([...(AL.talk||[]),...keys]);
+}
 
 /* ---------- render ---------- */
 function flashPrice(){
@@ -2794,6 +3036,7 @@ function renderAll(){
   const reb=renderRebound();
   drawChart();renderEvents();renderNext();renderResults();
   renderKeyLv();
+  {const m=renderMtf();renderTech();checkAlerts(m)}
   renderGmmaNow();  // チャートが見えていない（デスクの裏で動いている）ときも、GMMAのクロスを確かめて知らせる
   const risk=calcRisk();
   renderChecks(risk,reb);updateCaution();
@@ -2852,6 +3095,12 @@ $('maToggles').addEventListener('click',e=>{
   const k=btn.dataset.ma;state.maOn[k]=!state.maOn[k];lsSet(LSP+'ma',JSON.stringify(state.maOn));renderMaToggles();renderTfGrid();renderFibNow();renderGmmaNow();drawChart();
 });
 $('tlBtn').onclick=()=>{state.showTrend=!state.showTrend;$('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);savePrefs();drawChart()};
+$('mtfScore').onclick=e=>{const b=e.target.closest('[data-tf]');if(!b)return;setTf(b.dataset.tf);$('secChart').scrollIntoView({behavior:'smooth',block:'start'})};
+$('alertList').onclick=e=>{const b=e.target.closest('.al-sw');if(!b)return;const k=b.dataset.alk;alertCfg[k]=!alertCfg[k];b.setAttribute('aria-pressed',String(alertCfg[k]));saveAlerts()};
+$('alertList').onchange=e=>{const f=e.target.dataset.al;if(!f||!e.target.isConnected)return;  // 通知のあと作り直した欄から遅れて来る変更は無視
+ alertCfg[f]=e.target.value.trim();
+  if((f==='above'||f==='below')&&alertCfg[f]){alertCfg.price=true;const sw=document.querySelector('[data-alk="price"]');if(sw)sw.setAttribute('aria-pressed','true')}saveAlerts()};
+renderAlerts();
 $('lvList').onclick=e=>{const b=e.target.closest('.lvchip');if(!b)return;if(b.dataset.lv==='all'){hiddenLv=[];lsSet(LSP+'hidden_lv','[]');drawChart()}else toggleLv(+b.dataset.lv)};
 $('lvBtn').onclick=()=>{state.showLevels=!state.showLevels;$('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);savePrefs();drawChart()};
 document.querySelectorAll('#dirSeg .seg').forEach(b=>b.onclick=()=>{

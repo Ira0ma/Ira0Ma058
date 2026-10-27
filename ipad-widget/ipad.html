@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#06070b">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="b6a7f42dfb">
+<meta name="build" content="b710773bdf">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -120,6 +120,18 @@ body {
 .mkt .klv span i { font-style: normal; font-size: 9px; font-weight: 700; margin-right: 2px; opacity: .8; }
 .mkt .klv .r { color: #ff8a7e; } .mkt .klv .s { color: #5fd99a; }
 .mkt.has-klv canvas.chart { height: 88px; }
+.mkt .mscore { position: absolute; right: 18px; top: 15px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; pointer-events: none; }
+.mkt .mscore b { font-size: 11.5px; font-weight: 700; white-space: nowrap; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--glass-line); color: var(--ink-2); }
+.mkt .mscore b span { font-family: var(--display); font-size: 13px; margin-left: 4px; }
+.mkt .mscore .mt { display: flex; gap: 3px; }
+.mkt .mscore .mt i { font-style: normal; display: flex; flex-direction: column; align-items: center; width: 22px; font-size: 8.5px; color: var(--ink-3); line-height: 1.1; }
+.mkt .mscore .mt i em { font-style: normal; font-size: 13px; font-weight: 700; color: #ffd166; }
+.mkt .mscore .up { color: #5fd99a; border-color: rgba(95,217,154,.55); } .mkt .mscore .down { color: #ff8a7e; border-color: rgba(255,138,126,.55); }
+.mkt .mscore .mt i.up em { color: #5fd99a; } .mkt .mscore .mt i.down em { color: #ff8a7e; }
+.mkt.has-score .sym small, .mkt.has-score .head .chev { display: none; } .mkt.has-score .jp { max-width: 110px; }
+.dk-toasts { position: fixed; left: 0; right: 0; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 200; display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; padding: 0 16px; }
+.dk-toast { pointer-events: auto; font: inherit; font-size: 13.5px; font-weight: 700; color: #ffd57a; background: rgba(14,15,20,.96); border: 1px solid rgba(255,213,122,.7); border-radius: 12px; padding: 10px 16px; box-shadow: 0 8px 24px rgba(0,0,0,.55); cursor: pointer; max-width: 640px; text-align: left; }
+.dk-toast small { color: var(--ink-3); font-weight: 600; margin-right: 6px; }
 .mkt canvas.chart { width: 100%; height: 108px; display: block; margin-top: 8px; touch-action: none; cursor: grab; }
 .chart-reset { position: absolute; left: 20px; top: 132px; z-index: 2; font: inherit; font-size: 11px; font-weight: 600; color: #14100a; background: var(--gold); border: 0; border-radius: 999px; padding: 3px 10px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
 .tabs { display: flex; gap: 2px; margin-top: 6px; }
@@ -388,6 +400,7 @@ html:not(.flow) #flow { display: none; }
       <div class="price num" data-f="price"></div>
       <div class="chg num" data-f="chg"></div>
       <div class="klv num" data-f="klv" hidden></div>
+      <div class="mscore" data-f="score" hidden></div>
       <canvas class="chart"></canvas>
       <div class="tabs" role="group" aria-label="期間"></div>
       <div class="picker" hidden><div class="picker-h"><span>銘柄を選ぶ</span><button type="button" class="picker-close">閉じる</button></div><div class="picker-list"></div></div>
@@ -402,6 +415,7 @@ html:not(.flow) #flow { display: none; }
       <div class="price num" data-f="price"></div>
       <div class="chg num" data-f="chg"></div>
       <div class="klv num" data-f="klv" hidden></div>
+      <div class="mscore" data-f="score" hidden></div>
       <canvas class="chart"></canvas>
       <div class="tabs" role="group" aria-label="期間"></div>
       <div class="picker" hidden><div class="picker-h"><span>銘柄を選ぶ</span><button type="button" class="picker-close">閉じる</button></div><div class="picker-list"></div></div>
@@ -416,6 +430,7 @@ html:not(.flow) #flow { display: none; }
       <div class="price num" data-f="price"></div>
       <div class="chg num" data-f="chg"></div>
       <div class="klv num" data-f="klv" hidden></div>
+      <div class="mscore" data-f="score" hidden></div>
       <canvas class="chart"></canvas>
       <div class="tabs" role="group" aria-label="期間"></div>
       <div class="picker" hidden><div class="picker-h"><span>銘柄を選ぶ</span><button type="button" class="picker-close">閉じる</button></div><div class="picker-list"></div></div>
@@ -646,9 +661,9 @@ html:not(.flow) #flow { display: none; }
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=debbf5324d", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=161b2093f9", title: "ドル円分析" },
-    btc: { src: "btc.html?v=e0e8bc8747", title: "BTC分析" }
+    gold: { src: "gold.html?v=721fa7afad", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=335ba21728", title: "ドル円分析" },
+    btc: { src: "btc.html?v=6e8b9da430", title: "BTC分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -685,12 +700,14 @@ html:not(.flow) #flow { display: none; }
   var entryState = {};
   window.addEventListener("message", function (e) {
     var d = e.data;
-    if (!d || (d.type !== "dash-signal" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels") || !SHEETS[d.key] || !SHEETS[d.key].el) return;
+    if (!d || (d.type !== "dash-signal" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert") || !SHEETS[d.key] || !SHEETS[d.key].el) return;
     if (e.source !== SHEETS[d.key].el.querySelector("iframe").contentWindow) return;  // only our own dashboards
     // While a dashboard shows its chart full screen, its own "back" button sits where ours does: hide ours
     if (d.type === "dash-chartfull") { SHEETS[d.key].el.querySelector(".dash-close").hidden = !!d.on; return; }
     if (d.type === "dash-gmma") { gmmaToasts(d); return; }
     if (d.type === "dash-levels") { keyLv[d.key] = d; paintKeyLv(); return; }
+    if (d.type === "dash-score") { scoreOf[d.key] = d; paintScore(); return; }
+    if (d.type === "dash-alert") { deskAlert(d); return; }
     var was = entryState[d.key] && entryState[d.key].entry;
     entryState[d.key] = d; paintEntries();
     if (d.entry && !was && !marketClosed(d.key)) chime(d.sig === "BUY");  // a new entry call: sound once
@@ -701,6 +718,31 @@ html:not(.flow) #flow { display: none; }
      dashboard on that timeframe. */
   /* Key levels: each dashboard reports the two H1 lines just above the price (R1, R2) and the two just below
      (S1, S2); the price panel showing that market lists them in one line above its chart. */
+  /* Total score: each dashboard reports its rule-based call (買い優勢・売り優勢・様子見, agreement /100) and the arrow
+     for H4, H1, M15 and M5; the price panel showing that market shows them at its top right. */
+  var scoreOf = {};
+  function paintScore() {
+    if (!markets) return;
+    markets.forEach(function (mk) {
+      var d = scoreOf[mk.key], el = mk.el.querySelector('[data-f="score"]'), cls = d ? (d.dir > 0 ? "up" : d.dir < 0 ? "down" : "") : "";
+      el.hidden = !d; mk.el.classList.toggle("has-score", !!d);
+      if (d) el.innerHTML = '<b class="' + cls + '">' + d.label + "<span>" + d.score + "</span></b>" +
+        '<span class="mt">' + d.tfs.map(function (t) { return '<i class="' + t.cls + '">' + t.tf + "<em>" + t.arrow + "</em></i>"; }).join("") + "</span>";
+    });
+  }
+  setInterval(paintScore, 2000);
+  /* Alerts set on a dashboard (price reached, 120SMA, CHOCH/BOS, indicator in 30 min, score, remarks) pop up here
+     while the dashboard runs behind the desk; a tap opens that dashboard. */
+  var ALERT_NAME = { gold: "GOLD", usdjpy: "ドル円", btc: "BTC" };
+  function deskAlert(d) {
+    var box = document.querySelector(".dk-toasts");
+    if (!box) { box = document.createElement("div"); box.className = "dk-toasts"; box.setAttribute("aria-live", "polite"); document.body.appendChild(box); }
+    var t = document.createElement("button"); t.type = "button"; t.className = "dk-toast";
+    t.innerHTML = "<small>🔔 " + (ALERT_NAME[d.key] || d.key) + "</small>"; t.appendChild(document.createTextNode(d.text));
+    t.addEventListener("click", function () { t.remove(); openDash(d.key, t); });
+    box.appendChild(t); setTimeout(function () { t.remove(); }, 15000);
+    chime(true);
+  }
   var keyLv = {};
   function paintKeyLv() {
     if (!markets) return;
