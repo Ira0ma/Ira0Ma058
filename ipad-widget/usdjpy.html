@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="fb815b0e9d">
+<meta name="build" content="d9ceb61705">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -257,6 +257,11 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .tvl-sc{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12.5px}.tvl-sc input{width:18px;height:18px}
 .tvl-how{background:#0a0e12;border:1px solid #232d36;border-radius:9px;padding:6px 10px;margin-top:6px}.tvl-how ol{margin:4px 0;padding-left:1.3em}.tvl-how li{margin:2px 0}
 .tvl-in{display:flex;gap:6px;margin:6px 0}.tvl-in input{flex:1;min-width:0;font:inherit;font-size:12.5px;color:#eef3f7;background:#0a0e12;border:1px solid #2c3742;border-radius:8px;padding:7px 9px}
+.chnow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin:6px 0}.chn-h{font-size:11px;color:var(--muted);margin-right:2px}.chn-h small{font-weight:500;font-size:9.5px;margin-left:3px}
+.chn{font:inherit;font-size:11px;font-weight:700;border-radius:999px;padding:4px 9px;border:1px solid #2c3742;background:#0c1116;color:#cbd6e0;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.chn i{width:12px;height:0;border-top:2px solid currentColor}.chn.ref i{border-top-style:dashed}.chn small{font-size:9.5px;font-weight:600;opacity:.8;margin-left:2px}.chn.ref{opacity:.75;font-weight:600}
+.chn.up{color:#7fd3f7;border-color:rgba(79,195,247,.45)}.chn.down{color:#f7a8c4;border-color:rgba(244,143,177,.45)}.chn.flat{color:#ffd166;border-color:rgba(255,209,102,.45)}
+.chn.cur{background:#16202b;box-shadow:0 0 0 1px currentColor inset}
 .tvnote{font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.5}
 #secChart.tv .chartwrap,#secChart.tv #rsi,#secChart.tv .matoggles,#secChart.tv #lvList,#secChart.tv #chartInfo,#secChart.tv .charthint{display:none!important}
 #secChart.full .tvbox{flex:1 1 auto;display:flex;flex-direction:column}#secChart.full .tvhost{flex:1 1 auto;height:auto}
@@ -524,6 +529,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
     <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button></div>
     <div id="lvList" class="lvlist" role="group" aria-label="水平線を1本ずつ消す・戻す" hidden></div>
+    <div id="chNow" class="chnow" role="group" aria-label="時間足ごとのチャネル" hidden></div>
     <div id="fibNow" class="fibnow" role="status" hidden></div>
     <div id="gmmaNow" class="gmmanow" role="status" hidden></div>
     <div id="gxToasts" class="gxtoasts" aria-live="polite"></div>
@@ -1423,49 +1429,64 @@ function trendLines(src){
   return [best(lows,'up'),best(highs,'down')].filter(Boolean);
 }
 
-// 平行チャンネル（表示中の時間足で自動）：直近40〜150本のどれかの範囲で、終値の回帰直線の傾きにそろえた2本の平行線を、
-// 山（前後3本より高い足）の外側と谷の外側に引く。はっきりしたものだけ：回帰の当てはまり（R²）0.55以上、範囲でATRの3倍以上動いた、
-// 上の線・下の線にそれぞれ2回以上、範囲の2割以上離れた所で触れた（幅の12%以内）、範囲の終値の95%以上が線の内側、幅がATRの1.2〜7倍。
-// 今の足が幅の25%以上外へ抜けたら（ブレイク）そのチャンネルは消える。いちばん接点が多く、当てはまりのよい範囲を選ぶ
+// チャネル（時間足ごとに自動）：直近40〜150本のどれかの範囲で、終値の回帰直線の傾きにそろえた2本の平行線を、
+// 山（前後3本より高い足）の外側と谷の外側に引く。範囲でATRの3倍以上動いていれば上昇／下降チャネル、1.5倍未満ならレンジ（水平チャネル）。
+// はっきりしたものだけ「確定」：上昇・下降は回帰の当てはまり（R²）0.55以上、上の線・下の線にそれぞれ2回以上、範囲の2割以上離れた所で
+// 触れた（幅の12%以内）、範囲の終値の95%以上が内側、幅がATRの1.2〜7倍。今の足が幅の25%以上外へ抜けたらブレイクとして外す。
+// 確定するものがない時間足は、直近60本で同じ引き方をした「参考」のチャネル（点線）を出す（どの時間足でも状態がわかるように）
 const CH_P={wMax:7,spread:.2};
-let chCache={k:'',v:null};
-function parallelChannel(src){
-  const N=src.length,key=state.tf+':'+N+':'+(src.at(-1)?.t)+':'+(src.at(-1)?.c);
-  if(chCache.k===key)return chCache.v;
-  let best=null;
-  if(N>=60){
+let chCache={};
+function channelOf(tf){
+  const src=state[tf]||[],N=src.length,key=N+':'+(src.at(-1)?.t)+':'+(src.at(-1)?.c);
+  if(chCache[tf]&&chCache[tf].k===key)return chCache[tf].v;
+  let best=null,ref=null;
+  if(N>=50){
     const K=3,a=atr(src.slice(-150),14)||1;
-    for(const L of [40,60,90,120,150]){
-      if(L>N-K)continue;
-      const s0=N-L;let sx=0,sy=0,sxx=0,sxy=0,syy=0;
-      for(let i=s0;i<N;i++){const c=src[i].c;sx+=i;sy+=c;sxx+=i*i;sxy+=i*c;syy+=c*c}
-      const den=L*sxx-sx*sx,sl=den?(L*sxy-sx*sy)/den:0,b0=(sy-sl*sx)/L;
+    const fit=(L,strict)=>{
+      const s0=N-L;let sx=0,sy=0,sxx=0,sxy=0;
+      for(let i=s0;i<N;i++){const c=src[i].c;sx+=i;sy+=c;sxx+=i*i;sxy+=i*c}
+      const den=L*sxx-sx*sx;let sl=den?(L*sxy-sx*sy)/den:0;const b0=(sy-sl*sx)/L;
       let ssr=0,sst=0;const my=sy/L;for(let i=s0;i<N;i++){const f=b0+sl*i,c=src[i].c;ssr+=(c-f)**2;sst+=(c-my)**2}
-      const r2=sst?1-ssr/sst:0;
-      if(r2<.55||Math.abs(sl)*L<a*3)continue;
+      const r2=sst?1-ssr/sst:0,move=Math.abs(sl)*L,kind=move>=a*3?(sl>0?'up':'down'):move<a*1.5?'flat':null;
+      if(strict&&!kind)return null;  // 傾きがどっちつかずのものは確定にしない
+      if(strict&&kind!=='flat'&&r2<.55)return null;
       const hp=[],lp=[];
       for(let i=s0+K;i<N-K;i++){
         let isH=true,isL=true;
         for(let j=i-K;j<=i+K;j++){if(j===i)continue;if(src[j].h>src[i].h)isH=false;if(src[j].l<src[i].l)isL=false}
         if(isH)hp.push(i);if(isL)lp.push(i);
       }
-      if(hp.length<2||lp.length<2)continue;
+      if(hp.length<2||lp.length<2)return null;
       const up=Math.max(...hp.map(i=>src[i].h-sl*i)),lo=Math.min(...lp.map(i=>src[i].l-sl*i)),w=up-lo;
-      if(w<a*1.2||w>a*CH_P.wMax)continue;
+      if(!(w>0))return null;
       const tol=w*.12,TH=hp.filter(i=>up-(src[i].h-sl*i)<=tol),TL=lp.filter(i=>(src[i].l-sl*i)-lo<=tol),th=TH.length,tl=TL.length;
-      if(th<2||tl<2)continue;
-      if(TH.at(-1)-TH[0]<L*CH_P.spread||TL.at(-1)-TL[0]<L*CH_P.spread)continue;  // 接点が範囲の中で離れている（同じ所の山・谷だけではない）
-      let out=0;for(let i=s0;i<N;i++){const c=src[i].c-sl*i;if(c>up+tol||c<lo-tol)out++}
-      if(out/L>.05)continue;
-      const lc=src[N-1].c-sl*(N-1);if(lc>up+w*.25||lc<lo-w*.25)continue;
-      const score=th+tl+r2*2+L/60;
-      if(!best||score>best.score)best={s:sl,up,lo,i0:s0,th,tl,r2,dir:sl>0?1:-1,score,
-        upNow:up+sl*(N-1),loNow:lo+sl*(N-1),pos:(lc-lo)/w};
-    }
+      const lc=src[N-1].c-sl*(N-1),pos=(lc-lo)/w;
+      if(strict){
+        if(w<a*1.2||w>a*CH_P.wMax||th<2||tl<2)return null;
+        if(TH.at(-1)-TH[0]<L*CH_P.spread||TL.at(-1)-TL[0]<L*CH_P.spread)return null;  // 接点が範囲の中で離れている
+        let out=0;for(let i=s0;i<N;i++){const c=src[i].c-sl*i;if(c>up+tol||c<lo-tol)out++}
+        if(out/L>.05)return null;
+        if(pos>1.25||pos<-.25)return null;  // ブレイクしたものは外す
+      }
+      return {s:sl,up,lo,i0:s0,th,tl,r2,kind:kind||(sl>0?'up':'down'),ref:!strict,score:th+tl+r2*2+L/60,
+        upNow:up+sl*(N-1),loNow:lo+sl*(N-1),pos};
+    };
+    for(const L of [40,60,90,120,150]){if(L>N-K)continue;const c=fit(L,true);if(c&&(!best||c.score>best.score))best=c}
+    if(!best)ref=fit(Math.min(60,N-K),false);
   }
-  chCache={k:key,v:best};return best;
+  const v=best||ref;chCache[tf]={k:key,v};return v;
 }
-const CH_COL={1:'79,195,247',[-1]:'244,143,177'};
+const CH_COL={up:'79,195,247',down:'244,143,177',flat:'255,209,102'};
+const CH_NAME={up:'上昇チャネル',down:'下降チャネル',flat:'レンジ（水平チャネル）'};
+const chPos=c=>c.pos>1?'上抜け気味':c.pos<0?'下抜け気味':c.pos>=.75?'上限付近':c.pos<=.25?'下限付近':'中ほど';
+// 全時間足のチャネルの状態をチャートの上に並べる（タップでその時間足へ）。確定は実線、参考は点線で区別
+function renderChNow(){
+  const el=$('chNow');if(!el)return;
+  if(!state.maOn.ch){el.hidden=true;return}
+  const rows=Object.keys(TFS).map(tf=>({tf,c:channelOf(tf)})).filter(o=>o.c);
+  el.hidden=!rows.length;
+  el.innerHTML='<b class="chn-h">チャネル<small>（実線＝はっきり・点線＝参考）</small></b>'+rows.map(({tf,c})=>`<button type="button" data-tf="${tf}" class="chn ${c.kind}${c.ref?' ref':''}${tf===state.tf?' cur':''}" title="${c.ref?'参考（はっきりしたチャネルではありません）':'確定（はっきりしたチャネル）'}"><i></i>${tf.toUpperCase()} ${{up:'上昇',down:'下降',flat:'レンジ'}[c.kind]}${c.ref?'<small>参考</small>':''}・${chPos(c)}</button>`).join('');
+}
 
 // ダウ理論のトレンド：直近の山（高値）2つと谷（安値）2つを比べる。
 // 高値・安値とも切り上げ＝上昇トレンド、切り下げ＝下降トレンド。上昇中に直近の押し安値を割る（下降中に戻り高値を超える）とトレンド崩れ。
@@ -1718,7 +1739,7 @@ const MA_BTNS=[{key:'sma',color:SMA_COLOR,label:()=>smaLen()+'SMA'}].concat(EMAS
   [{key:'st',color:'linear-gradient(90deg,#42d59c 50%,#ff6969 50%)',label:()=>'スーパートレンド'},
    {key:'rsi',color:'#b48cff',label:()=>'RSI(14)'},
    {key:'fib',color:FIB_COLOR,label:()=>'フィボナッチ'},
-   {key:'ch',color:'linear-gradient(90deg,#4fc3f7 50%,#f48fb1 50%)',label:()=>'平行チャンネル'},
+   {key:'ch',color:'linear-gradient(90deg,#4fc3f7 50%,#f48fb1 50%)',label:()=>'チャネル'},
    {key:'swingN',color:'linear-gradient(90deg,#42d59c 50%,#ff6969 50%)',label:()=>'直近高値・安値'},
    {key:'swingP',color:'#93a0ad',label:()=>'前回高値・安値'},
    {key:'gmmaS',color:GMMA_SC,label:()=>'GMMA短期',off:true},
@@ -2641,7 +2662,7 @@ function drawChart(){
   // 各水準は細い点線、止まった線だけ実線。0%・100%は短い目印だけ。強い水平線と重なる水準は線を省き名前だけ残す
   // フィボナッチは表示中の時間足の足で引く（時間足を切り替えると、その時間足の波で引き直す）。名前に時間足を付ける
   const fib=state.maOn.fib?fibonacci(source,DOW_K[state.tf]||4):null,fibTag=state.tf.toUpperCase()+' ';
-  renderFibNow();renderGmmaNow();  // 価格が動くたびに「今効いているフィボナッチ」「GMMAのクロス」も更新
+  renderFibNow();renderGmmaNow();renderChNow();  // 価格が動くたびに「今効いているフィボナッチ」「GMMAのクロス」も更新
   const fbest=bestFib(),fibOnR=fbest&&fbest.tf===state.tf&&fib&&!fib.prov?fbest.lv.r:null;  // 表示中の時間足が一番効いているなら、その水準を点滅
   if(fib){
     // 波の終点が右端に近い（伸びている最中など）ときは、線が短くなりすぎないよう波の始点から引く
@@ -2737,19 +2758,20 @@ function drawChart(){
     ctx.fillStyle=`rgba(${L.col},1)`;ctx.fillText(L.txt,lx+4,ly);
     swingBoxes.push({x:lx,y:ly-7,w:tw,h:14});
   });
-  // 平行チャンネル：範囲の始まりから右端（右側の空白を含む）まで。上下の線と、薄い帯・中心の点線。名前と今の上限・下限を上の線の近くに
-  const ch=state.maOn.ch?parallelChannel(source):null;
+  // チャネル：範囲の始まりから右端（右側の空白を含む）まで。上下の線と、薄い帯・中心の点線。名前と今の上限・下限を線の近くに。
+  // 確定は実線、参考（はっきりしたチャネルがない時間足）は細い点線
+  const ch=state.maOn.ch?channelOf(state.tf):null;
   if(ch){
-    const col=CH_COL[ch.dir],g0=ch.i0,g1=endIdx-1+blank+1,X0=x(g0-startIdx),X1=x(g1-startIdx),Y=(off,i)=>y(off+ch.s*i);
+    const col=CH_COL[ch.kind],g0=ch.i0,g1=endIdx-1+blank+1,X0=x(g0-startIdx),X1=x(g1-startIdx),Y=(off,i)=>y(off+ch.s*i);
     ctx.save();ctx.beginPath();ctx.rect(P.l,P.t,W-P.l-P.r,H-P.t-P.b);ctx.clip();
-    ctx.fillStyle=`rgba(${col},.06)`;ctx.beginPath();ctx.moveTo(X0,Y(ch.up,g0));ctx.lineTo(X1,Y(ch.up,g1));ctx.lineTo(X1,Y(ch.lo,g1));ctx.lineTo(X0,Y(ch.lo,g0));ctx.closePath();ctx.fill();
-    ctx.strokeStyle=`rgba(${col},.95)`;ctx.lineWidth=1.2;
+    ctx.fillStyle=`rgba(${col},${ch.ref?.035:.06})`;ctx.beginPath();ctx.moveTo(X0,Y(ch.up,g0));ctx.lineTo(X1,Y(ch.up,g1));ctx.lineTo(X1,Y(ch.lo,g1));ctx.lineTo(X0,Y(ch.lo,g0));ctx.closePath();ctx.fill();
+    ctx.strokeStyle=`rgba(${col},${ch.ref?.7:.95})`;ctx.lineWidth=ch.ref?.9:1.2;if(ch.ref)ctx.setLineDash([6,4]);
     [ch.up,ch.lo].forEach(off=>{ctx.beginPath();ctx.moveTo(X0,Y(off,g0));ctx.lineTo(X1,Y(off,g1));ctx.stroke()});
-    ctx.strokeStyle=`rgba(${col},.45)`;ctx.lineWidth=.8;ctx.setLineDash([4,4]);const mid=(ch.up+ch.lo)/2;
+    ctx.strokeStyle=`rgba(${col},.4)`;ctx.lineWidth=.8;ctx.setLineDash([3,4]);const mid=(ch.up+ch.lo)/2;
     ctx.beginPath();ctx.moveTo(X0,Y(mid,g0));ctx.lineTo(X1,Y(mid,g1));ctx.stroke();ctx.setLineDash([]);ctx.restore();
     // 名前は範囲の3割ほどの所に。上の線が見えていればその上、見えていなければ下の線の下に書く
-    const iL=Math.round(Math.max(g0,startIdx)+(source.length-1-Math.max(g0,startIdx))*.3),lx=x(iL-startIdx),txt=`${ch.dir>0?'上昇':'下降'}チャンネル（${state.tf.toUpperCase()}） 上限 ${pxt(ch.upNow)}・下限 ${pxt(ch.loNow)}`;
-    const yu=Y(ch.up,iL),yl=Y(ch.lo,iL);
+    const iL=Math.round(Math.max(g0,startIdx)+(source.length-1-Math.max(g0,startIdx))*.3),lx=x(iL-startIdx);
+    const txt=`${ch.ref?'参考 ':''}${CH_NAME[ch.kind]}（${state.tf.toUpperCase()}） 上限 ${pxt(ch.upNow)}・下限 ${pxt(ch.loNow)}`,yu=Y(ch.up,iL),yl=Y(ch.lo,iL);
     if(yu>P.t+20&&yu<H-P.b-8)lowLabels.push({x0:lx,yy:yu,col,dir:-1,txt});
     else if(yl>P.t+8&&yl<H-P.b-20)lowLabels.push({x0:lx,yy:yl,col,dir:1,txt});
   }
@@ -2897,7 +2919,7 @@ function drawChart(){
     tls.map(t=>`<span class="legend"><i style="background:${t.kind==='up'?TL_UP:TL_DOWN}"></i>${t.kind==='up'?'上昇':'下降'}トレンドライン <b>${fmt(t.p1+t.slope*(endIdx-1-t.i1))}</b>（接点${t.touches}）</span>`).join('')+
     tags.map(({l})=>`<span class="legend"><i style="background:${l.kind==='r'?'#ff6969':'#42d59c'}"></i>${l.kind==='r'?'抵抗線':'支持線'}${l.tf!=='h1'?'（'+l.tf.toUpperCase()+'）':''}${l.touches>=3?'★':''} <b>${fmt(l.price)}</b></span>`).join('')+
     (fib&&fib.prov?`<span class="legend"><i style="background:${FIB_COLOR}"></i>暫定フィボナッチ（${fibTag}${fib.dir>0?'上昇':'下降'}中・次の${fib.dir>0?'押し目':'戻り'}の目安） 38.2% <b>${fmt(fib.levels.find(l=>l.r===.382).p)}</b>・半値 <b>${fmt(fib.levels.find(l=>l.r===.5).p)}</b>・61.8% <b>${fmt(fib.levels.find(l=>l.r===.618).p)}</b></span>`:'')+
-    (ch?`<span class="legend"><i style="background:rgb(${CH_COL[ch.dir]})"></i>${ch.dir>0?'上昇':'下降'}チャンネル（${state.tf.toUpperCase()}） 上限 <b>${fmt(ch.upNow)}</b>・下限 <b>${fmt(ch.loNow)}</b>｜今はチャンネルの${ch.pos>=.75?'上限付近':ch.pos<=.25?'下限付近':'中ほど'}（接点 上${ch.th}・下${ch.tl}）</span>`:'')+
+    (ch?`<span class="legend"><i style="background:rgb(${CH_COL[ch.kind]})"></i>${ch.ref?'参考 ':''}${CH_NAME[ch.kind]}（${state.tf.toUpperCase()}） 上限 <b>${fmt(ch.upNow)}</b>・下限 <b>${fmt(ch.loNow)}</b>｜今はチャネルの${chPos(ch)}（接点 上${ch.th}・下${ch.tl}${ch.ref?'・はっきりしたチャネルではありません':''}）</span>`:'')+
     (fib&&!fib.prov?`<span class="legend"><i style="background:${FIB_COLOR}"></i>フィボナッチ（${fibTag}直近の${fib.dir>0?'上昇':'下降'}の${fib.dir>0?'押し':'戻り'}） 今 <b>${Math.round(fib.cur*100)}%</b>（最深 ${Math.round(fib.deep*100)}%${fib.half?'・半値戻し':''}）${fib.hit!=null?`｜${FIB_NAME(fib.hit)}（${fmt(fib.levels.find(l=>l.r===fib.hit).p)}）で${fib.held?'反発':'到達'}`:''}</span>`:'')+
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
   $('chartMeta').textContent=TF_NAME[state.tf]+'（'+state.tf.toUpperCase()+'）/ '+len+'SMA'+' / 10・20・80・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
@@ -3221,6 +3243,7 @@ $('maToggles').addEventListener('click',e=>{
   const k=btn.dataset.ma;state.maOn[k]=!state.maOn[k];lsSet(LSP+'ma',JSON.stringify(state.maOn));renderMaToggles();renderTfGrid();renderFibNow();renderGmmaNow();drawChart();
 });
 $('tlBtn').onclick=()=>{state.showTrend=!state.showTrend;$('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);savePrefs();drawChart()};
+$('chNow').onclick=e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)};
 $('mtfScore').onclick=e=>{const b=e.target.closest('[data-tf]');if(!b)return;setTf(b.dataset.tf);$('secChart').scrollIntoView({behavior:'smooth',block:'start'})};
 $('alertList').onclick=e=>{const b=e.target.closest('.al-sw');if(!b)return;const k=b.dataset.alk;alertCfg[k]=!alertCfg[k];b.setAttribute('aria-pressed',String(alertCfg[k]));saveAlerts()};
 $('alertList').onchange=e=>{const f=e.target.dataset.al;if(!f||!e.target.isConnected)return;  // 通知のあと作り直した欄から遅れて来る変更は無視
