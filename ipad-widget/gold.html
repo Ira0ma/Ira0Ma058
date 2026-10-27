@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="f8f9644746">
+<meta name="build" content="bfe8b892b1">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2778,6 +2778,14 @@ function drawChart(){
     // 重なる面積（0なら空いている）。線のすぐ下（売りは上）→反対側→少し離れた所の順に、左から右へ探して一番重ならない所に置く
     const cover=(lx,ly)=>swingBoxes.reduce((t,b)=>t+Math.max(0,Math.min(lx+tw,b.x+b.w)-Math.max(lx,b.x))*Math.max(0,Math.min(ly+7,b.y+b.h)-Math.max(ly-7,b.y)),0);
     let lx=x1,ly=L.dir>0?L.yy+10:L.yy-10,best=Infinity;
+    if(L.right){  // 右端に右寄せ：右から左へ（最大8か所）、線のすぐ外側→少し離れた所の順に探す
+      const xr=W-P.r-tw-32;lx=xr;  // 右の価格タグの左にある R1・S1 などの名札の分をあける
+      rsearch:for(const dy of L.dir>0?[10,24]:[-10,-24])for(let k=0;k<8;k++){
+        const xx=xr-k*24;if(xx<P.l+2)break;const yc=L.yAt(xx+tw/2)+dy;if(yc-7<P.t||yc+7>H-P.b)continue;
+        const c=cover(xx,yc);if(c<best){best=c;lx=xx;ly=yc}if(!c)break rsearch;
+      }
+      if(best===Infinity)ly=Math.min(Math.max(L.yy+(L.dir>0?10:-10),P.t+8),H-P.b-8);
+    }else
     search:for(const dy of L.dir>0?[10,-10,25,-25]:[-10,10,-25,25]){
       const yc=L.yy+dy;if(yc-7<P.t||yc+7>H-P.b)continue;
       for(let x=x1;x<=W-P.r-tw-2;x+=24){const c=cover(x,yc);if(c<best){best=c;lx=x;ly=yc}if(!c)break search}
@@ -2797,11 +2805,16 @@ function drawChart(){
     [ch.up,ch.lo].forEach(off=>{ctx.beginPath();ctx.moveTo(X0,Y(off,g0));ctx.lineTo(X1,Y(off,g1));ctx.stroke()});
     ctx.strokeStyle=`rgba(${col},.4)`;ctx.lineWidth=.8;ctx.setLineDash([3,4]);const mid=(ch.up+ch.lo)/2;
     ctx.beginPath();ctx.moveTo(X0,Y(mid,g0));ctx.lineTo(X1,Y(mid,g1));ctx.stroke();ctx.setLineDash([]);ctx.restore();
-    // 名前は範囲の3割ほどの所に。上の線が見えていればその上、見えていなければ下の線の下に書く
-    const iL=Math.round(Math.max(g0,startIdx)+(source.length-1-Math.max(g0,startIdx))*.3),lx=x(iL-startIdx);
-    const txt=`${ch.ref?'参考 ':''}${CH_NAME[ch.kind]}（${state.tf.toUpperCase()}） 上限 ${pxt(ch.upNow)}・下限 ${pxt(ch.loNow)}`,yu=Y(ch.up,iL),yl=Y(ch.lo,iL);
-    if(yu>P.t+20&&yu<H-P.b-8)lowLabels.push({x0:lx,yy:yu,col,dir:-1,txt});
-    else if(yl>P.t+8&&yl<H-P.b-20)lowLabels.push({x0:lx,yy:yl,col,dir:1,txt});
+    // 名前はチャートの右端（価格目盛りの手前）に右寄せで。上の線が見えていればその上、見えていなければ下の線の下。
+    // 線は斜めなので、置いた場所での線の高さに合わせる（ほかのラベルと重なるときは少し左・上下へずらす）
+    const xi=X=>g0+(X-X0)/((X1-X0)||1)*(g1-g0),yAtU=X=>Y(ch.up,xi(X)),yAtL=X=>Y(ch.lo,xi(X));
+    const nm=ch.kind==='flat'?'レンジ':CH_NAME[ch.kind];
+    const narrow=W-P.l-P.r<520;
+    const txt=`${ch.ref?'参考 ':''}${nm}（${state.tf.toUpperCase()}） 上限 ${pxt(ch.upNow)}・下限 ${pxt(ch.loNow)}`,XR=W-P.r-6,yu=yAtU(XR),yl=yAtL(XR);
+    // スマホなど幅の狭いチャートは、フィボの文字などで混み合うので名前は書かない（チャートの上の「チャネル」欄と下の説明に出る）
+    if(narrow){}
+    else if(yu>P.t+20&&yu<H-P.b-8)lowLabels.push({right:true,yAt:yAtU,yy:yu,col,dir:-1,txt});
+    else if(yl>P.t+8&&yl<H-P.b-20)lowLabels.push({right:true,yAt:yAtL,yy:yl,col,dir:1,txt});
   }
   // チャートパターン：表示中の時間足の形について、形の始まりから今までネックライン（点線）と名前・価格。カップは底に印。
   // 形が否定された（買いの形なら底・右肩の安値を割った、売りの形なら高値を超えた）ものは検出されなくなり、線も消える
