@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="23b2a5587e">
+<meta name="build" content="e71937026e">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -259,7 +259,7 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .tvl-in{display:flex;gap:6px;margin:6px 0}.tvl-in input{flex:1;min-width:0;font:inherit;font-size:12.5px;color:#eef3f7;background:#0a0e12;border:1px solid #2c3742;border-radius:8px;padding:7px 9px}
 .chnow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin:6px 0}.chn-h{font-size:11px;color:var(--muted);margin-right:2px}.chn-h small{font-weight:500;font-size:9.5px;margin-left:3px}
 .chn{font:inherit;font-size:11px;font-weight:700;border-radius:999px;padding:4px 9px;border:1px solid #2c3742;background:#0c1116;color:#cbd6e0;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
-.chn i{width:12px;height:0;border-top:2px solid currentColor}.chn.ref i{border-top-style:dashed}.chn small{font-size:9.5px;font-weight:600;opacity:.8;margin-left:2px}.chn.ref{opacity:.75;font-weight:600}
+.chn i{width:12px;height:0;border-top:2px solid currentColor}.chn small{font-size:9.5px;font-weight:600;opacity:.8;margin-left:2px}.chn.ref{opacity:.75;font-weight:600}
 .chn.up{color:#7fd3f7;border-color:rgba(79,195,247,.45)}.chn.down{color:#f7a8c4;border-color:rgba(244,143,177,.45)}.chn.flat{color:#ffd166;border-color:rgba(255,209,102,.45)}
 .chn.cur{background:#16202b;box-shadow:0 0 0 1px currentColor inset}
 .tvnote{font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.5}
@@ -1433,7 +1433,7 @@ function trendLines(src){
 // 山（前後3本より高い足）の外側と谷の外側に引く。範囲でATRの3倍以上動いていれば上昇／下降チャネル、1.5倍未満ならレンジ（水平チャネル）。
 // はっきりしたものだけ「確定」：上昇・下降は回帰の当てはまり（R²）0.55以上、上の線・下の線にそれぞれ2回以上、範囲の2割以上離れた所で
 // 触れた（幅の12%以内）、範囲の終値の95%以上が内側、幅がATRの1.2〜7倍。今の足が幅の25%以上外へ抜けたらブレイクとして外す。
-// 確定するものがない時間足は、直近60本で同じ引き方をした「参考」のチャネル（点線）を出す（どの時間足でも状態がわかるように）
+// 確定するものがない時間足は、直近60本で同じ引き方をした「参考」のチャネル（淡い色）を出す（どの時間足でも状態がわかるように）
 const CH_P={wMax:7,spread:.2};
 let chCache={};
 function channelOf(tf){
@@ -1479,13 +1479,13 @@ function channelOf(tf){
 const CH_COL={up:'79,195,247',down:'244,143,177',flat:'255,209,102'};
 const CH_NAME={up:'上昇チャネル',down:'下降チャネル',flat:'レンジ（水平チャネル）'};
 const chPos=c=>c.pos>1?'上抜け気味':c.pos<0?'下抜け気味':c.pos>=.75?'上限付近':c.pos<=.25?'下限付近':'中ほど';
-// 全時間足のチャネルの状態をチャートの上に並べる（タップでその時間足へ）。確定は実線、参考は点線で区別
+// 全時間足のチャネルの状態をチャートの上に並べる（タップでその時間足へ）。参考は淡い色と「参考」の字で区別
 function renderChNow(){
   const el=$('chNow');if(!el)return;
   if(!state.maOn.ch){el.hidden=true;return}
   const rows=Object.keys(TFS).map(tf=>({tf,c:channelOf(tf)})).filter(o=>o.c);
   el.hidden=!rows.length;
-  el.innerHTML='<b class="chn-h">チャネル<small>（実線＝はっきり・点線＝参考）</small></b>'+rows.map(({tf,c})=>`<button type="button" data-tf="${tf}" class="chn ${c.kind}${c.ref?' ref':''}${tf===state.tf?' cur':''}" title="${c.ref?'参考（はっきりしたチャネルではありません）':'確定（はっきりしたチャネル）'}"><i></i>${tf.toUpperCase()} ${{up:'上昇',down:'下降',flat:'レンジ'}[c.kind]}${c.ref?'<small>参考</small>':''}・${chPos(c)}</button>`).join('');
+  el.innerHTML='<b class="chn-h">チャネル<small>（参考＝はっきりしたチャネルではないもの）</small></b>'+rows.map(({tf,c})=>`<button type="button" data-tf="${tf}" class="chn ${c.kind}${c.ref?' ref':''}${tf===state.tf?' cur':''}" title="${c.ref?'参考（はっきりしたチャネルではありません）':'確定（はっきりしたチャネル）'}"><i></i>${tf.toUpperCase()} ${{up:'上昇',down:'下降',flat:'レンジ'}[c.kind]}${c.ref?'<small>参考</small>':''}・${chPos(c)}</button>`).join('');
 }
 
 // ダウ理論のトレンド：直近の山（高値）2つと谷（安値）2つを比べる。
@@ -2759,13 +2759,13 @@ function drawChart(){
     swingBoxes.push({x:lx,y:ly-7,w:tw,h:14});
   });
   // チャネル：範囲の始まりから右端（右側の空白を含む）まで。上下の線と、薄い帯・中心の点線。名前と今の上限・下限を線の近くに。
-  // 確定は実線、参考（はっきりしたチャネルがない時間足）は細い点線
+  // 上限・下限は実線、半値（中心）は点線。参考（はっきりしたチャネルがない時間足）は少し淡く
   const ch=state.maOn.ch?channelOf(state.tf):null;
   if(ch){
     const col=CH_COL[ch.kind],g0=ch.i0,g1=endIdx-1+blank+1,X0=x(g0-startIdx),X1=x(g1-startIdx),Y=(off,i)=>y(off+ch.s*i);
     ctx.save();ctx.beginPath();ctx.rect(P.l,P.t,W-P.l-P.r,H-P.t-P.b);ctx.clip();
     ctx.fillStyle=`rgba(${col},${ch.ref?.035:.06})`;ctx.beginPath();ctx.moveTo(X0,Y(ch.up,g0));ctx.lineTo(X1,Y(ch.up,g1));ctx.lineTo(X1,Y(ch.lo,g1));ctx.lineTo(X0,Y(ch.lo,g0));ctx.closePath();ctx.fill();
-    ctx.strokeStyle=`rgba(${col},${ch.ref?.7:.95})`;ctx.lineWidth=ch.ref?.9:1.2;if(ch.ref)ctx.setLineDash([6,4]);
+    ctx.strokeStyle=`rgba(${col},${ch.ref?.7:.95})`;ctx.lineWidth=ch.ref?1:1.2;  // 上限・下限はいつも実線（参考は少し淡く）
     [ch.up,ch.lo].forEach(off=>{ctx.beginPath();ctx.moveTo(X0,Y(off,g0));ctx.lineTo(X1,Y(off,g1));ctx.stroke()});
     ctx.strokeStyle=`rgba(${col},.4)`;ctx.lineWidth=.8;ctx.setLineDash([3,4]);const mid=(ch.up+ch.lo)/2;
     ctx.beginPath();ctx.moveTo(X0,Y(mid,g0));ctx.lineTo(X1,Y(mid,g1));ctx.stroke();ctx.setLineDash([]);ctx.restore();
