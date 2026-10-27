@@ -647,10 +647,12 @@ html:not(.flow) #flow { display: none; }
   function openDash(key, opener) {
     var sh = ensureSheet(key);
     sh.el.hidden = false; openSheet = sh; sheetOpener = opener;
+    try { sh.el.querySelector("iframe").contentWindow.postMessage({ type: "desk-sheet", on: true }, "*"); } catch (e) {}  // it draws its chart again
     sh.el.querySelector(".dash-close").focus();
   }
   function closeDash() {
     if (!openSheet) return;
+    try { openSheet.el.querySelector("iframe").contentWindow.postMessage({ type: "desk-sheet", on: false }, "*"); } catch (e) {}  // behind the desk: it stops drawing
     openSheet.el.hidden = true; openSheet = null;
     if (sheetOpener) sheetOpener.focus();
   }
@@ -1539,63 +1541,74 @@ html:not(.flow) #flow { display: none; }
   });
 
   /* ---------- background ---------- */
+  /* The background is drawn in layers, once per resize: the still parts (glow, planet rim and city lights, faint
+     candles) and the golden streaks each go into their own canvas, and a glow dot is drawn once. Each frame only
+     copies those and twinkles the dots, about 15 times a second, and nothing is drawn while the page is hidden or a
+     dashboard covers it (the shadow blurs and gradients used to be redrawn every frame, which kept the iPad busy). */
   var bg = (function () {
-    var cv = document.getElementById("bg"), c, w, h, parts = [], streaks = [], cityPts = [], t0 = performance.now();
+    var cv = document.getElementById("bg"), c, w, h, k = 1, parts = [], still = null, glow = null, dot = null, last = 0, t0 = performance.now();
+    function layer() { var l = document.createElement("canvas"); l.width = cv.width; l.height = cv.height; var x = l.getContext("2d"); x.setTransform(k, 0, 0, k, 0, 0); return { cv: l, c: x }; }
     function resize() {
-      var k = window.devicePixelRatio || 1;
+      k = Math.min(window.devicePixelRatio || 1, 2);
       w = innerWidth; h = innerHeight;
       cv.width = Math.round(w * k); cv.height = Math.round(h * k);
-      c = cv.getContext("2d"); c.setTransform(k, 0, 0, k, 0, 0);
-      var r = rng(5); parts = []; streaks = []; cityPts = [];
-      for (var i = 0; i < 70; i++) parts.push({ x: r(), y: 0.35 + r() * 0.65, s: 0.6 + r() * 3.2, a: 0.08 + r() * 0.35, ph: r() * 6.3, sp: 0.4 + r() });
+      c = cv.getContext("2d");
+      var r = rng(5), streaks = [], cityPts = [], i; parts = [];
+      for (i = 0; i < 70; i++) parts.push({ x: r(), y: 0.35 + r() * 0.65, s: 0.6 + r() * 3.2, a: 0.08 + r() * 0.35, ph: r() * 6.3, sp: 0.4 + r() });
       for (i = 0; i < 7; i++) streaks.push({ y0: 0.55 + r() * 0.35, y1: 0.35 + r() * 0.4, bend: -0.2 + r() * 0.25, wd: 0.6 + r() * 1.4, a: 0.25 + r() * 0.5, ph: r() * 6.3 });
       for (i = 0; i < 260; i++) { var ang = Math.PI * (0.98 + r() * 0.55), rad = 0.86 + r() * 0.13; cityPts.push([ang, rad, r()]); }
-      if (reduce) frame(t0);
+      // still layer
+      var L = layer(), x = L.c;
+      x.fillStyle = "#06070b"; x.fillRect(0, 0, w, h);
+      var g = x.createRadialGradient(w * 0.82, h * 0.95, 0, w * 0.82, h * 0.95, Math.max(w, h) * 0.75);
+      g.addColorStop(0, "rgba(150,100,40,.55)"); g.addColorStop(0.35, "rgba(70,45,20,.35)"); g.addColorStop(1, "rgba(6,7,11,0)");
+      x.fillStyle = g; x.fillRect(0, 0, w, h);
+      var g2 = x.createRadialGradient(w * 0.12, h * 0.95, 0, w * 0.12, h * 0.95, w * 0.4);
+      g2.addColorStop(0, "rgba(120,80,30,.35)"); g2.addColorStop(1, "rgba(6,7,11,0)");
+      x.fillStyle = g2; x.fillRect(0, 0, w, h);
+      var R = Math.max(w, h) * 0.55, cx = w * 0.98, cy = h * 1.12;  // planet rim with city lights
+      x.save(); x.beginPath(); x.arc(cx, cy, R, 0, 7); x.fillStyle = "rgba(10,10,14,.85)"; x.fill();
+      x.shadowColor = "rgba(255,190,100,.9)"; x.shadowBlur = 30; x.strokeStyle = "rgba(255,205,130,.75)"; x.lineWidth = 1.6;
+      x.beginPath(); x.arc(cx, cy, R, Math.PI * 0.95, Math.PI * 1.6); x.stroke(); x.restore();
+      cityPts.forEach(function (p) {
+        x.fillStyle = "rgba(255,200,120," + (0.25 + 0.5 * p[2]) + ")"; x.fillRect(cx + Math.cos(p[0]) * R * p[1], cy + Math.sin(p[0]) * R * p[1], 1.2, 1.2);
+      });
+      var base = h * 0.78, rr = rng(9);  // faint candlesticks rising at the right
+      for (i = 0; i < 26; i++) {
+        var px = w * (0.62 + i * 0.014), top = base - h * (0.04 + i * 0.012 + rr() * 0.05), hh = h * (0.02 + rr() * 0.04), bw = Math.max(2, w * 0.005);
+        x.fillStyle = "rgba(230,180,100," + (0.05 + i * 0.006) + ")"; x.fillRect(px, top, bw, hh); x.fillRect(px + bw / 2 - 0.5, top - hh * 0.5, 1, hh * 2);
+      }
+      still = L.cv;
+      // golden streaks layer (they breathe together in the frame)
+      var S = layer(), y = S.c; y.globalCompositeOperation = "lighter";
+      streaks.forEach(function (s) {
+        y.strokeStyle = "rgba(255,190,90," + s.a + ")"; y.lineWidth = s.wd; y.shadowColor = "rgba(255,170,60,.9)"; y.shadowBlur = 14;
+        y.beginPath(); y.moveTo(-20, h * s.y0); y.bezierCurveTo(w * 0.35, h * (s.y0 + s.bend), w * 0.6, h * (s.y1 + 0.25), w + 20, h * s.y1); y.stroke();
+      });
+      glow = S.cv;
+      // one glow dot, scaled for each twinkle
+      dot = document.createElement("canvas"); dot.width = dot.height = 64;
+      var d = dot.getContext("2d"), gg = d.createRadialGradient(32, 32, 0, 32, 32, 32);
+      gg.addColorStop(0, "rgba(255,210,140,1)"); gg.addColorStop(1, "rgba(255,210,140,0)"); d.fillStyle = gg; d.fillRect(0, 0, 64, 64);
+      last = 0; draw(performance.now());
+    }
+    function draw(now) {
+      var t = (now - t0) / 1000;
+      c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.globalCompositeOperation = "source-over";
+      c.drawImage(still, 0, 0);
+      c.globalCompositeOperation = "lighter";
+      c.globalAlpha = 0.8 + 0.2 * Math.sin(t * 0.6); c.drawImage(glow, 0, 0);
+      parts.forEach(function (p) {
+        var r = p.s * 3 * k;
+        c.globalAlpha = p.a * (0.55 + 0.45 * Math.sin(t * p.sp + p.ph));
+        c.drawImage(dot, p.x * w * k - r, p.y * h * k - r, r * 2, r * 2);
+      });
+      c.globalAlpha = 1; c.globalCompositeOperation = "source-over";
     }
     function frame(now) {
-      var t = (now - t0) / 1000;
-      c.fillStyle = "#06070b"; c.fillRect(0, 0, w, h);
-      var g = c.createRadialGradient(w * 0.82, h * 0.95, 0, w * 0.82, h * 0.95, Math.max(w, h) * 0.75);
-      g.addColorStop(0, "rgba(150,100,40,.55)"); g.addColorStop(0.35, "rgba(70,45,20,.35)"); g.addColorStop(1, "rgba(6,7,11,0)");
-      c.fillStyle = g; c.fillRect(0, 0, w, h);
-      var g2 = c.createRadialGradient(w * 0.12, h * 0.95, 0, w * 0.12, h * 0.95, w * 0.4);
-      g2.addColorStop(0, "rgba(120,80,30,.35)"); g2.addColorStop(1, "rgba(6,7,11,0)");
-      c.fillStyle = g2; c.fillRect(0, 0, w, h);
-      // planet rim with city lights
-      var R = Math.max(w, h) * 0.55, cx = w * 0.98, cy = h * 1.12;
-      c.save(); c.beginPath(); c.arc(cx, cy, R, 0, 7); c.fillStyle = "rgba(10,10,14,.85)"; c.fill();
-      c.shadowColor = "rgba(255,190,100,.9)"; c.shadowBlur = 30; c.strokeStyle = "rgba(255,205,130,.75)"; c.lineWidth = 1.6;
-      c.beginPath(); c.arc(cx, cy, R, Math.PI * 0.95, Math.PI * 1.6); c.stroke(); c.restore();
-      cityPts.forEach(function (p) {
-        var x = cx + Math.cos(p[0]) * R * p[1], y = cy + Math.sin(p[0]) * R * p[1];
-        c.fillStyle = "rgba(255,200,120," + (0.25 + 0.5 * p[2]) + ")"; c.fillRect(x, y, 1.2, 1.2);
-      });
-      // faint candlesticks rising at the right
-      var base = h * 0.78, r = rng(9);
-      for (var i = 0; i < 26; i++) {
-        var x = w * (0.62 + i * 0.014), top = base - h * (0.04 + i * 0.012 + r() * 0.05), hh = h * (0.02 + r() * 0.04);
-        c.fillStyle = "rgba(230,180,100," + (0.05 + i * 0.006) + ")";
-        c.fillRect(x, top, Math.max(2, w * 0.005), hh); c.fillRect(x + Math.max(2, w * 0.005) / 2 - 0.5, top - hh * 0.5, 1, hh * 2);
-      }
-      // golden streaks
-      c.save(); c.globalCompositeOperation = "lighter";
-      streaks.forEach(function (s) {
-        var a = s.a * (0.75 + 0.25 * Math.sin(t * 0.6 + s.ph));
-        c.strokeStyle = "rgba(255,190,90," + a + ")"; c.lineWidth = s.wd;
-        c.shadowColor = "rgba(255,170,60,.9)"; c.shadowBlur = 14;
-        c.beginPath(); c.moveTo(-20, h * s.y0);
-        c.bezierCurveTo(w * 0.35, h * (s.y0 + s.bend), w * 0.6, h * (s.y1 + 0.25), w + 20, h * s.y1);
-        c.stroke();
-      });
-      c.shadowBlur = 0;
-      parts.forEach(function (p) {
-        var a = p.a * (0.55 + 0.45 * Math.sin(t * p.sp + p.ph));
-        var gg = c.createRadialGradient(p.x * w, p.y * h, 0, p.x * w, p.y * h, p.s * 3);
-        gg.addColorStop(0, "rgba(255,210,140," + a + ")"); gg.addColorStop(1, "rgba(255,210,140,0)");
-        c.fillStyle = gg; c.beginPath(); c.arc(p.x * w, p.y * h, p.s * 3, 0, 7); c.fill();
-      });
-      c.restore();
-      if (!reduce) requestAnimationFrame(frame);
+      requestAnimationFrame(frame);
+      if (now - last < 66 || document.hidden || (typeof openSheet !== "undefined" && openSheet)) return;  // ~15 fps (slow twinkles); skip while hidden or covered
+      last = now; draw(now);
     }
     return { resize: resize, start: function () { resize(); if (!reduce) requestAnimationFrame(frame); } };
   })();

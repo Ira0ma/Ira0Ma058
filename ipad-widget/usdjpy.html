@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="1577c17aa9">
+<meta name="build" content="24632531af">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -792,7 +792,13 @@ function lsGet(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch{}}
 function todayKey(){return new Date().toLocaleDateString('sv-SE')}
 // 取引日（ブローカーの日足と同じくNY 17時で切り替え）：米国夏時間は日本時間6時、冬時間は7時に自動で切り替わる
-function tradeDayKey(ms=Date.now()){try{return new Date(ms+7*3600000).toLocaleDateString('sv-SE',{timeZone:'America/New_York'})}catch{return new Date(ms-6*3600000).toLocaleDateString('sv-SE')}}
+// 取引日（NY時間17時で日付が変わる）。足ごとに何百回も呼ぶので、書式を1つ作って使い回し、1時間ごとの結果を覚えておく
+const TD_FMT=(()=>{try{return new Intl.DateTimeFormat('sv-SE',{timeZone:'America/New_York'})}catch{return null}})(),tdMemo=new Map();
+function tradeDayKey(ms=Date.now()){
+  const h=Math.floor((ms+7*3600000)/3600000);let v=tdMemo.get(h);if(v)return v;
+  v=TD_FMT?TD_FMT.format(new Date(h*3600000)):new Date(ms-6*3600000).toLocaleDateString('sv-SE');
+  if(tdMemo.size>20000)tdMemo.clear();tdMemo.set(h,v);return v;
+}
 function localTime(ms){
   if(!ms)return '--';
   return new Date(ms).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
@@ -1081,7 +1087,7 @@ function onLiveTick(){
   const mt=Math.floor(Date.now()/60000)*60000,mb=LIVE.mins.at(-1);
   if(mb&&mb.t===mt){mb.h=Math.max(mb.h,px);mb.l=Math.min(mb.l,px);mb.c=px}else{LIVE.mins.push({t:mt,h:px,l:px,c:px});if(LIVE.mins.length>60)LIVE.mins.shift()}
   // 描画は1秒に1回まで（iPadの負担を抑える）
-  const now=Date.now();if(now-LIVE.lastDraw<1000)return;LIVE.lastDraw=now;
+  const now=Date.now();if(now-LIVE.lastDraw<(sheetHidden()?5000:1000))return;LIVE.lastDraw=now;  // デスクの裏に隠れている間は5秒に1回
   renderAll();flashPrice();
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!LIVE.ws)startLive()});
@@ -3181,7 +3187,8 @@ function renderChecks(risk,reb){
 function renderAll(){
   renderSnapshot();
   const reb=renderRebound();
-  drawChart();renderEvents();renderNext();renderResults();
+  if(!sheetHidden())drawChart();  // デスクの裏に隠れている間はチャートを描かない（開いたときに描く）
+  renderEvents();renderNext();renderResults();
   renderKeyLv();
   {const m=renderMtf();renderTech();checkAlerts(m)}
   renderGmmaNow();  // チャートが見えていない（デスクの裏で動いている）ときも、GMMAのクロスを確かめて知らせる
@@ -3237,6 +3244,10 @@ $('autoBtn').onclick=()=>{
 $('tfGrid').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)});
 // トレードデスクの通知をタップしたとき：その時間足を表示する
 window.addEventListener('message',e=>{if(e.source===window.parent&&e.data&&e.data.type==='desk-settf'&&TF_NAME[e.data.tf])setTf(e.data.tf)});
+// トレードデスクの中で、このダッシュボードが閉じている（裏で動いている）か。デスクが開け閉めを知らせる。知らせが来る前は画面の大きさで判断
+let deskHidden=null;
+function sheetHidden(){return window.parent!==window&&(deskHidden!=null?deskHidden:innerWidth===0||innerHeight===0)}
+window.addEventListener('message',e=>{if(e.source===window.parent&&e.data&&e.data.type==='desk-sheet'){deskHidden=!e.data.on;if(e.data.on)renderAll()}});
 $('fibNow').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)});
 $('gmmaNow').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)});
 $('maToggles').addEventListener('click',e=>{
