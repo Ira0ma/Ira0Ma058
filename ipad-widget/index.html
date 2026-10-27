@@ -940,9 +940,11 @@ html:not(.flow) #flow { display: none; }
     this.tvEl.addEventListener("click", function (e) {
       self.tvEl.href = tvUrl(self);  // the saved chart may have been set on a dashboard meanwhile
       var sc = ""; try { sc = localStorage.getItem("tv_via_shortcut") || ""; } catch (err) {}
-      if (sc === "1") {  // set on a dashboard: hand the link to the 「TVを開く」 shortcut, which opens it in the TradingView app
+      var nm = ""; try { nm = localStorage.getItem(self.key + "_tv_sc_name") || ""; } catch (err) {}
+      nm = nm || { gold: "GOLD を表示", usdjpy: "USDJPY を表示", btc: "BTC を表示" }[self.key];
+      if (sc === "1" && nm) {  // set on a dashboard: run that market's shortcut (one TradingView "chart" action), which opens the TradingView app
         e.preventDefault();
-        location.href = "shortcuts://run-shortcut?name=" + encodeURIComponent("TVを開く") + "&input=text&text=" + encodeURIComponent(self.tvEl.href);
+        location.href = "shortcuts://run-shortcut?name=" + encodeURIComponent(nm);
       }
     });
     tabs.appendChild(this.tvEl);

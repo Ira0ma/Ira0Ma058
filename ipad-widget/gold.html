@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="365712015d">
+<meta name="build" content="49eaa94529">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -538,16 +538,16 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
         <div class="tvl-in"><input id="tvLayoutUrl" type="url" inputmode="url" placeholder="https://www.tradingview.com/chart/xxxxxxxx/" autocomplete="off"><button type="button" id="tvLayoutSave" class="seg">保存</button><button type="button" id="tvLayoutClear" class="seg">消す</button></div>
         <div id="tvLayoutMsg" class="sub"></div>
         <label class="tvl-sc"><input type="checkbox" id="tvViaSc"> <b>TradingViewアプリで直接開く（ショートカット経由）</b></label>
+        <div class="tvl-in"><label for="tvScName" class="sub" style="white-space:nowrap;align-self:center">この銘柄のショートカット名</label><input id="tvScName" type="text" autocomplete="off"><button type="button" id="tvScSave" class="seg">保存</button></div>
         <div class="tvl-how">
-          <p>ホーム画面に追加したトレードデスク・ダッシュボードから、TradingViewアプリにすぐ切り替えるための設定です（このiPadのすべての銘柄とトレードデスクに効きます）。最初に一度だけ、iPadの「ショートカット」アプリで次のショートカットを作ってください。</p>
+          <p>ホーム画面に追加したトレードデスク・ダッシュボードから、TradingViewアプリ（ログイン済み・プレミアム）にすぐ切り替える設定です。チェックはこのiPadの全銘柄とトレードデスクの「TV ↗」に効きます。銘柄ごとに、iPadの「ショートカット」アプリで1つずつ作ってください。</p>
           <ol>
-            <li>「ショートカット」アプリを開き、右上の「＋」で新しいショートカットを作る</li>
-            <li>名前を <b>TVを開く</b> にする（この名前どおりに）</li>
-            <li>アクションの検索で「<b>URLを開く</b>」を追加し、URLの欄をタップして「<b>ショートカットの入力</b>」を選ぶ</li>
-            <li>「完了」を押して保存</li>
-            <li>上のチェックをオンにして「TradingViewで開く」を押す（初回だけ「ショートカットを実行しますか？」の確認が出ることがあります）</li>
+            <li>「ショートカット」アプリで右上の「＋」→ 新しいショートカットを作る</li>
+            <li>右上の「編集」→ アクション検索で「<b>TradingView</b>」と入力し、TradingViewアプリの「<b>チャート</b>」のアクションを追加して、この銘柄（<span class="tvScSym"></span>）のチャートを選ぶ</li>
+            <li>名前を上の「ショートカット名」と同じにする（例：<b><span class="tvScDef"></span></b>）。すでに「GOLD を表示」のようなショートカットがあれば、それをそのまま使えます</li>
+            <li>上のチェックをオンにして「TradingViewで開く」を押す（初回だけ実行の確認が出ることがあります）</li>
           </ol>
-          <p class="sub">ショートカットが一瞬開いたあと、TradingViewアプリがそのチャートで開きます。アプリが入っていない場合はSafariで開きます。</p>
+          <p class="sub">ショートカットが一瞬開いたあと、TradingViewアプリがその銘柄のチャートで開きます（Safariは通りません）。</p>
         </div>
         <p class="sub">URL の調べ方：パソコンやSafariでTradingViewを開き、使いたいチャートを表示したときのアドレス（/chart/ の後ろに英数字が付いたもの）をコピー。アプリでは、チャート画面の「共有」→「リンクをコピー」。登録していないときは、この銘柄（<span id="tvSymName"></span>）を今の時間足で開きます。</p>
       </div>
@@ -3279,9 +3279,12 @@ const TV_LAYOUT_RE=/^https:\/\/([a-z]{2,3}\.)?tradingview\.com\/chart\/[A-Za-z0-
 function tvLayout(){const u=lsGet(LSP+'tv_layout','');return TV_LAYOUT_RE.test(u)?u:''}
 // ショートカット経由：iOSの「ショートカット」アプリの公式URL（shortcuts://run-shortcut）で「TVを開く」を実行し、URLを渡す。
 // ホーム画面のアプリ内ではTradingViewのリンクがアプリに切り替わりにくいので、ショートカットの「URLを開く」に開いてもらう
-const TV_SC_NAME='TVを開く';
+// 銘柄ごとに、TradingViewアプリの「チャート」アクション1つだけのショートカットを作ってもらい、その名前で実行する
+// （「URLを開く」ではSafariで開いてしまうため）。名前は銘柄ごとに保存し、トレードデスクの「TV ↗」も同じ名前を使う
+const TV_SC_DEF={gold:'GOLD を表示',usdjpy:'USDJPY を表示',btc:'BTC を表示'}[INSTR.key];
 function tvViaSc(){return lsGet('tv_via_shortcut','')==='1'}
-function tvScUrl(u){return 'shortcuts://run-shortcut?name='+encodeURIComponent(TV_SC_NAME)+'&input=text&text='+encodeURIComponent(u)}
+function tvScName(){return lsGet(LSP+'tv_sc_name','')||TV_SC_DEF}
+function tvScUrl(){return 'shortcuts://run-shortcut?name='+encodeURIComponent(tvScName())}
 function tvOpenUrl(){return tvLayout()||'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(TV_SYMBOL)+'&interval='+TV_IV[state.tf]}
 function paintTvOpen(){
   const a=$('tvOpen'),lay=tvLayout();a.href=tvOpenUrl();a.classList.toggle('saved',!!lay);
@@ -3296,11 +3299,13 @@ $('tvLayoutSave').onclick=()=>{
 };
 $('tvOpen').onclick=e=>{
   if(!tvViaSc())return;  // ふつうはリンクのまま（新しいタブで開く）
-  e.preventDefault();const u=tvScUrl(tvOpenUrl());
+  e.preventDefault();const u=tvScUrl();
   try{window.top.location.href=u}catch{location.href=u}  // トレードデスクの中でも、いちばん外側の画面から実行する
 };
 $('tvViaSc').checked=tvViaSc();
-$('tvViaSc').onchange=e=>{lsSet('tv_via_shortcut',e.target.checked?'1':'');$('tvLayoutMsg').textContent=e.target.checked?'ショートカット経由で開きます。「TVを開く」ショートカットを作ってから試してください。':'ふつうのリンクで開きます。'};
+$('tvViaSc').onchange=e=>{lsSet('tv_via_shortcut',e.target.checked?'1':'');$('tvLayoutMsg').textContent=e.target.checked?'ショートカット「'+tvScName()+'」で開きます。':'ふつうのリンクで開きます。'};
+$('tvScName').value=tvScName();document.querySelectorAll('.tvScSym').forEach(x=>x.textContent=TV_SYMBOL);document.querySelectorAll('.tvScDef').forEach(x=>x.textContent=TV_SC_DEF);
+$('tvScSave').onclick=()=>{const v=$('tvScName').value.trim();lsSet(LSP+'tv_sc_name',v===TV_SC_DEF?'':v);$('tvScName').value=tvScName();$('tvLayoutMsg').textContent='ショートカット名を「'+tvScName()+'」にしました。'};
 $('tvLayoutClear').onclick=()=>{lsSet(LSP+'tv_layout','');$('tvLayoutUrl').value='';$('tvLayoutMsg').textContent='登録を消しました。';paintTvOpen()};
 function setChartSrc(src){
   chartSrc=src;lsSet(LSP+'chart_src',src);
