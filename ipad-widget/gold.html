@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="6c5d7e57db">
+<meta name="build" content="0ef8cc9d94">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -264,7 +264,8 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .chn.cur{background:#16202b;box-shadow:0 0 0 1px currentColor inset}
 .tvnote{font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.5}
 #secChart.tv .chartwrap,#secChart.tv #rsi,#secChart.tv .matoggles,#secChart.tv #lvList,#secChart.tv #chartInfo,#secChart.tv .charthint{display:none!important}
-#secChart.full .tvbox{flex:1 1 auto;display:flex;flex-direction:column}#secChart.full .tvhost{flex:1 1 auto;height:auto}
+#secChart.full.tv .tvbox{flex:1 1 auto;display:flex;flex-direction:column}#secChart.full.tv .tvhost{flex:1 1 auto;height:auto}
+.tvbox[hidden]{display:none!important}  /* 自作チャートのときは全画面でも出さない */
 #rsi{height:96px;margin-top:4px;cursor:default;touch-action:pan-y}
 #rsi[hidden]{display:none}
 .charttools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
