@@ -1,5 +1,6 @@
 <title>Trade Desk Home</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<script>try { if (localStorage.getItem("desk_theme") === "navy") document.documentElement.setAttribute("data-theme", "navy"); } catch (e) {}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@500;600&display=swap">
 <style>
@@ -20,8 +21,29 @@
   --display: -apple-system, "SF Pro Display", "Hiragino Sans", "Noto Sans JP", sans-serif;
   --mincho: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
   --gutter: 16px;
+  --up-c: #ecc67c; --down-c: #a5834c; --candle-glow: rgba(227,184,103,.45);
   color-scheme: dark;
 }
+/* Navy theme (the setting on the clock card): flat slate-navy panels, thin blue-grey lines, green/red candles */
+html[data-theme="navy"] {
+  --night: #0a101b;
+  --glass: #101827;
+  --glass-line: rgba(130, 160, 200, 0.18);
+  --ink: #e9eef6;
+  --ink-2: rgba(220, 230, 245, 0.74);
+  --ink-3: rgba(200, 214, 235, 0.5);
+  --gold-soft: rgba(227, 184, 103, 0.16);
+  --up-c: #3fcf8e; --down-c: #f2546d; --candle-glow: transparent;
+}
+html[data-theme="navy"] body { background: linear-gradient(180deg, #0d1422 0%, #0a101b 100%); }
+html[data-theme="navy"] #bg { display: none; }
+html[data-theme="navy"] .card { border-radius: 14px; box-shadow: 0 8px 22px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-theme="navy"] .gold-open { background: #172236; color: var(--gold); box-shadow: inset 0 0 0 1px rgba(227,184,103,.55); }
+html[data-theme="navy"] .card > canvas.scene { opacity: .55; }
+.theme-btn { position: absolute; left: 12px; top: 12px; z-index: 2; display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 11px; font-weight: 700; color: var(--ink); background: rgba(0,0,0,.35); border: 1px solid var(--glass-line); border-radius: 999px; padding: 4px 9px; cursor: pointer; }
+.theme-btn i { width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg, #e3b867 50%, #06070b 50%); box-shadow: 0 0 0 1px rgba(255,255,255,.3); }
+html[data-theme="navy"] .theme-btn i { background: linear-gradient(135deg, #3d7bf0 50%, #101827 50%); }
+.theme-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { height: 100%; }
@@ -340,6 +362,7 @@ html:not(.flow) #flow { display: none; }
   <!-- clock -->
   <section class="card" id="clock" aria-label="時計">
     <canvas class="scene" data-scene="sunrise"></canvas>
+    <button class="theme-btn" id="theme-btn" type="button" title="配色を切り替え（ゴールド ⇄ ネイビー）"><i></i><span>配色</span></button>
     <button class="sound-btn" id="sound-btn" type="button" title="エントリー通知音（タップで 大→中→小→オフ）"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M2.5 6h2.5l3.5-3v10L5 10H2.5z" fill="currentColor"/><path class="w1" d="M11 5.5a3.5 3.5 0 0 1 0 5" stroke-linecap="round"/><path class="w2" d="M12.8 3.5a6.3 6.3 0 0 1 0 9" stroke-linecap="round"/><path class="mute" d="M11 6l4 4M15 6l-4 4" stroke-linecap="round"/></svg><span></span></button>
     <div class="content">
       <div class="time num" data-clock="hm">9:41</div>
@@ -774,6 +797,20 @@ html:not(.flow) #flow { display: none; }
       o.connect(v); v.connect(ac.destination); o.start(t); o.stop(t + 0.5);
     });
   }
+  /* Colour theme: ゴールド (black with the gold glow) or ネイビー (flat navy panels, green/red candles), saved on this device */
+  var themeBtn = document.getElementById("theme-btn");
+  function paintTheme() {
+    var navy = document.documentElement.getAttribute("data-theme") === "navy";
+    themeBtn.setAttribute("aria-label", "配色：" + (navy ? "ネイビー" : "ゴールド") + "（タップで切り替え）");
+    if (markets) markets.forEach(function (mk) { mk.draw(); });
+  }
+  themeBtn.addEventListener("click", function () {
+    var navy = document.documentElement.getAttribute("data-theme") !== "navy";
+    if (navy) document.documentElement.setAttribute("data-theme", "navy"); else document.documentElement.removeAttribute("data-theme");
+    try { localStorage.setItem("desk_theme", navy ? "navy" : "gold"); } catch (e) {}
+    paintTheme();
+    if (!navy) bg.resize();
+  });
   var soundBtn = document.getElementById("sound-btn");
   function paintSound() {
     var o = SOUND[soundIdx];
@@ -1009,10 +1046,11 @@ html:not(.flow) #flow { display: none; }
       c.restore();
     }
     c.save(); c.beginPath(); c.rect(0, 0, cw, bot + 2); c.clip();  // candles stay inside the plot when scrolled
-    c.shadowColor = "rgba(227,184,103,.45)"; c.shadowBlur = 6;
+    var css = getComputedStyle(document.documentElement), upC = css.getPropertyValue("--up-c").trim(), dnC = css.getPropertyValue("--down-c").trim();
+    c.shadowColor = css.getPropertyValue("--candle-glow").trim(); c.shadowBlur = 6;
     cs.forEach(function (k, i) {
       var x = i * bw + bw / 2, up = k.c >= k.o;
-      var col = up ? "#ecc67c" : "#a5834c";
+      var col = up ? upC : dnC;
       c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 1;
       c.beginPath(); c.moveTo(x, Y(k.h)); c.lineTo(x, Y(k.l)); c.stroke();
       var y1 = Y(Math.max(k.o, k.c)), y2 = Y(Math.min(k.o, k.c));
@@ -1532,6 +1570,10 @@ html:not(.flow) #flow { display: none; }
       if (reduce) frame(t0);
     }
     function frame(now) {
+      if (document.documentElement.getAttribute("data-theme") === "navy") {  // hidden: draw nothing, look again in a second
+        if (!reduce) setTimeout(function () { requestAnimationFrame(frame); }, 1000);
+        return;
+      }
       var t = (now - t0) / 1000;
       c.fillStyle = "#06070b"; c.fillRect(0, 0, w, h);
       var g = c.createRadialGradient(w * 0.82, h * 0.95, 0, w * 0.82, h * 0.95, Math.max(w, h) * 0.75);
@@ -2029,7 +2071,7 @@ html:not(.flow) #flow { display: none; }
     document.querySelector('[data-wx="hours"]').innerHTML = "";
     document.querySelector("[data-wx-main]").innerHTML = "";
   }
-  tickClock(); renderCal(); bg.start(); layout(); loadWeather(); loadPrices();
+  paintTheme(); tickClock(); renderCal(); bg.start(); layout(); loadWeather(); loadPrices();
   eqHistory(); eqConnect(); setInterval(eqHistory, 2 * 60000); setInterval(eqPaint, 30000);
   if (loc.gps) locate(loadWeather, function () {});
   setInterval(loadPrices, 60000);
