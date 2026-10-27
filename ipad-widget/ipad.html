@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#06070b">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="eceddf6956">
+<meta name="build" content="3692e0cb12">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -662,9 +662,9 @@ html:not(.flow) #flow { display: none; }
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=49eaa94529", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=a79cd9a617", title: "ドル円分析" },
-    btc: { src: "btc.html?v=0e343db623", title: "BTC分析" }
+    gold: { src: "gold.html?v=deec31b14b", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=e1a7333b24", title: "ドル円分析" },
+    btc: { src: "btc.html?v=3aed6b2786", title: "BTC分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -955,7 +955,7 @@ html:not(.flow) #flow { display: none; }
       self.tvEl.href = tvUrl(self);  // the saved chart may have been set on a dashboard meanwhile
       var sc = ""; try { sc = localStorage.getItem("tv_via_shortcut") || ""; } catch (err) {}
       var nm = ""; try { nm = localStorage.getItem(self.key + "_tv_sc_name") || ""; } catch (err) {}
-      nm = nm || { gold: "GOLD を表示", usdjpy: "USDJPY を表示", btc: "BTC を表示" }[self.key];
+      nm = nm || { gold: "GOLD を表示", usdjpy: "TradingViewを開く", btc: "TradingViewを開く" }[self.key];
       if (sc === "1" && nm) {  // set on a dashboard: run that market's shortcut (one TradingView "chart" action), which opens the TradingView app
         e.preventDefault();
         location.href = "shortcuts://run-shortcut?name=" + encodeURIComponent(nm);

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="49eaa94529">
+<meta name="build" content="deec31b14b">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -543,8 +543,8 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
           <p>ホーム画面に追加したトレードデスク・ダッシュボードから、TradingViewアプリ（ログイン済み・プレミアム）にすぐ切り替える設定です。チェックはこのiPadの全銘柄とトレードデスクの「TV ↗」に効きます。銘柄ごとに、iPadの「ショートカット」アプリで1つずつ作ってください。</p>
           <ol>
             <li>「ショートカット」アプリで右上の「＋」→ 新しいショートカットを作る</li>
-            <li>右上の「編集」→ アクション検索で「<b>TradingView</b>」と入力し、TradingViewアプリの「<b>チャート</b>」のアクションを追加して、この銘柄（<span class="tvScSym"></span>）のチャートを選ぶ</li>
-            <li>名前を上の「ショートカット名」と同じにする（例：<b><span class="tvScDef"></span></b>）。すでに「GOLD を表示」のようなショートカットがあれば、それをそのまま使えます</li>
+            <li>右上の「編集」→ アクション「<b>アプリを開く</b>」を追加して、アプリに「<b>TradingView</b>」を選ぶ（GOLDのようにTradingViewの「○○ チャート」アクションがある銘柄は、それを使うとその銘柄で開きます）</li>
+            <li>名前を上の「ショートカット名」と同じにする（この銘柄の初期値：<b><span class="tvScDef"></span></b>）</li>
             <li>上のチェックをオンにして「TradingViewで開く」を押す（初回だけ実行の確認が出ることがあります）</li>
           </ol>
           <p class="sub">ショートカットが一瞬開いたあと、TradingViewアプリがその銘柄のチャートで開きます（Safariは通りません）。</p>
@@ -3281,7 +3281,7 @@ function tvLayout(){const u=lsGet(LSP+'tv_layout','');return TV_LAYOUT_RE.test(u
 // ホーム画面のアプリ内ではTradingViewのリンクがアプリに切り替わりにくいので、ショートカットの「URLを開く」に開いてもらう
 // 銘柄ごとに、TradingViewアプリの「チャート」アクション1つだけのショートカットを作ってもらい、その名前で実行する
 // （「URLを開く」ではSafariで開いてしまうため）。名前は銘柄ごとに保存し、トレードデスクの「TV ↗」も同じ名前を使う
-const TV_SC_DEF={gold:'GOLD を表示',usdjpy:'USDJPY を表示',btc:'BTC を表示'}[INSTR.key];
+const TV_SC_DEF={gold:'GOLD を表示',usdjpy:'TradingViewを開く',btc:'TradingViewを開く'}[INSTR.key];  // ドル円・BTCはアプリを開くだけの共通ショートカット（銘柄はアプリで選ぶ）
 function tvViaSc(){return lsGet('tv_via_shortcut','')==='1'}
 function tvScName(){return lsGet(LSP+'tv_sc_name','')||TV_SC_DEF}
 function tvScUrl(){return 'shortcuts://run-shortcut?name='+encodeURIComponent(tvScName())}
