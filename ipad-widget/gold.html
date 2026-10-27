@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="a24c4d40e1">
+<meta name="build" content="1ebbd5328d">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -227,6 +227,8 @@ canvas.dragging{cursor:grabbing}
 /* 目にやさしく、でも分かりやすく：2.4秒でゆっくり光が強まって弱まる（チカチカしない。消えても本体の線は残る） */
 @keyframes srblink{0%,100%{opacity:1}50%{opacity:0}}
 @media (prefers-reduced-motion:reduce){#chartBlink{animation:none}}
+/* 市場休場中は点滅・光る演出をすべて止める */
+body.mkt-closed #chartBlink,body.mkt-closed .fibnow,body.mkt-closed .gmmanow,body.mkt-closed .signal,body.mkt-closed .talkitem,body.mkt-closed .caution{animation:none!important}
 .chartreset{position:absolute;left:10px;top:10px;z-index:1;font-size:11px;font-weight:800;color:#101114;background:var(--gold);border-radius:999px;padding:5px 11px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .charthint{font-size:10px;color:var(--muted);margin-top:4px}
 .lvlist{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:6px;font-size:11px;color:var(--muted)}
@@ -871,6 +873,20 @@ async function refreshFx(){
    ドル円：GMOコイン外国為替FXの公開配信（売値。サイトで測ったXS売値との差を引く）。
    ゴールド：金に連動するトークンXAUTの配信（OKX→Bitfinex→KrakenのPAXG）。現物より数ドル高いので、
    30秒ごとに取る現物価格（Gold API）との差の中央値を引いて現物に合わせる。 */
+/* 市場の休場：ゴールド・ドル円は週末（NY時間 金曜17時〜日曜17時。ゴールドは日曜18時まで、平日17〜18時も休み）は動かない。
+   XAUTなどの配信は週末も動くので、休場中は配信の値を使わず、点滅も止める（BTCは24時間なので対象外） */
+const NY_FMT=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'numeric',minute:'numeric',hourCycle:'h23'});
+function marketClosed(t){
+  if(IS_BTC)return false;
+  const p={};NY_FMT.formatToParts(new Date(t||Date.now())).forEach(x=>p[x.type]=x.value);
+  const d=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(p.weekday),h=+p.hour+ +p.minute/60;
+  return d===6||(d===5&&h>=17)||(d===0&&h<(IS_GOLD?18:17))||(IS_GOLD&&h>=17&&h<18);
+}
+let mktClosed=marketClosed();
+function checkClosed(){
+  const c=marketClosed();document.body.classList.toggle('mkt-closed',c);
+  if(c!==mktClosed){mktClosed=c;renderAll()}
+}
 const LIVE={raw:0,rawAt:0,src:'',offs:[],ws:null,tries:0,lastDraw:0,timer:0,mins:[]};
 const GOLD_WS=[
   {name:'OKX XAUT',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'tickers',instId:'XAUT-USDT'}]},ping:'ping',
@@ -888,7 +904,7 @@ const BTC_WS=[
    parse:m=>{const d=m?.data?.[0];return d&&+d.bidPx&&+d.askPx?(+d.bidPx+ +d.askPx)/2:0}}];
 const FX_WS=[{name:'GMO FX',url:'wss://forex-api.coin.z.com/ws/public/v1',sub:{command:'subscribe',channel:'ticker',symbol:'USD_JPY'},
    parse:m=>m?.symbol==='USD_JPY'&&+m.bid?+m.bid:0}];
-function liveFresh(){return LIVE.raw&&Date.now()-LIVE.rawAt<15000&&(!IS_GOLD||LIVE.offs.length)}  // BTCは補正なし（配信がそのまま米ドル建ての現物）
+function liveFresh(){return !mktClosed&&LIVE.raw&&Date.now()-LIVE.rawAt<15000&&(!IS_GOLD||LIVE.offs.length)}  // BTCは補正なし（配信がそのまま米ドル建ての現物）
 function liveOffset(){
   if(IS_FX)return n(siteCache.d?.instruments?.usdjpy?.liveOffsetGmo);
   if(IS_BTC)return 0;
@@ -918,7 +934,7 @@ function startLive(){
 }
 function retryLive(){clearTimeout(LIVE.timer);LIVE.timer=setTimeout(startLive,Math.min(30000,2000*(1+LIVE.tries)))}
 function onLiveTick(){
-  if(!liveFresh()||!state.spot)return;
+  if(mktClosed||!liveFresh()||!state.spot)return;
   const sc=IS_FX?1000:100,px=Math.round((LIVE.raw-liveOffset())*sc)/sc;
   if(Math.abs(px-state.spot.price)>(IS_GOLD?30:IS_BTC?state.spot.price*0.02:0.5))return;  // 補正前の大きな食い違いは使わない
   state.prevPrice=state.spot.price;
@@ -945,7 +961,7 @@ async function fillRecentGold(){
     let off=liveOffset();
     if(IS_BTC){const mine=new Map(LIVE.mins.map(m=>[m.t,m.c])),df=(d?.data||[]).filter(x=>mine.has(n(x[0]))).map(x=>n(x[4])-mine.get(n(x[0]))).sort((a,b)=>a-b);off=df.length?df[df.length>>1]:0}
     const asOf=toMs(siteCache.d?.instruments?.[INSTR.site]?.asOf)||0,r2=v=>Math.round((n(v)-off)*100)/100;
-    const rows=(d?.data||[]).map(x=>({t:n(x[0]),h:r2(x[2]),l:r2(x[3]),c:r2(x[4])})).filter(x=>x.t>asOf&&x.h&&x.l).sort((a,b)=>a.t-b.t);
+    const rows=(d?.data||[]).map(x=>({t:n(x[0]),h:r2(x[2]),l:r2(x[3]),c:r2(x[4])})).filter(x=>x.t>asOf&&x.h&&x.l&&!marketClosed(x.t)).sort((a,b)=>a.t-b.t);
     if(!rows.length)return;
     const have=new Map(LIVE.mins.map(m=>[m.t,m]));
     rows.forEach(x=>{const m=have.get(x.t);if(m){m.h=Math.max(m.h,x.h);m.l=Math.min(m.l,x.l)}else LIVE.mins.push({...x})});
@@ -1476,8 +1492,8 @@ let gmxPosted='';
 function gmmaPost(list){
   if(window.parent===window)return;
   const msg={type:'dash-gmma',key:INSTR.key,name:INSTR.short==='XAU'?'GOLD':INSTR.short==='USDJPY'?'ドル円':INSTR.short,
-    list:list.map(o=>({tf:o.tf,tfName:TF_NAME[o.tf],kind:o.x.kind}))};
-  const k=JSON.stringify(msg.list);if(k===gmxPosted)return;gmxPosted=k;
+    closed:mktClosed,list:list.map(o=>({tf:o.tf,tfName:TF_NAME[o.tf],kind:o.x.kind}))};
+  const k=JSON.stringify([msg.closed,msg.list]);if(k===gmxPosted)return;gmxPosted=k;
   try{window.parent.postMessage(msg,'*')}catch{}
 }
 // 新しくクロスが始まった時間足を、画面の下に通知（ページを開いたときは今のクロスを1回だけ）
@@ -1486,6 +1502,7 @@ function gmmaToast(list){
   const now=new Set(list.map(o=>o.tf+':'+o.x.kind));
   const fresh=gmxSeen?list.filter(o=>!gmxSeen.has(o.tf+':'+o.x.kind)):list;
   gmxSeen=now;
+  if(mktClosed)return;  // 休場中は新しい通知を出さない
   fresh.forEach(o=>{
     const t=document.createElement('button');t.type='button';t.className='gxtoast '+(o.x.kind==='golden'?'up':'down');
     t.textContent=TF_NAME[o.tf]+' GMMA '+GMX_NAME[o.x.kind]+'中';t.onclick=()=>{setTf(o.tf);t.remove()};
@@ -1947,7 +1964,7 @@ function flashPrice(){
 let lastSignalMsg='';
 function notifyDesk(s){
   if(window.parent===window)return;
-  const msg={type:'dash-signal',key:INSTR.key,entry:!!s.entry,sig:s.sig,tpPips:s.plan?Math.round(tpPipsBy(s.plan)):0};
+  const msg={type:'dash-signal',key:INSTR.key,closed:mktClosed,entry:!!s.entry,sig:s.sig,tpPips:s.plan?Math.round(tpPipsBy(s.plan)):0};
   const k=JSON.stringify(msg);if(k===lastSignalMsg)return;lastSignalMsg=k;
   try{window.parent.postMessage(msg,'*')}catch{}
 }
@@ -2054,10 +2071,11 @@ function renderDxy(){
 }
 function renderSnapshot(){
   const s=calcSignal();
+  if(mktClosed)s.entry=false;  // 休場中はエントリーを出さない
   state.signal=s.sig;
   notifyDesk(s);
   const el=$('signal');
-  const sub=!s.ready?'データ取得中':s.forced?'重要指標前後のため待機':
+  const sub=!s.ready?'データ取得中':mktClosed?'市場休場中のためエントリー判定は停止（週明けに再開）':s.forced?'重要指標前後のため待機':
     s.via.length?(s.entry3?'3条件一致＋':'')+s.via.join('・')+'（'+(s.sig==='BUY'?'買い':'売り')+'）・利確目安（'+TP_BASIS_NAME[state.tpBasis]+'）まで'+Math.round(tpPipsBy(s.plan))+'pips':
     s.sig==='WAIT'?'条件がそろうまで待機':
     s.entry?'3条件一致・利確目安（'+TP_BASIS_NAME[state.tpBasis]+'）まで'+Math.round(tpPipsBy(s.plan))+'pips':
@@ -2076,7 +2094,7 @@ function renderSnapshot(){
   $('goldPrice').textContent=fmt(state.spot.price);
   $('goldChange').textContent=chg;
   $('goldChange').className='change '+(pct>=0?'up':'down');
-  $('goldFresh').textContent=(state.spot.freshness==='stale'?'⚠ 遅延データ':'LIVE')+'｜'+localTime(state.spot.asof)+(state.src.spot?'｜'+state.src.spot:'');
+  $('goldFresh').textContent=(mktClosed?'市場休場中':state.spot.freshness==='stale'?'⚠ 遅延データ':'LIVE')+'｜'+localTime(state.spot.asof)+(state.src.spot?'｜'+state.src.spot:'');
   $('dayHigh').textContent=d.hi?fmt(d.hi):'--';$('dayLow').textContent=d.lo?fmt(d.lo):'--';$('dayRange').textContent=d.hi&&d.lo?INSTR.dist(d.hi-d.lo):'--';
   if(!IS_FX){
     $('usdjpy').textContent=state.fx?fmt(state.fx,3):'--';
@@ -2917,6 +2935,7 @@ renderMaToggles();
 $('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);
 $('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);
 loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(scheduler,1000);
+checkClosed();setInterval(checkClosed,60000);
 refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(releaseHot())refreshLiveTalk()},5000);startLive();setTimeout(fillRecentGold,20000);setInterval(fillRecentGold,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
 </script>
 </body>

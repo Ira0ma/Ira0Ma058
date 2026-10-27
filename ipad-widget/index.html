@@ -671,7 +671,7 @@ html:not(.flow) #flow { display: none; }
     if (d.type === "dash-gmma") { gmmaToasts(d); return; }
     var was = entryState[d.key] && entryState[d.key].entry;
     entryState[d.key] = d; paintEntries();
-    if (d.entry && !was) chime(d.sig === "BUY");  // a new entry call: sound once
+    if (d.entry && !was && !marketClosed(d.key)) chime(d.sig === "BUY");  // a new entry call: sound once
   });
   /* GMMA cross notices: each dashboard running in the background reports the timeframes now in a cross
      (e.g. "GOLD 5分足 GMMA ゴールデンクロス中"); they are listed in the X card's spare space, a cross that
@@ -694,7 +694,7 @@ html:not(.flow) #flow { display: none; }
       var id = d.key + ":" + o.tf + ":" + o.kind;
       if (!gmmaFirst[id]) gmmaFirst[id] = had ? now : now - 1;  // crosses already running when the desk opened count as new once
     });
-    gmmaNow[d.key] = { name: d.name, list: d.list || [] };
+    gmmaNow[d.key] = { name: d.name, list: d.list || [], closed: !!d.closed };
     paintGmma();
   }
   function paintGmma() {
@@ -711,7 +711,7 @@ html:not(.flow) #flow { display: none; }
     if (!items.length) { box.innerHTML = '<span class="none">' + (Object.keys(gmmaNow).length ? "いまクロス中の時間足はありません" : "データ待ち…") + "</span>"; }
     items.forEach(function (it) {
       var b = document.createElement("button"); b.type = "button";
-      b.className = "gx-chip " + (it.o.kind === "golden" ? "up" : "down") + (now - it.t < 10 * 60000 ? " new" : "");
+      b.className = "gx-chip " + (it.o.kind === "golden" ? "up" : "down") + (now - it.t < 10 * 60000 && !gmmaNow[it.key].closed ? " new" : "");
       b.textContent = it.name + " " + it.o.tfName + " GMMA " + (it.o.kind === "golden" ? "ゴールデンクロス" : "デッドクロス") + "中";
       b.addEventListener("click", function () {
         openDash(it.key, b);
@@ -726,7 +726,7 @@ html:not(.flow) #flow { display: none; }
   function paintEntries() {
     if (!markets) return;
     markets.forEach(function (mk) {
-      var st = entryState[mk.key], on = !!(st && st.entry), buy = on && st.sig === "BUY";
+      var st = entryState[mk.key], on = !!(st && st.entry && !marketClosed(mk.key)), buy = on && st.sig === "BUY";
       mk.el.classList.toggle("entry-buy", on && buy);
       mk.el.classList.toggle("entry-sell", on && !buy);
       var badge = mk.el.querySelector(".entry-badge");
@@ -746,7 +746,7 @@ html:not(.flow) #flow { display: none; }
     });
     document.querySelectorAll("[data-sheet]").forEach(function (btn) {
       var st = entryState[btn.getAttribute("data-sheet")];
-      btn.classList.toggle("entry-on", !!(st && st.entry));
+      btn.classList.toggle("entry-on", !!(st && st.entry && !marketClosed(btn.getAttribute("data-sheet"))));
     });
   }
   setInterval(paintEntries, 2000);  // follows a panel switched to or from GOLD / USD/JPY
@@ -1099,10 +1099,19 @@ html:not(.flow) #flow { display: none; }
       { url: "wss://ws.kraken.com/v2", sub: { method: "subscribe", params: { channel: "ticker", symbol: ["BTC/USD"] } },
       parse: function (m) { var d = m && m.channel === "ticker" && m.data && m.data[0]; return d ? (d.bid + d.ask) / 2 : 0; } }]
   };
+  /* GOLD and USD/JPY are closed at the weekend (New York Fri 17:00 to Sun 17:00; gold also 17:00-18:00 daily and
+     until 18:00 on Sunday). XAUT keeps trading then, so its ticks are ignored and nothing glows; BTC never closes. */
+  var NY_FMT = window.Intl ? new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "numeric", hourCycle: "h23" }) : null;
+  function marketClosed(key, t) {
+    if (key === "btc" || !NY_FMT || !NY_FMT.formatToParts) return false;
+    var p = {}; NY_FMT.formatToParts(new Date(t || Date.now())).forEach(function (x) { p[x.type] = x.value; });
+    var d = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(p.weekday), h = +p.hour + +p.minute / 60, gold = key === "gold";
+    return d === 6 || (d === 5 && h >= 17) || (d === 0 && h < (gold ? 18 : 17)) || (gold && h >= 17 && h < 18);
+  }
   var live = {};
   function liveFresh(key) {
     var L = live[key];
-    return !!(L && L.raw && Date.now() - L.at < 15000 && (key !== "gold" || L.offs.length));
+    return !!(L && L.raw && !marketClosed(key) && Date.now() - L.at < 15000 && (key !== "gold" || L.offs.length));
   }
   function liveOffset(key) {
     var L = live[key];
@@ -1148,7 +1157,7 @@ html:not(.flow) #flow { display: none; }
   function liveWatch() {  // keep a feed open for each of GOLD and USD/JPY while a panel shows it
     ["gold", "usdjpy"].forEach(function (key) {
       var used = markets.some(function (mk) { return mk.key === key; }), L = live[key];
-      if (used && !document.hidden) liveConnect(key);
+      if (used && !document.hidden && !marketClosed(key)) liveConnect(key);
       else if (L && L.ws) { var ws = L.ws; L.ws = null; try { ws.close(); } catch (e) {} }
     });
   }
