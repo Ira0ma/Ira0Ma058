@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="deec31b14b">
+<meta name="build" content="a19869ec84">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -518,7 +518,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
   <section id="secChart" class="panel s8">
     <div class="cardhead">
       <div><div class="title" id="chartTitle">GOLDチャート</div><div id="chartMeta" class="sub">取得中...</div></div>
-      <div class="charttools"><div class="segmented" id="srcSeg" role="group" aria-label="チャートの種類"><button type="button" class="seg" data-src="own">自作チャート</button><button type="button" class="seg" data-src="tv">TradingView</button></div><a id="tvOpen" class="tvopen" href="https://www.tradingview.com/chart/" target="_blank" rel="noopener">TradingViewで開く ↗</a><button type="button" id="fullBtn" class="fullbtn" aria-pressed="false">⤢ 大きく表示</button></div>
+      <div class="charttools"><div class="segmented" id="srcSeg" role="group" aria-label="チャートの種類"><button type="button" class="seg" data-src="own">自作チャート</button><button type="button" class="seg" data-src="tv">TradingView</button></div><a id="tvOpen" class="tvopen" href="https://www.tradingview.com/chart/" target="_blank" rel="noopener">プレミアムで開く ↗</a><button type="button" id="fullBtn" class="fullbtn" aria-pressed="false">⤢ 大きく表示</button></div>
     </div>
     <div class="tfcap">時間足｜下段＝ダウ理論のトレンドとST（スーパートレンド）の向き</div>
     <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
@@ -534,7 +534,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <details id="tvLayoutBox" class="tvlayout">
       <summary>TradingView の保存チャート（プレミアム用）<span id="tvLayoutState"></span></summary>
       <div class="tvl">
-        <p>TradingView で保存した自分のチャート（インジケーターや線を入れたレイアウト）の URL を貼り付けると、「TradingViewで開く」でそのチャートが開きます。ログイン済みのTradingView（アプリかSafari）で開くので、プレミアムの機能がそのまま使えます。</p>
+        <p>TradingView で保存した自分のチャート（インジケーターや線を入れたレイアウト）の URL を貼り付けると、「プレミアムで開く」でそのチャートが開きます。ログイン済みのTradingView（アプリかSafari）で開くので、プレミアムの機能がそのまま使えます。</p>
         <div class="tvl-in"><input id="tvLayoutUrl" type="url" inputmode="url" placeholder="https://www.tradingview.com/chart/xxxxxxxx/" autocomplete="off"><button type="button" id="tvLayoutSave" class="seg">保存</button><button type="button" id="tvLayoutClear" class="seg">消す</button></div>
         <div id="tvLayoutMsg" class="sub"></div>
         <label class="tvl-sc"><input type="checkbox" id="tvViaSc"> <b>TradingViewアプリで直接開く（ショートカット経由）</b></label>
@@ -545,7 +545,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
             <li>「ショートカット」アプリで右上の「＋」→ 新しいショートカットを作る</li>
             <li>右上の「編集」→ アクション「<b>アプリを開く</b>」を追加して、アプリに「<b>TradingView</b>」を選ぶ（GOLDのようにTradingViewの「○○ チャート」アクションがある銘柄は、それを使うとその銘柄で開きます）</li>
             <li>名前を上の「ショートカット名」と同じにする（この銘柄の初期値：<b><span class="tvScDef"></span></b>）</li>
-            <li>上のチェックをオンにして「TradingViewで開く」を押す（初回だけ実行の確認が出ることがあります）</li>
+            <li>上のチェックをオンにして「プレミアムで開く」を押す（初回だけ実行の確認が出ることがあります）</li>
           </ol>
           <p class="sub">ショートカットが一瞬開いたあと、TradingViewアプリがその銘柄のチャートで開きます（Safariは通りません）。</p>
         </div>
@@ -3274,7 +3274,7 @@ function tvBuild(){
     backgroundColor:'#0f1419',gridColor:'rgba(255,255,255,0.05)',allow_symbol_change:false,hide_volume:true,calendar:false,withdateranges:true,support_host:'https://www.tradingview.com'});
   box.appendChild(sc);host.appendChild(box);
 }
-// 「TradingViewで開く」：保存チャートのURLがあればそれを、なければこの銘柄・今の時間足のチャートを開く（トレードデスクも同じ設定を使う）
+// 「プレミアムで開く」：保存チャートのURLがあればそれを、なければこの銘柄・今の時間足のチャートを開く（トレードデスクも同じ設定を使う）
 const TV_LAYOUT_RE=/^https:\/\/([a-z]{2,3}\.)?tradingview\.com\/chart\/[A-Za-z0-9_-]+\/?(\?.*)?$/;
 function tvLayout(){const u=lsGet(LSP+'tv_layout','');return TV_LAYOUT_RE.test(u)?u:''}
 // ショートカット経由：iOSの「ショートカット」アプリの公式URL（shortcuts://run-shortcut）で「TVを開く」を実行し、URLを渡す。
@@ -3288,14 +3288,14 @@ function tvScUrl(){return 'shortcuts://run-shortcut?name='+encodeURIComponent(tv
 function tvOpenUrl(){return tvLayout()||'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(TV_SYMBOL)+'&interval='+TV_IV[state.tf]}
 function paintTvOpen(){
   const a=$('tvOpen'),lay=tvLayout();a.href=tvOpenUrl();a.classList.toggle('saved',!!lay);
-  a.textContent=lay?'保存チャートを開く ↗':'TradingViewで開く ↗';a.title=lay?'登録した保存チャート：'+lay:TV_SYMBOL+'・'+TF_NAME[state.tf];
+  a.textContent='プレミアムで開く ↗';a.title=lay?'登録した保存チャート：'+lay:TV_SYMBOL+'・'+TF_NAME[state.tf];
   $('tvLayoutState').textContent=lay?'登録済み':'';$('tvSymName').textContent=TV_SYMBOL;
   if(document.activeElement!==$('tvLayoutUrl'))$('tvLayoutUrl').value=lay;
 }
 $('tvLayoutSave').onclick=()=>{
   const u=$('tvLayoutUrl').value.trim();
   if(!TV_LAYOUT_RE.test(u)){$('tvLayoutMsg').textContent='TradingViewのチャートのURL（https://www.tradingview.com/chart/〜）を貼り付けてください。';return}
-  lsSet(LSP+'tv_layout',u);$('tvLayoutMsg').textContent='保存しました。「保存チャートを開く」で開きます（トレードデスクのTVボタンも同じチャートを開きます）。';paintTvOpen();
+  lsSet(LSP+'tv_layout',u);$('tvLayoutMsg').textContent='保存しました。「プレミアムで開く」で開きます（トレードデスクのTVボタンも同じチャートを開きます）。';paintTvOpen();
 };
 $('tvOpen').onclick=e=>{
   if(!tvViaSc())return;  // ふつうはリンクのまま（新しいタブで開く）
