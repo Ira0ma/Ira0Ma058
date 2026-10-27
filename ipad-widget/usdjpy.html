@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="feffc2fc28">
+<meta name="build" content="d4a83ed8c7">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -114,6 +114,14 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .dxybar i{position:absolute;top:-3px;width:4px;height:14px;border-radius:2px;background:#e6c973;transform:translateX(-2px)}
 .dxyrow .v{font-weight:800;white-space:nowrap}
 .dxynote{color:var(--muted);line-height:1.5}.dxynote b{color:var(--text)}
+.keylvhead{display:flex;align-items:baseline;justify-content:space-between;margin:12px 0 6px}.keylvhead b{font-size:13px}
+.keylv{display:grid;gap:5px}
+.kl{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:6px 10px;border-radius:9px;border:1px solid;font-size:12px}
+.kl b{font-size:14px;font-variant-numeric:tabular-nums}.kl small{font-size:10.5px;color:var(--muted);min-width:64px;text-align:right}
+.kl.r{background:rgba(255,105,105,.07);border-color:rgba(255,105,105,.35)}.kl.r b{color:#ff8a8a}
+.kl.s{background:rgba(66,213,156,.07);border-color:rgba(66,213,156,.35)}.kl.s b{color:#5fe0ad}
+.kl b .kl-none{font-size:11px;font-weight:500;color:var(--muted)}
+.kl.now{background:rgba(80,140,255,.1);border-color:rgba(80,140,255,.45)}.kl.now b{color:#9cc0ff}
 .stat{background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:9px 10px;min-width:0}
 .stat span{display:block;color:var(--muted);font-size:10px}.stat b{display:block;font-size:14px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .signal{padding:12px;text-align:center;border-radius:14px;font-size:30px;font-weight:950;letter-spacing:.08em}
@@ -422,6 +430,8 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
         <div class="stat"><span id="stat5Label">円換算 / oz</span><b id="goldJpy">--</b></div>
         <div class="stat"><span>H1 120SMA</span><b id="sma120">--</b></div>
       </div>
+      <div class="keylvhead"><b>重要価格帯</b><span class="sub">1時間足の水平線から</span></div>
+      <div id="keyLv" class="keylv"></div>
       <div id="dxyBox" class="dxybox" hidden></div>
     </div>
 
@@ -1417,6 +1427,36 @@ function chartLevels(){
     if(m)m.touches=Math.max(m.touches,l.touches);else lv.push({...l,tf:state.tf});
   });
   return lv;
+}
+// 重要価格帯：1時間足の水平線（消した線は除く）から、現在値のすぐ上の2本をR1・R2、すぐ下の2本をS1・S2とする。
+// 1時間足の線が足りない側（高値・安値の更新中など）は、4時間足・日足の水平線で埋める（時間足名を添える）
+function keyLevels(){
+  const px=state.spot?.price;if(!px)return null;
+  const pick=(side)=>{
+    const out=[];
+    [['h1',h1Levels().filter(l=>!lvHidden(l))],['h4',srLevels(state.h4)],['d1',srLevels(state.d1)]].forEach(([tf,lv])=>{
+      lv.filter(l=>side>0?l.price>px:l.price<=px).sort((a,b)=>side*(a.price-b.price)).forEach(l=>{
+        if(out.length<2&&!out.some(o=>Math.abs(o.price-l.price)<=LV_TOL)&&(!out.length||side*(l.price-out[out.length-1].price)>0))out.push({...l,tf});
+      });
+    });
+    return out;
+  };
+  return {px,r:pick(1),s:pick(-1)};
+}
+function renderKeyLv(){
+  const k=keyLevels(),el=$('keyLv');if(!el)return;
+  if(!k){el.innerHTML='<div class="sub">取得中...</div>';return}
+  const row=(cls,name,l)=>`<div class="kl ${cls}"><span>${name}</span><b>${l?fmt(l.price):'<span class="kl-none">'+(cls==='r'?'上に水平線なし':'下に水平線なし')+'</span>'}</b><small>${l&&l.tf?(l.tf!=='h1'?l.tf.toUpperCase()+'｜':'')+(l.price>k.px?'+':'−')+INSTR.dist(Math.abs(l.price-k.px)):''}</small></div>`;
+  el.innerHTML=row('r','Resistance 2',k.r[1])+row('r','Resistance 1',k.r[0])+row('now','現在価格',{price:k.px})+row('s','Support 1',k.s[0])+row('s','Support 2',k.s[1]);
+  keyPost(k);
+}
+// トレードデスクの中で動いているときは、R1・R2・S1・S2をデスクへ知らせる（価格パネルに並べる）
+let keyPosted='';
+function keyPost(k){
+  if(window.parent===window)return;
+  const msg={type:'dash-levels',key:INSTR.key,r:k.r.map(l=>l.price),s:k.s.map(l=>l.price)};
+  const j=JSON.stringify(msg);if(j===keyPosted)return;keyPosted=j;
+  try{window.parent.postMessage(msg,'*')}catch{}
 }
 function srLevels(bars){
   if(!bars||bars.length<30)return [];
@@ -2441,7 +2481,11 @@ function drawChart(){
 
   // 水平線の価格を右の目盛りに色付きタグで表示
   ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='left';
+  const kk=keyLevels(),kname=l=>{if(!kk)return'';const f=(a,p)=>a.findIndex(m=>Math.abs(m.price-l.price)<=LV_TOL);const i=f(kk.r),j=f(kk.s);return i>=0?'R'+(i+1):j>=0?'S'+(j+1):''};
   tags.forEach(({l,yy})=>{
+    const nm=kname(l);  // R1・R2・S1・S2 は価格タグの左に名前を付ける
+    if(nm){ctx.save();ctx.font='bold 10px -apple-system,sans-serif';ctx.fillStyle='rgba(16,17,20,.85)';ctx.fillRect(W-P.r-27,yy-8,22,16);
+      ctx.fillStyle=l.kind==='r'?'#ff6969':'#42d59c';ctx.textAlign='center';ctx.fillText(nm,W-P.r-16,yy+.5);ctx.restore()}
     const ly=y(l.price);ctx.fillStyle=l.kind==='r'?'#ff6969':'#42d59c';
     // ずらしたタグも、線の位置を指す小さな矢印で結ぶ
     ctx.beginPath();ctx.moveTo(W-P.r-5,ly);ctx.lineTo(W-P.r+2,Math.min(yy+7,Math.max(yy-7,ly))-4);ctx.lineTo(W-P.r+2,Math.min(yy+7,Math.max(yy-7,ly))+4);ctx.closePath();ctx.fill();
@@ -2748,6 +2792,7 @@ function renderAll(){
   renderSnapshot();
   const reb=renderRebound();
   drawChart();renderEvents();renderNext();renderResults();
+  renderKeyLv();
   renderGmmaNow();  // チャートが見えていない（デスクの裏で動いている）ときも、GMMAのクロスを確かめて知らせる
   const risk=calcRisk();
   renderChecks(risk,reb);updateCaution();
