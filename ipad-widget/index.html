@@ -123,6 +123,7 @@ body {
 .chart-reset { position: absolute; left: 20px; top: 132px; z-index: 2; font: inherit; font-size: 11px; font-weight: 600; color: #14100a; background: var(--gold); border: 0; border-radius: 999px; padding: 3px 10px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
 .tabs { display: flex; gap: 2px; margin-top: 6px; }
 .tabs button { flex: 1 1 0; min-width: 0; white-space: nowrap; letter-spacing: -.03em; font: inherit; font-size: 10.5px; color: var(--ink-2); background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 4px 0; cursor: pointer; }
+.tabs .tv-go { flex: none; font-size: 10px; font-weight: 700; color: #9fdcff; text-decoration: none; border: 1px solid rgba(92,200,255,.4); border-radius: 7px; padding: 3px 6px; margin-left: 3px; white-space: nowrap; align-self: center; }
 .tabs button[aria-pressed="true"] { color: var(--gold); border-color: rgba(227,184,103,.55); background: rgba(227,184,103,.10); }
 .tabs button:focus-visible, .pt-pick:focus-visible, .mkt .head:focus-visible, .picker-list button:focus-visible, .cal-nav button:focus-visible, a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
@@ -935,6 +936,9 @@ html:not(.flow) #flow { display: none; }
       });
       tabs.appendChild(b);
     });
+    this.tvEl = document.createElement("a"); this.tvEl.className = "tv-go"; this.tvEl.target = "_blank"; this.tvEl.rel = "noopener"; this.tvEl.textContent = "TV ↗";
+    this.tvEl.addEventListener("click", function () { self.tvEl.href = tvUrl(self); });  // the saved chart may have been set on a dashboard meanwhile
+    tabs.appendChild(this.tvEl);
     this.bindGestures();
     this.setInst(key);
   }
@@ -1285,6 +1289,16 @@ html:not(.flow) #flow { display: none; }
     oil: '<span class="badge-txt oil"><svg width="18" height="22" viewBox="0 0 18 22"><path d="M9 1.5C9 1.5 2 9.5 2 14a7 7 0 0 0 14 0C16 9.5 9 1.5 9 1.5z" fill="#14100a"/><path d="M5.6 14.5a3.4 3.4 0 0 0 3 3" stroke="#e3b867" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg></span>',
     txt: function (t, cls) { return '<span class="badge-txt ' + (cls || "") + '">' + t + "</span>"; }
   };
+  /* "TV ↗" on each price panel opens TradingView (the app or Safari, signed in, so a Premium plan works there): the chart
+     saved on the GOLD / USD/JPY / BTC dashboard if one is set, otherwise this market at the panel's timeframe. */
+  var TV_SYM = { gold: "OANDA:XAUUSD", silver: "OANDA:XAGUSD", usoil: "TVC:USOIL", btc: "COINBASE:BTCUSD", dxy: "TVC:DXY", jxy: "TVC:JXY", vix: "TVC:VIX" };
+  var TV_INT = { "1分": "1", "5分": "5", "15分": "15", "30分": "30", "1時間": "60", "4時間": "240", "1日": "D", "1週": "W" };
+  function tvUrl(mk) {
+    var lay = ""; try { lay = localStorage.getItem(mk.key + "_tv_layout") || ""; } catch (e) {}
+    if (/^https:\/\/([a-z]{2,3}\.)?tradingview\.com\/chart\/[A-Za-z0-9_-]+\/?(\?.*)?$/.test(lay)) return lay;
+    var sym = TV_SYM[mk.key] || "FX:" + mk.key.toUpperCase(), t = TF[mk.tf];
+    return "https://www.tradingview.com/chart/?symbol=" + encodeURIComponent(sym) + "&interval=" + (TV_INT[t && t.k] || "60");
+  }
   var INST = {
     usdjpy: { label: "USD/JPY", sub: "米ドル／円", name: "ドル円", dp: 3, tail: 1, demo: 158.1, badge: BADGE.us, unit: "yen", live: "coinbase" },
     eurjpy: { label: "EUR/JPY", sub: "ユーロ／円", name: "ユーロ円", dp: 3, tail: 1, demo: 177.6, badge: BADGE.txt("€"), unit: "yen" },

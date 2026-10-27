@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="05407f5a70">
+<meta name="build" content="8e7f73455e">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -250,12 +250,17 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .chartwrap{position:relative}
 .tvbox{margin-top:6px}.tvhost{height:min(560px,70vh);min-height:360px;border-radius:12px;overflow:hidden;border:1px solid #232d36;background:#0f1419}
 .tvhost .tradingview-widget-container{height:100%;width:100%}
+.tvopen{font-size:12px;font-weight:800;border-radius:999px;padding:6px 12px;border:1px solid #2c3742;background:#121820;color:#d5dde5;text-decoration:none;white-space:nowrap}
+.tvopen.saved{border-color:rgba(92,200,255,.6);color:#9fdcff}
+.tvlayout summary span{font-weight:600;color:#9fdcff;margin-left:auto;margin-right:8px}
+.tvl{font-size:12px;line-height:1.65;color:#cbd6e0;padding-bottom:10px}.tvl p{margin:6px 0}
+.tvl-in{display:flex;gap:6px;margin:6px 0}.tvl-in input{flex:1;min-width:0;font:inherit;font-size:12.5px;color:#eef3f7;background:#0a0e12;border:1px solid #2c3742;border-radius:8px;padding:7px 9px}
 .tvnote{font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.5}
 #secChart.tv .chartwrap,#secChart.tv #rsi,#secChart.tv .matoggles,#secChart.tv #lvList,#secChart.tv #chartInfo,#secChart.tv .charthint{display:none!important}
 #secChart.full .tvbox{flex:1 1 auto;display:flex;flex-direction:column}#secChart.full .tvhost{flex:1 1 auto;height:auto}
 #rsi{height:96px;margin-top:4px;cursor:default;touch-action:pan-y}
 #rsi[hidden]{display:none}
-.charttools{display:flex;gap:6px;align-items:center}
+.charttools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .fullbtn{font-size:12px;font-weight:800;border-radius:999px;padding:6px 12px;border:1px solid #b5872d;background:linear-gradient(180deg,#e6c973,#b5872d);color:#101114;cursor:pointer;white-space:nowrap}
 #secChart.full{position:fixed;inset:0;z-index:60;margin:0;border-radius:0;overflow:hidden;width:auto;max-width:none;background:var(--bg);
   display:flex;flex-direction:column;padding:10px 12px calc(8px + env(safe-area-inset-bottom))}
@@ -511,7 +516,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
   <section id="secChart" class="panel s8">
     <div class="cardhead">
       <div><div class="title" id="chartTitle">GOLDチャート</div><div id="chartMeta" class="sub">取得中...</div></div>
-      <div class="charttools"><div class="segmented" id="srcSeg" role="group" aria-label="チャートの種類"><button type="button" class="seg" data-src="own">自作チャート</button><button type="button" class="seg" data-src="tv">TradingView</button></div><button type="button" id="fullBtn" class="fullbtn" aria-pressed="false">⤢ 大きく表示</button></div>
+      <div class="charttools"><div class="segmented" id="srcSeg" role="group" aria-label="チャートの種類"><button type="button" class="seg" data-src="own">自作チャート</button><button type="button" class="seg" data-src="tv">TradingView</button></div><a id="tvOpen" class="tvopen" href="https://www.tradingview.com/chart/" target="_blank" rel="noopener">TradingViewで開く ↗</a><button type="button" id="fullBtn" class="fullbtn" aria-pressed="false">⤢ 大きく表示</button></div>
     </div>
     <div class="tfcap">時間足｜下段＝ダウ理論のトレンドとST（スーパートレンド）の向き</div>
     <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
@@ -524,6 +529,15 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <div class="chartwrap"><canvas id="chart"></canvas><canvas id="chartBlink" aria-hidden="true"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
     <canvas id="rsi" aria-label="RSI(14)"></canvas>
     <div id="chartInfo" class="chartinfo">--</div>
+    <details id="tvLayoutBox" class="tvlayout">
+      <summary>TradingView の保存チャート（プレミアム用）<span id="tvLayoutState"></span></summary>
+      <div class="tvl">
+        <p>TradingView で保存した自分のチャート（インジケーターや線を入れたレイアウト）の URL を貼り付けると、「TradingViewで開く」でそのチャートが開きます。ログイン済みのTradingView（アプリかSafari）で開くので、プレミアムの機能がそのまま使えます。</p>
+        <div class="tvl-in"><input id="tvLayoutUrl" type="url" inputmode="url" placeholder="https://www.tradingview.com/chart/xxxxxxxx/" autocomplete="off"><button type="button" id="tvLayoutSave" class="seg">保存</button><button type="button" id="tvLayoutClear" class="seg">消す</button></div>
+        <div id="tvLayoutMsg" class="sub"></div>
+        <p class="sub">URL の調べ方：パソコンやSafariでTradingViewを開き、使いたいチャートを表示したときのアドレス（/chart/ の後ろに英数字が付いたもの）をコピー。アプリでは、チャート画面の「共有」→「リンクをコピー」。登録していないときは、この銘柄（<span id="tvSymName"></span>）を今の時間足で開きます。</p>
+      </div>
+    </details>
     <div class="charthint">ドラッグで左右（過去へ・右側に空白）・上下に移動／ピンチ・ホイールで拡大縮小／右端の価格目盛りを上下ドラッグで縦の拡大縮小／ダブルタップでリセット</div>
   </section>
 
@@ -3110,6 +3124,7 @@ function setTf(tf){
   renderTfGrid();renderFibNow();renderGmmaNow();
   savePrefs();drawChart();
   if(chartSrc==='tv'){setChartSrc('tv')}
+  paintTvOpen();
 }
 
 $('refreshBtn').onclick=fullRefresh;
@@ -3245,6 +3260,22 @@ function tvBuild(){
     backgroundColor:'#0f1419',gridColor:'rgba(255,255,255,0.05)',allow_symbol_change:false,hide_volume:true,calendar:false,withdateranges:true,support_host:'https://www.tradingview.com'});
   box.appendChild(sc);host.appendChild(box);
 }
+// 「TradingViewで開く」：保存チャートのURLがあればそれを、なければこの銘柄・今の時間足のチャートを開く（トレードデスクも同じ設定を使う）
+const TV_LAYOUT_RE=/^https:\/\/([a-z]{2,3}\.)?tradingview\.com\/chart\/[A-Za-z0-9_-]+\/?(\?.*)?$/;
+function tvLayout(){const u=lsGet(LSP+'tv_layout','');return TV_LAYOUT_RE.test(u)?u:''}
+function tvOpenUrl(){return tvLayout()||'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(TV_SYMBOL)+'&interval='+TV_IV[state.tf]}
+function paintTvOpen(){
+  const a=$('tvOpen'),lay=tvLayout();a.href=tvOpenUrl();a.classList.toggle('saved',!!lay);
+  a.textContent=lay?'保存チャートを開く ↗':'TradingViewで開く ↗';a.title=lay?'登録した保存チャート：'+lay:TV_SYMBOL+'・'+TF_NAME[state.tf];
+  $('tvLayoutState').textContent=lay?'登録済み':'';$('tvSymName').textContent=TV_SYMBOL;
+  if(document.activeElement!==$('tvLayoutUrl'))$('tvLayoutUrl').value=lay;
+}
+$('tvLayoutSave').onclick=()=>{
+  const u=$('tvLayoutUrl').value.trim();
+  if(!TV_LAYOUT_RE.test(u)){$('tvLayoutMsg').textContent='TradingViewのチャートのURL（https://www.tradingview.com/chart/〜）を貼り付けてください。';return}
+  lsSet(LSP+'tv_layout',u);$('tvLayoutMsg').textContent='保存しました。「保存チャートを開く」で開きます（トレードデスクのTVボタンも同じチャートを開きます）。';paintTvOpen();
+};
+$('tvLayoutClear').onclick=()=>{lsSet(LSP+'tv_layout','');$('tvLayoutUrl').value='';$('tvLayoutMsg').textContent='登録を消しました。';paintTvOpen()};
 function setChartSrc(src){
   chartSrc=src;lsSet(LSP+'chart_src',src);
   $('secChart').classList.toggle('tv',src==='tv');$('tvBox').hidden=src!=='tv';
@@ -3254,7 +3285,7 @@ function setChartSrc(src){
 }
 $('srcSeg').onclick=e=>{const b=e.target.closest('[data-src]');if(b)setChartSrc(b.dataset.src)};
 if('IntersectionObserver' in window)new IntersectionObserver(es=>{if(es.some(x=>x.isIntersecting)){tvSeen=true;tvBuild()}}).observe($('tvBox'));else tvSeen=true;
-setChartSrc(chartSrc);
+setChartSrc(chartSrc);paintTvOpen();
 function setFull(on){
   $('secChart').classList.toggle('full',on);document.body.classList.toggle('chartfull',on);
   $('fullBtn').textContent=on?'↙ 元の表示に戻す':'⤢ 大きく表示';$('fullBtn').setAttribute('aria-pressed',on);
