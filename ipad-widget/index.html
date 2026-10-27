@@ -937,7 +937,14 @@ html:not(.flow) #flow { display: none; }
       tabs.appendChild(b);
     });
     this.tvEl = document.createElement("a"); this.tvEl.className = "tv-go"; this.tvEl.target = "_blank"; this.tvEl.rel = "noopener"; this.tvEl.textContent = "TV ↗";
-    this.tvEl.addEventListener("click", function () { self.tvEl.href = tvUrl(self); });  // the saved chart may have been set on a dashboard meanwhile
+    this.tvEl.addEventListener("click", function (e) {
+      self.tvEl.href = tvUrl(self);  // the saved chart may have been set on a dashboard meanwhile
+      var sc = ""; try { sc = localStorage.getItem("tv_via_shortcut") || ""; } catch (err) {}
+      if (sc === "1") {  // set on a dashboard: hand the link to the 「TVを開く」 shortcut, which opens it in the TradingView app
+        e.preventDefault();
+        location.href = "shortcuts://run-shortcut?name=" + encodeURIComponent("TVを開く") + "&input=text&text=" + encodeURIComponent(self.tvEl.href);
+      }
+    });
     tabs.appendChild(this.tvEl);
     this.bindGestures();
     this.setInst(key);
