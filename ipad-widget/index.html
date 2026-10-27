@@ -1255,12 +1255,14 @@ html:not(.flow) #flow { display: none; }
     jxy: { label: "JXY", small: "(独自計算)", sub: "円指数（対6通貨）", name: "円指数", pickName: "円指数", dp: 3, tail: 1, demo: 67.8, badge: BADGE.txt("¥"), unit: "pt" },
     vix: { label: "VIX", sub: "恐怖指数（S&P500）", name: "VIX", pickName: "恐怖指数", dp: 2, tail: 0, demo: 19.99, badge: BADGE.txt("VIX", "small vix"), unit: "pt" }
   };
-  var PICK_KEY = "mkt-v1", picks = ["usdjpy", "gold", "btc"];
+  var PICK_KEY = "mkt-v1", picks = ["gold", "usdjpy", "btc"];  // left to right: GOLD, USD/JPY, BTC
   try {
     var sp = JSON.parse(localStorage.getItem(PICK_KEY));
     if (sp && INST[sp[0]] && INST[sp[1]]) {  // a choice saved with two panels gets BTC (or another unshown market) as the third
       var third = INST[sp[2]] ? sp[2] : ["btc", "gold", "usdjpy"].filter(function (k) { return sp.indexOf(k) < 0; })[0];
       picks = [sp[0], sp[1], third];
+      // the old default order (USD/JPY, GOLD, BTC) moves to GOLD first; a panel the user changed stays as chosen
+      if (picks.join() === "usdjpy,gold,btc" || picks.join() === "usdjpy,gold") { picks = ["gold", "usdjpy", "btc"]; localStorage.setItem(PICK_KEY, JSON.stringify(picks)); }
     }
   } catch (e) {}
   function atrText(key, atr) {
