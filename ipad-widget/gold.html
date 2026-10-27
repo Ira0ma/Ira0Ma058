@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="497472a6d5">
+<meta name="build" content="6c5d7e57db">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3385,7 +3385,9 @@ $('tvLayoutSave').onclick=()=>{
 $('tvOpen').onclick=e=>{
   if(!tvViaSc())return;  // ふつうはリンクのまま（新しいタブで開く）
   e.preventDefault();const u=tvScUrl();
-  try{window.top.location.href=u}catch{location.href=u}  // トレードデスクの中でも、いちばん外側の画面から実行する
+  // トレードデスクの中（iframe）からはSafariがショートカットの実行を止めるので、デスクに頼んでいちばん外側の画面から実行する
+  if(window.parent!==window){try{window.parent.postMessage({type:'dash-open',key:INSTR.key,url:u},'*');return}catch{}}
+  location.href=u;
 };
 $('tvViaSc').checked=tvViaSc();
 $('tvViaSc').onchange=e=>{lsSet('tv_via_shortcut',e.target.checked?'1':'');$('tvLayoutMsg').textContent=e.target.checked?'ショートカット「'+tvScName()+'」で開きます。':'ふつうのリンクで開きます。'};

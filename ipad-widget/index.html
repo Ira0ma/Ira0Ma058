@@ -665,7 +665,7 @@ html:not(.flow) #flow { display: none; }
   var entryState = {};
   window.addEventListener("message", function (e) {
     var d = e.data;
-    if (!d || (d.type !== "dash-signal" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert") || !SHEETS[d.key] || !SHEETS[d.key].el) return;
+    if (!d || (d.type !== "dash-signal" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert" && d.type !== "dash-open") || !SHEETS[d.key] || !SHEETS[d.key].el) return;
     if (e.source !== SHEETS[d.key].el.querySelector("iframe").contentWindow) return;  // only our own dashboards
     // While a dashboard shows its chart full screen, its own "back" button sits where ours does: hide ours
     if (d.type === "dash-chartfull") { SHEETS[d.key].el.querySelector(".dash-close").hidden = !!d.on; return; }
@@ -673,6 +673,10 @@ html:not(.flow) #flow { display: none; }
     if (d.type === "dash-levels") { keyLv[d.key] = d; paintKeyLv(); return; }
     if (d.type === "dash-score") { scoreOf[d.key] = d; paintScore(); return; }
     if (d.type === "dash-alert") { deskAlert(d); return; }
+    if (d.type === "dash-open") {  // a dashboard's 「プレミアムで開く」: run its TradingView shortcut from the desk itself
+      if (/^shortcuts:\/\/run-shortcut\?name=[^&]+$/.test(String(d.url))) location.href = d.url;
+      return;
+    }
     var was = entryState[d.key] && entryState[d.key].entry;
     entryState[d.key] = d; paintEntries();
     if (d.entry && !was && !marketClosed(d.key)) chime(d.sig === "BUY");  // a new entry call: sound once

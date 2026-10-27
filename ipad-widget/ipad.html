@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#06070b">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="b4e0e4a950">
+<meta name="build" content="100fe598d6">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -640,9 +640,9 @@ html:not(.flow) #flow { display: none; }
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=497472a6d5", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=dd4fb06bf5", title: "ドル円分析" },
-    btc: { src: "btc.html?v=e71937026e", title: "BTC分析" }
+    gold: { src: "gold.html?v=6c5d7e57db", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=7a5874a630", title: "ドル円分析" },
+    btc: { src: "btc.html?v=bbb254c93a", title: "BTC分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -679,7 +679,7 @@ html:not(.flow) #flow { display: none; }
   var entryState = {};
   window.addEventListener("message", function (e) {
     var d = e.data;
-    if (!d || (d.type !== "dash-signal" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert") || !SHEETS[d.key] || !SHEETS[d.key].el) return;
+    if (!d || (d.type !== "dash-signal" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert" && d.type !== "dash-open") || !SHEETS[d.key] || !SHEETS[d.key].el) return;
     if (e.source !== SHEETS[d.key].el.querySelector("iframe").contentWindow) return;  // only our own dashboards
     // While a dashboard shows its chart full screen, its own "back" button sits where ours does: hide ours
     if (d.type === "dash-chartfull") { SHEETS[d.key].el.querySelector(".dash-close").hidden = !!d.on; return; }
@@ -687,6 +687,10 @@ html:not(.flow) #flow { display: none; }
     if (d.type === "dash-levels") { keyLv[d.key] = d; paintKeyLv(); return; }
     if (d.type === "dash-score") { scoreOf[d.key] = d; paintScore(); return; }
     if (d.type === "dash-alert") { deskAlert(d); return; }
+    if (d.type === "dash-open") {  // a dashboard's 「プレミアムで開く」: run its TradingView shortcut from the desk itself
+      if (/^shortcuts:\/\/run-shortcut\?name=[^&]+$/.test(String(d.url))) location.href = d.url;
+      return;
+    }
     var was = entryState[d.key] && entryState[d.key].entry;
     entryState[d.key] = d; paintEntries();
     if (d.entry && !was && !marketClosed(d.key)) chime(d.sig === "BUY");  // a new entry call: sound once
