@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="a19869ec84">
+<meta name="build" content="0fca98be89">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1422,6 +1422,50 @@ function trendLines(src){
   return [best(lows,'up'),best(highs,'down')].filter(Boolean);
 }
 
+// 平行チャンネル（表示中の時間足で自動）：直近40〜150本のどれかの範囲で、終値の回帰直線の傾きにそろえた2本の平行線を、
+// 山（前後3本より高い足）の外側と谷の外側に引く。はっきりしたものだけ：回帰の当てはまり（R²）0.55以上、範囲でATRの3倍以上動いた、
+// 上の線・下の線にそれぞれ2回以上、範囲の2割以上離れた所で触れた（幅の12%以内）、範囲の終値の95%以上が線の内側、幅がATRの1.2〜7倍。
+// 今の足が幅の25%以上外へ抜けたら（ブレイク）そのチャンネルは消える。いちばん接点が多く、当てはまりのよい範囲を選ぶ
+const CH_P={wMax:7,spread:.2};
+let chCache={k:'',v:null};
+function parallelChannel(src){
+  const N=src.length,key=state.tf+':'+N+':'+(src.at(-1)?.t)+':'+(src.at(-1)?.c);
+  if(chCache.k===key)return chCache.v;
+  let best=null;
+  if(N>=60){
+    const K=3,a=atr(src.slice(-150),14)||1;
+    for(const L of [40,60,90,120,150]){
+      if(L>N-K)continue;
+      const s0=N-L;let sx=0,sy=0,sxx=0,sxy=0,syy=0;
+      for(let i=s0;i<N;i++){const c=src[i].c;sx+=i;sy+=c;sxx+=i*i;sxy+=i*c;syy+=c*c}
+      const den=L*sxx-sx*sx,sl=den?(L*sxy-sx*sy)/den:0,b0=(sy-sl*sx)/L;
+      let ssr=0,sst=0;const my=sy/L;for(let i=s0;i<N;i++){const f=b0+sl*i,c=src[i].c;ssr+=(c-f)**2;sst+=(c-my)**2}
+      const r2=sst?1-ssr/sst:0;
+      if(r2<.55||Math.abs(sl)*L<a*3)continue;
+      const hp=[],lp=[];
+      for(let i=s0+K;i<N-K;i++){
+        let isH=true,isL=true;
+        for(let j=i-K;j<=i+K;j++){if(j===i)continue;if(src[j].h>src[i].h)isH=false;if(src[j].l<src[i].l)isL=false}
+        if(isH)hp.push(i);if(isL)lp.push(i);
+      }
+      if(hp.length<2||lp.length<2)continue;
+      const up=Math.max(...hp.map(i=>src[i].h-sl*i)),lo=Math.min(...lp.map(i=>src[i].l-sl*i)),w=up-lo;
+      if(w<a*1.2||w>a*CH_P.wMax)continue;
+      const tol=w*.12,TH=hp.filter(i=>up-(src[i].h-sl*i)<=tol),TL=lp.filter(i=>(src[i].l-sl*i)-lo<=tol),th=TH.length,tl=TL.length;
+      if(th<2||tl<2)continue;
+      if(TH.at(-1)-TH[0]<L*CH_P.spread||TL.at(-1)-TL[0]<L*CH_P.spread)continue;  // 接点が範囲の中で離れている（同じ所の山・谷だけではない）
+      let out=0;for(let i=s0;i<N;i++){const c=src[i].c-sl*i;if(c>up+tol||c<lo-tol)out++}
+      if(out/L>.05)continue;
+      const lc=src[N-1].c-sl*(N-1);if(lc>up+w*.25||lc<lo-w*.25)continue;
+      const score=th+tl+r2*2+L/60;
+      if(!best||score>best.score)best={s:sl,up,lo,i0:s0,th,tl,r2,dir:sl>0?1:-1,score,
+        upNow:up+sl*(N-1),loNow:lo+sl*(N-1),pos:(lc-lo)/w};
+    }
+  }
+  chCache={k:key,v:best};return best;
+}
+const CH_COL={1:'79,195,247',[-1]:'244,143,177'};
+
 // ダウ理論のトレンド：直近の山（高値）2つと谷（安値）2つを比べる。
 // 高値・安値とも切り上げ＝上昇トレンド、切り下げ＝下降トレンド。上昇中に直近の押し安値を割る（下降中に戻り高値を超える）とトレンド崩れ。
 // 片方だけ切り上げ（切り下げ）でも直近の山（谷）を抜けたら転換とみる。それ以外はレンジ。
@@ -1673,6 +1717,7 @@ const MA_BTNS=[{key:'sma',color:SMA_COLOR,label:()=>smaLen()+'SMA'}].concat(EMAS
   [{key:'st',color:'linear-gradient(90deg,#42d59c 50%,#ff6969 50%)',label:()=>'スーパートレンド'},
    {key:'rsi',color:'#b48cff',label:()=>'RSI(14)'},
    {key:'fib',color:FIB_COLOR,label:()=>'フィボナッチ'},
+   {key:'ch',color:'linear-gradient(90deg,#4fc3f7 50%,#f48fb1 50%)',label:()=>'平行チャンネル'},
    {key:'swingN',color:'linear-gradient(90deg,#42d59c 50%,#ff6969 50%)',label:()=>'直近高値・安値'},
    {key:'swingP',color:'#93a0ad',label:()=>'前回高値・安値'},
    {key:'gmmaS',color:GMMA_SC,label:()=>'GMMA短期',off:true},
@@ -2691,6 +2736,22 @@ function drawChart(){
     ctx.fillStyle=`rgba(${L.col},1)`;ctx.fillText(L.txt,lx+4,ly);
     swingBoxes.push({x:lx,y:ly-7,w:tw,h:14});
   });
+  // 平行チャンネル：範囲の始まりから右端（右側の空白を含む）まで。上下の線と、薄い帯・中心の点線。名前と今の上限・下限を上の線の近くに
+  const ch=state.maOn.ch?parallelChannel(source):null;
+  if(ch){
+    const col=CH_COL[ch.dir],g0=ch.i0,g1=endIdx-1+blank+1,X0=x(g0-startIdx),X1=x(g1-startIdx),Y=(off,i)=>y(off+ch.s*i);
+    ctx.save();ctx.beginPath();ctx.rect(P.l,P.t,W-P.l-P.r,H-P.t-P.b);ctx.clip();
+    ctx.fillStyle=`rgba(${col},.06)`;ctx.beginPath();ctx.moveTo(X0,Y(ch.up,g0));ctx.lineTo(X1,Y(ch.up,g1));ctx.lineTo(X1,Y(ch.lo,g1));ctx.lineTo(X0,Y(ch.lo,g0));ctx.closePath();ctx.fill();
+    ctx.strokeStyle=`rgba(${col},.95)`;ctx.lineWidth=1.2;
+    [ch.up,ch.lo].forEach(off=>{ctx.beginPath();ctx.moveTo(X0,Y(off,g0));ctx.lineTo(X1,Y(off,g1));ctx.stroke()});
+    ctx.strokeStyle=`rgba(${col},.45)`;ctx.lineWidth=.8;ctx.setLineDash([4,4]);const mid=(ch.up+ch.lo)/2;
+    ctx.beginPath();ctx.moveTo(X0,Y(mid,g0));ctx.lineTo(X1,Y(mid,g1));ctx.stroke();ctx.setLineDash([]);ctx.restore();
+    // 名前は範囲の3割ほどの所に。上の線が見えていればその上、見えていなければ下の線の下に書く
+    const iL=Math.round(Math.max(g0,startIdx)+(source.length-1-Math.max(g0,startIdx))*.3),lx=x(iL-startIdx),txt=`${ch.dir>0?'上昇':'下降'}チャンネル（${state.tf.toUpperCase()}） 上限 ${pxt(ch.upNow)}・下限 ${pxt(ch.loNow)}`;
+    const yu=Y(ch.up,iL),yl=Y(ch.lo,iL);
+    if(yu>P.t+20&&yu<H-P.b-8)lowLabels.push({x0:lx,yy:yu,col,dir:-1,txt});
+    else if(yl>P.t+8&&yl<H-P.b-20)lowLabels.push({x0:lx,yy:yl,col,dir:1,txt});
+  }
   // チャートパターン：表示中の時間足の形について、形の始まりから今までネックライン（点線）と名前・価格。カップは底に印。
   // 形が否定された（買いの形なら底・右肩の安値を割った、売りの形なら高値を超えた）ものは検出されなくなり、線も消える
   chartPatterns().filter(p=>p.tf===state.tf&&p.id!=='cup').forEach(pt=>{
@@ -2835,6 +2896,7 @@ function drawChart(){
     tls.map(t=>`<span class="legend"><i style="background:${t.kind==='up'?TL_UP:TL_DOWN}"></i>${t.kind==='up'?'上昇':'下降'}トレンドライン <b>${fmt(t.p1+t.slope*(endIdx-1-t.i1))}</b>（接点${t.touches}）</span>`).join('')+
     tags.map(({l})=>`<span class="legend"><i style="background:${l.kind==='r'?'#ff6969':'#42d59c'}"></i>${l.kind==='r'?'抵抗線':'支持線'}${l.tf!=='h1'?'（'+l.tf.toUpperCase()+'）':''}${l.touches>=3?'★':''} <b>${fmt(l.price)}</b></span>`).join('')+
     (fib&&fib.prov?`<span class="legend"><i style="background:${FIB_COLOR}"></i>暫定フィボナッチ（${fibTag}${fib.dir>0?'上昇':'下降'}中・次の${fib.dir>0?'押し目':'戻り'}の目安） 38.2% <b>${fmt(fib.levels.find(l=>l.r===.382).p)}</b>・半値 <b>${fmt(fib.levels.find(l=>l.r===.5).p)}</b>・61.8% <b>${fmt(fib.levels.find(l=>l.r===.618).p)}</b></span>`:'')+
+    (ch?`<span class="legend"><i style="background:rgb(${CH_COL[ch.dir]})"></i>${ch.dir>0?'上昇':'下降'}チャンネル（${state.tf.toUpperCase()}） 上限 <b>${fmt(ch.upNow)}</b>・下限 <b>${fmt(ch.loNow)}</b>｜今はチャンネルの${ch.pos>=.75?'上限付近':ch.pos<=.25?'下限付近':'中ほど'}（接点 上${ch.th}・下${ch.tl}）</span>`:'')+
     (fib&&!fib.prov?`<span class="legend"><i style="background:${FIB_COLOR}"></i>フィボナッチ（${fibTag}直近の${fib.dir>0?'上昇':'下降'}の${fib.dir>0?'押し':'戻り'}） 今 <b>${Math.round(fib.cur*100)}%</b>（最深 ${Math.round(fib.deep*100)}%${fib.half?'・半値戻し':''}）${fib.hit!=null?`｜${FIB_NAME(fib.hit)}（${fmt(fib.levels.find(l=>l.r===fib.hit).p)}）で${fib.held?'反発':'到達'}`:''}</span>`:'')+
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
   $('chartMeta').textContent=TF_NAME[state.tf]+'（'+state.tf.toUpperCase()+'）/ '+len+'SMA'+' / 10・20・80・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
