@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="b5718406a7">
+<meta name="build" content="05407f5a70">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -248,6 +248,11 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .seg{background:#121820;color:#d5dde5;border:1px solid #34404c;border-radius:999px;padding:7px 12px;font-size:12px}
 .seg.active{background:linear-gradient(180deg,#e6c973,#b5872d);border-color:#b5872d;color:#101114}
 .chartwrap{position:relative}
+.tvbox{margin-top:6px}.tvhost{height:min(560px,70vh);min-height:360px;border-radius:12px;overflow:hidden;border:1px solid #232d36;background:#0f1419}
+.tvhost .tradingview-widget-container{height:100%;width:100%}
+.tvnote{font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.5}
+#secChart.tv .chartwrap,#secChart.tv #rsi,#secChart.tv .matoggles,#secChart.tv #lvList,#secChart.tv #chartInfo,#secChart.tv .charthint{display:none!important}
+#secChart.full .tvbox{flex:1 1 auto;display:flex;flex-direction:column}#secChart.full .tvhost{flex:1 1 auto;height:auto}
 #rsi{height:96px;margin-top:4px;cursor:default;touch-action:pan-y}
 #rsi[hidden]{display:none}
 .charttools{display:flex;gap:6px;align-items:center}
@@ -506,7 +511,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
   <section id="secChart" class="panel s8">
     <div class="cardhead">
       <div><div class="title" id="chartTitle">GOLDチャート</div><div id="chartMeta" class="sub">取得中...</div></div>
-      <div class="charttools"><button type="button" id="fullBtn" class="fullbtn" aria-pressed="false">⤢ 大きく表示</button></div>
+      <div class="charttools"><div class="segmented" id="srcSeg" role="group" aria-label="チャートの種類"><button type="button" class="seg" data-src="own">自作チャート</button><button type="button" class="seg" data-src="tv">TradingView</button></div><button type="button" id="fullBtn" class="fullbtn" aria-pressed="false">⤢ 大きく表示</button></div>
     </div>
     <div class="tfcap">時間足｜下段＝ダウ理論のトレンドとST（スーパートレンド）の向き</div>
     <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
@@ -515,6 +520,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <div id="fibNow" class="fibnow" role="status" hidden></div>
     <div id="gmmaNow" class="gmmanow" role="status" hidden></div>
     <div id="gxToasts" class="gxtoasts" aria-live="polite"></div>
+    <div id="tvBox" class="tvbox" hidden><div id="tvNote" class="tvnote"></div><div id="tvHost" class="tvhost"></div></div>
     <div class="chartwrap"><canvas id="chart"></canvas><canvas id="chartBlink" aria-hidden="true"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
     <canvas id="rsi" aria-label="RSI(14)"></canvas>
     <div id="chartInfo" class="chartinfo">--</div>
@@ -3103,6 +3109,7 @@ function setTf(tf){
   state.tf=tf;state.hover=null;resetView();renderMaToggles();
   renderTfGrid();renderFibNow();renderGmmaNow();
   savePrefs();drawChart();
+  if(chartSrc==='tv'){setChartSrc('tv')}
 }
 
 $('refreshBtn').onclick=fullRefresh;
@@ -3218,6 +3225,36 @@ chart.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 chart.addEventListener('dblclick',()=>{resetView();state.hover=null;drawChart()});
 $('chartReset').onclick=()=>{resetView();state.hover=null;drawChart()};
 // チャートを画面いっぱいに（もう一度押すか Esc で戻る）
+/* ---------- TradingView のチャート（切り替え式） ----------
+   チャート欄を「自作チャート／TradingView」で切り替える（端末に保存）。TradingViewは公式の埋め込みチャートを使い、
+   表示中の時間足で開く。読み込みは欄が画面に見えたときだけ（デスクの裏で動いているときは読み込まない）。
+   水平線・フィボナッチ・パターンなどの自作の線はTradingViewには出せない。判定・アラートは自作チャートのデータで動き続ける */
+const TV_SYMBOL={gold:'OANDA:XAUUSD',usdjpy:'FX:USDJPY',btc:'COINBASE:BTCUSD'}[INSTR.key];
+const TV_IV={m5:'5',m15:'15',m30:'30',h1:'60',h4:'240',d1:'D',w1:'W',mn:'M'};
+let chartSrc=lsGet(LSP+'chart_src','own')==='tv'?'tv':'own',tvMade='',tvSeen=false;
+function tvBuild(){
+  const want=TV_SYMBOL+'|'+TV_IV[state.tf];
+  if(chartSrc!=='tv'||!tvSeen||tvMade===want)return;
+  tvMade=want;
+  const host=$('tvHost');host.innerHTML='';
+  const box=document.createElement('div');box.className='tradingview-widget-container';
+  const w=document.createElement('div');w.className='tradingview-widget-container__widget';w.style.height='100%';w.style.width='100%';box.appendChild(w);
+  const sc=document.createElement('script');sc.type='text/javascript';sc.async=true;
+  sc.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  sc.textContent=JSON.stringify({autosize:true,symbol:TV_SYMBOL,interval:TV_IV[state.tf],timezone:'Asia/Tokyo',theme:'dark',style:'1',locale:'ja',
+    backgroundColor:'#0f1419',gridColor:'rgba(255,255,255,0.05)',allow_symbol_change:false,hide_volume:true,calendar:false,withdateranges:true,support_host:'https://www.tradingview.com'});
+  box.appendChild(sc);host.appendChild(box);
+}
+function setChartSrc(src){
+  chartSrc=src;lsSet(LSP+'chart_src',src);
+  $('secChart').classList.toggle('tv',src==='tv');$('tvBox').hidden=src!=='tv';
+  setSegActive('#srcSeg .seg','src',src);
+  $('tvNote').textContent='TradingView（'+TV_SYMBOL+'・'+TF_NAME[state.tf]+'で開きます）の価格は配信元が違うため、XM・XSと少しずれることがあります。水平線・R1/S1・フィボナッチ・パターンの線は自作チャートでだけ表示されます。総合判定やアラートはこのまま動きます。';
+  if(src==='tv'){$('chartMeta').textContent='TradingView｜'+TV_SYMBOL+'｜'+TF_NAME[state.tf]+'（時間足はチャート内でも変えられます）';tvBuild()}else requestAnimationFrame(drawChart);
+}
+$('srcSeg').onclick=e=>{const b=e.target.closest('[data-src]');if(b)setChartSrc(b.dataset.src)};
+if('IntersectionObserver' in window)new IntersectionObserver(es=>{if(es.some(x=>x.isIntersecting)){tvSeen=true;tvBuild()}}).observe($('tvBox'));else tvSeen=true;
+setChartSrc(chartSrc);
 function setFull(on){
   $('secChart').classList.toggle('full',on);document.body.classList.toggle('chartfull',on);
   $('fullBtn').textContent=on?'↙ 元の表示に戻す':'⤢ 大きく表示';$('fullBtn').setAttribute('aria-pressed',on);
