@@ -49,6 +49,8 @@ jobs:
           mkdir -p _site
           cp ipad-widget/ipad.html _site/index.html
           cp ipad-widget/icon-cup.png _site/icon-cup.png
+          cp ipad-widget/sw.js _site/sw.js  # notifications only (no caching)
+          cp ipad-widget/manifest.webmanifest _site/manifest.webmanifest
           cp ipad-widget/gold.html _site/gold.html
           cp ipad-widget/usdjpy.html _site/usdjpy.html
           cp ipad-widget/btc.html _site/btc.html

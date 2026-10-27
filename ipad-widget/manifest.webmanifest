@@ -1,0 +1,10 @@
+{
+  "name": "Trade Desk",
+  "short_name": "Trade Desk",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#06070b",
+  "theme_color": "#06070b",
+  "icons": [{ "src": "icon-cup.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }]
+}

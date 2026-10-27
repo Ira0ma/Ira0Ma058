@@ -8,9 +8,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Trade Desk">
 <meta name="theme-color" content="#06070b">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="cb3e6931c8">
+<meta name="build" content="9ab8719a75">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -74,6 +75,9 @@ body {
 #clock { left: 27px; top: 35px; width: 241px; height: 276px; }
 #clock .content { position: relative; padding: 22px 22px; }
 .sound-btn { position: absolute; right: 12px; top: 12px; z-index: 2; display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 11px; font-weight: 700; color: var(--ink); background: rgba(0,0,0,.35); border: 1px solid var(--glass-line); border-radius: 999px; padding: 4px 9px; cursor: pointer; }
+.notify-btn { position: absolute; left: 12px; top: 12px; z-index: 2; display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 11px; font-weight: 700; color: var(--ink-3); background: rgba(0,0,0,.35); border: 1px solid var(--glass-line); border-radius: 999px; padding: 4px 9px; cursor: pointer; }
+.notify-btn[aria-pressed="true"] { color: #14100a; background: var(--gold); border-color: var(--gold); }
+.notify-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .sound-btn .mute { display: none; }
 .sound-btn[data-level="off"] { color: var(--ink-3); }
 .sound-btn[data-level="off"] .w1, .sound-btn[data-level="off"] .w2 { display: none; }
@@ -350,6 +354,7 @@ html:not(.flow) #flow { display: none; }
   <!-- clock -->
   <section class="card" id="clock" aria-label="時計">
     <canvas class="scene" data-scene="sunrise"></canvas>
+    <button class="notify-btn" id="notify-btn" type="button" aria-pressed="false" title="この端末の通知（アラート・エントリー）"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 11V7a4 4 0 0 1 8 0v4l1.3 1.5H2.7z"/><path d="M6.5 14a1.6 1.6 0 0 0 3 0" stroke-linecap="round"/></svg><span>通知</span></button>
     <button class="sound-btn" id="sound-btn" type="button" title="エントリー通知音（タップで 大→中→小→オフ）"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M2.5 6h2.5l3.5-3v10L5 10H2.5z" fill="currentColor"/><path class="w1" d="M11 5.5a3.5 3.5 0 0 1 0 5" stroke-linecap="round"/><path class="w2" d="M12.8 3.5a6.3 6.3 0 0 1 0 9" stroke-linecap="round"/><path class="mute" d="M11 6l4 4M15 6l-4 4" stroke-linecap="round"/></svg><span></span></button>
     <div class="content">
       <div class="time num" data-clock="hm">9:41</div>
@@ -640,9 +645,9 @@ html:not(.flow) #flow { display: none; }
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=1c386d7e79", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=24632531af", title: "ドル円分析" },
-    btc: { src: "btc.html?v=9da0664f10", title: "BTC分析" }
+    gold: { src: "gold.html?v=2a7bc570f4", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=525c44d502", title: "ドル円分析" },
+    btc: { src: "btc.html?v=c382d87e84", title: "BTC分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -695,7 +700,10 @@ html:not(.flow) #flow { display: none; }
     }
     var was = entryState[d.key] && entryState[d.key].entry;
     entryState[d.key] = d; paintEntries();
-    if (d.entry && !was && !marketClosed(d.key)) chime(d.sig === "BUY");  // a new entry call: sound once
+    if (d.entry && !was && !marketClosed(d.key)) {  // a new entry call: sound once, and a device notification
+      chime(d.sig === "BUY");
+      sysNotify((ALERT_NAME[d.key] || d.key) + " " + (d.sig === "BUY" ? "買い" : "売り") + "エントリー", "セットアップ判定がエントリーになりました" + (d.tpPips ? "（利確目安まで" + d.tpPips + "pips）" : "") + "。タップでトレードデスクを開きます。", "entry-" + d.key);
+    }
   });
   /* Key levels: each dashboard reports the two H1 lines just above the price (R1, R2) and the two just below
      (S1, S2); the price panel showing that market lists them in one line above its chart. */
@@ -715,7 +723,16 @@ html:not(.flow) #flow { display: none; }
   /* Alerts set on a dashboard (price reached, 120SMA, CHOCH/BOS, indicator in 30 min, score, remarks) pop up here
      while the dashboard runs behind the desk; a tap opens that dashboard. */
   var ALERT_NAME = { gold: "GOLD", usdjpy: "ドル円", btc: "BTC" };
+  function deskToast(text, onTap) {
+    var box = document.querySelector(".dk-toasts");
+    if (!box) { box = document.createElement("div"); box.className = "dk-toasts"; box.setAttribute("aria-live", "polite"); document.body.appendChild(box); }
+    var t = document.createElement("button"); t.type = "button"; t.className = "dk-toast"; t.textContent = text;
+    t.addEventListener("click", function () { t.remove(); if (onTap) onTap(t); });
+    box.appendChild(t); setTimeout(function () { t.remove(); }, 15000);
+    return t;
+  }
   function deskAlert(d) {
+    sysNotify((ALERT_NAME[d.key] || d.key) + " アラート", d.text, "al-" + d.key + "-" + d.kind);
     var box = document.querySelector(".dk-toasts");
     if (!box) { box = document.createElement("div"); box.className = "dk-toasts"; box.setAttribute("aria-live", "polite"); document.body.appendChild(box); }
     var t = document.createElement("button"); t.type = "button"; t.className = "dk-toast";
@@ -787,6 +804,42 @@ html:not(.flow) #flow { display: none; }
       o.connect(v); v.connect(ac.destination); o.start(t); o.stop(t + 0.5);
     });
   }
+  /* Device notifications: with 通知 on (and permission given), the alerts from the dashboards and new entry calls also
+     show as this device's own notifications, through sw.js. They come only while the desk is open on this device
+     (in front or in the background); on iPhone / iPad only from the desk added to the Home Screen (iOS 16.4+). */
+  var NOTIFY_KEY = "desk_notify", notifyBtn = document.getElementById("notify-btn");
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function () {});
+  function notifyOn() { try { return localStorage.getItem(NOTIFY_KEY) === "1" && !!window.Notification && Notification.permission === "granted"; } catch (e) { return false; } }
+  function sysNotify(title, body, tag) {
+    if (!notifyOn()) return;
+    var opt = { body: body, tag: tag, icon: "icon-cup.png", badge: "icon-cup.png", data: { url: location.href } };
+    var plain = function () { try { new Notification(title, opt); } catch (e) {} };
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+      navigator.serviceWorker.getRegistration().then(function (r) { if (r && r.showNotification) r.showNotification(title, opt).catch(plain); else plain(); }).catch(plain);
+    } else plain();
+  }
+  function paintNotify() {
+    var on = notifyOn();
+    notifyBtn.setAttribute("aria-pressed", String(on));
+    notifyBtn.querySelector("span").textContent = on ? "通知オン" : "通知";
+  }
+  notifyBtn.addEventListener("click", function () {
+    if (notifyOn()) { try { localStorage.setItem(NOTIFY_KEY, "0"); } catch (e) {} paintNotify(); deskToast("通知をオフにしました"); return; }
+    if (!window.Notification || !Notification.requestPermission) {
+      deskToast(/iP(hone|ad|od)|Macintosh/.test(navigator.userAgent) && "ontouchend" in document ? "iPhone・iPadでは、ホーム画面に追加したトレードデスクで使えます（iOS 16.4以降）" : "このブラウザでは通知を使えません");
+      return;
+    }
+    var ask = Notification.requestPermission(function () {});
+    Promise.resolve(ask).then(function (p) {
+      p = p || Notification.permission;
+      if (p === "granted") {
+        try { localStorage.setItem(NOTIFY_KEY, "1"); } catch (e) {}
+        paintNotify(); deskToast("通知をオンにしました");
+        sysNotify("Trade Desk", "通知がオンになりました。アラートとエントリーをこの端末に通知します。", "notify-on");
+      } else deskToast("通知が許可されませんでした。設定アプリの通知（またはブラウザのサイト設定）で許可してください");
+    });
+  });
+  paintNotify();
   var soundBtn = document.getElementById("sound-btn");
   function paintSound() {
     var o = SOUND[soundIdx];

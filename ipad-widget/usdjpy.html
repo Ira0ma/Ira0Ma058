@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="24632531af">
+<meta name="build" content="525c44d502">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2317,6 +2317,15 @@ function alertBeep(){
   [880,660].forEach((f,i)=>{const o=alCtx.createOscillator(),v=alCtx.createGain(),t=t0+i*.18;o.type='sine';o.frequency.value=f;
     v.gain.setValueAtTime(0,t);v.gain.linearRampToValueAtTime(.18,t+.02);v.gain.exponentialRampToValueAtTime(.0001,t+.4);o.connect(v);v.connect(alCtx.destination);o.start(t);o.stop(t+.45)});
 }
+// この端末の通知：トレードデスクの「通知」をオンにして許可していれば、単体で開いたダッシュボードのアラートも端末の通知に出す
+// （トレードデスクの中では、デスクが通知を出す）
+function sysNotify(text){
+  try{if(lsGet('desk_notify','')!=='1'||!window.Notification||Notification.permission!=='granted')return}catch{return}
+  const title=(INSTR.short==='XAU'?'GOLD':INSTR.short==='USDJPY'?'ドル円':INSTR.short)+' アラート',opt={body:text,tag:'al-'+INSTR.key+'-'+text.slice(0,20),icon:'icon-cup.png',data:{url:location.href}};
+  const plain=()=>{try{new Notification(title,opt)}catch{}};
+  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)navigator.serviceWorker.getRegistration().then(r=>r&&r.showNotification?r.showNotification(title,opt).catch(plain):plain()).catch(plain);else plain();
+}
+if('serviceWorker' in navigator&&window.parent===window)navigator.serviceWorker.register('sw.js').catch(()=>{});
 function pushAlert(kind,text,tf){
   alertHist.unshift({kind,text,t:Date.now()});if(alertHist.length>10)alertHist.length=10;
   renderAlertHist();
@@ -2324,6 +2333,7 @@ function pushAlert(kind,text,tf){
     if(kind!=='gmma')try{window.parent.postMessage({type:'dash-alert',key:INSTR.key,kind,text},'*')}catch{}
     return;
   }
+  sysNotify(text);
   const t=document.createElement('button');t.type='button';t.className='gxtoast al';
   t.textContent='🔔 '+text;t.onclick=()=>{if(tf)setTf(tf);t.remove()};
   $('gxToasts').appendChild(t);setTimeout(()=>t.remove(),12000);
