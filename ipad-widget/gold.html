@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="2a3798910b">
+<meta name="build" content="d216ac29d8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1162,7 +1162,20 @@ async function refreshSpotBtc(){
   if(!px)throw new Error('BTC price missing');
   return {px,asof,src};
 }
+// 休場中（週末・ゴールドの毎日の休止）は、週末も動き続ける取得先（Gold API・Swissquote・Coinbase）の値を使わず、
+// サイトに残っている休場前の最終値を表示する
+async function closedSpot(){
+  const g=(await getSite()).instruments[INSTR.site],px=n(g.price);
+  if(!px)throw new Error('price missing');
+  const changed=!state.spot||state.spot.price!==px;
+  state.src.spot='サイト（休場前の最終値）';
+  state.spot={price:px,asof:toMs(g.asOf)||Date.now(),freshness:'fresh',age:0};
+  if(IS_FX){state.fx=px;state.health.fx=true}else if(state.fx)state.goldJpy=px*state.fx;
+  state.health.spot=true;state.lastOk=Date.now();state.nextSpot=Date.now()+INTERVALS.spot;
+  setStatus('live','休場中');showError('');if(changed){saveCache();renderAll()}
+}
 async function refreshSpot(){
+  if(mktClosed&&!IS_BTC){try{await closedSpot()}catch(e){state.nextSpot=Date.now()+15000}return}
   if(IS_BTC){
     try{
       const fx=await refreshFx();

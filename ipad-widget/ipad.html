@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="e8206736f0">
+<meta name="build" content="1d0de49eaf">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1042,9 +1042,9 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=2a3798910b", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=11b367e7ba", title: "ドル円分析" },
-    btc: { src: "btc.html?v=94531fbd4b", title: "BTC分析" }
+    gold: { src: "gold.html?v=d216ac29d8", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=36f57b42a5", title: "ドル円分析" },
+    btc: { src: "btc.html?v=f3105d3244", title: "BTC分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -1641,15 +1641,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       { name: "Kraken", url: "wss://ws.kraken.com/v2", sub: { method: "subscribe", params: { channel: "ticker", symbol: ["BTC/USD"] } },
       parse: function (m) { var d = m && m.channel === "ticker" && m.data && m.data[0]; return d ? (d.bid + d.ask) / 2 : 0; } }]
   };
-  /* GOLD and USD/JPY are closed at the weekend (New York Fri 17:00 to Sun 17:00; gold also 17:00-18:00 daily and
-     until 18:00 on Sunday). XAUT keeps trading then, so its ticks are ignored and nothing glows; BTC never closes. */
-  var NY_FMT = window.Intl ? new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "numeric", hourCycle: "h23" }) : null;
-  function marketClosed(key, t) {
-    if (key === "btc" || !NY_FMT || !NY_FMT.formatToParts) return false;
-    var p = {}; NY_FMT.formatToParts(new Date(t || Date.now())).forEach(function (x) { p[x.type] = x.value; });
-    var d = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(p.weekday), h = +p.hour + +p.minute / 60, gold = key === "gold";
-    return d === 6 || (d === 5 && h >= 17) || (d === 0 && h < (gold ? 18 : 17)) || (gold && h >= 17 && h < 18);
-  }
+  /* Closed markets (weekly hours from core.js: FX at the weekend, gold, silver and oil also 17:00-18:00 New York daily,
+     VIX outside its hours; BTC never closes). XAUT, Gold API, Swissquote and Coinbase keep quoting then, so while a
+     market is closed none of them moves its card: it keeps the last price before the close. */
+  function marketClosed(key, t) { return TDCore.marketState(key, t || Date.now()).state !== "open"; }
   var live = {};
   function liveFresh(key) {
     var L = live[key];
@@ -1709,6 +1704,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     if (!window.fetch) return;
     markets.forEach(function (mk) {
       var spot = INST[mk.key].spot, key = mk.key;
+      if (marketClosed(key)) return;  // closed: these quotes keep moving at the weekend, but the market does not
       // USD/JPY: Coinbase's rate every minute, less the offset to the bid the site measures (as on the USD/JPY page)
       if (INST[key].live === "coinbase") {
         if (!market) return;  // needs the site's offset and price first; loadMarket calls back once they are in
@@ -2658,7 +2654,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
           mk.series = m.candles; mk.prevClose = m.prevClose;
           mk.unadjusted = !!INST[mk.key].spot && m.spotAdjusted === false;
           // spot-priced instruments keep their fresher minute quote
-          var keepSpot = mk.live && (INST[mk.key].spot || INST[mk.key].live) && mk.asOf > (m.asOf || 0);
+          var keepSpot = mk.live && (INST[mk.key].spot || INST[mk.key].live) && mk.asOf > (m.asOf || 0) && !marketClosed(mk.key);
           if (keepSpot) mk.alignSpot(mk.price);
           if (!keepSpot) {
             mk.asOf = m.asOf;
