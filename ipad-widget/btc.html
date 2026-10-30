@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="50c5d1fa70">
+<meta name="build" content="94531fbd4b">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -90,7 +90,7 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .hero{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:16px}
 .hero>div{min-width:0}
 .hero>div+div{border-left:1px solid #222b35;padding-left:16px}
-.price{font-size:clamp(34px,4vw,52px);font-weight:950;line-height:1;transition:color .6s}
+.price{font-size:clamp(34px,4vw,52px);font-weight:950;line-height:1}  /* 色のフェードはなし：価格は毎秒動くので、フェードが途切れず続いて重くなる */
 .price.flash-up{color:var(--green)}.price.flash-down{color:var(--red)}
 .change{margin-top:7px;font-size:13px;font-weight:700}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:11px}
@@ -801,7 +801,8 @@ const INTERVALS = {spot:30000, chart:300000, calendar:300000, calendarHot:60000}
 
 /* ---------- utils ---------- */
 function n(v){const x=Number(v);return Number.isFinite(x)?x:0}
-function fmt(v,d=INSTR.dp){return n(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d})}
+const NUM_FMT={};  // 書式は桁数ごとに1回だけ作る（toLocaleStringを毎回呼ぶと重い）
+function fmt(v,d=INSTR.dp){return (NUM_FMT[d]||(NUM_FMT[d]=new Intl.NumberFormat('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}))).format(n(v))}
 function yen(v){return '¥'+Math.round(n(v)).toLocaleString('ja-JP')}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function lsGet(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch{return d}}
@@ -817,9 +818,10 @@ function tradeDayKey(ms=Date.now()){
 }
 function localTime(ms){
   if(!ms)return '--';
-  return new Date(ms).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  return LT_FMT.format(new Date(ms));
 }
-function hhmm(ms){return new Date(ms).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}
+const LT_FMT=new Intl.DateTimeFormat('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}),HM_FMT=new Intl.DateTimeFormat('ja-JP',{hour:'2-digit',minute:'2-digit'});
+function hhmm(ms){return HM_FMT.format(new Date(ms))}
 function dur(ms){
   const s=Math.max(0,Math.round(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),sec=s%60;
   if(h>=24)return Math.floor(h/24)+'日'+(h%24)+'時間'+m+'分';
@@ -1118,7 +1120,9 @@ function onLiveTick(){
   if(mb&&mb.t===mt){mb.h=Math.max(mb.h,px);mb.l=Math.min(mb.l,px);mb.c=px}else{LIVE.mins.push({t:mt,h:px,l:px,c:px});if(LIVE.mins.length>60)LIVE.mins.shift()}
   // 描画は1秒に1回まで（iPadの負担を抑える）
   const now=Date.now();if(now-LIVE.lastDraw<(sheetHidden()?5000:1000))return;LIVE.lastDraw=now;  // デスクの裏に隠れている間は5秒に1回
-  renderAll();flashPrice();
+  // 毎秒は価格の欄とチャートだけ。ページ全体（表・指標・アラートなど）は3秒に1回（毎秒ページ全体を描き直すとiPadが重くなる）
+  if(sheetHidden()||now-(LIVE.lastFull||0)>=3000){LIVE.lastFull=now;renderAll()}else{renderSnapshot();drawChart()}
+  flashPrice();
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!LIVE.ws)startLive()});
 // ゴールド：サイトの足は約10分遅れの先物を現物に換算したもの。その空白を、XAUTの1分足（OKX、1時間分）を
@@ -1883,8 +1887,8 @@ function dayHL(){
 let cupCache={k:'',v:null};
 function cupHandle(){
   if(!INSTR.cupHandle||!state.spot||state.m15.length<200)return null;
-  const bars=state.m15,price=state.spot.price,k=bars.length+':'+bars.at(-1).t+':'+price;
-  if(cupCache.k===k)return cupCache.v;
+  const bars=state.m15,price=state.spot.price,k=bars.length+':'+bars.at(-1).t;
+  if(cupCache.k===k&&Date.now()-cupCache.at<10000)return cupCache.v;  // 同じ足なら10秒は使い回す（価格の小さな動きのたびに探し直さない）
   const a=atr(bars,14)||0, found=[];
   if(a)for(const dir of [1,-1]){
     // 売り型は価格を上下反転して同じ形を探す
@@ -1917,7 +1921,7 @@ function cupHandle(){
     }
   }
   const v=found.sort((x,y)=>(y.state==='breakout')-(x.state==='breakout')||y.tr-x.tr)[0]||null;
-  cupCache={k,v};return v;
+  cupCache={k,v,at:Date.now()};return v;
 }
 /* ダブルボトム・逆三尊（買い）とダブルトップ・三尊（売り＝価格を上下反転して同じ形を探す）
    しきい値は XAU/USD 10年分（2016〜2025年）のバックテスト（research/pattern_backtest.py）で、2016〜2022年で選び
@@ -2016,8 +2020,8 @@ let patCache={k:'',v:[]};
 // チャートパターンの一覧（カップウィズハンドルを含む）。ブレイク中・形成中のものだけ
 function chartPatterns(){
   if(!INSTR.patterns||!state.spot)return [];
-  const price=state.spot.price,k=state.m15.length+':'+(state.m15.at(-1)?.t)+':'+state.h1.length+':'+(state.h1.at(-1)?.t)+':'+price;
-  if(patCache.k===k)return patCache.v;
+  const price=state.spot.price,k=state.m15.length+':'+(state.m15.at(-1)?.t)+':'+state.h1.length+':'+(state.h1.at(-1)?.t);
+  if(patCache.k===k&&Date.now()-patCache.at<10000)return patCache.v;
   const out=[],cup=cupHandle();if(cup)out.push(cup);
   for(const cfg of PATTERNS){
     const bars=cfg.tf==='h1'?state.h1:state.m15;
@@ -2031,7 +2035,7 @@ function chartPatterns(){
       height:r.height,target:d*(r.neck+r.height*(cfg.tpMult||1)),tpMult:cfg.tpMult,t0:r.t0,atr:a,useSma:cfg.p.useSma,entry:cfg.entry,tpFixed:cfg.tpFixed,
       slSrc:(cfg.id==='db'?(d>0?'ボトム':'トップ'):'右肩')+'の'+(d>0?'安値':'高値')+'の外'});
   }
-  patCache={k,v:out};return out;
+  patCache={k,v:out,at:Date.now()};return out;
 }
 function calcSignal(){
   if(!state.spot||state.h1.length<120)return {sig:'WAIT',entry:false,score:0,sma:0,mom:0,mid:state.spot?.price||0,hi:0,lo:0,forced:false,ready:false};
@@ -2702,8 +2706,14 @@ function renderRebound(){
   return r;
 }
 
+// キャンバスの大きさは ResizeObserver で覚えておく（描くたびに getBoundingClientRect で測ると、直前の文字の更新のせいでページ全体の配置計算が毎回走る）
+const CV_SIZE=new WeakMap(),cvRO=window.ResizeObserver?new ResizeObserver(es=>{let ch=false;es.forEach(e=>{
+  const bb=e.borderBoxSize&&e.borderBoxSize[0],v=bb?{width:bb.inlineSize,height:bb.blockSize}:{width:e.target.offsetWidth,height:e.target.offsetHeight},o=CV_SIZE.get(e.target);
+  if(!o||o.width!==v.width||o.height!==v.height){CV_SIZE.set(e.target,v);ch=true}});if(ch&&state.h1.length&&!sheetHidden())drawChart()}):null;
 function sizeCanvas(c){
-  const r=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  let r=CV_SIZE.get(c);
+  if(!r){r=c.getBoundingClientRect();r={width:r.width,height:r.height};if(cvRO&&r.width){CV_SIZE.set(c,r);cvRO.observe(c)}}
+  const dpr=window.devicePixelRatio||1;
   const w=Math.round(r.width*dpr),h=Math.round(r.height*dpr);
   if(c.width!==w||c.height!==h){c.width=w;c.height=h}
   const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);
