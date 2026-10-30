@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="70e59d26d5">
+<meta name="build" content="e48da8d247">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -379,11 +379,12 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gl-tile { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding-top: 0px; }
 .gl-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .gl-tile[data-book="eco"] { --gl-acc: #6fd0d4; --gl-rgb: 111,208,212; }
+.gl-tile[data-book="gold"] { --gl-acc: #e6c27a; --gl-rgb: 230,194,122; }
 .gl-tile[data-book="pattern"] { --gl-acc: #9cc996; --gl-rgb: 156,201,150; }
 .gl-tile[data-book="usdjpy"] { --gl-acc: #a9bdf0; --gl-rgb: 169,189,240; }
 .gl-tile[data-book="fvg"] { --gl-acc: #c8b6ec; --gl-rgb: 200,182,236; }
 .gl-tile { --gl-acc: var(--gold); --gl-rgb: 227,184,103; }
-.gl-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 2px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--glass-line); flex: none; }
+.gl-tabs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; padding: 2px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--glass-line); flex: none; }
 .gl-tabs button { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: inherit; font-size: 11.5px; font-weight: 700; color: var(--ink-3); background: none; border: 0; border-radius: 999px; padding: 3px 10px; cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
 .gl-tabs button.on { color: #14100a; background: var(--gl-acc); }
 .gl-title { font-size: 14px; font-weight: 700; color: var(--ink); letter-spacing: .04em; }
@@ -468,7 +469,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gbook.eco .gb-figbox { border-color: #cfe0dc; }
 .gbook.eco .gb-resume { background: #dcecea; border-color: #bcd6d2; color: #175e63; }
 /* 学習の本（パターン図鑑・ドル円入門・FVG詳説）：用語集と同じ紙面に、ひと言→図→見る所→待つこと→例→勘違い→詳しく の順 */
-.gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; }
+.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; }
 .gbook.bk-learn .gb-bar .gb-title { color: var(--bk); } .gbook.bk-learn .gb-prog i { background: var(--bk); } .gbook.bk-learn .gb-btn.gb-x { background: var(--bk); border-color: var(--bk); }
 .gbook.bk-learn .gb-cover small, .gbook.bk-learn .gb-chhead small, .gbook.bk-learn .gb-toc i, .gbook.bk-learn .gb-idx button em, .gbook.bk-learn .gb-cover .gb-hint::before, .gbook.bk-learn .gb-pts li::marker { color: var(--bk-ink); }
 .gbook.bk-learn .gb-idx h4, .gbook.bk-learn .gb-table th { background: var(--bk-ink); }
@@ -505,9 +506,13 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .lt-qa li + li { margin-top: 8px; } .lt-qa p { margin: 0; }
 .lt-qa summary, .lt-more summary { cursor: pointer; font-size: 12px; font-weight: 700; color: var(--bk-ink, #a37a2c); padding: 4px 0; }
 .lt-more { margin-top: 8px; border-top: 1px dashed #e0d2b2; padding-top: 4px; }
+.lt-calcbox { margin-top: 10px; }
+.lt-calcbox > summary { cursor: pointer; display: inline-block; font-size: 12.5px; font-weight: 700; color: #2b241a; padding: 6px 12px; border: 1px solid #d9c89f; border-radius: 999px; background: #fffaf0; }
+.lt-calcbox > summary::marker { color: var(--bk-ink, #a37a2c); }
 .lt-calc { margin-top: 10px; padding: 10px 12px; border: 1px solid #e3d6b8; border-radius: 10px; background: #fffaf0; display: grid; gap: 6px; }
 .lt-calc h4 { margin: 0 0 2px; }
-.lt-calc label { display: grid; grid-template-columns: 6.5em 1fr auto; align-items: center; gap: 8px; font-size: 12.5px; color: #3c3326; }
+.lt-calc label { display: grid; grid-template-columns: 7.5em 1fr auto; align-items: center; gap: 8px; font-size: 12.5px; color: #3c3326; }
+.lt-calc label select + select, .lt-calc label input + select { min-width: 4.5em; }
 .lt-calc input, .lt-calc select { font: inherit; font-size: 16px; padding: 5px 8px; border: 1px solid #d9c89f; border-radius: 7px; background: #fff; color: #2b241a; min-width: 0; }
 .lt-calc i { font-style: normal; font-size: 11.5px; color: #8d7d61; }
 .lt-calc output { font-size: 13px; line-height: 1.6; color: #2b241a; min-height: 1.6em; }
@@ -541,6 +546,11 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gb-toc i { font-style: normal; font-weight: 800; color: #a37a2c; width: 3.6em; flex: none; white-space: nowrap; }
 .gb-toc b { font-size: 14.5px; }
 .gb-toc small { display: block; font-size: 11px; color: #8d7d61; font-weight: 400; margin-top: 2px; }
+.gb-toc.many { column-count: 2; column-gap: 22px; }
+.gb-toc.many li { break-inside: avoid; border-top: 1px solid #e6dabf; }
+.gb-toc.many button { padding: 6px 2px; }
+.gb-toc.many small { font-size: 10.5px; }
+@media (max-width: 760px) { .gb-toc.many { column-count: 1; } }
 .gb-toc em { margin-left: auto; font-style: normal; font-size: 12px; color: #8d7d61; white-space: nowrap; }
 .gb-resume { font: inherit; display: block; width: 100%; margin-top: 12px; padding: 9px; border-radius: 10px; border: 1px solid #d9c89f; background: #f0e3c2; color: #6b4f19; font-weight: 700; cursor: pointer; }
 .gb-idx { columns: 2; column-gap: 18px; }
@@ -794,7 +804,7 @@ html:not(.beginner) .step-tag { display: none; }
       <div class="gl-head">
         <b class="gl-title">学ぶ</b><span id="gl-count"></span><button type="button" class="gl-open" data-gl="toc">目次を開く ›</button>
       </div>
-      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ"><button type="button" role="tab" data-glbook="fx">FX用語集</button><button type="button" role="tab" data-glbook="eco">経済用語集</button><button type="button" role="tab" data-glbook="pattern">パターン図鑑</button><button type="button" role="tab" data-glbook="usdjpy">ドル円入門</button><button type="button" role="tab" data-glbook="fvg">FVG詳説</button></div>
+      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ"><button type="button" role="tab" data-glbook="fx">FX用語集</button><button type="button" role="tab" data-glbook="eco">経済用語集</button><button type="button" role="tab" data-glbook="gold">ゴールド入門</button><button type="button" role="tab" data-glbook="pattern">パターン図鑑</button><button type="button" role="tab" data-glbook="usdjpy">ドル円入門</button><button type="button" role="tab" data-glbook="fvg">FVG詳説</button></div>
       <div class="gl-grid" id="gl-grid"></div>
       <p class="gl-hint">本を開いたら、左右にスワイプか「次のページ ›」でめくれます</p>
     </div>
@@ -2762,12 +2772,12 @@ html:not(.beginner) .step-tag { display: none; }
       ["バックテスト", "", "過去の値動きで売買のルールを試して、どれくらいもうかったか（損したか）を確かめること。本番の前の練習試合のようなもの。", { fig: "backtest" }]
     ]},
     { t: "ゴールドとビットコイン", s: "XAUUSD・オンス・BTC", terms: [
-      ["XAUUSD", "ゴールド", "金（ゴールド）のドルでの値段。「1トロイオンス（約31グラム）が何ドルか」を表す。", { fig: "oz", rel: ["pattern:g-gold"] }],
-      ["トロイオンス", "oz", "金や銀の重さの単位。1トロイオンス＝約31.1グラム。"],
-      ["スポット価格", "現物", "今すぐ受け渡しする場合の値段。XMなどで取引するゴールドは、このスポット価格。", { fig: "spotfut" }],
-      ["先物価格", "", "決まった未来の日に受け渡す約束の値段。金の先物は、ふつうスポットより少し高い。このアプリは先物のデータをスポットの値段にそろえて表示している。"],
-      ["有事の金", "", "戦争や金融の不安など、世の中が不安なときに金が買われやすいこと。金は国や会社がつぶれても価値がなくならないので、「安全な避難先」と考えられている。", { fig: "safehaven" }],
-      ["実質金利", "", "金利から物価の上がり分を引いた、本当の金利。例：金利3％でも物価が2％上がれば、実質は1％。金は利息がつかないので、実質金利が下がると相対的に有利になり、買われやすい。", { fig: "realrate" }],
+      ["XAUUSD", "ゴールド", "金（ゴールド）のドルでの値段。「1トロイオンス（約31グラム）が何ドルか」を表す。", { fig: "oz", rel: ["gold:gold-intro-02", "pattern:g-gold"] }],
+      ["トロイオンス", "oz", "金や銀の重さの単位。1トロイオンス＝約31.1グラム。", { rel: ["gold:gold-intro-07"] }],
+      ["スポット価格", "現物", "今すぐ受け渡しする場合の値段。XMなどで取引するゴールドは、このスポット価格。", { fig: "spotfut", rel: ["gold:gold-intro-04"] }],
+      ["先物価格", "", "決まった未来の日に受け渡す約束の値段。金の先物は、ふつうスポットより少し高い。このアプリは先物のデータをスポットの値段にそろえて表示している。", { rel: ["gold:gold-intro-04"] }],
+      ["有事の金", "", "戦争や金融の不安など、世の中が不安なときに金が買われやすいこと。金は国や会社がつぶれても価値がなくならないので、「安全な避難先」と考えられている。", { fig: "safehaven", rel: ["gold:gold-intro-29"] }],
+      ["実質金利", "", "金利から物価の上がり分を引いた、本当の金利。例：金利3％でも物価が2％上がれば、実質は1％。金は利息がつかないので、実質金利が下がると相対的に有利になり、買われやすい。", { fig: "realrate", rel: ["gold:gold-intro-26"] }],
       ["BTC", "ビットコイン", "代表的な暗号資産（仮想通貨）。土日も含めて24時間いつでも取引でき、値動きがとても大きい。"],
       ["ドルインデックス", "DXY", "主な通貨に比べて、ドルがどれくらい強いかを表す数字。上がるとドル高で、金やドル以外の通貨は下がりやすい。", { fig: "dxyfig" }]
     ]},
@@ -2879,11 +2889,12 @@ html:not(.beginner) .step-tag { display: none; }
       fx: { id: "fx", data: GLOSSARY, title: "FX用語集", en: "FX GLOSSARY", icon: "📖", short: SHORT, bm: "gloss-page" },
       eco: { id: "eco", data: ECONOMY, title: "経済用語集", en: "ECONOMICS GLOSSARY", icon: "📘", short: ["投資", "経済", "金利", "株式", "投信・制度", "財政・世界", "市場心理", "くらし"], bm: "eco-page" },
       // 学習の本：中身は learn/*.json（開いたときに読み込む。トップの表示では読まない）
+      gold: { id: "gold", src: "learn/gold.json", title: "ゴールド入門", en: "GOLD TRADING BASICS", icon: "🪙", bm: "learn-gold-page", learn: true },
       pattern: { id: "pattern", src: "learn/pattern.json", title: "パターン図鑑", en: "CHART PATTERNS", icon: "📗", bm: "learn-pattern-page", learn: true },
       usdjpy: { id: "usdjpy", src: "learn/usdjpy.json", title: "ドル円入門", en: "USD/JPY BASICS", icon: "💴", bm: "learn-usdjpy-page", learn: true },
       fvg: { id: "fvg", src: "learn/fvg.json", title: "FVG詳説", en: "FAIR VALUE GAP", icon: "📐", bm: "learn-fvg-page", learn: true }
     };
-    var ORDER = ["fx", "eco", "pattern", "usdjpy", "fvg"], LEARN = ["pattern", "usdjpy", "fvg"];
+    var ORDER = ["fx", "eco", "gold", "pattern", "usdjpy", "fvg"], LEARN = ["gold", "pattern", "usdjpy", "fvg"];
     // learn/*.json の1項目を、用語集と同じ [名前, 読み, 説明, 付録] の形にする（付録の L に元の項目を持つ）
     function learnBook(b, j) {
       b.version = j.version; b.lead = j.lead; b.short = j.chapters.map(function (c) { return c.short || c.t; });
@@ -3375,7 +3386,7 @@ html:not(.beginner) .step-tag { display: none; }
       if (!rel || !rel.length) return "";
       return '<div class="gb-rel"><span>関連</span>' + rel.map(function (r) { return '<button type="button" data-ref="' + esc(r) + '">' + esc(refLabel(r)) + '</button>'; }).join("") + '</div>';
     };
-    var LV = { "まず覚える": 1, "まずここから": 1, "少し慣れたら": 2, "練習しながら": 2, "必要なときに": 3, "あとで読む": 3 };
+    var LV = { "まず覚える": 1, "まずここから": 1, "最初に読む": 1, "少し慣れたら": 2, "練習しながら": 2, "図で理解する": 2, "必要なときに": 3, "あとで読む": 3 };
     var blocksHtml = function (bs) {
       return bs.map(function (b) {
         var k = b[0];
@@ -3410,9 +3421,59 @@ html:not(.beginner) .step-tag { display: none; }
         '<label>決済の価格<input type="number" inputmode="decimal" step="any" data-f="close" value="150.20"><i>円</i></label>' +
         '<label>数量<input type="number" inputmode="decimal" min="0" step="any" data-f="qty" value="1000"><i>ドル</i></label>' +
         '<output aria-live="polite"></output></div>';
+      if (kind === "goldsize" || kind === "goldpnl") return goldCalcHtml(kind);
       return (kind === "profit" ? profit : kind === "both" ? sizing + profit : sizing) + '<p class="lt-note">コスト（スプレッド・手数料・スワップ）と滑りを含まない計算例です。実際の損益や最大損失を保証しません。最小数量・取引単位は業者の条件で確認してください。</p>';
     };
+    // ゴールド入門の計算練習：数量（損失枠→オンス→ロット）と損益（価格差→費用・持ち越し→円換算）。初期値は本の仮定（説明用）
+    var inp = function (f, label, unit, val, extra) { return '<label>' + label + '<input type="number" inputmode="decimal" step="any" data-f="' + f + '" value="' + val + '"' + (extra || "") + '><i>' + unit + '</i></label>'; };
+    var goldCalcHtml = function (kind) {
+      if (kind === "goldsize") return '<div class="lt-calc" data-calc="goldsize"><h4>計算してみる：損失枠からオンス数・ロット数</h4>' +
+        '<label>許容損失<input type="number" inputmode="decimal" step="any" data-f="loss" value="4500"><select data-f="cur" aria-label="許容損失の通貨"><option value="jpy">円</option><option value="usd">米ドル</option></select></label>' +
+        inp("rate", "換算レート", "円／ドル", "150") + inp("reserve", "費用・滑りの予備枠", "米ドル", "0") + inp("stop", "損切り幅", "ドル／オンス", "8") +
+        inp("contract", "1ロットの大きさ", "オンス", "100") + inp("min", "最小数量", "ロット", "0.01") + inp("step", "数量の刻み", "ロット", "0.01") +
+        inp("price", "価格（証拠金の計算用）", "ドル／オンス", "3000") + inp("mrate", "必要証拠金率（仮）", "％", "5") +
+        '<output aria-live="polite"></output></div><p class="lt-note">数量＝（許容損失（米ドル）−予備枠）÷損切り幅÷1ロットのオンス数を、刻みの整数倍へ切り下げます。値はすべて説明用の仮定で、業者の証拠金の計算や約定を再現しません。予定損失は損切りの価格で決済できた場合の目安で、損失の上限を保証しません。</p>';
+      return '<div class="lt-calc" data-calc="goldpnl"><h4>計算してみる：損益（米ドル→円）</h4>' +
+        '<label>向き<select data-f="side"><option value="1">買い</option><option value="-1">売り</option></select></label>' +
+        inp("open", "新規の価格", "ドル／オンス", "3000") + inp("close", "決済の価格", "ドル／オンス", "3012") + inp("oz", "数量", "オンス", "2") +
+        inp("fee", "別途の手数料（合計）", "米ドル", "2") + inp("carry", "持ち越し（受取＋／支払−）", "米ドル", "0") + inp("rate", "換算レート（空欄なら省略）", "円／ドル", "150") +
+        '<output aria-live="polite"></output></div><p class="lt-note">買い＝（決済−新規）×オンス、売り＝（新規−決済）×オンス。実際の約定価格の差にはスプレッドが含まれているので、ここでは二重に引きません。</p>';
+    };
+    function runGold(el) {
+      var v = function (f) { var x = el.querySelector('[data-f="' + f + '"]'); return x && String(x.value).trim() !== "" ? Number(x.value) : NaN; },
+        s = function (f) { var x = el.querySelector('[data-f="' + f + '"]'); return x ? x.value : ""; }, out = el.querySelector("output"),
+        fmt = function (n, d) { return n.toLocaleString("ja-JP", { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); },
+        dec = function (x) { var t = String(x); return t.indexOf(".") < 0 ? 0 : Math.min(6, t.split(".")[1].length); };
+      if (el.getAttribute("data-calc") === "goldsize") {
+        var loss = v("loss"), cur = s("cur"), rate = v("rate"), res = v("reserve"), stop = v("stop"), con = v("contract"), min = v("min"), step = v("step"), price = v("price"), mr = v("mrate");
+        var need = [loss, stop, con, min, step].concat(cur === "jpy" ? [rate] : []);
+        if (!need.every(isFinite)) { out.textContent = "空欄や数字でない欄があります。許容損失・損切り幅・1ロットの大きさ・最小数量・刻み（円なら換算レートも）を入れてください。"; return; }
+        if (!(loss > 0 && stop > 0 && con > 0 && min > 0 && step > 0) || (cur === "jpy" && !(rate > 0))) { out.textContent = "0より大きい数字を入れてください。"; return; }
+        if (!isFinite(res) || res < 0) { out.textContent = "予備枠は0以上の数字にしてください（なければ0）。"; return; }
+        var usd = cur === "jpy" ? loss / rate : loss, avail = usd - res;
+        if (avail <= 0) { out.innerHTML = "予備枠（" + fmt(res, 2) + " ドル）が許容損失（" + fmt(usd, 2) + " ドル）以上です。<b>この条件では数量を出せません。</b>"; return; }
+        var rawOz = avail / stop, rawLot = rawOz / con, k = Math.round(min / step), warn = "";
+        if (Math.abs(min / step - k) > 1e-9) warn = "<br>※最小数量が刻みの整数倍ではありません。この計算では刻みで切り下げていますが、業者の発注規則を確認してください。";
+        if (rawLot > 1e6) { out.textContent = "数量が極端に大きくなります。単位（円／米ドル、ドル／オンス）や桁を確認してください。"; return; }
+        var lots = Math.floor(rawLot / step + 1e-9) * step, d = Math.max(dec(step), dec(min)), oz = lots * con, jp = function (x) { return isFinite(rate) && rate > 0 ? "（約 " + fmt(x * rate) + " 円）" : ""; };
+        if (lots + 1e-12 < min) { out.innerHTML = "計算上 " + fmt(rawOz, 2) + " オンス＝" + fmt(rawLot, 4) + " ロットで、最小数量（" + fmt(min, d) + " ロット）に届きません。<b>損失枠を広げず、見送る</b>のが計画どおりの選択です。" + warn; return; }
+        var plan = oz * stop, margin = isFinite(price) && price > 0 && isFinite(mr) && mr > 0 && mr <= 100 ? price * oz * mr / 100 : NaN;
+        out.innerHTML = "理論値 " + fmt(rawOz, 2) + " オンス → 刻みで切り下げて <b>" + fmt(lots, d) + " ロット＝" + fmt(oz, 2) + " オンス</b>。<br>損切り幅での予定損失 約 " + fmt(plan, 2) + " ドル" + jp(plan) + "＋予備枠 " + fmt(res, 2) + " ドル。" +
+          (isFinite(margin) ? "<br>取引金額 " + fmt(price * oz, 2) + " ドル、必要証拠金（仮に " + mr + "％）約 " + fmt(margin, 2) + " ドル" + jp(margin) + "。証拠金は損失の上限ではありません。" : (isFinite(mr) && (mr <= 0 || mr > 100) ? "<br>必要証拠金率は0より大きく100以下で入れてください。" : "")) + warn;
+      } else {
+        var side = v("side"), o = v("open"), c = v("close"), oz2 = v("oz"), fee = v("fee"), carry = v("carry"), r2 = v("rate");
+        if (![o, c, oz2].every(isFinite)) { out.textContent = "新規・決済の価格と数量を数字で入れてください。"; return; }
+        if (!(o > 0 && c > 0 && oz2 > 0)) { out.textContent = "価格と数量は0より大きい数字を入れてください。"; return; }
+        if (isNaN(fee)) fee = 0; if (isNaN(carry)) carry = 0;
+        if (!isFinite(fee) || fee < 0) { out.textContent = "手数料は0以上の数字にしてください。"; return; }
+        if (!isFinite(carry)) { out.textContent = "持ち越しは数字で入れてください（受取は＋、支払は−）。"; return; }
+        var diff = (c - o) * side, gross = diff * oz2, net = gross - fee + carry, sg = function (x, d2) { return (x >= 0 ? "+" : "−") + fmt(Math.abs(x), d2); };
+        out.innerHTML = "価格差 " + sg(diff, 2) + " ドル／オンス × " + fmt(oz2, 2) + " オンス ＝ " + sg(gross, 2) + " ドル。<br>手数料 −" + fmt(fee, 2) + "・持ち越し " + sg(carry, 2) + " を加えて <b>" + sg(net, 2) + " ドル</b>" +
+          (isFinite(r2) && r2 > 0 ? "（" + fmt(r2, 2) + " 円換算で <b>" + sg(net * r2) + " 円</b>）" : isFinite(r2) ? "。換算レートは0より大きい数字で。" : "") + "。";
+      }
+    }
     function runCalc(el) {
+      if (/^gold/.test(el.getAttribute("data-calc"))) { runGold(el); return; }
       var v = function (f) { var x = el.querySelector('[data-f="' + f + '"]'); return x && x.value.trim() !== "" ? Number(x.value) : NaN; }, out = el.querySelector("output"), fmt = function (n, d) { return n.toLocaleString("ja-JP", { maximumFractionDigits: d || 0 }); };
       if (el.getAttribute("data-calc") === "sizing") {
         var loss = v("loss"), pips = v("pips"), step = v("step");
@@ -3445,7 +3506,7 @@ html:not(.beginner) .step-tag { display: none; }
       if (L.diff) s += '<p class="lt-diff">' + esc(L.diff) + '</p>';
       if (L.takeaway) s += '<p class="lt-take">' + esc(L.takeaway) + '</p>';
       if (L.hide) s += '<p class="lt-note">' + esc(L.hide) + '</p>';
-      if (L.calc) s += calcHtml(L.calc);
+      if (L.calc) s += '<details class="lt-calcbox"><summary>計算してみる（数字を入れて試せます）</summary>' + calcHtml(L.calc) + '</details>';
       if (L.more) s += '<details class="lt-more"><summary>くわしい判定メモ</summary><dl class="lt-dl">' + L.more.map(function (d) { return '<dt>' + esc(d[0]) + '</dt><dd>' + esc(d[1]) + '</dd>'; }).join("") + '</dl></details>';
       return '<div class="gb-term lt" data-term="' + esc(t[0]) + '">' + head + s + relHtml(L.rel) + '</div>';
     };
@@ -3525,7 +3586,7 @@ html:not(.beginner) .step-tag { display: none; }
         var bm = 0; try { bm = +localStorage.getItem(BK.bm) || 0; } catch (e) {}
         inner = '<div class="gb-cover"><small>' + BK.en + '</small><h1>' + BK.title + '</h1><p>' + BK.data.length + '章・' + total + (BK.learn ? '項目' : '語') + '｜章をタップするとそのページへ</p>' +
           (BK.lead ? '<p class="gb-lead">' + esc(BK.lead) + '</p>' : '') +
-          '<p class="gb-hint">左右にスワイプ、または下の「次のページ ›」「‹ 前のページ」でページをめくれます</p>' + (BK.version ? '<p class="gb-ver">' + esc(BK.version) + '</p>' : '') + '</div><ol class="gb-toc">' +
+          '<p class="gb-hint">左右にスワイプ、または下の「次のページ ›」「‹ 前のページ」でページをめくれます</p>' + (BK.version ? '<p class="gb-ver">' + esc(BK.version) + '</p>' : '') + '</div><ol class="gb-toc' + (BK.data.length > 10 ? ' many' : '') + '">' +
           BK.data.map(function (c, ci) { return '<li><button type="button" data-go="' + chStart[ci] + '"><i>第' + (ci + 1) + '章</i><span><b>' + esc(c.t) + '</b><small>' + esc(c.s) + '</small></span><em>p.' + (chStart[ci] + 1) + '</em></button></li>'; }).join("") +
           '<li><button type="button" data-go="' + idxStart + '"><i>索引</i><span><b>索引</b><small>用語をあいうえお順に</small></span><em>p.' + (idxStart + 1) + '</em></button></li></ol>' +
           (bm > 0 && bm < pages.length ? '<button type="button" class="gb-resume" data-go="' + bm + '">しおり：前回の続き（p.' + (bm + 1) + '）から読む</button>' : '');
@@ -3543,6 +3604,7 @@ html:not(.beginner) .step-tag { display: none; }
       spread.className = "gb-spread" + (two ? " two" : "");
       spread.innerHTML = pageHtml(i) + (two ? pageHtml(i + 1) : "");
       Array.prototype.forEach.call(spread.children, function (el) { el.style.width = sz.w + "px"; });
+      Array.prototype.forEach.call(spread.querySelectorAll(".lt-calc"), runCalc);  // 初期値での計算結果を最初から見せる
       if (dir) { void spread.offsetWidth; spread.classList.add(dir > 0 ? "turn-next" : "turn-prev"); }
       var p = pages[i], last = Math.min(pages.length, i + step);
       document.getElementById("gb-chap").textContent = p.kind === "ch" ? "第" + (p.ch + 1) + "章　" + BK.data[p.ch].t : p.kind === "idx" ? "索引" : "目次";
@@ -3565,7 +3627,7 @@ html:not(.beginner) .step-tag { display: none; }
     var hasName = function (b, term) { return b.data && b.data.some(function (c) { return c.terms.some(function (t) { return t[0] === term; }); }); };
     // 用語名・別名・"本:キー" から、どの本のどの項目かを決める（名前の完全一致 → 別名の順、本は FX → 経済 → 図鑑 → ドル円 → FVG）
     function resolve(term) {
-      var m = /^(fx|eco|pattern|usdjpy|fvg):(.+)$/.exec(term);
+      var m = /^(fx|eco|gold|pattern|usdjpy|fvg):(.+)$/.exec(term);
       if (m) { var b = BOOKS[m[1]], k = m[2]; return { book: m[1], key: (b.ids && b.ids[k]) || k }; }
       for (var i = 0; i < ORDER.length; i++) if (hasName(BOOKS[ORDER[i]], term)) return { book: ORDER[i], key: term };
       for (i = 0; i < ORDER.length; i++) if (has(BOOKS[ORDER[i]], term)) return { book: ORDER[i], key: term };
@@ -3630,6 +3692,7 @@ html:not(.beginner) .step-tag { display: none; }
     sin.addEventListener("input", runSearch);
     sbox.addEventListener("keydown", function (e) { if (e.key === "Enter") { var f = slist.querySelector("button"); if (f) f.click(); } });
     spread.addEventListener("input", function (e) { var c = e.target.closest(".lt-calc"); if (c) runCalc(c); });
+    spread.addEventListener("toggle", function (e) { if (e.target.open) Array.prototype.forEach.call(e.target.querySelectorAll(".lt-calc"), runCalc); }, true);
     spread.addEventListener("change", function (e) { var c = e.target.closest(".lt-calc"); if (c) runCalc(c); });
     var hm = /[#&]gloss=([^&]+)/.exec(location.hash); if (hm) setTimeout(function () { window.openGlossary(decodeURIComponent(hm[1])); }, 300);
     document.addEventListener("click", function (e) {
@@ -3653,7 +3716,7 @@ html:not(.beginner) .step-tag { display: none; }
     });
     document.addEventListener("keydown", function (e) {
       if (book.hidden) return;
-      if (e.key === "Escape") { if (!closeZoom() && !closeSearch()) close(); else if (sbox.hidden) book.querySelector('[data-gl="search"]').focus(); return; }
+      if (e.key === "Escape") { if (closeZoom()) return; if (closeSearch()) book.querySelector('[data-gl="search"]').focus(); else close(); return; }
       if (!zoom.hidden || !sbox.hidden || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;  // 入力中・拡大中は矢印でページを送らない
       if (e.key === "ArrowRight") show(cur + (two ? 2 : 1), 1);
       else if (e.key === "ArrowLeft") show(cur - (two ? 2 : 1), -1);

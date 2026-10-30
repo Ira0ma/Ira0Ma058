@@ -1,0 +1,62 @@
+[
+  {
+    "id": "lbma-ounce",
+    "title": "LBMA：The Troy Ounce",
+    "url": "https://www.lbma.org.uk/wonders-of-gold/items/the-troy-ounce",
+    "use": "トロイオンスのグラム換算"
+  },
+  {
+    "id": "lbma-price",
+    "title": "LBMA：About LBMA Daily Auction Prices",
+    "url": "https://www.lbma.org.uk/prices-and-data/about-lbma-daily-auction-prices",
+    "use": "金の国際的な価格指標と単位の参考"
+  },
+  {
+    "id": "cme-gold",
+    "title": "CME Group：Gold Product Overview",
+    "url": "https://www.cmegroup.com/education/courses/event-contracts-underlying-markets/product-gold",
+    "use": "取引所先物の標準化された契約の参考。CFD全般の仕様ではない"
+  },
+  {
+    "id": "fed-gold",
+    "title": "Chicago Fed：What Drives Gold Prices?",
+    "url": "https://www.chicagofed.org/publications/chicago-fed-letter/2021/464",
+    "use": "実質金利、期待、金価格の関係を学ぶ参考。将来の予測式として使わない"
+  },
+  {
+    "id": "wgc-drivers",
+    "title": "World Gold Council：What drives gold?",
+    "url": "https://www.gold.org/goldhub/research/what-drives-gold",
+    "use": "金の多様な価格材料を整理する参考"
+  },
+  {
+    "id": "fsa-fx",
+    "title": "金融庁：いわゆる外国為替証拠金取引について",
+    "url": "https://www.fsa.go.jp/ordinary/iwagai/",
+    "use": "店頭FXの証拠金規制・リスクの参考。金の商品へ同条件を自動適用しない"
+  },
+  {
+    "id": "bls-cpi",
+    "title": "米BLS：CPI公表予定",
+    "url": "https://www.bls.gov/schedule/news_release/cpi.htm",
+    "use": "最新の公式予定を確認する入口"
+  },
+  {
+    "id": "bls-jobs",
+    "title": "米BLS：Employment Situation公表予定",
+    "url": "https://www.bls.gov/schedule/news_release/empsit.htm",
+    "use": "雇用統計の公式予定を確認する入口"
+  },
+  {
+    "id": "bea-pce",
+    "title": "米BEA：PCE Price Index",
+    "url": "https://www.bea.gov/data/personal-consumption-expenditures-price-index",
+    "use": "PCE価格指数の説明"
+  },
+  {
+    "id": "fed-fomc",
+    "title": "FRB：FOMC会合・声明",
+    "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+    "use": "最新の会合、声明、会見資料の入口"
+  }
+]

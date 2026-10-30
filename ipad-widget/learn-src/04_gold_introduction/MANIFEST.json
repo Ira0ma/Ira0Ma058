@@ -1,0 +1,422 @@
+[
+  {
+    "path": "START_HERE.md",
+    "bytes": 8074,
+    "sha256": "a564c441908d7c8452c0997c29bc11bab512f2e689e4438fedecacb47516c53e"
+  },
+  {
+    "path": "COPY_TO_CLAUDE.txt",
+    "bytes": 704,
+    "sha256": "d5bce862c7ccab15f80decccaf698518b0b728f0cfb678df3dbe55c53c8a806b"
+  },
+  {
+    "path": "README.txt",
+    "bytes": 1326,
+    "sha256": "8cec9bc51bce385f41951aa2870469a04e8ba4758c1a4a2b8e8f7a361e7a6bc2"
+  },
+  {
+    "path": "QUALITY_CHECK.md",
+    "bytes": 1508,
+    "sha256": "cfb2738d8c6ab4e8b4608ebeb6f457dba59b8be45f30d632f25333f853877dae"
+  },
+  {
+    "path": "book.meta.json",
+    "bytes": 1434,
+    "sha256": "2b6c5d5b3255d29f9bbb6cfdae0627740601a1e4e20fcdfde69d6b66fe27e9b8"
+  },
+  {
+    "path": "gold-introduction.pdf",
+    "bytes": 1728580,
+    "sha256": "dc7dbb8870f2e2c8707dfd886bd665f6375d9e490bbac737095709ec7eba9ffc"
+  },
+  {
+    "path": "gold-introduction.html",
+    "bytes": 234189,
+    "sha256": "2f23c7a59c85bc935f210f8482b4e9cdbc398cada4eb82a8781ed3e9a3b4a95b"
+  },
+  {
+    "path": "gold-introduction.epub",
+    "bytes": 131138,
+    "sha256": "76328395f0a2d3255bc1bb11b8a5585edc81abc8b5a78280e164e19f0e18d19c"
+  },
+  {
+    "path": "gold-introduction.md",
+    "bytes": 92503,
+    "sha256": "af2e18a5f59e8f9e9e819f6e3f1229368bc16fcc8936eeadf94a535986cb94ca"
+  },
+  {
+    "path": "lessons.json",
+    "bytes": 79675,
+    "sha256": "6fcf181ce2a2d67de42da49e4fbdf78a1221e570dea7d8dd0e0f6e5c0e429bce"
+  },
+  {
+    "path": "front-back-matter.json",
+    "bytes": 33479,
+    "sha256": "d757678abcc31a40a388da24719c0617a7cc2a3de5ab7466135cd88e15400ae7"
+  },
+  {
+    "path": "sources.json",
+    "bytes": 2309,
+    "sha256": "bad3112c3cc6a0ac8235ae0c9da733bfd5da334dd9b9f5bef8f8f25e18b5a898"
+  },
+  {
+    "path": "figures/backtest.svg",
+    "bytes": 1559,
+    "sha256": "737e1ef24d67989cedf8de2ca10b633cf8b1dfe7a2fcc5b7dc899e8bba4ee9a0"
+  },
+  {
+    "path": "figures/breakout.svg",
+    "bytes": 1507,
+    "sha256": "82733ad02e126c509398b9423b0790667dbfc0235496c3d34301374b7157be98"
+  },
+  {
+    "path": "figures/candle.svg",
+    "bytes": 1246,
+    "sha256": "26c48fa2b10e4da5190f81310ba0ef408cb83916f7dfe06b54a727042c676be4"
+  },
+  {
+    "path": "figures/candlestick-pattern.svg",
+    "bytes": 959,
+    "sha256": "762920ce7a126d7ac6ef325c4e2026c02d9e51009288e5c5a3901a37a21b8225"
+  },
+  {
+    "path": "figures/continuation.svg",
+    "bytes": 1377,
+    "sha256": "2ab55963f25a2b5aef7c73f22a543a6b1e412d07dac4061fe931a277c088926a"
+  },
+  {
+    "path": "figures/conversion.svg",
+    "bytes": 1028,
+    "sha256": "37a929d14b8b608511822e0124acd0dc70e11a0b20517157858178a18683f2ab"
+  },
+  {
+    "path": "figures/costs.svg",
+    "bytes": 724,
+    "sha256": "ccc5b27ede0e2cbf97a45bbacc4ff3fc6bd3333e3e752c4fec82841ae9af596d"
+  },
+  {
+    "path": "figures/cpi.svg",
+    "bytes": 1076,
+    "sha256": "4645c292bbb80be85682ee24df857a0b77fd0679efd450c6f7e924427a11fd50"
+  },
+  {
+    "path": "figures/demand.svg",
+    "bytes": 1567,
+    "sha256": "a29c85872ead1b7996cf16c3342b8f636baaae215c903a54ba4b04882a8a61a7"
+  },
+  {
+    "path": "figures/demo.svg",
+    "bytes": 1085,
+    "sha256": "dee965bd5323fbf01c470d57e7fe7f5673e2cb8d04b18af7a34953d3adce9007"
+  },
+  {
+    "path": "figures/desk.svg",
+    "bytes": 1534,
+    "sha256": "c1e20b120a3992bc0d1d37830c6329d818a012c4fb99723da700da725f651135"
+  },
+  {
+    "path": "figures/documents.svg",
+    "bytes": 1426,
+    "sha256": "6216d8e791f4b74a8dc20a05b3c9ad0c8ca732af73dcf112e661d032a1d2f23e"
+  },
+  {
+    "path": "figures/dollar.svg",
+    "bytes": 1046,
+    "sha256": "000b44a5325deb966315c42ce6700ff877b6cb66a44d949aec3777175280a972"
+  },
+  {
+    "path": "figures/drawdown.svg",
+    "bytes": 1013,
+    "sha256": "326b40b9f0a3883555cb21f87c59d800785548b94f7c99406466037008925cac"
+  },
+  {
+    "path": "figures/dst.svg",
+    "bytes": 1081,
+    "sha256": "c91002f88cbbd161e4f9efed929a348b0c1b7f4f72b09cd925c23a846bcffced"
+  },
+  {
+    "path": "figures/emotions.svg",
+    "bytes": 1438,
+    "sha256": "9f0b15924f23df2ced722c9f120018cc8657fbcf990f64e320acee961f0593c1"
+  },
+  {
+    "path": "figures/exits.svg",
+    "bytes": 1074,
+    "sha256": "d2023e53241208a3e747407783e30bcbb86479c437a340cf68fdd4b8d20a7c9f"
+  },
+  {
+    "path": "figures/expectancy.svg",
+    "bytes": 745,
+    "sha256": "ab8e60864963cc2f7a00f4d825ce17d9e0e80a3f8455bd0ea682c3cfc706d58b"
+  },
+  {
+    "path": "figures/expectations.svg",
+    "bytes": 1408,
+    "sha256": "f61de1d65095d63d922bfaaa4d4ccc9577bdc40035ee497a5a7173a3f4a74d0e"
+  },
+  {
+    "path": "figures/fomc.svg",
+    "bytes": 1414,
+    "sha256": "90f77af60fc16bec32c5da7343b67244f1efe23bcd8267c1e9a63dc0ced305e5"
+  },
+  {
+    "path": "figures/fvg.svg",
+    "bytes": 1617,
+    "sha256": "94569f2e515eb266845a2b8aaeab6efffb42c0bfda208c698f585acf1fa17caf"
+  },
+  {
+    "path": "figures/gaps.svg",
+    "bytes": 1080,
+    "sha256": "d7707e6fd4ef431ea6d178a56b3814a3a98edd5eca67742a9864cdb170c61ed3"
+  },
+  {
+    "path": "figures/gold-vs-fx.svg",
+    "bytes": 1013,
+    "sha256": "047a19890acceb2d80335f2ef6d675227397dd76be3879c76b21c2afd6e6a250"
+  },
+  {
+    "path": "figures/indicators.svg",
+    "bytes": 1393,
+    "sha256": "0fdc7ea26d0439bec42a0e330143c63355e16a8d694fd90b0be11d7e3bf3dde0"
+  },
+  {
+    "path": "figures/inflation.svg",
+    "bytes": 1408,
+    "sha256": "7ca9007778cd628f710773386b879b217e9cad2c1614a38d5e1189d8cf1c68a5"
+  },
+  {
+    "path": "figures/jobs.svg",
+    "bytes": 1414,
+    "sha256": "03c8a66e65e114dc6e194006e8716ad79cb9d1770ca4a960a601935a7c47522d"
+  },
+  {
+    "path": "figures/journal.svg",
+    "bytes": 1420,
+    "sha256": "b4b54121114f3ebbea5b0f7fbc2995b16878f673cdb776ab2e91cd5a46776ac0"
+  },
+  {
+    "path": "figures/levels.svg",
+    "bytes": 1326,
+    "sha256": "d28d02fef3a54f5f7b3b06b95ff0b433ed891bdf6c59ca9f4b125525e132c7f9"
+  },
+  {
+    "path": "figures/leverage.svg",
+    "bytes": 1110,
+    "sha256": "020f962325d2750a12b0d863b0da237c0cea6b7fc05c99557e5d62d68c398377"
+  },
+  {
+    "path": "figures/linked-orders.svg",
+    "bytes": 1429,
+    "sha256": "f0d98549942b7cfc7a7dab6d83ec9bfefae579e21e8cd1af470b8b89a7f0334b"
+  },
+  {
+    "path": "figures/long-pnl.svg",
+    "bytes": 717,
+    "sha256": "413a2711ce27cacf4b6c7f17e4506a28100578c9d9122a10076b941749dfa700"
+  },
+  {
+    "path": "figures/lots.svg",
+    "bytes": 1199,
+    "sha256": "8fa2ae8e784cef306e4aa5ba3e19986c0f425a860d8dacbfe10247ff17bd3f5b"
+  },
+  {
+    "path": "figures/ma.svg",
+    "bytes": 845,
+    "sha256": "e9a39d2ebb424ed88029d4a8b872a1ed138376f503d2eeca9d94dda274b7b27e"
+  },
+  {
+    "path": "figures/management.svg",
+    "bytes": 1426,
+    "sha256": "c729cb2451c95a94d173084c513bff0ec76fb45c975181ba34bfddfd86c9264c"
+  },
+  {
+    "path": "figures/margin.svg",
+    "bytes": 744,
+    "sha256": "0227c75d8ccf006d0dbc5ab9a9d194e268f118f27ffb50e6f089896e4c459af4"
+  },
+  {
+    "path": "figures/news.svg",
+    "bytes": 1531,
+    "sha256": "007fa5feda9b2bc4cfc06fd297567b5d36c1d81ba3ab74fe2132fb8fc40f60e6"
+  },
+  {
+    "path": "figures/next.svg",
+    "bytes": 1570,
+    "sha256": "6f85f90b99520d8b4df4939f6ebc58d310e179fdec2e33dae4cd48faf072633d"
+  },
+  {
+    "path": "figures/notional.svg",
+    "bytes": 1420,
+    "sha256": "6f7463e0fc209d13fdfc194eec98982f47ae75c7de5b224ef21404207c487c95"
+  },
+  {
+    "path": "figures/opportunity.svg",
+    "bytes": 1115,
+    "sha256": "5de71f6d45456066949c461af3f71a146088acb75526ce1a4274881d288409b1"
+  },
+  {
+    "path": "figures/orders.svg",
+    "bytes": 1396,
+    "sha256": "cce4b519ae6eedef34909de76138f3645f13ce963dcc2e1097d103d9596abc61"
+  },
+  {
+    "path": "figures/ounce.svg",
+    "bytes": 704,
+    "sha256": "5769e299b25ea8a0fb8bec704cc1115b064838bce783af497d99f0ec1d9bb429"
+  },
+  {
+    "path": "figures/outage.svg",
+    "bytes": 1425,
+    "sha256": "b96be5fa4aa7a072dc43b1cfda4a524b27ddf51d8421fd2490440ffdfcd72891"
+  },
+  {
+    "path": "figures/pause.svg",
+    "bytes": 1168,
+    "sha256": "b68488db5d2723f033a1b69f488ec681d81f94719daec06cf964edca93cb0e6b"
+  },
+  {
+    "path": "figures/portfolio.svg",
+    "bytes": 753,
+    "sha256": "0a3172f0d157c187ce1315dce3f8f4678685d68264dbc0ae8e57cd832ffbf311"
+  },
+  {
+    "path": "figures/position-sizing.svg",
+    "bytes": 749,
+    "sha256": "b2d5fdc6c50161c34c4b4253ffe75ec428900cd169d9ade0d9b4913d37da6c58"
+  },
+  {
+    "path": "figures/preflight.svg",
+    "bytes": 1045,
+    "sha256": "a08ad172d234f04c5c647610b0e8dd5223208c15b21f26e2aa6b86345f24b444"
+  },
+  {
+    "path": "figures/products.svg",
+    "bytes": 1528,
+    "sha256": "3a614ea7e34500e2bdcc845b8a04eaee70430e4bc04e6cbf79f8e3dff512fe48"
+  },
+  {
+    "path": "figures/quiz.svg",
+    "bytes": 1525,
+    "sha256": "a9f1c8071e222e956c0b4f89be4c4e35131f99f3da4dafd4efadfdddea83ccbe"
+  },
+  {
+    "path": "figures/quote.svg",
+    "bytes": 698,
+    "sha256": "57d92abe65540b27e5a57356ccef888825caf958bcefd6664d097720400987bc"
+  },
+  {
+    "path": "figures/range-triangle.svg",
+    "bytes": 1280,
+    "sha256": "fa783d0827215e1eac7359527c4ca74a6496523d6228b7a158cabe7161f5b975"
+  },
+  {
+    "path": "figures/real-rates.svg",
+    "bytes": 1098,
+    "sha256": "47093c40329708c9e45fc86b9644065a724820b22ba7ddc0d5b356f1ef39f27d"
+  },
+  {
+    "path": "figures/reversals.svg",
+    "bytes": 948,
+    "sha256": "6aa027adb1609013df748da0f3cfa020716c04a10fb4e6085b30657f3cb41a95"
+  },
+  {
+    "path": "figures/review.svg",
+    "bytes": 1423,
+    "sha256": "f013cc944d0e429cf51b5e72c23b717e074a8d22e20d3249ede10f6daa8cd51b"
+  },
+  {
+    "path": "figures/risk-budget.svg",
+    "bytes": 726,
+    "sha256": "9e3a6917929e4048e83878c92fb67cad0cda4cbe33ca62d7b1871112e892a22e"
+  },
+  {
+    "path": "figures/routine.svg",
+    "bytes": 1504,
+    "sha256": "d975c7c6b83ad8cb064e7376a7013339c22e3a89121e8bed0bb95c43585bdeb6"
+  },
+  {
+    "path": "figures/scenario.svg",
+    "bytes": 1432,
+    "sha256": "33cd1d4bb1a233482fe7b051fdb0d60160a3404ba050ecc7bac1601c0f880bfa"
+  },
+  {
+    "path": "figures/sessions.svg",
+    "bytes": 1420,
+    "sha256": "833c2bda865d32612b64ee6ff83c7955f57b3a5af5551907c4ff83206444a904"
+  },
+  {
+    "path": "figures/short-pnl.svg",
+    "bytes": 717,
+    "sha256": "8f5478031c5eb8427ff82d686402cf1365565bcb403737a8792d9062c5063824"
+  },
+  {
+    "path": "figures/specs.svg",
+    "bytes": 1555,
+    "sha256": "09dce33878ac4d80ad87aaaabaea4f2685cf561f801887c41202e71f0f29864b"
+  },
+  {
+    "path": "figures/spot-future.svg",
+    "bytes": 1043,
+    "sha256": "b0f3517e5c5c9ce72c33c9dd0d7e6ac9f86b1261036b28ac1fc407857f63a571"
+  },
+  {
+    "path": "figures/spread.svg",
+    "bytes": 1092,
+    "sha256": "485ef47be291392f9959996b377cca1704c86f13f280f3389c96b9643dbbd0a0"
+  },
+  {
+    "path": "figures/start.svg",
+    "bytes": 1516,
+    "sha256": "48a739825c6c8dbca7dd3d989d30bcdcb99e803957c424a96ddef767fb0c0fd1"
+  },
+  {
+    "path": "figures/steps.svg",
+    "bytes": 721,
+    "sha256": "0c6f1b195983ccd3de84cd510af60df5811dbeb4186dfbe6af6b8ec906da7f78"
+  },
+  {
+    "path": "figures/stop-width.svg",
+    "bytes": 1087,
+    "sha256": "feec397986f804e08e3f9e411d9ae090d4a2eb63596b252031790aa65653de7c"
+  },
+  {
+    "path": "figures/swings.svg",
+    "bytes": 879,
+    "sha256": "264a4831717292abd3d77cd3e923c685278125b6378eb4765ecb039bb34cb8fc"
+  },
+  {
+    "path": "figures/ticks.svg",
+    "bytes": 1032,
+    "sha256": "3169d84876258d5ba3acd0482b78e8fb895c4a2e70429428c3c0c0d5791a89e4"
+  },
+  {
+    "path": "figures/timeframes.svg",
+    "bytes": 1388,
+    "sha256": "f128c2a39f0d8172ffa1f7df923fcb488a92316caf0e6281f4471f46b3bff2b2"
+  },
+  {
+    "path": "figures/unrealized.svg",
+    "bytes": 1391,
+    "sha256": "f716ba5b7eed8c0df69855d1b5b9a23217e760d3a28dcf30f2c93254c7838978"
+  },
+  {
+    "path": "figures/worked-pnl.svg",
+    "bytes": 732,
+    "sha256": "6b927e35ac11d04901add09cd157f13b9175986aa31e79ed63798aa1a23257c0"
+  },
+  {
+    "path": "figures/worked-scenario.svg",
+    "bytes": 1040,
+    "sha256": "aadecb7db1afd10e145782c19fb80d0e8924097ce244d8774e774a01d61bf29a"
+  },
+  {
+    "path": "figures/worked-size.svg",
+    "bytes": 1560,
+    "sha256": "9d3bc41dbe8c5e1087e291d4709420797efbef3f45545daf0b2a49864ebb2de9"
+  },
+  {
+    "path": "figures/yen-gold.svg",
+    "bytes": 721,
+    "sha256": "343e4d102ca9ace32a7ba0b6099fba56f13da649cde8aa9e3330ca61e725a3be"
+  }
+]
