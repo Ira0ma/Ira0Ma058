@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="7e8121bbe9">
+<meta name="build" content="28eb594db9">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -211,10 +211,10 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .plrow.tp b{color:var(--green)}
 /* 利確の時間足：15分足＝水色（早めの利確）、1時間足＝緑（本命の利確） */
 .tf5{color:#c792ff}.reason .tf5{font-weight:700}.plrow.tp5 b{color:#c792ff}
-.tf15{color:#5cc8ff}.tf60{color:var(--green)}.reason .tf15,.reason .tf60{font-weight:700}
+.tf15{color:#5cc8ff}.tf60{color:var(--green)}.tfday{color:#ffa94d}.reason .tf15,.reason .tf60,.reason .tfday{font-weight:700}.plrow.tpday b{color:#ffa94d}
 .tp15row{margin-left:14px;padding:5px 9px}.tp15row>span{font-size:11px}
 .tpbasis{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:8px 0 6px;font-size:11px;color:var(--muted)}
-.tpbasis .seg{padding:6px 11px}
+.tpbasis .seg{padding:6px 11px}.tpbasis .segmented{flex-wrap:wrap;flex:0 1 auto}
 .reason.unused{opacity:.6}.tpuse{color:var(--gold2);font-weight:700}
 .plrow.tp15 b{color:#5cc8ff}.plrow span b{font-size:12px;text-align:left}.plrow.sl b{color:var(--red)}
 .plfoot{font-size:10px;color:var(--muted);text-align:right;margin-top:4px}
@@ -500,7 +500,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div class="meter"><i id="meter"></i></div>
       <div class="sub">判定強度 <b id="confidence">--</b></div>
       <div class="tpbasis"><span>利確判定の基準</span><div class="segmented" id="tpBasisSeg">
-        <button class="seg" data-tpb="h1">1時間足</button><button class="seg" data-tpb="m15">15分足</button><button class="seg" data-tpb="m5" title="5分足の水平線で利確を判定">スキャルピング</button><button class="seg" data-tpb="all">すべて</button></div></div>
+        <button class="seg" data-tpb="h1">1時間足</button><button class="seg" data-tpb="m15">15分足</button><button class="seg" data-tpb="m5" title="5分足の水平線で利確を判定">スキャルピング</button><button class="seg" data-tpb="day" title="4時間足・日足の水平線で利確を判定">デイトレード</button><button class="seg" data-tpb="all">すべて</button></div></div>
       <div class="reasons">
         <div class="reason"><span>① H1 120SMA</span><b id="reasonSma">--</b></div>
         <div class="reason"><span>② H1モメンタム(3本)</span><b id="reasonMom">--</b></div>
@@ -508,6 +508,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
         <div class="reason"><span>④ 利確余地・<b class="tf60">1時間足</b>（<span id="minTpLabel">50</span>pips以上｜<span id="tp60Use">判定</span>）</span><b id="reasonTp">--</b></div>
         <div class="reason tp15row"><span>└ 利確余地・<b class="tf15">15分足</b>（<span id="minTpLabel15">50</span>pips以上｜<span id="tp15Use">参考</span>）</span><b id="reasonTp15">--</b></div>
         <div class="reason tp15row"><span>└ 利確余地・<b class="tf5">5分足</b>（<span id="minTpLabel5">50</span>pips以上｜<span id="tp5Use">参考</span>）</span><b id="reasonTp5">--</b></div>
+        <div class="reason tp15row"><span>└ 利確余地・<b class="tfday">4時間足・日足</b>（<span id="minTpLabelDay">50</span>pips以上｜<span id="tpDayUse">参考</span>）</span><b id="reasonTpDay">--</b></div>
         <div class="reason" id="cupRow" hidden><span>⑤ チャートパターン</span><b id="reasonCup">--</b></div>
       </div>
       <div id="patList" class="patlist" hidden></div>
@@ -733,7 +734,7 @@ const LSP=INSTR.key+'_';  // 端末に保存する設定は銘柄ごとに分け
   document.title=INSTR.title+' Trade Dashboard';
   t('h1Sym',INSTR.title);t('subTitle',INSTR.sub);t('miniSym',INSTR.short);t('instrLabel',INSTR.label);
   t('chartTitle',INSTR.title+'チャート');t('sprPipNote',INSTR.pipNote);t('contractLabel','1lot契約量('+INSTR.unit+')');t('brokerNote',INSTR.brokerNote);
-  t('relBtn',INSTR.name+'関連');t('minTpLabel',INSTR.minTp);t('minTpLabel15',INSTR.minTp);t('minTpLabel5',INSTR.minTp);t('footerSrc',INSTR.footer);
+  t('relBtn',INSTR.name+'関連');t('minTpLabel',INSTR.minTp);t('minTpLabel15',INSTR.minTp);t('minTpLabel5',INSTR.minTp);t('minTpLabelDay',INSTR.minTp);t('footerSrc',INSTR.footer);
   if(IS_BTC){
     const logo=document.querySelector('.logo');if(logo){logo.textContent='₿';logo.style.fontSize='20px'}
     t('stat5Label','円換算 / BTC');
@@ -986,7 +987,7 @@ function loadPrefs(){
   state.showTrend=lsGet(LSP+'trend','1')==='1';
   loadMaOn();
   state.broker=BROKERS[lsGet(LSP+'broker','xm')]?lsGet(LSP+'broker','xm'):'xm';
-  {const b=lsGet(LSP+'tp_basis','h1');state.tpBasis=b==='both'?'all':['h1','m15','m5','all'].includes(b)?b:'h1'}  // 以前の「両方」は「すべて」に引き継ぐ
+  {const b=lsGet(LSP+'tp_basis','h1');state.tpBasis=b==='both'?'all':['h1','m15','m5','day','all'].includes(b)?b:'h1'}  // 以前の「両方」は「すべて」に引き継ぐ
    // 利確判定の基準（端末に保存）
   loadBroker();
 }
@@ -1612,6 +1613,9 @@ function renderTfGrid(){
 // H1の強い水平線：H1の山・谷（前後3本より高い／低い足）を集め、ATRの0.35倍以内に重なるものを1本にまとめる。
 // 2回以上反応した価格帯だけを残し、現在値より上を抵抗、下を支持として強い順に最大3本ずつ選ぶ。
 function h1Levels(){return srLevels(state.h1)}
+// 4時間足・日足の強い水平線（デイトレードの利確と、チャートに重ねる上位足の線に使う）
+function dayLevels(){return srLevels(state.h4).map(l=>({...l,tf:'h4'})).concat(srLevels(state.d1).map(l=>({...l,tf:'d1'})))}
+const TF_JA={h4:'4時間足',d1:'日足'};
 // 1本ずつ消した水平線（価格で覚える。足の更新で線の価格が少し動いても同じ線とみなす）
 let hiddenLv=[];try{hiddenLv=JSON.parse(lsGet(LSP+'hidden_lv','[]'))||[]}catch{}
 const LV_TOL=INSTR.tolMin*2;
@@ -1621,14 +1625,19 @@ function toggleLv(price){
   if(i>=0)hiddenLv.splice(i,1);else hiddenLv.push(+price);
   lsSet(LSP+'hidden_lv',JSON.stringify(hiddenLv));drawChart();
 }
-// 表示中の時間足の水平線：H1の線に、その時間足で3回以上止まった強い線を足す（H1の線と近いものはまとめて強い方の回数にする）
+// 表示中の時間足の水平線：H1の線に、その時間足で3回以上止まった強い線を足す（H1の線と近いものはまとめて強い方の回数にする）。
+// さらに4時間足・日足の強い水平線を、どの時間足のチャートにも重ねる（近い線があればその線を上位足の線として太く描く）
 function chartLevels(){
   const lv=h1Levels().map(l=>({...l,tf:'h1'}));
-  if(state.tf==='h1')return lv;
   const bars=state[state.tf]||[],tol=Math.max(INSTR.tolMin,(atr(bars,14)||1)*.35);
-  srLevels(bars).filter(l=>l.touches>=3).forEach(l=>{
+  if(state.tf!=='h1')srLevels(bars).filter(l=>l.touches>=3).forEach(l=>{
     const m=lv.find(h=>Math.abs(h.price-l.price)<=tol);
     if(m)m.touches=Math.max(m.touches,l.touches);else lv.push({...l,tf:state.tf});
+  });
+  const htol=Math.max(INSTR.tolMin,(atr(state.h1,14)||1)*.35);
+  dayLevels().sort((a,b)=>(b.tf==='d1')-(a.tf==='d1')).forEach(l=>{  // 日足を先に：両方に近い線は日足の線にする
+    const m=lv.find(h=>Math.abs(h.price-l.price)<=htol);
+    if(m){if(!m.big)m.big=l.tf;m.touches=Math.max(m.touches,l.touches)}else lv.push({...l,big:l.tf});
   });
   return lv;
 }
@@ -2022,12 +2031,13 @@ function calcSignal(){
 }
 // ゴールドの1pips＝0.1ドル（XMなど国内向け業者の一般的な表記。1lot＝100ozで1pips＝10ドル）
 const PIP=INSTR.pip, MIN_TP_PIPS=INSTR.minTp;
-// エントリー判定に使う利確余地：1時間足（本命の利確。パターンはその形の利確）、15分足、5分足（スキャルピング）、すべて（1時間足と15分足の両方が基準以上。スキャルピングは含めない）
-const TP_BASIS_NAME={h1:'1時間足',m15:'15分足',m5:'5分足（スキャルピング）',all:'1時間足・15分足'};
+// エントリー判定に使う利確余地：1時間足（本命の利確。パターンはその形の利確）、15分足、5分足（スキャルピング）、
+// 4時間足・日足（デイトレード）、すべて（1時間足と15分足の両方が基準以上。スキャルピング・デイトレードは含めない）
+const TP_BASIS_NAME={h1:'1時間足',m15:'15分足',m5:'5分足（スキャルピング）',day:'4時間足・日足（デイトレード）',all:'1時間足・15分足'};
 function tpPipsBy(pl){
   if(!pl)return 0;
-  const a=pl.tpPips,b=pl.tp15?pl.tp15.pips:0,c=pl.tp5?pl.tp5.pips:0;
-  return state.tpBasis==='m15'?b:state.tpBasis==='m5'?c:state.tpBasis==='all'?Math.min(a,b):a;
+  const a=pl.tpPips,b=pl.tp15?pl.tp15.pips:0,c=pl.tp5?pl.tp5.pips:0,d=pl.tpDay?pl.tpDay.pips:0;
+  return state.tpBasis==='m15'?b:state.tpBasis==='m5'?c:state.tpBasis==='day'?d:state.tpBasis==='all'?Math.min(a,b):a;
 }
 const tpOkBy=pl=>!!pl&&tpPipsBy(pl)>=MIN_TP_PIPS;
 // 売買プラン：エントリー＝現在値。損切り＝M15 ATR×倍率（最低2ドル）。
@@ -2035,11 +2045,11 @@ const tpOkBy=pl=>!!pl&&tpPipsBy(pl)>=MIN_TP_PIPS;
 // 一番近い水平線の利確（エントリーから5pips以上先）。5分足はいちばん早い利確（スキャルピング）、15分足は早めの利確、1時間足は本命の利確
 function levelTarget(lvs,dir,entry){
   const lv=lvs.filter(l=>dir>0?l.price>entry+5*PIP:l.price<entry-5*PIP).sort((x,y)=>Math.abs(x.price-entry)-Math.abs(y.price-entry))[0];
-  return lv?{price:lv.price,pips:Math.abs(lv.price-entry)/PIP,touches:lv.touches}:null;
+  return lv?{price:lv.price,pips:Math.abs(lv.price-entry)/PIP,touches:lv.touches,tf:lv.tf}:null;
 }
 function tradePlan(dir,cup){
   const pl=tradePlan0(dir,cup);
-  if(pl){pl.tp5=levelTarget(srLevels(state.m5),dir,pl.entry);pl.tp15=levelTarget(srLevels(state.m15),dir,pl.entry);pl.tp60=levelTarget(h1Levels(),dir,pl.entry)}
+  if(pl){pl.tp5=levelTarget(srLevels(state.m5),dir,pl.entry);pl.tp15=levelTarget(srLevels(state.m15),dir,pl.entry);pl.tp60=levelTarget(h1Levels(),dir,pl.entry);pl.tpDay=levelTarget(dayLevels(),dir,pl.entry)}
   return pl;
 }
 function tradePlan0(dir,cup){
@@ -2093,7 +2103,7 @@ function autoRisk(){
   $('entry').value=plan.entry.toFixed(2);
   $('stop').value=plan.sl.toFixed(2);
   // 利確判定を15分足（5分足）にしているときは、利確の入力もその時間足の線にする
-  $('target').value=(state.tpBasis==='m15'&&plan.tp15?plan.tp15.price:state.tpBasis==='m5'&&plan.tp5?plan.tp5.price:plan.tp).toFixed(2);
+  $('target').value=(state.tpBasis==='m15'&&plan.tp15?plan.tp15.price:state.tpBasis==='m5'&&plan.tp5?plan.tp5.price:state.tpBasis==='day'&&plan.tpDay?plan.tpDay.price:plan.tp).toFixed(2);
 }
 function calcRisk(){
   autoRisk();
@@ -2557,8 +2567,8 @@ function renderSnapshot(){
   }else{setReason('reasonSma','H1待ち',0);setReason('reasonMom','H1待ち',0)}
   if(d.hi&&d.lo){const mid=(d.hi+d.lo)/2;setReason('reasonRange',state.spot.price>=mid?'上半分（+1）':'下半分（−1）',state.spot.price>=mid?1:-1)}
   else setReason('reasonRange','取得中',0);
-  const all=state.tpBasis==='all',use60=all||state.tpBasis==='h1',use15=all||state.tpBasis==='m15',use5=state.tpBasis==='m5';
-  [['tp60Use','reasonTp',use60],['tp15Use','reasonTp15',use15],['tp5Use','reasonTp5',use5]].forEach(([u,r,on])=>{
+  const all=state.tpBasis==='all',use60=all||state.tpBasis==='h1',use15=all||state.tpBasis==='m15',use5=state.tpBasis==='m5',useDay=state.tpBasis==='day';
+  [['tp60Use','reasonTp',use60],['tp15Use','reasonTp15',use15],['tp5Use','reasonTp5',use5],['tpDayUse','reasonTpDay',useDay]].forEach(([u,r,on])=>{
     $(u).textContent=on?'判定':'参考';$(u).className=on?'tpuse':'';$(r).closest('.reason').classList.toggle('unused',!on)});
   setSegActive('#tpBasisSeg .seg','tpb',state.tpBasis);
   if(s.plan)setReason('reasonTp',Math.round(s.plan.tpPips)+'pips'+(s.plan.tpSrc==='H1水平線'?'（'+fmt(s.plan.tp)+'）':'')+(s.plan.tpPips>=MIN_TP_PIPS?' OK':' 不足'),use60&&s.plan.tpPips>=MIN_TP_PIPS?(s.sig==='BUY'?1:-1):0);
@@ -2570,6 +2580,9 @@ function renderSnapshot(){
   const t5=s.plan&&s.plan.tp5;
   setReason('reasonTp5',!s.plan?(s.ready?'方向が決まると計算':'取得中'):t5?Math.round(t5.pips)+'pips（'+fmt(t5.price)+'）'+(t5.pips>=MIN_TP_PIPS?' OK':' 不足'):'5分足の線なし',0);
   $('reasonTp5').classList.add('tf5');
+  const td=s.plan&&s.plan.tpDay;
+  setReason('reasonTpDay',!s.plan?(s.ready?'方向が決まると計算':'取得中'):td?Math.round(td.pips)+'pips（'+TF_JA[td.tf]+' '+fmt(td.price)+'）'+(td.pips>=MIN_TP_PIPS?' OK':' 不足'):'4時間足・日足の線なし',0);
+  $('reasonTpDay').classList.add('tfday');
   if(INSTR.patterns){
     $('cupRow').hidden=false;
     const ps=s.pats||[],br=ps.filter(p=>p.state==='breakout'),fm=ps.filter(p=>p.state==='forming');
@@ -2604,6 +2617,7 @@ function renderPlan(s){
        [pl.tp5.pips,row('利確 <b class="tf5">5分足</b>',fmt(pl.tp5.price),'+'+Math.round(pl.tp5.pips)+'pips｜5分足の水平線（スキャルピングの利確）'+(state.tpBasis==='m5'?'｜判定に使用':''),'tp5')],
      pl.tp15&&(pl.tp15.pips<pl.tpPips-1||state.tpBasis==='m15'||state.tpBasis==='all')&&
        [pl.tp15.pips,row('利確 <b class="tf15">15分足</b>',fmt(pl.tp15.price),'+'+Math.round(pl.tp15.pips)+'pips｜15分足の水平線（早めの利確・一部決済の目安）'+(state.tpBasis==='m15'||state.tpBasis==='all'?'｜判定に使用':''),'tp15')],
+     pl.tpDay&&[pl.tpDay.pips,row('利確 <b class="tfday">'+TF_JA[pl.tpDay.tf]+'</b>',fmt(pl.tpDay.price),'+'+Math.round(pl.tpDay.pips)+'pips｜'+TF_JA[pl.tpDay.tf]+'の水平線（デイトレードの利確）'+(state.tpBasis==='day'?'｜判定に使用':''),'tpday')],
      [pl.tpPips,row(pl.tpSrc==='H1水平線'?'利確 <b class="tf60">1時間足</b>':'利確目安',fmt(pl.tp),'+'+Math.round(pl.tpPips)+'pips｜'+(pl.tpSrc==='H1水平線'?'1時間足の水平線（本命の利確）':pl.tpSrc)+(state.tpBasis==='h1'||state.tpBasis==='all'?'｜判定に使用':''),'tp')]]
       .filter(Boolean).sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join('')+
     (pl.tpSrc!=='H1水平線'&&pl.tp60?row('参考 <b class="tf60">1時間足</b>',fmt(pl.tp60.price),'+'+Math.round(pl.tp60.pips)+'pips｜1時間足の水平線','tp'):'')+
@@ -2683,9 +2697,17 @@ function drawChart(){
   // 水平線：H1の線はどの時間足にも引き、表示中の時間足の強い線も足す
   // 強い線（どの時間足でも3回以上止まった）は点滅用のキャンバスに引く
   const bl=sizeCanvas($('chartBlink')).ctx;bl.clearRect(0,0,W,H);
+  const bigBoxes=[];  // 4時間足・日足の線の名前（ローソク足を描いたあとで左端に出す）
   levels.forEach(l=>{
     if(l.price<min||l.price>max)return;
     const yy=Math.round(y(l.price))+.5,col=l.kind==='r'?'255,105,105':'66,213,156',strong=l.touches>=3,g=strong?bl:ctx;
+    if(l.big){
+      // 4時間足・日足の線：太い線と、左端に時間足の名前（日足はさらに太く）
+      ctx.strokeStyle=`rgba(${col},.85)`;ctx.lineWidth=l.big==='d1'?2.6:2;ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();
+      if(strong){bl.strokeStyle=`rgba(${col},.18)`;bl.lineWidth=8;bl.beginPath();bl.moveTo(P.l,yy);bl.lineTo(W-P.r,yy);bl.stroke()}
+      bigBoxes.push({yy,col,big:l.big,kind:l.kind});  // 名前はローソク足の上に描く（下の「水平線の価格」の前）
+      return;
+    }
     if(strong){
       // 強い線：本体の線は消えずに残し、点滅用のキャンバスに光の帯と明るい線を重ねて、ゆっくり浮かび上がらせる
       ctx.strokeStyle=`rgba(${col},.55)`;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();
@@ -2898,6 +2920,18 @@ function drawChart(){
   }
   drawLowLabels();
 
+  // 4時間足・日足の線の名前を左端に（近い線どうしは右へずらして重ねない）
+  ctx.save();ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='bottom';
+  const bigPut=[],bigNarrow=W-P.l-P.r<520;  // スマホの幅では「4H」「日足」だけにして、近い線の名前は省く
+  bigBoxes.forEach(({yy,col,big,kind})=>{
+    const txt=bigNarrow?(big==='d1'?'日足':'4H'):(big==='d1'?'日足':'4時間足')+(kind==='r'?' 抵抗':' 支持');
+    const tw=ctx.measureText(txt).width+8;let lx=P.l+2;
+    if(bigNarrow&&bigPut.some(b=>Math.abs(b.y-yy)<15))return;
+    for(let k=0,hit;k<6&&(hit=bigPut.find(b=>Math.abs(b.y-yy)<15&&lx<b.x+b.w+4&&lx+tw>b.x));k++)lx=hit.x+hit.w+4;
+    bigPut.push({x:lx,y:yy,w:tw});
+    ctx.fillStyle='rgba(13,18,23,.88)';ctx.fillRect(lx,yy-14,tw,12);ctx.fillStyle=`rgb(${col})`;ctx.fillText(txt,lx+4,yy-3);
+  });
+  ctx.restore();
   // フィボの名前と価格：チャートの右端（価格目盛りの手前）に右寄せで小さく。0%・100%以外の各線、重なるものは止まった線・半値を優先して省く
   // R1・R2・S1・S2 の名札の場所（価格タグの左）。フィボの文字はこれを避ける
   const kk=keyLevels(),kname=l=>{if(!kk)return'';const f=a=>a.findIndex(m=>Math.abs(m.price-l.price)<=LV_TOL);const i=f(kk.r),j=f(kk.s);return i>=0?'R'+(i+1):j>=0?'S'+(j+1):''};
@@ -2948,7 +2982,7 @@ function drawChart(){
   const inView=allLv.filter(l=>l.price>=min&&l.price<=max).sort((a,b)=>b.price-a.price);
   $('lvList').hidden=!inView.length;
   $('lvList').innerHTML=inView.length?'<span>水平線</span>'+inView.map(l=>{const off=lvHidden(l);
-    return `<button type="button" class="lvchip${off?' off':''}" data-lv="${l.price}" aria-pressed="${!off}" style="--c:${l.kind==='r'?'#ff6969':'#42d59c'}" title="${off?'タップで戻す':'タップで消す'}"><i></i>${fmt(l.price)}${l.touches>=3?'★':''}${l.tf!=='h1'?' '+l.tf.toUpperCase():''}</button>`}).join('')+
+    return `<button type="button" class="lvchip${off?' off':''}" data-lv="${l.price}" aria-pressed="${!off}" style="--c:${l.kind==='r'?'#ff6969':'#42d59c'}" title="${off?'タップで戻す':'タップで消す'}"><i></i>${fmt(l.price)}${l.touches>=3?'★':''}${l.big?' '+TF_JA[l.big]:l.tf!=='h1'?' '+l.tf.toUpperCase():''}</button>`}).join('')+
     (inView.some(lvHidden)?'<button type="button" class="lvchip all" data-lv="all" style="--c:rgba(232,195,90,.7)">すべて戻す</button>':''):'';
   $('chartInfo').innerHTML=`<span>${hi==null?'最新足':'選択足'} <b>${esc(barLabel(b.t,isH1))}</b></span>`+
     `<span>始 <b>${fmt(b.o)}</b></span><span>高 <b>${fmt(b.h)}</b></span><span>安 <b>${fmt(b.l)}</b></span><span>終 <b class="${b.c>=b.o?'up':'down'}">${fmt(b.c)}</b></span>`+
@@ -2968,7 +3002,7 @@ function drawChart(){
         (gmS&&gmL?`<span class="legend"><i style="background:linear-gradient(90deg,${GMMA_SC} 50%,${GMMA_LC} 50%)"></i>GMMA ${st}</span>`:'')})():'')+
     emas.map(m=>{const ev=m.vals[hi??bars.length-1];return `<span class="legend"><i style="background:${m.color}"></i>${m.len}EMA <b>${ev==null?'--':fmt(ev)}</b></span>`}).join('')+
     tls.map(t=>`<span class="legend"><i style="background:${t.kind==='up'?TL_UP:TL_DOWN}"></i>${t.kind==='up'?'上昇':'下降'}トレンドライン <b>${fmt(t.p1+t.slope*(endIdx-1-t.i1))}</b>（接点${t.touches}）</span>`).join('')+
-    tags.map(({l})=>`<span class="legend"><i style="background:${l.kind==='r'?'#ff6969':'#42d59c'}"></i>${l.kind==='r'?'抵抗線':'支持線'}${l.tf!=='h1'?'（'+l.tf.toUpperCase()+'）':''}${l.touches>=3?'★':''} <b>${fmt(l.price)}</b></span>`).join('')+
+    tags.map(({l})=>`<span class="legend"><i style="background:${l.kind==='r'?'#ff6969':'#42d59c'}"></i>${l.kind==='r'?'抵抗線':'支持線'}${l.big?'（'+TF_JA[l.big]+'）':l.tf!=='h1'?'（'+l.tf.toUpperCase()+'）':''}${l.touches>=3?'★':''} <b>${fmt(l.price)}</b></span>`).join('')+
     (fib&&fib.prov?`<span class="legend"><i style="background:${FIB_COLOR}"></i>暫定フィボナッチ（${fibTag}${fib.dir>0?'上昇':'下降'}中・次の${fib.dir>0?'押し目':'戻り'}の目安） 38.2% <b>${fmt(fib.levels.find(l=>l.r===.382).p)}</b>・半値 <b>${fmt(fib.levels.find(l=>l.r===.5).p)}</b>・61.8% <b>${fmt(fib.levels.find(l=>l.r===.618).p)}</b></span>`:'')+
     (ch?`<span class="legend"><i style="background:rgb(${CH_COL[ch.kind]})"></i>${ch.ref?'参考 ':''}${CH_NAME[ch.kind]}（${state.tf.toUpperCase()}） 上限 <b>${fmt(ch.upNow)}</b>・下限 <b>${fmt(ch.loNow)}</b>｜今はチャネルの${chPos(ch)}（接点 上${ch.th}・下${ch.tl}${ch.ref?'・はっきりしたチャネルではありません':''}）</span>`:'')+
     (fib&&!fib.prov?`<span class="legend"><i style="background:${FIB_COLOR}"></i>フィボナッチ（${fibTag}直近の${fib.dir>0?'上昇':'下降'}の${fib.dir>0?'押し':'戻り'}） 今 <b>${Math.round(fib.cur*100)}%</b>（最深 ${Math.round(fib.deep*100)}%${fib.half?'・半値戻し':''}）${fib.hit!=null?`｜${FIB_NAME(fib.hit)}（${fmt(fib.levels.find(l=>l.r===fib.hit).p)}）で${fib.held?'反発':'到達'}`:''}</span>`:'')+
