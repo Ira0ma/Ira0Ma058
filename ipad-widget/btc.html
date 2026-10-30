@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="d633d2f500">
+<meta name="build" content="40eb6ae091">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -537,7 +537,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     </div>
     <div class="tfcap">時間足｜下段＝ダウ理論のトレンドとST（スーパートレンド）の向き</div>
     <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
-    <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button></div>
+    <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button><button type="button" id="fvgBtn" class="seg on" aria-pressed="true" title="FVG（3本の足で、1本目と3本目の値幅が重ならない帯）を表示"><i style="height:8px;background:linear-gradient(90deg,rgba(66,213,156,.55) 50%,rgba(255,105,105,.55) 50%)"></i>FVG</button><button type="button" class="gq" data-gloss="fvg:fvg-01" aria-label="FVG詳説：FVGとは">?</button></div>
     <div id="lvList" class="lvlist" role="group" aria-label="水平線を1本ずつ消す・戻す" hidden></div>
     <div id="chNow" class="chnow" role="group" aria-label="時間足ごとのチャネル" hidden></div>
     <div id="fibNow" class="fibnow" role="status" hidden></div>
@@ -994,6 +994,7 @@ function loadPrefs(){
   state.tf=TFS[lsGet(LSP+'tf','h1')]?lsGet(LSP+'tf','h1'):'h1';
   state.showLevels=lsGet(LSP+'levels','1')==='1';
   state.showTrend=lsGet(LSP+'trend','1')==='1';
+  state.showFvg=lsGet(LSP+'fvg','1')==='1';
   loadMaOn();
   state.broker=BROKERS[lsGet(LSP+'broker','xm')]?lsGet(LSP+'broker','xm'):'xm';
   {const b=lsGet(LSP+'tp_basis','h1');state.tpBasis=b==='both'?'all':['h1','m15','m5','day','all'].includes(b)?b:'h1'}  // 以前の「両方」は「すべて」に引き継ぐ
@@ -1003,7 +1004,7 @@ function loadPrefs(){
 function savePrefs(){
   Object.entries(PREFS).forEach(([id,[k]])=>lsSet(k,$(id).value));
   lsSet(LSP+'auto_risk',$('autoRisk').checked?'1':'0');
-  lsSet(LSP+'dir',state.dir);lsSet(LSP+'ev_filter',state.evFilter);lsSet(LSP+'tf',state.tf);lsSet(LSP+'levels',state.showLevels?'1':'0');lsSet(LSP+'trend',state.showTrend?'1':'0');
+  lsSet(LSP+'dir',state.dir);lsSet(LSP+'ev_filter',state.evFilter);lsSet(LSP+'tf',state.tf);lsSet(LSP+'levels',state.showLevels?'1':'0');lsSet(LSP+'trend',state.showTrend?'1':'0');lsSet(LSP+'fvg',state.showFvg?'1':'0');
   lsSet(LSP+'broker',state.broker);lsSet(brokerKey('contract'),$('contract').value);lsSet(brokerKey('lev'),$('leverage').value);lsSet(brokerKey('spread'),$('spread').value);
   updateBrokerLabels();
 }
@@ -1817,6 +1818,28 @@ function smaSeries(bars,len){
     sum+=bars[i].c;if(i>=len)sum-=bars[i-len].c;
     out.push(i>=len-1?sum/len:null);
   }return out
+}
+/* FVG（フェアバリューギャップ）：同じ時間足の連続3本で、1本目と3本目のヒゲ込みの値幅が重ならない帯。
+   強気＝3本目の安値＞1本目の高値（帯は1本目高値〜3本目安値）、弱気＝3本目の高値＜1本目の安値。等しいときは幅ゼロでなし。
+   3本目が確定してから判定する（いちばん右の足は作りかけなので使わない）。その後の足が反対側の境界まで届いたら「全埋め」として消す。
+   細かい帯で埋まらないよう、幅がATR(14)の2割未満のものは出さない。表示だけで、売買の判断や通知には使わない */
+function fvgZones(bars,maxEach=5){
+  const n=bars.length,out=[];if(n<5)return out;
+  const minW=atr(bars.slice(-120))*0.2;
+  for(let i=Math.max(0,n-300);i+2<n-1;i++){
+    const a=bars[i],c=bars[i+2];let z=null;
+    if(c.l>a.h&&c.l-a.h>=minW)z={dir:1,lo:a.h,hi:c.l,i0:i};
+    else if(c.h<a.l&&a.l-c.h>=minW)z={dir:-1,lo:c.h,hi:a.l,i0:i};
+    if(!z)continue;
+    // 3本目より後の足で、どこまで戻ったか（反対側の境界に届いたら全埋め）
+    let reach=z.dir>0?z.hi:z.lo,filled=false;
+    for(let j=i+3;j<n;j++){const b=bars[j];
+      if(z.dir>0){reach=Math.min(reach,b.l);if(b.l<=z.lo){filled=true;break}}
+      else{reach=Math.max(reach,b.h);if(b.h>=z.hi){filled=true;break}}}
+    if(filled)continue;
+    z.reach=reach;out.push(z);
+  }
+  return [...out.filter(z=>z.dir>0).slice(-maxEach),...out.filter(z=>z.dir<0).slice(-maxEach)];
 }
 function atr(bars,len=14){
   if(bars.length<len+1)return 0;
@@ -2766,6 +2789,22 @@ function drawChart(){
     });
     ctx.setLineDash([]);
   }
+  // FVG：埋まっていない帯を、1本目の足から右端まで薄く敷く（中央50%は点線）。途中まで戻った部分は少し暗く
+  if(state.showFvg){
+    const xe=W-P.r;
+    fvgZones(source).forEach(z=>{
+      if(z.hi<min||z.lo>max)return;
+      const col=z.dir>0?'66,213,156':'255,105,105',x0=Math.max(P.l,x(z.i0-startIdx)-step/2),yt=y(z.hi),yb=y(z.lo);
+      if(x0>=xe)return;
+      ctx.fillStyle=`rgba(${col},.13)`;ctx.fillRect(x0,yt,xe-x0,yb-yt);
+      if(z.dir>0&&z.reach<z.hi){ctx.fillStyle='rgba(13,18,23,.45)';ctx.fillRect(x0,yt,xe-x0,y(z.reach)-yt)}
+      if(z.dir<0&&z.reach>z.lo){ctx.fillStyle='rgba(13,18,23,.45)';ctx.fillRect(x0,y(z.reach),xe-x0,yb-y(z.reach))}
+      ctx.strokeStyle=`rgba(${col},.5)`;ctx.lineWidth=.8;ctx.setLineDash([]);
+      ctx.beginPath();ctx.moveTo(x0,Math.round(yt)+.5);ctx.lineTo(xe,Math.round(yt)+.5);ctx.moveTo(x0,Math.round(yb)+.5);ctx.lineTo(xe,Math.round(yb)+.5);ctx.stroke();
+      const ym=Math.round(y((z.hi+z.lo)/2))+.5;ctx.setLineDash([2,3]);ctx.strokeStyle=`rgba(${col},.45)`;ctx.beginPath();ctx.moveTo(x0,ym);ctx.lineTo(xe,ym);ctx.stroke();ctx.setLineDash([]);
+      if(yb-yt>=9){ctx.font='bold 9px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle=`rgba(${col},.85)`;ctx.fillText('FVG',x0+3,(yt+yb)/2)}
+    });
+  }
   const cw=Math.max(1,step*.62);
   bars.forEach((b,i)=>{
     const up=b.c>=b.o,col=up?'#42d59c':'#ff6969',xx=x(i);
@@ -3396,6 +3435,7 @@ $('alertList').onchange=e=>{const f=e.target.dataset.al;if(!f||!e.target.isConne
   if((f==='above'||f==='below')&&alertCfg[f]){alertCfg.price=true;const sw=document.querySelector('[data-alk="price"]');if(sw)sw.setAttribute('aria-pressed','true')}saveAlerts()};
 renderAlerts();
 $('lvList').onclick=e=>{const b=e.target.closest('.lvchip');if(!b)return;if(b.dataset.lv==='all'){hiddenLv=[];lsSet(LSP+'hidden_lv','[]');drawChart()}else toggleLv(+b.dataset.lv)};
+$('fvgBtn').onclick=()=>{state.showFvg=!state.showFvg;$('fvgBtn').classList.toggle('on',state.showFvg);$('fvgBtn').setAttribute('aria-pressed',state.showFvg);savePrefs();drawChart()};
 $('lvBtn').onclick=()=>{state.showLevels=!state.showLevels;$('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);savePrefs();drawChart()};
 document.querySelectorAll('#dirSeg .seg').forEach(b=>b.onclick=()=>{
   state.dir=b.dataset.dir;setSegActive('#dirSeg .seg','dir',state.dir);savePrefs();renderAll();
@@ -3589,6 +3629,7 @@ renderTfGrid();renderFibNow();renderGmmaNow();
 renderMaToggles();
 $('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);
 $('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);
+$('fvgBtn').classList.toggle('on',state.showFvg);$('fvgBtn').setAttribute('aria-pressed',state.showFvg);
 loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(scheduler,1000);
 checkClosed();setInterval(checkClosed,60000);
 refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(releaseHot())refreshLiveTalk()},5000);startLive();setTimeout(fillRecentGold,20000);setInterval(fillRecentGold,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
