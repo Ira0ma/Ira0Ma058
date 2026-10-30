@@ -82,7 +82,8 @@
     (VIEWS[t] || VIEWS.guide)();
     var h = HELP[t];
     if (h) {  // one line on top of each tab, and the full guide one tap away
-      body.insertAdjacentHTML("afterbegin", '<p class="tdt-tip">💡 ' + esc(h[0]) + ' <button type="button" class="tdt-more" data-help="' + t + '">くわしい使い方</button></p>');
+      body.insertAdjacentHTML("afterbegin", '<p class="tdt-tip">💡 ' + esc(h[0]) + ' <button type="button" class="tdt-more" data-help="' + t + '">くわしい使い方</button><button type="button" class="tdt-more tdt-words">英語・略語の意味</button></p>');
+      body.querySelector(".tdt-words").addEventListener("click", function () { show("guide"); var w = body.querySelector("#g-words-h"); if (w) { w.scrollIntoView({ block: "start" }); body.querySelector(".g-words summary").focus(); } });
       body.querySelector(".tdt-more").addEventListener("click", function () { show("guide"); var a = body.querySelector("#g-" + t); if (a) { a.open = true; a.scrollIntoView({ block: "start" }); a.querySelector("summary").focus(); } });
     }
     body.scrollTop = 0;
@@ -173,9 +174,53 @@
       "表示だけ・通知だけ・資金管理と日誌だけ、など分けて初期化できます（元に戻せません）。"],
       "データはこの端末のブラウザの中だけに保存しています。音や通知は、このページを開いている間だけ届きます。"]
   ];
+  // English words and abbreviations that appear in the tools: [word, reading, meaning]
+  var WORDS = [
+    ["銘柄・通貨", [
+      ["GOLD・XAU/USD", "ゴールド・エックスエーユー ドル", "金（ゴールド）の米ドル建ての価格。1トロイオンス（約31.1グラム）が何ドルか。XAUは金を表す記号"],
+      ["USD/JPY", "ドル円", "1米ドルが何円か。USD＝米ドル、JPY＝日本円"],
+      ["BTC/USD", "ビットコイン ドル", "1ビットコイン（BTC）が何米ドルか"],
+      ["USD・JPY", "ユーエスディー・ジェーピーワイ", "通貨の略号。USD＝米ドル、JPY＝日本円（口座通貨の選択にも出ます）"],
+      ["DXY", "ドル指数", "主要6通貨に対する米ドルの強さを表す指数"],
+      ["VIX", "ビックス", "米国株の値動きの荒さの予想を表す指数。「恐怖指数」とも呼ばれる"],
+      ["XAUT・PAXG", "テザーゴールド・パックスゴールド", "金と連動するように作られた暗号資産。週末も動くので、金のリアルタイム価格の目安に補正して使う"]]],
+    ["取引の言葉", [
+      ["lot（ロット）", "ロット", "取引する量のまとまり。1lotの大きさ（契約サイズ）は業者・銘柄で違う。例：ゴールド1lot＝100oz、ドル円1lot＝10万通貨が多い"],
+      ["oz", "オンス", "トロイオンス。金の重さの単位（約31.1グラム）"],
+      ["pips", "ピップス", "値動きを数える小さな単位。ドル円は1pips＝0.01円、このアプリのゴールドは1pips＝0.1ドル"],
+      ["Bid・Ask", "ビッド・アスク", "Bid＝売るときの値段、Ask＝買うときの値段。その差がスプレッド"],
+      ["仲値（Mid）", "なかね", "BidとAskのちょうど真ん中の値段"],
+      ["RR（リスクリワード）", "アールアール", "損切りまでの幅に対して、利確までの幅が何倍か。2なら「損1に対して利益2を狙う」"],
+      ["SMA", "エスエムエー", "単純移動平均線。決まった本数の終値の平均をつないだ線。120SMA＝120本の平均"],
+      ["H1・H4・M15・M5", "エイチワン ほか", "時間足の略。H1＝1時間足、H4＝4時間足、M15＝15分足、M5＝5分足"],
+      ["CAUTION", "コーション", "「注意」。重要な経済指標の発表前後で、判定を見送る時間帯"],
+      ["CSV", "シーエスブイ", "表のデータをカンマで区切った文字のファイル。Excel・Numbers・Googleスプレッドシートで開ける"]]],
+    ["時間・市場", [
+      ["JST", "ジェイエスティー", "日本標準時（日本時間）。ツールの時刻はすべて日本時間"],
+      ["NY", "ニューヨーク", "ニューヨーク。為替・金の1日の区切りは、ニューヨーク時間の17時が基準"],
+      ["夏時間（DST）", "サマータイム", "夏の間、時計を1時間進める制度。ロンドン・ニューヨークにあり、日本にはない。市場の開く時刻が日本時間で1時間ずれる"],
+      ["CME", "シーエムイー", "シカゴの先物取引所。金・銀・原油の先物の取引時間の基準"],
+      ["ICE", "アイス", "米国の取引所。ドル指数（DXY）の先物の取引時間の基準"]]],
+    ["データ・保存", [
+      ["API", "エーピーアイ", "アプリがほかのサービスからデータを受け取るための窓口"],
+      ["JSON", "ジェイソン", "データを保存・受け渡しするための文字の形式。設定のバックアップはこの形式"],
+      ["market.json など", "マーケット ジェイソン", "このサイトが5分ごとに作る相場データのファイル（strategy.json＝本日の戦略、holidays.json＝祝日）"],
+      ["localStorage", "ローカルストレージ", "ブラウザの中の保存場所。日誌や設定はここに保存され、この端末の外には出ない"],
+      ["WebSocket", "ウェブソケット", "つないだままにして、価格を次々に受け取る通信の方法（リアルタイム配信）"]]],
+    ["データの提供元", [
+      ["Yahoo Finance", "ヤフーファイナンス", "ローソク足（チャート）の元データ。サイトが定期的に取得"],
+      ["Gold API", "ゴールドエーピーアイ", "金・銀の現在値を配信するサービス"],
+      ["Swissquote", "スイスクオート", "スイスの金融機関。公開している金のBid・Askを、Gold APIの代わりや点検に使う"],
+      ["Coinbase", "コインベース", "米国の暗号資産取引所。ドル円のレートとBTCの価格に使う"],
+      ["GMO", "ジーエムオー", "GMOコインの外国為替FX。ドル円のリアルタイム配信に使う"],
+      ["OKX・Bitfinex・Kraken", "オーケーエックス ほか", "海外の暗号資産取引所。XAUT・PAXG・BTCのリアルタイム配信に使う"],
+      ["Forex Factory", "フォレックスファクトリー", "経済指標カレンダーのサイト。指標の予定・予想・結果の元データ"],
+      ["Open-Meteo", "オープンメテオ", "天気予報のデータを配信するサービス"]]]
+  ];
   var VIEWS = {
     guide: function () {
       body.innerHTML = '<h3>🧰 ツールの使い方</h3><p class="note">デスクの数字を確かめ、入る前の準備と、あとからの振り返りに使う道具です。売買をすすめるものではありません。入力した内容はこの端末の中だけに保存され、どこにも送信しません。</p>' +
+        '<div class="btns"><button type="button" class="btn" id="g-jump-words">英語・略語の意味へ</button></div>' +
         '<h3>おすすめの使い方（1回の取引の流れ）</h3><div class="flow">' +
         [["① 確かめる", "データ状態で、価格と分析が新しいか"], ["② 時間を見る", "市場時間・取引前チェックで、指標や休場が近くないか"], ["③ 数量を決める", "資金管理で、損切りまでの損失が許容内の数量"],
           ["④ チェックする", "取引前チェックで7項目を確かめて記録"], ["⑤ 記録する", "取引のあと日誌に結果と反省"], ["⑥ 振り返る", "日誌の成績のまとめ・シグナル履歴を見直す"]]
@@ -189,7 +234,13 @@
           return '<details id="g-' + g[0] + '"><summary><b>' + esc(g[1]) + '</b></summary><ol class="steps">' + g[2].map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") +
             '</ol><p class="note">' + esc(g[3]) + '</p><div class="btns"><button type="button" class="btn" data-gtab="' + g[0] + '">このタブを開く</button></div></details>';
         }).join("") +
+        '<h3 id="g-words-h">英語・略語の意味</h3><p class="note">ツールやデスクに出てくる英語・略語です。くわしい解説は「学ぶ」パネルのFX用語集でも引けます。</p>' +
+        WORDS.map(function (grp) {
+          return '<details class="g-words" open><summary><b>' + esc(grp[0]) + '</b></summary><div class="tw"><table><tr><th>ことば</th><th>読み</th><th>意味</th></tr>' +
+            grp[1].map(function (w) { return "<tr><td><b>" + esc(w[0]) + "</b></td><td>" + esc(w[1]) + "</td><td>" + esc(w[2]) + "</td></tr>"; }).join("") + "</table></div></details>";
+        }).join("") +
         '<h3>操作のヒント</h3><p class="note">閉じるは右上の「閉じる」かEscキー。キーボードではTabで移動し、Enterで押せます。最後に開いたタブは次回も開きます。この「使い方」はいつでも左端のタブから開けます。</p>';
+      $("#g-jump-words").addEventListener("click", function () { var h = $("#g-words-h"); h.scrollIntoView({ block: "start" }); var s1 = body.querySelector(".g-words summary"); if (s1) s1.focus(); });
       body.querySelectorAll("[data-gtab]").forEach(function (b) { b.addEventListener("click", function () { show(b.getAttribute("data-gtab")); }); });
     },
     money: function () {
