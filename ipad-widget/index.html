@@ -262,6 +262,83 @@ body {
 .x-fallback { font-size: 12px; line-height: 1.6; color: var(--ink-2); padding: 2px; }
 /* on/off switch for the notices (saved on the device; off at first) */
 #xfeed .x-body { flex: 1; }
+/* FX用語集：みんなのFXのカードの下に目次の一覧、タップでデジタルブック */
+.gl-tile { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--glass-line); padding-top: 7px; }
+.gl-head { display: flex; align-items: baseline; gap: 8px; font: inherit; color: var(--ink); background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+.gl-head b { font-size: 13.5px; font-weight: 700; color: var(--gold); }
+.gl-head span { font-size: 11px; color: var(--ink-3); }
+.gl-head em { margin-left: auto; font-style: normal; font-size: 11.5px; font-weight: 700; color: #14100a; background: var(--gold); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+.gl-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; flex: 1; min-height: 0; }
+.gl-grid button { font: inherit; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 1px; min-width: 0; padding: 4px 8px; border-radius: 9px; border: 1px solid rgba(227,184,103,.18); background: rgba(227,184,103,.06); color: var(--ink); cursor: pointer; text-align: left; }
+.gl-grid button:hover, .gl-grid button:focus-visible { background: rgba(227,184,103,.16); outline: none; }
+.gl-grid b { font-size: 11.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.gl-grid b i { font-style: normal; color: var(--gold); margin-right: 4px; }
+.gl-grid small { font-size: 9.5px; color: var(--ink-3); }
+#xfeed:not(.x-ok) .x-body { flex: 0 0 auto; }
+#xfeed.x-ok .gl-grid { display: none; }
+#xfeed.x-ok .gl-tile { flex: none; }
+.flow #xfeed .gl-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.flow #xfeed .gl-grid button { padding: 6px 9px; }
+.flow #xfeed.x-ok .gl-grid { display: grid; }
+
+.gbook { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; background: radial-gradient(120% 90% at 50% 0%, #1a1712 0%, #08090c 70%); color: #2b241a;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+.gbook[hidden] { display: none; }
+.gb-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; color: var(--ink); }
+.gb-bar .gb-title { font-size: 15px; font-weight: 700; color: var(--gold); white-space: nowrap; }
+.gb-bar .gb-chap { font-size: 12px; color: var(--ink-3); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.gb-btn { font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); background: rgba(255,255,255,.07); border: 1px solid var(--glass-line); border-radius: 999px; padding: 7px 13px; cursor: pointer; white-space: nowrap; }
+.gb-btn:hover { background: rgba(255,255,255,.13); }
+.gb-btn.gb-x { color: #14100a; background: var(--gold); border-color: var(--gold); }
+.gb-stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 4px 14px; touch-action: pan-y; }
+.gb-spread { position: relative; display: flex; height: 100%; max-height: 100%; filter: drop-shadow(0 18px 40px rgba(0,0,0,.6)); }
+.gb-spread.turn-next { animation: gbNext .28s ease-out; } .gb-spread.turn-prev { animation: gbPrev .28s ease-out; }
+@keyframes gbNext { from { opacity: .2; transform: translateX(28px) rotateY(-4deg); } to { opacity: 1; transform: none; } }
+@keyframes gbPrev { from { opacity: .2; transform: translateX(-28px) rotateY(4deg); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .gb-spread.turn-next, .gb-spread.turn-prev { animation: none; } }
+.gb-page { position: relative; height: 100%; background: linear-gradient(180deg, #fbf6ea, #f3ead4); border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; }
+.gb-spread.two .gb-page:first-child { border-radius: 6px 0 0 6px; box-shadow: inset -18px 0 22px -18px rgba(80,55,20,.45); }
+.gb-spread.two .gb-page:last-child { border-radius: 0 6px 6px 0; box-shadow: inset 18px 0 22px -18px rgba(80,55,20,.45); }
+.gb-page.blank { background: linear-gradient(180deg, #f4ecd8, #ece0c3); }
+.gb-in { flex: 1; min-height: 0; padding: 26px 28px 10px; overflow: hidden; }
+.gb-page.toc .gb-in { overflow-y: auto; }
+#gb-pno { white-space: nowrap; }
+@media (max-width: 600px) { .gb-bar .gb-chap { display: none; } .gb-bar { gap: 6px; padding: 10px; } .gb-btn { padding: 7px 11px; } .gb-nav { gap: 8px; } .gb-nav .gb-btn { min-width: 0; } .gb-in { padding: 20px 20px 8px; } .gb-idx { column-gap: 12px; } .gbook .gb-cover { padding: 0 0 8px; margin-bottom: 6px; } .gbook .gb-cover h1 { font-size: 22px; } .gbook .gb-toc small { display: none; } .gbook .gb-toc button { padding: 8px 2px; } .gbook .gb-toc i { width: 3.4em; } .gbook .gb-in { padding: 20px 20px 8px; } .gbook .gb-idx { column-gap: 12px; } }
+.gb-foot { display: flex; justify-content: space-between; padding: 6px 22px 12px; font-size: 11px; color: #9a8a6c; }
+.gb-run { font-size: 10.5px; color: #9a8a6c; letter-spacing: .04em; margin-bottom: 10px; border-bottom: 1px solid #e3d6b8; padding-bottom: 6px; }
+.gb-chhead { margin: 2px 0 14px; }
+.gb-chhead small { display: block; font-size: 12px; font-weight: 700; color: #a37a2c; letter-spacing: .12em; }
+.gb-chhead h2 { margin: 4px 0 4px; font-size: 24px; color: #2b241a; line-height: 1.25; }
+.gb-chhead p { margin: 0; font-size: 12.5px; color: #7b6b52; }
+.gb-term { padding: 9px 0 10px; border-bottom: 1px dashed #e0d2b2; }
+.gb-term:last-child { border-bottom: 0; }
+.gb-term h3 { margin: 0; font-size: 16px; color: #2b241a; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.gb-term h3 span { font-size: 11.5px; font-weight: 600; color: #a37a2c; }
+.gb-term p { margin: 5px 0 0; font-size: 13.5px; line-height: 1.75; color: #3c3326; }
+.gb-cover { text-align: center; padding: 6px 0 14px; border-bottom: 2px solid #d9c89f; margin-bottom: 12px; }
+.gb-cover small { font-size: 11px; letter-spacing: .3em; color: #a37a2c; }
+.gb-cover h1 { margin: 6px 0 2px; font-size: 30px; color: #2b241a; letter-spacing: .08em; }
+.gb-cover p { margin: 0; font-size: 12px; color: #7b6b52; }
+.gb-toc { list-style: none; margin: 0; padding: 0; }
+.gb-toc li + li { border-top: 1px solid #e6dabf; }
+.gb-toc button { font: inherit; width: 100%; display: flex; align-items: baseline; gap: 10px; padding: 9px 2px; background: none; border: 0; cursor: pointer; color: #2b241a; text-align: left; }
+.gb-toc button:hover { background: rgba(163,122,44,.08); }
+.gb-toc i { font-style: normal; font-weight: 800; color: #a37a2c; width: 3.6em; flex: none; white-space: nowrap; }
+.gb-toc b { font-size: 14.5px; }
+.gb-toc small { display: block; font-size: 11px; color: #8d7d61; font-weight: 400; margin-top: 2px; }
+.gb-toc em { margin-left: auto; font-style: normal; font-size: 12px; color: #8d7d61; white-space: nowrap; }
+.gb-resume { font: inherit; display: block; width: 100%; margin-top: 12px; padding: 9px; border-radius: 10px; border: 1px solid #d9c89f; background: #f0e3c2; color: #6b4f19; font-weight: 700; cursor: pointer; }
+.gb-idx { columns: 2; column-gap: 18px; }
+.gb-idx button { font: inherit; display: flex; width: 100%; break-inside: avoid; justify-content: space-between; gap: 6px; padding: 4px 2px; background: none; border: 0; border-bottom: 1px dotted #e0d2b2; cursor: pointer; color: #2b241a; font-size: 12.5px; text-align: left; }
+.gb-idx h4 { margin: 8px 0 2px; padding: 2px 6px; font-size: 11.5px; color: #fff; background: #a37a2c; border-radius: 4px; break-after: avoid; }
+.gb-idx h4:first-child { margin-top: 0; }
+.gb-idx button em { font-style: normal; color: #a37a2c; font-size: 11px; white-space: nowrap; }
+.gb-nav { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 8px 14px 12px; color: var(--ink-2); font-size: 12.5px; }
+.gb-nav .gb-btn { min-width: 92px; }
+.gb-nav .gb-btn:disabled { opacity: .35; cursor: default; }
+.gb-prog { flex: 0 1 260px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; }
+.gb-prog i { display: block; height: 100%; background: var(--gold); width: 0; transition: width .2s; }
+.gb-measure { position: fixed; left: -9999px; top: 0; visibility: hidden; }
 #cal { left: 667px; top: 329px; width: 517px; height: 261px; padding: 14px 16px; display: grid; grid-template-columns: 1fr 1px 1fr; gap: 14px; }
 #cal .sep { background: var(--glass-line); }
 .month { min-width: 0; }
@@ -479,6 +556,10 @@ html:not(.flow) #flow { display: none; }
       <a class="twitter-timeline" data-theme="dark" data-chrome="noheader nofooter noborders transparent" data-height="140" data-dnt="true" data-lang="ja" href="https://twitter.com/Min_FX?ref_src=twsrc%5Etfw">@Min_FX のポストを読み込んでいます…</a>
       <div class="x-fallback" hidden>この端末では X の投稿を表示できません。右上の「X で開く」から確認できます。</div>
     </div>
+    <div class="gl-tile">
+      <button type="button" class="gl-head" data-gl="toc"><b>📖 FX用語集</b><span id="gl-count"></span><em>目次を開く ›</em></button>
+      <div class="gl-grid" id="gl-grid"></div>
+    </div>
   </section>
 
   <!-- calendar -->
@@ -490,6 +571,20 @@ html:not(.flow) #flow { display: none; }
 
 
 </div>
+</div>
+
+<!-- FX用語集（デジタルブック） -->
+<div class="gbook" id="gbook" hidden role="dialog" aria-modal="true" aria-label="FX用語集">
+  <div class="gb-bar">
+    <span class="gb-title">📖 FX用語集</span><span class="gb-chap" id="gb-chap"></span>
+    <button type="button" class="gb-btn" data-gl="toc">目次</button><button type="button" class="gb-btn" data-gl="idx">索引</button><button type="button" class="gb-btn gb-x" data-gl="close">閉じる</button>
+  </div>
+  <div class="gb-stage" id="gb-stage"><div class="gb-spread" id="gb-spread"></div></div>
+  <div class="gb-nav">
+    <button type="button" class="gb-btn" data-gl="prev">‹ 前のページ</button>
+    <span id="gb-pno"></span><div class="gb-prog"><i id="gb-prog"></i></div>
+    <button type="button" class="gb-btn" data-gl="next">次のページ ›</button>
+  </div>
 </div>
 
 <script>
@@ -2057,7 +2152,7 @@ html:not(.flow) #flow { display: none; }
     sc.onerror = fail;
     sc.onload = function () {
       if (!window.twttr || !twttr.events) { fail(); return; }
-      twttr.events.bind("rendered", function () { done = true; });
+      twttr.events.bind("rendered", function () { done = true; document.getElementById("xfeed").classList.add("x-ok"); });
     };
     document.body.appendChild(sc);
     setTimeout(function () {
@@ -2065,6 +2160,291 @@ html:not(.flow) #flow { display: none; }
       if (!f || f.offsetHeight < 60) { done = false; fail(); }
     }, 12000);
   }
+
+  /* ---------- FX用語集：カードに章の一覧、タップで目次つきのデジタルブック（ページ送り・スワイプ・索引） ---------- */
+  var GLOSSARY = [
+    { t: "FXの基本", s: "通貨ペア・レート・pips など、最初に覚える言葉", terms: [
+      ["FX", "外国為替証拠金取引", "証拠金（担保のお金）を預けて、通貨を売り買いする取引。値上がりでも値下がりでも利益をねらえる。"],
+      ["通貨ペア", "", "取引する2つの通貨の組み合わせ。USD/JPY（ドル円）なら「1ドルが何円か」を表す。"],
+      ["基軸通貨・決済通貨", "", "通貨ペアの左側が基軸通貨、右側が決済通貨。USD/JPYを買う＝ドルを買って円を売ること。"],
+      ["ドルストレート", "", "米ドルを含み円を含まない通貨ペア。EUR/USD、GBP/USD など。"],
+      ["クロス円", "", "米ドル以外の通貨と円の通貨ペア。EUR/JPY、GBP/JPY、AUD/JPY など。"],
+      ["円高・円安", "", "円の価値が上がるのが円高（ドル円の数字は下がる）、下がるのが円安（数字は上がる）。"],
+      ["ロング（買い）", "Long", "値上がりを予想して買うこと。安く買って高く売れば利益。"],
+      ["ショート（売り）", "Short", "値下がりを予想して売ること。高く売って安く買い戻せば利益。"],
+      ["Bid・Ask", "ビッド・アスク", "Bidは売るときの価格、Askは買うときの価格。いつも Ask の方が少し高い。"],
+      ["スプレッド", "", "AskとBidの差。取引するたびに実質的にかかるコストで、相場が荒い時間や早朝は広がりやすい。"],
+      ["pips", "ピップス", "値動きの単位。ドル円では1pips＝0.01円（1銭）。このアプリのゴールドは1pips＝0.1ドルで表示。"],
+      ["ロット", "Lot", "取引量の単位。1ロットの大きさは業者で違い、国内は1万通貨が多く、XMなど海外は10万通貨（ゴールドは100オンス）が多い。"],
+      ["レバレッジ", "", "預けた証拠金の何倍の金額まで取引できるか。国内の個人口座は最大25倍。大きいほど少ない資金で取引できるが、損失も速く膨らむ。"],
+      ["証拠金", "", "取引の担保として口座に預けるお金。ポジションを持つのに必要な分を「必要証拠金」という。"],
+      ["スワップポイント", "", "2つの通貨の金利差の調整分。ポジションを翌日に持ち越すと、毎日受け取り（または支払い）が発生する。"],
+      ["ボラティリティ", "", "値動きの大きさ・荒さ。高いほど短時間で大きく動く。このアプリではATRで確認できる。"]
+    ]},
+    { t: "注文と取引", s: "成行・指値・逆指値など注文の出し方", terms: [
+      ["成行注文", "なりゆき", "今の価格ですぐに売買する注文。確実に約定するが、価格は選べない。"],
+      ["指値注文", "さしね", "「この価格まで下がったら買う／上がったら売る」と、今より有利な価格を指定する注文。押し目買い・戻り売りや利確に使う。"],
+      ["逆指値注文", "ぎゃくさしね", "「この価格まで上がったら買う／下がったら売る」と、今より不利な価格を指定する注文。損切りやブレイクアウトのエントリーに使う。"],
+      ["IFD注文", "イフダン", "新規の注文と、それが約定したときの決済注文をセットで出す注文。"],
+      ["OCO注文", "オーシーオー", "2つの注文を同時に出し、片方が約定したらもう片方は自動で取り消される注文。利確と損切りを同時に置くときに使う。"],
+      ["IFO注文", "イフオー", "IFDとOCOの組み合わせ。新規注文が約定したら、利確と損切りのOCOが自動で入る。"],
+      ["約定", "やくじょう", "注文が成立すること。"],
+      ["スリッページ", "", "注文した価格と実際に約定した価格のずれ。指標発表など急な値動きのときに起きやすい。"],
+      ["ポジション", "建玉（たてぎょく）", "決済していない買い・売りの持ち高。「ポジションを持つ」＝取引中。"],
+      ["決済", "", "持っているポジションを反対売買で閉じること。ここで損益が確定する。"],
+      ["利確", "利益確定", "利益が出ているポジションを決済すること。"],
+      ["損切り", "ストップロス", "損失が出ているポジションを、それ以上損が広がらないよう自分で決済すること。"],
+      ["トレーリングストップ", "", "価格が有利に動くのに合わせて、損切りの位置を自動で追いかけて動かす注文。"],
+      ["両建て", "", "同じ通貨ペアで買いと売りを同時に持つこと。損益は固定されるが、スプレッドやスワップで不利になりやすい。"],
+      ["ナンピン", "", "含み損のポジションに同じ向きで買い（売り）増しして、平均価格を有利にすること。外れると損失が大きくなりやすい。"],
+      ["ピラミッディング", "", "含み益が出ている方向にポジションを追加していくこと。"]
+    ]},
+    { t: "口座とリスク管理", s: "証拠金維持率・ロスカット・資金管理", terms: [
+      ["有効証拠金", "", "口座の残高に、持っているポジションの含み損益を足した金額。"],
+      ["必要証拠金", "", "今のポジションを持ち続けるのに必要な証拠金。取引額÷レバレッジで決まる。"],
+      ["証拠金維持率", "", "有効証拠金÷必要証拠金×100（％）。下がるほど危険で、一定の水準でロスカットされる。"],
+      ["ロスカット", "強制決済", "証拠金維持率が業者の決めた水準（国内は50〜100％ほど、XMは20％など）を下回ったとき、ポジションが自動で決済されるしくみ。"],
+      ["マージンコール", "", "証拠金維持率がロスカットの手前まで下がったときに届く警告。"],
+      ["追証", "おいしょう", "追加証拠金。損失で証拠金が足りなくなったとき、追加で入金を求められること（国内業者の一部）。"],
+      ["ゼロカット", "", "急変で口座残高がマイナスになっても、その分を業者が負担してゼロに戻すしくみ。XMなど海外業者に多い。"],
+      ["含み益・含み損", "評価損益", "まだ決済していないポジションの、今の価格での損益。"],
+      ["確定損益", "", "決済して確定した損益。"],
+      ["リスクリワード比", "RR", "損切り幅に対する利確幅の比率。損切り20pips・利確40pipsならRR 2.0。1以上を目安にすると勝率が低めでも残りやすい。"],
+      ["許容リスク", "", "1回の取引で失ってよい金額の上限。資金の1〜2％が一般的な目安。このアプリのロット計算はこの考え方で数量を出す。"],
+      ["資金管理", "マネーマネジメント", "1回のリスクや取引数量を決めて、連敗しても資金が尽きないようにすること。"],
+      ["ドローダウン", "", "資金のピークからの下落幅（下落率）。どれだけ資金が減る局面があったかの目安。"],
+      ["勝率", "", "全取引のうち利益で終わった取引の割合。勝率だけでなくリスクリワード比とセットで見る。"]
+    ]},
+    { t: "チャートの見方", s: "ローソク足・トレンド・水平線", terms: [
+      ["ローソク足", "", "一定時間の始値・高値・安値・終値を1本で表した図。終値が始値より上なら陽線、下なら陰線。"],
+      ["時間足", "", "ローソク足1本の期間。5分足（M5）・15分足（M15）・1時間足（H1）・4時間足（H4）・日足（D1）・週足（W1）など。"],
+      ["ヒゲ", "", "ローソク足の実体から上下に伸びた線。その時間に付けた高値・安値まで動いて戻ったことを表す。"],
+      ["トレンド", "", "相場の方向。高値と安値を切り上げていれば上昇トレンド、切り下げていれば下降トレンド。"],
+      ["レンジ", "もみ合い", "一定の幅の中を上下していて、はっきりした方向がない状態。"],
+      ["ダウ理論", "", "高値・安値の切り上げ（切り下げ）が続く限りトレンドは続く、という考え方。このアプリでは各時間足のトレンド判定に使っている。"],
+      ["サポート", "支持線", "下落が止まりやすい価格帯。過去に何度も反発した安値をつないだ水平線。"],
+      ["レジスタンス", "抵抗線", "上昇が止まりやすい価格帯。過去に何度も跳ね返された高値をつないだ水平線。"],
+      ["水平線", "", "サポートやレジスタンスを示す横の線。このアプリでは2回以上反応した価格帯を自動で引き、R1・R2・S1・S2として表示する。"],
+      ["ロールリバーサル", "", "抜けたレジスタンスがサポートに（抜けたサポートがレジスタンスに）役割を変えること。"],
+      ["トレンドライン", "", "安値どうし（上昇）・高値どうし（下降）を結んだ斜めの線。"],
+      ["チャネル", "", "平行な2本の線の間で価格が動く形。上の線を上弦、下の線を下弦と呼ぶ。上昇・下降・レンジ（水平）のチャネルがある。"],
+      ["高値・安値の更新", "", "直近の高値を上に抜ける（安値を下に抜ける）こと。トレンドが続いているかの判断に使う。"],
+      ["ブレイクアウト", "", "水平線やチャネル、レンジを価格が抜けること。抜けた方向に勢いが出やすい。"],
+      ["ダマシ", "", "ブレイクしたように見えて、すぐ元に戻ること。"],
+      ["押し目・戻り", "", "上昇中の一時的な下げが押し目、下降中の一時的な上げが戻り。"],
+      ["マルチタイムフレーム分析", "MTF", "複数の時間足を見比べて判断すること。上の時間足の流れに沿った取引ほど成功しやすいとされる。"]
+    ]},
+    { t: "テクニカル指標", s: "移動平均線・RSI・ATR・フィボナッチなど", terms: [
+      ["移動平均線", "MA", "一定期間の終値の平均をつないだ線。向きでトレンド、価格との位置で強弱を見る。"],
+      ["SMA", "単純移動平均", "期間内の終値を単純に平均した移動平均線。このアプリはH1の120SMAを判定に使う。"],
+      ["EMA", "指数平滑移動平均", "直近の価格を重く扱う移動平均線。SMAより早く反応する。このアプリでは10・20・80・200EMAを表示。"],
+      ["ゴールデンクロス", "", "短期の移動平均線が長期の線を下から上に抜けること。上昇のサイン。"],
+      ["デッドクロス", "", "短期の移動平均線が長期の線を上から下に抜けること。下降のサイン。"],
+      ["GMMA", "複合型移動平均線", "短期6本・長期6本のEMAの束。束の並びと広がりでトレンドの強さや転換を見る。"],
+      ["RSI", "相対力指数", "一定期間の上げ幅と下げ幅から、買われすぎ・売られすぎを0〜100で表す。70以上は買われすぎ、30以下は売られすぎの目安。"],
+      ["ATR", "アベレージ・トゥルー・レンジ", "足1本あたりの平均の値動きの幅。損切り幅を決めたり、今が荒いか静かかを見るのに使う。このアプリはM15のATR×1.2を損切りの目安にする。"],
+      ["スーパートレンド", "", "ATRを使って、価格の下（上昇中）か上（下降中）に引かれる線。線の色と位置でトレンドの向きを見る。"],
+      ["フィボナッチ・リトレースメント", "", "直近の上げ（下げ）に対して、38.2％・50％（半値）・61.8％などの割合でどこまで戻るかの目安を引くもの。"],
+      ["ボリンジャーバンド", "", "移動平均線の上下に、値動きのばらつき（標準偏差）の幅で線を引いたもの。バンドの広がりで値動きの勢いを見る。"],
+      ["MACD", "マックディー", "2本のEMAの差で、トレンドの向きと勢いを見る指標。シグナル線とのクロスを売買の目安にする。"],
+      ["ストキャスティクス", "", "一定期間の高値・安値の範囲の中で、今の価格がどこにあるかで買われすぎ・売られすぎを見る指標。"],
+      ["ダイバージェンス", "逆行現象", "価格は高値を更新しているのに、RSIなどの指標は更新していない状態。トレンドの勢いが弱まっているサイン。"]
+    ]},
+    { t: "チャートパターンと値動きの構造", s: "ダブルトップ・三尊・CHOCH/BOS", terms: [
+      ["ダブルトップ", "", "同じくらいの高値を2回付けて下がる形。ネックライン（間の安値）を割ると下落のサイン。"],
+      ["ダブルボトム", "", "同じくらいの安値を2回付けて上がる形。ネックライン（間の高値）を超えると上昇のサイン。"],
+      ["三尊（ヘッドアンドショルダー）", "", "真ん中が一番高い3つの山の形。ネックラインを割ると下落のサイン。"],
+      ["逆三尊", "", "三尊を上下逆にした形（真ん中が一番低い3つの谷）。ネックラインを超えると上昇のサイン。"],
+      ["カップウィズハンドル", "", "お椀（カップ）のような丸い底のあとに小さな押し（ハンドル）を作る形。ハンドルの高値を超えると上昇のサイン。"],
+      ["ネックライン", "", "チャートパターンの節目になる線。ここを抜けたかどうかでパターンが完成したかを判断する。"],
+      ["三角保ち合い", "トライアングル", "高値は切り下げ、安値は切り上げて、だんだん値幅が狭くなる形。抜けた方向に動きやすい。"],
+      ["フラッグ・ペナント", "", "強い動きのあとの小さな休憩の形。休憩を抜けると元の方向に続きやすい。"],
+      ["BOS", "ボス／構造のブレイク", "今の流れと同じ向きに、直近の高値（安値）を終値で抜けること。流れが続いている合図。"],
+      ["CHOCH", "チョック／性格の変化", "今の流れと逆向きに、直近の高値（安値）を終値で抜けること。流れが変わり始めたかもしれない合図。"],
+      ["スイングハイ・スイングロー", "", "前後のローソク足より高い山（安い谷）。水平線やBOS・CHOCHの判定のもとになる。"],
+      ["大口の決済", "", "大きな資金の利確・損切りで出る急な値動きや長いヒゲ。このアプリのゴールドでは「大口決済の兆候」として表示する。"]
+    ]},
+    { t: "経済指標と市場", s: "雇用統計・FOMC・介入・取引時間", terms: [
+      ["ファンダメンタルズ", "", "経済の状態・金利・政治など、通貨の価値を動かすおおもとの要因。チャートを使うテクニカル分析と対になる言葉。"],
+      ["経済指標", "", "各国が発表する経済の統計。発表直後は大きく動きやすく、スプレッドも広がりやすい。"],
+      ["米雇用統計", "NFP", "アメリカの雇用者数や失業率。原則毎月第1金曜日の夜（日本時間21:30、冬時間は22:30）に発表され、もっとも注目される指標の一つ。"],
+      ["CPI", "消費者物価指数", "物価の上がり方を表す指標。インフレの強さが分かり、金利の予想を大きく動かす。"],
+      ["政策金利", "", "中央銀行が決める基準の金利。金利が上がる通貨は買われやすい。"],
+      ["FOMC", "米連邦公開市場委員会", "アメリカの政策金利を決める会合。年8回開かれ、結果発表と議長会見で大きく動く。"],
+      ["日銀金融政策決定会合", "", "日本の金融政策を決める会合。年8回。結果と総裁会見で円が大きく動くことがある。"],
+      ["タカ派・ハト派", "", "利上げなど引き締めに前向きなのがタカ派（その通貨の買い材料）、緩和に前向きなのがハト派（売り材料）。"],
+      ["為替介入", "", "政府・中央銀行が急な為替の動きを抑えるために自ら売買すること。日本では財務省が決め、日銀が実行する。"],
+      ["要人発言", "", "中央銀行の総裁や財務大臣などの発言。金利や介入の見通しが変わると相場が動く。"],
+      ["リスクオン・リスクオフ", "", "投資家が強気で株や高金利通貨が買われるのがリスクオン、弱気で円・金・米国債などに資金が逃げるのがリスクオフ。"],
+      ["東京・ロンドン・NY時間", "", "主な取引時間帯。値動きはロンドン時間（日本の夕方〜）とNY時間（日本の夜）に大きくなりやすい。"],
+      ["仲値・ゴトー日", "", "仲値は銀行がその日の為替レートを決める9:55の価格。5・10日（ゴトー日）はドルの需要が増えやすい。"],
+      ["窓開け", "ギャップ", "週末をはさんで、金曜の終値と月曜の始値の間に価格の空白ができること。"],
+      ["流動性", "", "取引の多さ・売買のしやすさ。少ない時間帯（早朝・年末年始）はスプレッドが広がり、急に動きやすい。"],
+      ["サマータイム", "夏時間", "3月〜11月の米国夏時間。日本時間で指標の発表や市場の開閉が1時間早くなる。"]
+    ]},
+    { t: "トレードスタイル", s: "スキャルピング・デイトレード・スイング", terms: [
+      ["スキャルピング", "", "数秒〜数分で数pipsを取る超短期の取引。このアプリでは5分足の水平線で利確を判断する。"],
+      ["デイトレード", "", "その日のうちに決済する取引。このアプリでは4時間足・日足の水平線を利確の目安にする。"],
+      ["スイングトレード", "", "数日〜数週間ポジションを持つ取引。日足・週足の流れを重視する。"],
+      ["ポジショントレード", "", "数週間〜数か月の長期の取引。金利差やスワップも重要になる。"],
+      ["順張り", "", "トレンドの方向にエントリーすること。押し目買い・戻り売りもこれに入る。"],
+      ["逆張り", "", "トレンドと逆の方向、または行き過ぎた価格の反発をねらってエントリーすること。"],
+      ["押し目買い", "", "上昇トレンドの中の一時的な下げで買うこと。"],
+      ["戻り売り", "", "下降トレンドの中の一時的な上げで売ること。"],
+      ["エントリー・エグジット", "", "ポジションを持つことがエントリー、決済して出ることがエグジット。"],
+      ["裁量トレード", "", "自分の判断で売買すること。"],
+      ["システムトレード", "自動売買", "あらかじめ決めたルールやプログラムで機械的に売買すること。"],
+      ["バックテスト", "", "過去のデータで売買ルールを試し、どれくらいの成績になるかを確かめること。"]
+    ]},
+    { t: "ゴールドとビットコイン", s: "XAUUSD・オンス・BTC", terms: [
+      ["XAUUSD", "ゴールド", "金（ゴールド）の米ドル建ての価格。1トロイオンスあたり何ドルかを表す。"],
+      ["トロイオンス", "oz", "金・銀の重さの単位。1トロイオンス＝約31.1グラム。"],
+      ["スポット価格", "現物", "今すぐ受け渡す場合の価格。XMなどのゴールドはスポット価格で取引する。"],
+      ["先物価格", "", "将来の決まった日に受け渡す価格。金先物はスポットより少し高いことが多い。このアプリは先物のデータを現物の価格にそろえて表示している。"],
+      ["有事の金", "", "戦争や金融不安など、リスクオフのときに金が買われやすいこと。"],
+      ["実質金利", "", "名目の金利から物価上昇率を引いた金利。金は利息が付かないため、実質金利が下がると買われやすい。"],
+      ["BTC", "ビットコイン", "代表的な暗号資産（仮想通貨）。24時間365日取引でき、値動きが大きい。"],
+      ["ドルインデックス", "DXY", "主要な通貨に対するドルの強さを表す指数。上がるとドル高で、金やドル以外の通貨は下がりやすい。"]
+    ]}
+  ];
+
+  (function () {
+    var YOMI = {"通貨ペア": "つうかぺあ", "基軸通貨・決済通貨": "きじくつうか", "円高・円安": "えんだか", "成行注文": "なりゆきちゅうもん", "指値注文": "さしねちゅうもん", "逆指値注文": "ぎゃくさしねちゅうもん", "約定": "やくじょう", "決済": "けっさい", "利確": "りかく", "損切り": "そんぎり", "両建て": "りょうだて", "有効証拠金": "ゆうこうしょうこきん", "必要証拠金": "ひつようしょうこきん", "証拠金維持率": "しょうこきんいじりつ", "証拠金": "しょうこきん", "追証": "おいしょう", "含み益・含み損": "ふくみえき", "確定損益": "かくていそんえき", "許容リスク": "きょようりすく", "資金管理": "しきんかんり", "勝率": "しょうりつ", "時間足": "じかんあし", "ダウ理論": "だうりろん", "水平線": "すいへいせん", "高値・安値の更新": "たかね", "押し目・戻り": "おしめ", "マルチタイムフレーム分析": "まるちたいむふれーむ", "移動平均線": "いどうへいきんせん", "三尊（ヘッドアンドショルダー）": "さんぞん", "逆三尊": "ぎゃくさんぞん", "三角保ち合い": "さんかくもちあい", "大口の決済": "おおぐちのけっさい", "経済指標": "けいざいしひょう", "米雇用統計": "べいこようとうけい", "政策金利": "せいさくきんり", "日銀金融政策決定会合": "にちぎんきんゆうせいさく", "タカ派・ハト派": "たかは", "為替介入": "かわせかいにゅう", "要人発言": "ようじんはつげん", "東京・ロンドン・NY時間": "とうきょう", "仲値・ゴトー日": "なかね", "窓開け": "まどあけ", "流動性": "りゅうどうせい", "順張り": "じゅんばり", "逆張り": "ぎゃくばり", "押し目買い": "おしめがい", "戻り売り": "もどりうり", "裁量トレード": "さいりょうとれーど", "先物価格": "さきものかかく", "有事の金": "ゆうじのきん", "実質金利": "じっしつきんり", "スポット価格": "すぽっとかかく", "クロス円": "くろすえん", "ローソク足": "ろーそくあし"};
+    var SHORT = ["基本", "注文・取引", "リスク管理", "チャート", "テクニカル指標", "パターン", "経済指標・市場", "スタイル", "金・BTC"];
+    var total = GLOSSARY.reduce(function (n, c) { return n + c.terms.length; }, 0);
+    var esc = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+    document.getElementById("gl-count").textContent = GLOSSARY.length + "章・" + total + "語";
+    document.getElementById("gl-grid").innerHTML = GLOSSARY.map(function (c, i) {
+      return '<button type="button" data-gl="ch" data-ch="' + i + '"><b><i>' + (i + 1) + '</i>' + esc(SHORT[i] || c.t) + '</b><small>' + c.terms.length + '語</small></button>';
+    }).join("") + '<button type="button" data-gl="idx"><b><i>索</i>索引</b><small>あいうえお順</small></button>';
+
+    var book = document.getElementById("gbook"), stage = document.getElementById("gb-stage"), spread = document.getElementById("gb-spread");
+    var pages = [], chStart = [], termPage = {}, idxStart = 0, cur = 0, two = false, opener = null, built = "";
+    var BM = "gloss-page";
+    var termHtml = function (t) { return '<div class="gb-term"><h3>' + esc(t[0]) + (t[1] ? '<span>' + esc(t[1]) + '</span>' : '') + '</h3><p>' + esc(t[2]) + '</p></div>'; };
+    // ページの大きさ：見開き（横長の広い画面）なら2ページ、ほかは1ページ。中身は実際の大きさで測ってページに分ける
+    function pageSize() {
+      var w = stage.clientWidth - 28, h = stage.clientHeight - 8;
+      two = w >= 860 && w > h * 1.15;
+      var pw = two ? Math.min(w / 2, h * 0.78) : Math.min(w, Math.max(h * 0.72, Math.min(w, 560)));
+      return { w: Math.floor(pw), h: Math.floor(h) };
+    }
+    function paginate() {
+      var sz = pageSize(), key = sz.w + "x" + sz.h + (two ? "2" : "1");
+      if (key === built) return; built = key;
+      var m = document.createElement("div"); m.className = "gb-measure";
+      m.innerHTML = '<div class="gb-page" style="width:' + sz.w + 'px;height:' + sz.h + 'px"><div class="gb-in"><div class="gb-run">x</div><div class="gb-body"></div></div><div class="gb-foot"><span>x</span></div></div>';
+      document.body.appendChild(m);
+      var inner = m.querySelector(".gb-in"), body = m.querySelector(".gb-body");
+      var fits = function () { return inner.scrollHeight <= inner.clientHeight + 1; };
+      pages = []; chStart = []; termPage = {};
+      // 1ページ目：表紙と目次（ページ番号はあとで入れる）
+      pages.push({ kind: "toc", run: "目次" });
+      GLOSSARY.forEach(function (c, ci) {
+        chStart[ci] = pages.length;
+        var head = '<div class="gb-chhead"><small>第' + (ci + 1) + '章</small><h2>' + esc(c.t) + '</h2><p>' + esc(c.s) + '・' + c.terms.length + '語</p></div>';
+        var pg = { kind: "ch", ch: ci, run: "第" + (ci + 1) + "章　" + c.t, html: head };
+        body.innerHTML = pg.html;
+        c.terms.forEach(function (t) {
+          var h = termHtml(t);
+          body.innerHTML = pg.html + h;
+          if (!fits() && pg.html !== head && pg.html !== "") { pages.push(pg); pg = { kind: "ch", ch: ci, run: "第" + (ci + 1) + "章　" + c.t + "（つづき）", html: "" }; body.innerHTML = h; }
+          pg.html += h; termPage[t[0]] = pages.length;
+        });
+        pages.push(pg);
+      });
+      // 索引：用語をあいうえお順（英字・カタカナ・漢字の読みの近似）に並べ、ページへ飛べるボタン
+      idxStart = pages.length;
+      var all = [];
+      GLOSSARY.forEach(function (c) { c.terms.forEach(function (t) { all.push(t[0]); }); });
+      var kana = function (n) { var y = YOMI[n] || n; return y.replace(/[\u30a1-\u30f6]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0x60); }); };
+      var ROWS = ["あ", "か", "さ", "た", "な", "は", "ま", "や", "ら", "わ"], ROWEND = "かさたなはまやらわん";
+      var group = function (n) { var k = kana(n).replace(/^[ー・]/, ""), c = k.charAt(0); if (/[A-Za-z]/.test(c)) return "英字";
+        var base = c.normalize("NFD").charAt(0); for (var r = 0; r < ROWS.length; r++) if (base < ROWEND.charAt(r)) return ROWS[r] + "行"; return "わ行"; };
+      all.sort(function (a, b) { var ga = /[A-Za-z]/.test(a.charAt(0)), gb = /[A-Za-z]/.test(b.charAt(0)); if (ga !== gb) return ga ? -1 : 1; return kana(a).localeCompare(kana(b), "ja"); });
+      var ip = { kind: "idx", run: "索引", items: [] };
+      body.innerHTML = '<div class="gb-chhead"><small>INDEX</small><h2>索引</h2><p>用語をタップするとそのページへ</p></div><div class="gb-idx"></div>';
+      var list = body.querySelector(".gb-idx");
+      var seq = [], lastG = "";
+      all.forEach(function (name) { var g = group(name); if (g !== lastG) { seq.push({ h: g }); lastG = g; } seq.push(name); });
+      var itemHtml = function (x) { return x.h ? '<h4>' + esc(x.h) + '</h4>' : '<button type="button">' + esc(x) + '<em>p.000</em></button>'; };
+      seq.forEach(function (x, k) {
+        var add = itemHtml(x) + (x.h && seq[k + 1] ? itemHtml(seq[k + 1]) : "");  // 見出しは次の用語といっしょに入るときだけ
+        list.insertAdjacentHTML("beforeend", add);
+        if (!fits() && ip.items.length) { pages.push(ip); ip = { kind: "idx", run: "索引（つづき）", items: [] }; body.innerHTML = '<div class="gb-idx"></div>'; list = body.querySelector(".gb-idx"); list.insertAdjacentHTML("beforeend", add); }
+        if (x.h && seq[k + 1]) list.lastChild.remove();
+        ip.items.push(x);
+      });
+      pages.push(ip);
+      m.remove();
+      if (two && pages.length % 2) pages.push({ kind: "blank" });
+    }
+    function pageHtml(i) {
+      var p = pages[i];
+      if (!p) return "";
+      if (p.kind === "blank") return '<div class="gb-page blank"></div>';
+      var inner = "";
+      if (p.kind === "toc") {
+        var bm = 0; try { bm = +localStorage.getItem(BM) || 0; } catch (e) {}
+        inner = '<div class="gb-cover"><small>FX GLOSSARY</small><h1>FX用語集</h1><p>' + GLOSSARY.length + '章・' + total + '語｜章をタップするとそのページへ</p></div><ol class="gb-toc">' +
+          GLOSSARY.map(function (c, ci) { return '<li><button type="button" data-go="' + chStart[ci] + '"><i>第' + (ci + 1) + '章</i><span><b>' + esc(c.t) + '</b><small>' + esc(c.s) + '</small></span><em>p.' + (chStart[ci] + 1) + '</em></button></li>'; }).join("") +
+          '<li><button type="button" data-go="' + idxStart + '"><i>索引</i><span><b>索引</b><small>用語をあいうえお順に</small></span><em>p.' + (idxStart + 1) + '</em></button></li></ol>' +
+          (bm > 0 && bm < pages.length ? '<button type="button" class="gb-resume" data-go="' + bm + '">しおり：前回の続き（p.' + (bm + 1) + '）から読む</button>' : '');
+      } else if (p.kind === "ch") inner = p.html;
+      else inner = (p.run === "索引" ? '<div class="gb-chhead"><small>INDEX</small><h2>索引</h2><p>用語をタップするとそのページへ</p></div>' : '') +
+        '<div class="gb-idx">' + p.items.map(function (n) { return n.h ? '<h4>' + esc(n.h) + '</h4>' : '<button type="button" data-go="' + termPage[n] + '">' + esc(n) + '<em>p.' + (termPage[n] + 1) + '</em></button>'; }).join("") + '</div>';
+      return '<div class="gb-page' + (p.kind === "toc" ? " toc" : "") + '"><div class="gb-in"><div class="gb-run">' + esc(p.run) + '</div>' + inner + '</div><div class="gb-foot"><span>FX用語集</span><span>' + (i + 1) + ' / ' + pages.length + '</span></div></div>';
+    }
+    function show(i, dir) {
+      paginate();
+      var step = two ? 2 : 1;
+      i = Math.max(0, Math.min(pages.length - 1, i)); if (two) i -= i % 2;
+      cur = i;
+      var sz = pageSize();
+      spread.className = "gb-spread" + (two ? " two" : "");
+      spread.innerHTML = pageHtml(i) + (two ? pageHtml(i + 1) : "");
+      Array.prototype.forEach.call(spread.children, function (el) { el.style.width = sz.w + "px"; });
+      if (dir) { void spread.offsetWidth; spread.classList.add(dir > 0 ? "turn-next" : "turn-prev"); }
+      var p = pages[i], last = Math.min(pages.length, i + step);
+      document.getElementById("gb-chap").textContent = p.kind === "ch" ? "第" + (p.ch + 1) + "章　" + GLOSSARY[p.ch].t : p.kind === "idx" ? "索引" : "目次";
+      document.getElementById("gb-pno").textContent = (two && last > i + 1 ? (i + 1) + "–" + last : (i + 1)) + " / " + pages.length;
+      document.getElementById("gb-prog").style.width = (last / pages.length * 100) + "%";
+      book.querySelector('[data-gl="prev"]').disabled = i === 0;
+      book.querySelector('[data-gl="next"]').disabled = i + step >= pages.length;
+      if (i > 0) try { localStorage.setItem(BM, String(i)); } catch (e) {}
+    }
+    function open(i, from) {
+      opener = from || document.activeElement;
+      book.hidden = false; built = ""; show(i || 0);
+      book.querySelector('[data-gl="next"]').focus();
+    }
+    function close() { book.hidden = true; if (opener && opener.focus) opener.focus(); }
+    document.addEventListener("click", function (e) {
+      var g = e.target.closest("[data-gl],[data-go]"); if (!g) return;
+      if (g.hasAttribute("data-go")) { var to = +g.getAttribute("data-go"); show(to, to >= cur ? 1 : -1); return; }
+      var a = g.getAttribute("data-gl");
+      if (a === "close") close();
+      else if (a === "prev") show(cur - (two ? 2 : 1), -1);
+      else if (a === "next") show(cur + (two ? 2 : 1), 1);
+      else if (book.hidden) { paginate(); built = ""; open(a === "idx" ? -1 : a === "ch" ? -2 : 0, g); if (a === "idx") show(idxStart); if (a === "ch") show(chStart[+g.getAttribute("data-ch")]); }
+      else if (a === "toc") show(0, -1);
+      else if (a === "idx") show(idxStart, 1);
+    });
+    document.addEventListener("keydown", function (e) {
+      if (book.hidden) return;
+      if (e.key === "Escape") close();
+      else if (e.key === "ArrowRight") show(cur + (two ? 2 : 1), 1);
+      else if (e.key === "ArrowLeft") show(cur - (two ? 2 : 1), -1);
+    });
+    // スワイプでページをめくる（左へ＝次、右へ＝前）
+    var sx = null, sy = 0;
+    stage.addEventListener("pointerdown", function (e) { sx = e.clientX; sy = e.clientY; });
+    stage.addEventListener("pointerup", function (e) {
+      if (sx == null) return; var dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3) show(cur + (dx < 0 ? 1 : -1) * (two ? 2 : 1), dx < 0 ? 1 : -1);
+    });
+    window.addEventListener("resize", function () { if (book.hidden) return; var top = pages[cur]; built = ""; paginate(); show(Math.min(cur, pages.length - 1)); });
+  })();
 
   /* ---------- 今日の言葉: each device keeps its own text ---------- */
   (function () {
