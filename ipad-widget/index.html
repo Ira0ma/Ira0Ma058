@@ -232,6 +232,69 @@ body {
 .wx-eq small { font-size: 11px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wx-eq button { position: absolute; top: 4px; right: 4px; font: inherit; font-size: 13px; line-height: 1; color: var(--ink-2); background: none; border: 0; padding: 4px 6px; cursor: pointer; }
 
+/* 地震・台風・花粉：天気のカードのボタンと全画面のパネル */
+.wx-hz { position: absolute; top: 10px; right: 12px; display: flex; gap: 4px; z-index: 1; }
+.wx-hz button { font: inherit; font-size: 10.5px; font-weight: 600; color: var(--ink-2); background: rgba(255,255,255,.07); border: 1px solid var(--glass-line); border-radius: 999px; padding: 2px 8px; cursor: pointer; }
+.wx-hz button:hover, .wx-hz button:focus-visible { color: #14100a; background: var(--gold); border-color: var(--gold); outline: none; }
+#weather .wx-hl { margin-top: 18px; }
+.hz { position: fixed; inset: 0; z-index: 41; display: flex; flex-direction: column; background: radial-gradient(120% 90% at 50% 0%, #121a24 0%, #07090d 70%); color: var(--ink);
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+.hz[hidden] { display: none; }
+.hz-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; }
+.hz-tabs { display: flex; gap: 6px; }
+.hz-tabs button, .hz-x { font: inherit; font-size: 13px; font-weight: 700; color: var(--ink-2); background: rgba(255,255,255,.07); border: 1px solid var(--glass-line); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+.hz-tabs button.on { color: #14100a; background: var(--gold); border-color: var(--gold); }
+.hz-x { color: #14100a; background: var(--gold); border-color: var(--gold); }
+.hz-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 6px 16px 24px; width: 100%; max-width: 820px; margin: 0 auto; box-sizing: border-box; }
+.hz-load { padding: 30px 0; text-align: center; color: var(--ink-2); font-size: 13px; }
+.hz-lead { font-size: 13px; color: var(--ink-2); line-height: 1.6; margin: 6px 0 10px; }
+.hz-src { font-size: 11.5px; color: var(--ink-3); margin: 12px 0 0; line-height: 1.7; }
+.hz-link { color: var(--gold); text-decoration: none; font-weight: 600; white-space: nowrap; }
+.hz-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.hz-eq { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.045); border: 1px solid var(--glass-line); }
+.hz-eq > div { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.hz-eq b { font-size: 14px; } .hz-eq span { font-size: 12.5px; color: var(--ink-2); } .hz-eq small { font-size: 11.5px; color: var(--ink-3); }
+.hz-eq em { font-style: normal; color: #ff8a7e; }
+.hz-sc { flex: none; width: 52px; height: 52px; border-radius: 12px; display: grid; place-items: center; align-content: center; color: #fff; font-size: 19px; font-weight: 800; line-height: 1; }
+.hz-sc small { font-size: 9.5px; font-weight: 600; opacity: .9; margin-bottom: 2px; }
+.hz-calm { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 40px 10px 20px; font-size: 40px; text-align: center; }
+.hz-calm b { font-size: 16px; } .hz-calm span { font-size: 12.5px; color: var(--ink-2); }
+.hz-ty { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 640px) { .hz-ty { grid-template-columns: 1fr; } }
+.hz-map { width: 100%; height: auto; background: #0b1f33; border-radius: 12px; border: 1px solid var(--glass-line); }
+.hz-grid { stroke: rgba(255,255,255,.08); stroke-width: 1; } .hz-gt { fill: rgba(255,255,255,.35); font-size: 9px; }
+.hz-land { fill: #3f5b45; stroke: #6c8f72; stroke-width: .8; }
+.hz-me { fill: #e3b867; font-size: 10px; font-weight: 700; }
+.hz-track { fill: none; stroke: #ff8a7e; stroke-width: 2; stroke-dasharray: 5 4; }
+.hz-circle { fill: rgba(255,255,255,.06); stroke: rgba(255,255,255,.55); stroke-width: 1; stroke-dasharray: 3 3; }
+.hz-tyno { fill: #fff; font-size: 12px; font-weight: 800; }
+.hz-tylist { display: flex; flex-direction: column; gap: 8px; }
+.hz-tycard { padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid var(--glass-line); display: flex; flex-direction: column; gap: 6px; }
+.hz-tycard b { font-size: 16px; color: #ff9a8e; } .hz-tycat { font-size: 12px; color: var(--ink-2); }
+.hz-tycard dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 2px 0 0; font-size: 13px; }
+.hz-tycard dt { color: var(--ink-3); } .hz-tycard dd { margin: 0; }
+.hz-tycard small { font-size: 11px; color: var(--ink-3); }
+.hz-fc { list-style: none; margin: 4px 0 0; padding: 6px 0 0; border-top: 1px solid var(--glass-line); display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.hz-fc li { display: flex; justify-content: space-between; gap: 8px; } .hz-fc span { color: var(--ink-2); } .hz-fc em { font-style: normal; }
+.hz-now { font-size: 14px; margin: 4px 0 10px; } .hz-now b { color: var(--gold); }
+.hz-cal { width: 100%; border-collapse: separate; border-spacing: 2px; font-size: 11.5px; table-layout: fixed; }
+.hz-cal th { font-weight: 600; color: var(--ink-2); padding: 2px 0; }
+.hz-cal tbody th { text-align: left; white-space: nowrap; width: 9.5em; font-size: 12px; color: var(--ink); }
+.hz-cal th.now { color: var(--gold); }
+.hz-cal td { height: 18px; border-radius: 4px; background: rgba(255,255,255,.04); }
+.hz-cal td.on { background: rgba(240,170,70,.45); } .hz-cal td.pk { background: #e8862f; }
+.hz-cal td.now { box-shadow: inset 0 0 0 2px var(--gold); }
+.hz-pl { display: grid; grid-template-columns: 170px 1fr; gap: 14px; align-items: end; padding: 12px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid var(--glass-line); }
+@media (max-width: 520px) { .hz-pl { grid-template-columns: 1fr; } }
+.hz-plnow { display: flex; flex-direction: column; gap: 2px; } .hz-plnow span { font-size: 12.5px; color: var(--ink-2); } .hz-plnow b { font-size: 26px; } .hz-plnow small { font-size: 11.5px; color: var(--ink-3); }
+.hz-bars { display: flex; align-items: flex-end; gap: 2px; height: 90px; }
+.hz-bars div { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+.hz-bars i { width: 100%; border-radius: 2px 2px 0 0; min-height: 1px; } .hz-bars small { font-size: 9px; color: var(--ink-3); height: 12px; }
+.hz-h { font-size: 13px; margin: 14px 0 6px; color: var(--ink-2); }
+.hz-rank { margin: 0 0 12px; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 14px; counter-reset: r; font-size: 13px; }
+.hz-rank li { display: flex; gap: 8px; align-items: baseline; counter-increment: r; } .hz-rank li::before { content: counter(r); color: var(--ink-3); width: 1.2em; }
+.hz-rank em { margin-left: auto; font-style: normal; color: var(--ink-3); font-size: 11.5px; }
+
 /* quote */
 /* 今日の言葉: in the clock card, under the date (each device keeps its own text) */
 #clock .q-text { font-family: var(--mincho); font-size: 15px; font-weight: 600; line-height: 1.55; letter-spacing: .04em; color: var(--ink); white-space: pre-line; overflow-wrap: anywhere; margin-top: 12px; max-height: 72px; overflow: hidden; }
@@ -549,6 +612,7 @@ html:not(.flow) #flow { display: none; }
       <div class="wx-hl num">最高 <span data-wx="hi">26</span>°<br>最低 <span data-wx="lo">18</span>°</div>
     </div>
     <div class="wx-hours num" data-wx="hours"></div>
+    <div class="wx-hz" role="group" aria-label="防災・季節の情報"><button type="button" data-hz-open="eq">地震</button><button type="button" data-hz-open="ty">台風</button><button type="button" data-hz-open="pl">花粉</button></div>
     <div class="wx-eq" id="wx-eq" role="alert" hidden><button type="button" aria-label="地震情報を閉じる">✕</button><b></b><span></span><small></small></div>
     <div class="wx-panel" hidden>
       <div class="wx-ph"><span>天気の場所</span><button type="button" class="wx-close">閉じる</button></div>
@@ -585,6 +649,12 @@ html:not(.flow) #flow { display: none; }
 
 
 </div>
+</div>
+
+<!-- 地震・台風・花粉（天気のカードのボタンから） -->
+<div class="hz" id="hz" hidden role="dialog" aria-modal="true" aria-label="地震・台風・花粉の情報">
+  <div class="hz-bar"><div class="hz-tabs" role="tablist"><button type="button" role="tab" data-hz="eq">🌏 地震</button><button type="button" role="tab" data-hz="ty">🌀 台風</button><button type="button" role="tab" data-hz="pl">🌲 花粉</button></div><button type="button" class="hz-x">閉じる</button></div>
+  <div class="hz-body" id="hz-body"></div>
 </div>
 
 <!-- FX用語集（デジタルブック） -->
@@ -1538,6 +1608,7 @@ html:not(.flow) #flow { display: none; }
   var LOC_KEY = "wx-loc-v1", loc = { name: "東京", lat: 35.68, lon: 139.76 };
   try { loc = JSON.parse(localStorage.getItem(LOC_KEY)) || loc; } catch (e) {}
   function saveLoc() { try { localStorage.setItem(LOC_KEY, JSON.stringify(loc)); } catch (e) {} }
+  window.wxLoc = function () { return loc; };  // 地震・台風・花粉のパネルが、天気の場所に近い地点を選ぶのに使う
   function showCity() { document.querySelector('[data-wx="city"]').textContent = loc.name + (loc.gps ? "（現在地）" : ""); }
   function locate(done, fail) {
     if (!navigator.geolocation) { fail(); return; }
@@ -1659,6 +1730,114 @@ html:not(.flow) #flow { display: none; }
     eqClosed = eqShown.id; try { localStorage.setItem("desk_eq_closed", eqClosed); } catch (e) {}
     eqPaint();
   });
+
+  /* ---------- 地震・台風・花粉：天気のカードのボタンから全画面のパネルで見る ----------
+     地震は P2P地震情報（気象庁の発表）の履歴、台風は気象庁の台風情報、花粉はウェザーニューズのポールンロボの観測
+     （どちらも Pages のワークフローが typhoon.json・pollen.json にまとめる）。花粉の季節外は飛散の時期の目安を出す */
+  (function () {
+    var sheet = document.getElementById("hz"), body = document.getElementById("hz-body"), tab = "eq", opener = null;
+    var esc = function (t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+    var hm = function (t) { var d = new Date(t); return (d.getMonth() + 1) + "/" + d.getDate() + " " + d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2); };
+    var link = function (href, text) { return '<a class="hz-link" href="' + href + '" target="_blank" rel="noopener">' + text + ' ↗</a>'; };
+    function open(t, from) { opener = from || document.activeElement; tab = t; sheet.hidden = false; render(); sheet.querySelector(".hz-x").focus(); }
+    function close() { sheet.hidden = true; if (opener && opener.focus) opener.focus(); }
+    function render() {
+      sheet.querySelectorAll(".hz-tabs button").forEach(function (b) { var on = b.getAttribute("data-hz") === tab; b.classList.toggle("on", on); b.setAttribute("aria-selected", String(on)); });
+      body.innerHTML = '<div class="hz-load">読み込み中...</div>';
+      (tab === "eq" ? quakes : tab === "ty" ? typhoons : pollen)();
+    }
+    function getJson(url) { return fetch(url, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); }); }
+
+    /* 地震：最近の地震（震度1以上）を新しい順に */
+    var SC = { 10: ["1", "#6c7a89"], 20: ["2", "#3a8fd6"], 30: ["3", "#2fa56a"], 40: ["4", "#d7b52e"], 45: ["5弱", "#e8862f"], 50: ["5強", "#e8692f"], 55: ["6弱", "#d8402f"], 60: ["6強", "#b3262b"], 70: ["7", "#7d1c4f"] };
+    function quakes() {
+      getJson("https://api.p2pquake.net/v2/history?codes=551&limit=30").then(function (list) {
+        var rows = list.filter(function (m) { return m.earthquake && m.earthquake.maxScale > 0; }).slice(0, 20).map(function (m) {
+          var q = m.earthquake, h = q.hypocenter || {}, sc = SC[q.maxScale] || ["?", "#6c7a89"], t = eqTime(q.time);
+          var prefs = {}; (m.points || []).forEach(function (p) { if (!prefs[p.pref] || prefs[p.pref] < p.scale) prefs[p.pref] = p.scale; });
+          var top = Object.keys(prefs).sort(function (a, b) { return prefs[b] - prefs[a]; }).slice(0, 3).map(function (p) { return p + " " + ((SC[prefs[p]] || [])[0] || ""); });
+          var ts = q.domesticTsunami;
+          return '<li class="hz-eq"><span class="hz-sc" style="background:' + sc[1] + '"><small>震度</small>' + sc[0] + '</span><div><b>' + esc(h.name || "震源 調査中") + '</b>' +
+            '<span>' + hm(t) + (h.magnitude > 0 ? '　M' + h.magnitude : '') + (h.depth > 0 ? '　深さ' + h.depth + 'km' : h.depth === 0 ? '　ごく浅い' : '') + '</span>' +
+            '<small>' + esc(top.join("・")) + (ts && ts !== "None" ? '　<em>' + esc(EQ_TSUNAMI[ts] || ts) + '</em>' : '') + '</small></div></li>';
+        }).join("");
+        body.innerHTML = '<p class="hz-lead">最近の地震（震度1以上・新しい順）。強い揺れの地震は、この画面を閉じていてもトップの天気のカードでお知らせします。</p>' +
+          (rows ? '<ul class="hz-list">' + rows + '</ul>' : '<div class="hz-load">最近の地震はありません</div>') +
+          '<p class="hz-src">気象庁の発表（P2P地震情報経由）　' + link("https://www.jma.go.jp/bosai/map.html#contents=earthquake_map", "気象庁の地震情報") + '</p>';
+      }).catch(function () { body.innerHTML = '<div class="hz-load">地震情報を取得できませんでした。</div><p class="hz-src">' + link("https://www.jma.go.jp/bosai/map.html#contents=earthquake_map", "気象庁の地震情報") + '</p>'; });
+    }
+
+    /* 台風：位置・気圧・風と予報の進路を簡単な地図に */
+    var JP = [[[141.0,41.4],[140.0,42.2],[139.8,42.6],[140.4,43.3],[141.4,43.3],[141.6,44.2],[141.7,45.4],[142.2,45.4],[143.3,44.3],[144.3,44.0],[145.3,44.3],[145.8,43.3],[145.0,43.0],[144.0,42.9],[143.3,42.0],[141.8,42.6],[141.0,41.8]],
+      [[140.9,41.5],[141.5,40.5],[141.9,39.6],[141.6,38.3],[141.0,38.0],[141.0,37.0],[140.6,36.2],[140.9,35.7],[140.3,35.1],[139.8,35.0],[139.7,35.4],[139.2,35.2],[138.8,34.6],[138.2,34.6],[137.0,34.6],[136.9,34.3],[136.2,33.9],[135.8,33.5],[135.1,33.9],[135.0,34.4],[134.0,34.6],[133.0,34.4],[132.2,34.0],[131.0,34.0],[130.9,34.4],[131.4,34.6],[132.4,35.4],[133.5,35.6],[134.5,35.6],[135.4,35.7],[135.9,35.7],[136.0,36.2],[136.7,36.8],[137.3,36.8],[137.0,37.1],[137.4,37.5],[138.5,37.4],[139.2,38.0],[139.6,38.8],[140.0,39.8],[139.9,40.6],[140.3,41.2]],
+      [[132.0,33.2],[132.6,33.9],[133.5,34.3],[134.6,34.2],[134.7,33.8],[134.2,33.3],[133.6,33.5],[133.0,32.8],[132.4,32.9]],
+      [[129.6,33.3],[130.3,33.6],[130.9,33.9],[131.6,33.6],[131.8,32.8],[131.4,31.5],[130.7,31.0],[130.2,31.3],[130.2,32.0],[129.8,32.7]]];
+    function tyMap(items) {
+      var L0 = 115, L1 = 160, B0 = 5, B1 = 50, W = 360, H = 360, x = function (lon) { return (lon - L0) / (L1 - L0) * W; }, y = function (lat) { return (B1 - lat) / (B1 - B0) * H; };
+      var g = "";
+      for (var lo = 120; lo < L1; lo += 10) g += '<line x1="' + x(lo) + '" x2="' + x(lo) + '" y1="0" y2="' + H + '" class="hz-grid"/><text x="' + (x(lo) + 2) + '" y="' + (H - 4) + '" class="hz-gt">' + lo + '°E</text>';
+      for (var la = 10; la < B1; la += 10) g += '<line y1="' + y(la) + '" y2="' + y(la) + '" x1="0" x2="' + W + '" class="hz-grid"/><text x="2" y="' + (y(la) - 2) + '" class="hz-gt">' + la + '°N</text>';
+      g += JP.map(function (p) { return '<polygon points="' + p.map(function (q) { return x(q[0]) + "," + y(q[1]); }).join(" ") + '" class="hz-land"/>'; }).join("") + '<circle cx="' + x(127.7) + '" cy="' + y(26.3) + '" r="2.5" class="hz-land"/>';
+      var me = window.wxLoc && wxLoc();
+      if (me && me.lat) g += '<circle cx="' + x(me.lon) + '" cy="' + y(me.lat) + '" r="4" fill="#e3b867"/><text x="' + (x(me.lon) + 6) + '" y="' + (y(me.lat) + 4) + '" class="hz-me">' + esc(me.name || "") + '</text>';
+      items.forEach(function (ty, k) {
+        var pts = (ty.track || []).filter(function (p) { return p.pos && p.pos.length >= 2; }).map(function (p) { return { lat: parseFloat(p.pos[0]), lon: parseFloat(p.pos[1]), r: parseFloat(p.circle) || 0, t: p.t }; })
+          .filter(function (p) { return isFinite(p.lat) && isFinite(p.lon); });
+        if (!pts.length) return;
+        g += pts.slice(1).map(function (p) { return p.r ? '<circle cx="' + x(p.lon) + '" cy="' + y(p.lat) + '" r="' + (p.r / 111 / (L1 - L0) * W) + '" class="hz-circle"/>' : ''; }).join("");
+        g += '<polyline points="' + pts.map(function (p) { return x(p.lon) + "," + y(p.lat); }).join(" ") + '" class="hz-track"/>';
+        g += pts.slice(1).map(function (p) { return '<circle cx="' + x(p.lon) + '" cy="' + y(p.lat) + '" r="2.5" fill="#fff"/>'; }).join("");
+        g += '<circle cx="' + x(pts[0].lon) + '" cy="' + y(pts[0].lat) + '" r="7" fill="#ff5a4a" stroke="#fff" stroke-width="1.5"/><text x="' + (x(pts[0].lon) + 10) + '" y="' + (y(pts[0].lat) + 4) + '" class="hz-tyno">' + esc(ty.number ? "第" + (+String(ty.number).slice(-2)) + "号" : "") + '</text>';
+      });
+      return '<svg class="hz-map" viewBox="0 0 ' + W + ' ' + H + '">' + g + '</svg>';
+    }
+    function typhoons() {
+      getJson("typhoon.json").then(function (j) {
+        var items = (j.items || []).filter(function (t) { return (t.track || []).length; });
+        var up = j.updated ? '<p class="hz-src">気象庁の台風情報（' + hm(j.updated * 1000) + ' 取得）　' + link("https://www.jma.go.jp/bosai/map.html#contents=typhoon", "気象庁の台風情報") + '</p>' : '';
+        if (!items.length) { body.innerHTML = '<div class="hz-calm">🌀<b>現在、台風は発生していません</b><span>日本の周辺で台風が発生すると、ここに位置と予報の進路が出ます。</span></div>' + up; return; }
+        body.innerHTML = '<div class="hz-ty">' + tyMap(items) + '<div class="hz-tylist">' + items.map(function (ty) {
+          var a = ty.track[0], n = ty.number ? +String(ty.number).slice(-2) : "";
+          return '<div class="hz-tycard"><b>台風第' + n + '号' + (ty.name ? '（' + esc(ty.name) + '）' : '') + '</b><span class="hz-tycat">' + esc([ty.size, ty.strength, ty.category].filter(Boolean).join("・")) + '</span>' +
+            '<dl><dt>位置</dt><dd>' + esc(a.loc || (a.pos ? "北緯" + a.pos[0] + "°・東経" + a.pos[1] + "°" : "--")) + '</dd>' +
+            '<dt>中心気圧</dt><dd>' + (a.pressure ? esc(a.pressure) + ' hPa' : '--') + '</dd><dt>最大風速</dt><dd>' + (a.wind ? esc(a.wind) + ' m/s' : '--') + '</dd>' +
+            '<dt>進路・速さ</dt><dd>' + esc(a.course || "--") + (a.speed ? '　' + esc(a.speed) + ' km/h' : '') + '</dd></dl>' +
+            (ty.track.length > 1 ? '<ul class="hz-fc">' + ty.track.slice(1).map(function (p) { var t = Date.parse(p.t); return '<li><span>' + (isFinite(t) ? hm(t) : esc(p.part || "予報")) + '</span><em>' + (p.pressure ? esc(p.pressure) + 'hPa' : '') + (p.wind ? '・' + esc(p.wind) + 'm/s' : '') + '</em></li>'; }).join("") + '</ul>' +
+              '<small>地図の白い点が予報の位置、点線の円は予報円（中心が70％の確率で入る範囲）</small>' : '') + '</div>';
+        }).join("") + '</div></div>' + up;
+      }).catch(function () { body.innerHTML = '<div class="hz-load">台風情報を取得できませんでした。</div><p class="hz-src">' + link("https://www.jma.go.jp/bosai/map.html#contents=typhoon", "気象庁の台風情報") + '</p>'; });
+    }
+
+    /* 花粉：季節中は天気の場所にいちばん近い県庁所在地の観測（1時間ごとの個数）、季節外は飛ぶ時期の目安 */
+    var CAL = [["スギ", [2, 3, 4], 3], ["ヒノキ", [3, 4, 5], 4], ["イネ科", [4, 5, 6, 7, 8, 9], 5], ["ブタクサ", [8, 9, 10], 9], ["ヨモギ", [8, 9, 10], 9], ["シラカバ（北海道）", [4, 5, 6], 5]];
+    function pollenCal() {
+      var m = new Date().getMonth() + 1, now = CAL.filter(function (c) { return c[1].indexOf(m) >= 0; }).map(function (c) { return c[0]; });
+      var head = '<tr><th></th>' + [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(function (k) { return '<th' + (k === m ? ' class="now"' : '') + '>' + k + '</th>'; }).join("") + '</tr>';
+      return '<div class="hz-now"><b>' + m + '月に飛ぶ花粉：</b>' + (now.length ? now.join("・") : "ほとんどありません") + '</div>' +
+        '<table class="hz-cal"><thead>' + head + '</thead><tbody>' + CAL.map(function (c) {
+          return '<tr><th>' + c[0] + '</th>' + [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(function (k) { var on = c[1].indexOf(k) >= 0; return '<td class="' + (on ? (k === c[2] ? "pk" : "on") : "") + (k === m ? " now" : "") + '"></td>'; }).join("") + '</tr>';
+        }).join("") + '</tbody></table><p class="hz-src">飛ぶ時期は関東の目安（濃い色がピーク）。地域や年で前後します。</p>';
+    }
+    var LV = function (v) { return v == null ? ["--", ""] : v < 10 ? ["少ない", "#3a8fd6"] : v < 30 ? ["やや多い", "#d7b52e"] : v < 100 ? ["多い", "#e8692f"] : ["非常に多い", "#b3262b"]; };
+    function pollen() {
+      getJson("pollen.json").then(function (j) {
+        var links = '<p class="hz-src">' + link("https://tenki.jp/pollen/", "tenki.jp 花粉情報") + '　' + link("https://weathernews.jp/s/pollen/", "ウェザーニュース 花粉") + '</p>';
+        if (!j.season || !(j.cities || []).length) { body.innerHTML = '<p class="hz-lead">今は花粉の観測期間（2〜5月）の外です。季節になると、天気の場所に近い観測地点の飛散数がここに出ます。</p>' + pollenCal() + links; return; }
+        var me = (window.wxLoc && wxLoc()) || { lat: 35.68, lon: 139.76 }, near = j.cities.slice().sort(function (a, b) { return (Math.pow(a.lat - me.lat, 2) + Math.pow(a.lon - me.lon, 2)) - (Math.pow(b.lat - me.lat, 2) + Math.pow(b.lon - me.lon, 2)); })[0];
+        var lv = LV(near.max), mx = Math.max(10, near.max || 0);
+        var bars = (near.hours || []).map(function (h) { return '<div title="' + h[0] + ' ' + h[1] + '個"><i style="height:' + Math.round(h[1] / mx * 100) + '%;background:' + LV(h[1])[1] + '"></i><small>' + (+h[0].slice(0, 2) % 3 ? '' : +h[0].slice(0, 2)) + '</small></div>'; }).join("");
+        var rank = j.cities.filter(function (c) { return c.max != null; }).sort(function (a, b) { return b.max - a.max; }).slice(0, 8);
+        body.innerHTML = '<div class="hz-pl"><div class="hz-plnow"><span>' + esc(near.name) + '（今日）</span><b style="color:' + lv[1] + '">' + lv[0] + '</b><small>1時間の最大 ' + (near.max == null ? '--' : near.max + '個') + '</small></div>' +
+          '<div class="hz-bars">' + (bars || '<div class="hz-load">まだ観測がありません</div>') + '</div></div>' +
+          '<h4 class="hz-h">今日多い地点</h4><ol class="hz-rank">' + rank.map(function (c) { var l = LV(c.max); return '<li><span>' + esc(c.name) + '</span><b style="color:' + l[1] + '">' + l[0] + '</b><em>' + c.max + '個</em></li>'; }).join("") + '</ol>' +
+          '<p class="hz-src">ウェザーニューズ ポールンロボの観測（1時間あたりの個数・' + hm(j.updated * 1000) + ' 取得）。多い・少ないは目安です。</p>' + pollenCal() + links;
+      }).catch(function () { body.innerHTML = pollenCal() + '<p class="hz-src">' + link("https://tenki.jp/pollen/", "tenki.jp 花粉情報") + '</p>'; });
+    }
+    document.querySelectorAll("[data-hz-open]").forEach(function (b) { b.addEventListener("click", function (e) { e.stopPropagation(); open(b.getAttribute("data-hz-open"), b); }); });
+    sheet.querySelectorAll(".hz-tabs button").forEach(function (b) { b.addEventListener("click", function () { tab = b.getAttribute("data-hz"); render(); }); });
+    sheet.querySelector(".hz-x").addEventListener("click", close);
+    document.addEventListener("keydown", function (e) { if (!sheet.hidden && e.key === "Escape") close(); });
+  })();
 
   /* ---------- calendar ---------- */
   var HOL = "2026-01-01 2026-01-12 2026-02-11 2026-02-23 2026-03-20 2026-04-29 2026-05-03 2026-05-04 2026-05-05 2026-05-06 2026-07-20 2026-08-11 2026-09-21 2026-09-22 2026-09-23 2026-10-12 2026-11-03 2026-11-23 " +

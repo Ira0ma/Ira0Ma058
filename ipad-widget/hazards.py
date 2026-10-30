@@ -49,15 +49,18 @@ def typhoons():
     for tc in ids:
         spec = json.loads(get(f"{base}{tc}/specifications.json"))
         parts = spec if isinstance(spec, list) else [spec]
-        if parts:
-            print("typhoon", tc, "keys:", sorted(parts[0].keys())[:20] if isinstance(parts[0], dict) else type(parts[0]))
+        if not out:  # the fields of the analysis part and of the last forecast part, for checking
+            for p in (parts[1:2] + parts[-1:]):
+                if isinstance(p, dict):
+                    print("typhoon", tc, "part", pick(p, "part", "jp"), "keys:", {k: (v if not isinstance(v, (dict, list)) else (list(v.keys()) if isinstance(v, dict) else len(v))) for k, v in p.items()})
         track = []
         head = None
         for p in parts:
             if not isinstance(p, dict):
                 continue
             pos = pick(p, "position", "deg") or pick(p, "center", "deg")
-            pt = {"t": p.get("validtime") or pick(p, "validtime", "JST") or p.get("time"),
+            vt = p.get("validtime") or p.get("time")
+            pt = {"t": vt.get("JST") if isinstance(vt, dict) else vt,
                   "part": pick(p, "part", "jp") or p.get("part"),
                   "pos": pos,
                   "loc": p.get("location"),
@@ -65,12 +68,16 @@ def typhoons():
                   "wind": pick(p, "maximumWind", "sustained", "m/s") or pick(p, "maximumWind", "sustained", "ms"),
                   "course": p.get("course"),
                   "speed": pick(p, "speed", "km/h") or pick(p, "speed", "km_h"),
-                  "circle": pick(p, "probabilityCircle", "radius", "km") or pick(p, "forecastCircle", "radius", "km")}
+                  "circle": (pick(p, "probabilityCircle", "radius", "km") or pick(p, "forecastCircle", "radius", "km")
+                             or pick(p, "probabilityCircle", "radius") or pick(p, "forecastCircle", "radius")),
+                  "storm": pick(p, "stormWarning", "radius", "km") or pick(p, "stormArea", "radius", "km")}
             if head is None and (p.get("name") or p.get("typhoonNumber")):
                 head = {"id": tc, "number": p.get("typhoonNumber") or tc[2:],
                         "name": pick(p, "name", "jp") or pick(p, "name", "en") or "",
                         "category": pick(p, "category", "jp") or "",
                         "size": pick(p, "scale", "jp") or "", "strength": pick(p, "intensity", "jp") or ""}
+            if head is not None and pos and not head["size"] and not head["strength"]:
+                head["size"], head["strength"] = pick(p, "scale", "jp") or "", pick(p, "intensity", "jp") or ""
             if pos:
                 track.append(pt)
         if head is None:
