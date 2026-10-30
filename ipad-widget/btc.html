@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="04ae47bd7f">
+<meta name="build" content="dca8a1abfe">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -142,6 +142,7 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .tl>span{color:#cbd6e0}.tl b{text-align:right;font-weight:700}.tl em{grid-column:1/-1;text-align:right;font-style:normal;font-size:11px;color:var(--muted)}
 .tl .up,.tl i.up{color:#42d59c}.tl .down,.tl i.down{color:#ff6969}.tl i{font-style:normal;font-weight:700}
 i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,156,.12);border-radius:6px;padding:1px 6px;margin-left:4px}
+.gq{display:inline-grid;place-items:center;width:18px;height:18px;margin-left:6px;vertical-align:2px;border-radius:50%;border:1px solid rgba(232,195,90,.55);background:rgba(232,195,90,.12);color:#e8c35a;font:700 11px/1 -apple-system,sans-serif;cursor:pointer;padding:0}.gq:hover{background:rgba(232,195,90,.3)}
 .alertgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .al-all{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#101820;border:1px solid #2c3a47;border-radius:11px;padding:10px 12px}
 .al-all b{display:block;font-size:13px}.al-all small{display:block;font-size:10.5px;color:var(--muted);margin-top:3px}.al-allbtn{display:flex;gap:6px}.al-allbtn .seg{padding:7px 14px}
@@ -490,19 +491,19 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
         <div class="stat"><span id="stat5Label">円換算 / oz</span><b id="goldJpy">--</b></div>
         <div class="stat"><span>H1 120SMA</span><b id="sma120">--</b></div>
       </div>
-      <div class="keylvhead"><b>重要価格帯</b><span class="sub">1時間足の水平線から</span></div>
+      <div class="keylvhead"><b>重要価格帯<button type="button" class="gq" data-gloss="水平線" aria-label="用語集：水平線">?</button></b><span class="sub">1時間足の水平線から</span></div>
       <div id="keyLv" class="keylv"></div>
       <div id="dxyBox" class="dxybox" hidden></div>
     </div>
 
     <div class="hero-signal">
-      <div class="cardhead"><div><div class="title">セットアップ判定</div><div class="sub" id="setupSub">3条件・チャートパターン＋利確余地で自動判定</div></div><span class="tag">SIGNAL</span></div>
+      <div class="cardhead"><div><div class="title">セットアップ判定<button type="button" class="gq" data-gloss="SMA" aria-label="用語集：SMA">?</button></div><div class="sub" id="setupSub">3条件・チャートパターン＋利確余地で自動判定</div></div><span class="tag">SIGNAL</span></div>
       <div id="signal" class="signal wait">WAIT<small>データ取得中</small></div>
       <div id="talkAlert" class="talkalert" hidden></div>
       <div id="waitFor" class="waitfor" hidden></div>
       <div class="meter"><i id="meter"></i></div>
       <div class="sub">判定強度 <b id="confidence">--</b></div>
-      <div class="tpbasis"><span>利確判定の基準</span><div class="segmented" id="tpBasisSeg">
+      <div class="tpbasis"><span>利確判定の基準<button type="button" class="gq" data-gloss="ch:トレードスタイル" aria-label="用語集：トレードスタイル">?</button></span><div class="segmented" id="tpBasisSeg">
         <button class="seg" data-tpb="h1">1時間足</button><button class="seg" data-tpb="m15">15分足</button><button class="seg" data-tpb="m5" title="5分足の水平線で利確を判定">スキャルピング</button><button class="seg" data-tpb="day" title="4時間足・日足の水平線で利確を判定">デイトレード</button><button class="seg" data-tpb="all">すべて</button></div></div>
       <div class="reasons">
         <div class="reason"><span>① H1 120SMA</span><b id="reasonSma">--</b></div>
@@ -571,7 +572,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 
   <!-- ===== リスク・ロット ===== -->
   <section id="secRisk" class="panel s4">
-    <div class="cardhead"><div><div class="title">リスク・ロット計算</div><div class="sub">ライブ価格とM15 ATRからSL/TPを算出</div></div><span class="tag">RISK</span></div>
+    <div class="cardhead"><div><div class="title">リスク・ロット計算<button type="button" class="gq" data-gloss="許容リスク" aria-label="用語集：許容リスク">?</button></div><div class="sub">ライブ価格とM15 ATRからSL/TPを算出</div></div><span class="tag">RISK</span></div>
     <div class="brokerrow"><span class="sub">口座</span>
       <div class="segmented" id="brokerSeg">
         <button class="seg" data-broker="xm"><b>XM KIWAMI極</b><small>1000倍</small></button>
@@ -623,7 +624,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 
   <!-- ===== 総合判定・マルチタイムフレーム ===== -->
   <section id="secMtf" class="panel s7">
-    <div class="cardhead"><div><div class="title">総合判定・マルチタイムフレーム</div><div class="sub">ルールベース｜ダウ理論・スーパートレンド・GMMA・RSIを時間足ごとに集計</div></div><span class="tag">SCORE</span></div>
+    <div class="cardhead"><div><div class="title">総合判定・マルチタイムフレーム<button type="button" class="gq" data-gloss="マルチタイムフレーム分析" aria-label="用語集：マルチタイムフレーム分析">?</button></div><div class="sub">ルールベース｜ダウ理論・スーパートレンド・GMMA・RSIを時間足ごとに集計</div></div><span class="tag">SCORE</span></div>
     <div id="mtfScore" class="mtfscore"></div>
     <div id="mtfTable" class="mtftable"></div>
     <div class="autonote">各時間足で4条件（ダウ理論・スーパートレンド・GMMA・RSI）が買い・売りのどちらにそろっているかを数え、H4・H1は3倍、M15は2倍、M5は1倍の重みで平均したものが一致度です。25未満は様子見。矢印やボタンをタップするとその時間足のチャートに切り替わります。売買の指示ではなく目安です。</div>
@@ -631,11 +632,11 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 
   <!-- ===== テクニカル詳細・CHOCH/BOS ===== -->
   <section id="secTech" class="panel s5">
-    <div class="cardhead"><div><div class="title">テクニカル詳細（H1）</div><div class="sub">120SMAとGMMAの状態</div></div><span class="tag">H1</span></div>
+    <div class="cardhead"><div><div class="title">テクニカル詳細（H1）<button type="button" class="gq" data-gloss="GMMA" aria-label="用語集：GMMA">?</button></div><div class="sub">120SMAとGMMAの状態</div></div><span class="tag">H1</span></div>
     <div id="techH1" class="techlist"></div>
-    <div class="cardhead" style="margin-top:14px"><div><div class="title">ATR（14）・値動きの大きさ</div><div class="sub">足1本あたりの平均の値幅。50本平均と比べて今が荒いか静かか</div></div><span class="tag">ATR</span></div>
+    <div class="cardhead" style="margin-top:14px"><div><div class="title">ATR（14）・値動きの大きさ<button type="button" class="gq" data-gloss="ATR" aria-label="用語集：ATR">?</button></div><div class="sub">足1本あたりの平均の値幅。50本平均と比べて今が荒いか静かか</div></div><span class="tag">ATR</span></div>
     <div id="atrBox" class="techlist"></div>
-    <div class="cardhead" style="margin-top:14px"><div><div class="title">CHOCH / BOS（M15）</div><div class="sub">構造の転換と高値・安値の更新（終値で判定）</div></div><span class="tag">M15</span></div>
+    <div class="cardhead" style="margin-top:14px"><div><div class="title">CHOCH / BOS（M15）<button type="button" class="gq" data-gloss="CHOCH" aria-label="用語集：CHOCH">?</button></div><div class="sub">構造の転換と高値・安値の更新（終値で判定）</div></div><span class="tag">M15</span></div>
     <div id="smcBox" class="techlist"></div>
     <details class="smcguide" id="smcGuide">
       <summary>CHOCH・BOS とは？（説明）</summary>
@@ -671,7 +672,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
   <!-- ===== 経済指標 ===== -->
   <section id="secNews" class="panel s7">
     <div class="cardhead">
-      <div><div class="title">経済指標</div><div class="sub">USD / JPYのHigh・Medium＋各国の要人発言を自動取得</div></div>
+      <div><div class="title">経済指標<button type="button" class="gq" data-gloss="ch:経済指標と市場" aria-label="用語集：経済指標と市場">?</button></div><div class="sub">USD / JPYのHigh・Medium＋各国の要人発言を自動取得</div></div>
       <div class="segmented"><button class="seg" data-ev="gold" id="relBtn">ゴールド関連</button><button class="seg" data-ev="all">★★以上＋発言</button><button class="seg" data-ev="high">★★★のみ</button></div>
     </div>
     <div id="eventList" class="events"><div class="sub">取得中...</div></div>
@@ -1514,7 +1515,7 @@ function renderChNow(){
   if(!state.maOn.ch){el.hidden=true;return}
   const rows=Object.keys(TFS).map(tf=>({tf,c:channelOf(tf)})).filter(o=>o.c);
   el.hidden=!rows.length;
-  el.innerHTML='<b class="chn-h">チャネル<small>（参考＝はっきりしたチャネルではないもの）</small></b>'+rows.map(({tf,c})=>`<button type="button" data-tf="${tf}" class="chn ${c.kind}${c.ref?' ref':''}${tf===state.tf?' cur':''}" title="${c.ref?'参考（はっきりしたチャネルではありません）':'確定（はっきりしたチャネル）'}"><i></i>${tf.toUpperCase()} ${{up:'上昇',down:'下降',flat:'レンジ'}[c.kind]}${c.ref?'<small>参考</small>':''}・${chPos(c)}</button>`).join('');
+  el.innerHTML='<b class="chn-h">チャネル<button type="button" class="gq" data-gloss="チャネル" aria-label="用語集：チャネル">?</button><small>（参考＝はっきりしたチャネルではないもの）</small></b>'+rows.map(({tf,c})=>`<button type="button" data-tf="${tf}" class="chn ${c.kind}${c.ref?' ref':''}${tf===state.tf?' cur':''}" title="${c.ref?'参考（はっきりしたチャネルではありません）':'確定（はっきりしたチャネル）'}"><i></i>${tf.toUpperCase()} ${{up:'上昇',down:'下降',flat:'レンジ'}[c.kind]}${c.ref?'<small>参考</small>':''}・${chPos(c)}</button>`).join('');
 }
 
 // ダウ理論のトレンド：直近の山（高値）2つと谷（安値）2つを比べる。
@@ -1601,7 +1602,7 @@ function bestFib(){
 }
 function renderFibNow(){
   const b=bestFib(),el=$('fibNow');el.hidden=!b;if(!b)return;
-  el.innerHTML=`<b>★ 今は${TF_NAME[b.tf]}のフィボナッチが効いています</b><span>${esc(b.why)}｜現在値との差 ${INSTR.dist(b.near.d)}</span>`+
+  el.innerHTML=`<b>★ 今は${TF_NAME[b.tf]}のフィボナッチが効いています<button type="button" class="gq" data-gloss="フィボナッチ・リトレースメント" aria-label="用語集：フィボナッチ・リトレースメント">?</button></b><span>${esc(b.why)}｜現在値との差 ${INSTR.dist(b.near.d)}</span>`+
     (b.tf!==state.tf?`<button type="button" class="seg" data-tf="${b.tf}">${TF_NAME[b.tf]}を表示</button>`:'');
 }
 // 時間足の切り替えボタン（各ボタンの下段に、その時間足のダウ理論トレンドとスーパートレンドの向き）
@@ -3380,6 +3381,9 @@ $('maToggles').addEventListener('click',e=>{
 $('tlBtn').onclick=()=>{state.showTrend=!state.showTrend;$('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);savePrefs();drawChart()};
 $('chNow').onclick=e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)};
 $('mtfScore').onclick=e=>{const b=e.target.closest('[data-tf]');if(!b)return;setTf(b.dataset.tf);$('secChart').scrollIntoView({behavior:'smooth',block:'start'})};
+// 「?」：用語集のその用語を開く（トレードデスクの中ならデスクの用語集、単体ならデスクを開いて表示）
+document.addEventListener('click',e=>{const g=e.target.closest('[data-gloss]');if(!g)return;e.preventDefault();e.stopPropagation();const term=g.dataset.gloss;
+  if(window.parent!==window){try{window.parent.postMessage({type:'dash-gloss',key:INSTR.key,term},'*')}catch{}}else location.href='./#gloss='+encodeURIComponent(term)},true);
 $('alertList').onclick=e=>{const all=e.target.closest('[data-alall]');if(all){const v=all.dataset.alall==='1';ALERT_DEF.forEach(d=>alertCfg[d.k]=v);saveAlerts();renderAlerts();return}
   const b=e.target.closest('.al-sw');if(!b)return;const k=b.dataset.alk;alertCfg[k]=!alertCfg[k];saveAlerts();renderAlerts()};
 $('alertList').onchange=e=>{const f=e.target.dataset.al;if(!f||!e.target.isConnected)return;  // 通知のあと作り直した欄から遅れて来る変更は無視

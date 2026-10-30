@@ -268,8 +268,8 @@ body {
 .gl-head b { font-size: 13.5px; font-weight: 700; color: var(--gold); }
 .gl-head span { font-size: 11px; color: var(--ink-3); }
 .gl-head em { margin-left: auto; font-style: normal; font-size: 11.5px; font-weight: 700; color: #14100a; background: var(--gold); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
-.gl-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; flex: 1; min-height: 0; }
-.gl-grid button { font: inherit; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 1px; min-width: 0; padding: 4px 8px; border-radius: 9px; border: 1px solid rgba(227,184,103,.18); background: rgba(227,184,103,.06); color: var(--ink); cursor: pointer; text-align: left; }
+.gl-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; flex: 1; min-height: 0; }
+.gl-grid button { font: inherit; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 1px; min-width: 0; padding: 4px 7px; border-radius: 9px; border: 1px solid rgba(227,184,103,.18); background: rgba(227,184,103,.06); color: var(--ink); cursor: pointer; text-align: left; }
 .gl-grid button:hover, .gl-grid button:focus-visible { background: rgba(227,184,103,.16); outline: none; }
 .gl-grid b { font-size: 11.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .gl-grid b i { font-style: normal; color: var(--gold); margin-right: 4px; }
@@ -301,7 +301,7 @@ body {
 .gb-spread.two .gb-page:last-child { border-radius: 0 6px 6px 0; box-shadow: inset 18px 0 22px -18px rgba(80,55,20,.45); }
 .gb-page.blank { background: linear-gradient(180deg, #f4ecd8, #ece0c3); }
 .gb-in { flex: 1; min-height: 0; padding: 26px 28px 10px; overflow: hidden; }
-.gb-page.toc .gb-in { overflow-y: auto; }
+.gb-page .gb-in { overflow-y: auto; }
 #gb-pno { white-space: nowrap; }
 @media (max-width: 600px) { .gb-bar .gb-chap { display: none; } .gb-bar { gap: 6px; padding: 10px; } .gb-btn { padding: 7px 11px; } .gb-nav { gap: 8px; } .gb-nav .gb-btn { min-width: 0; } .gb-in { padding: 20px 20px 8px; } .gb-idx { column-gap: 12px; } .gbook .gb-cover { padding: 0 0 8px; margin-bottom: 6px; } .gbook .gb-cover h1 { font-size: 22px; } .gbook .gb-toc small { display: none; } .gbook .gb-toc button { padding: 8px 2px; } .gbook .gb-toc i { width: 3.4em; } .gbook .gb-in { padding: 20px 20px 8px; } .gbook .gb-idx { column-gap: 12px; } }
 .gb-foot { display: flex; justify-content: space-between; padding: 6px 22px 12px; font-size: 11px; color: #9a8a6c; }
@@ -315,6 +315,19 @@ body {
 .gb-term h3 { margin: 0; font-size: 16px; color: #2b241a; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .gb-term h3 span { font-size: 11.5px; font-weight: 600; color: #a37a2c; }
 .gb-term p { margin: 5px 0 0; font-size: 13.5px; line-height: 1.75; color: #3c3326; }
+.gb-figbox { margin: 8px 0 2px; padding: 8px 6px 4px; background: rgba(255,255,255,.55); border: 1px solid #e6d8b6; border-radius: 10px; }
+.gb-fig { display: block; width: 100%; height: auto; font-family: inherit; }
+.gb-pts { margin: 6px 0 0; padding-left: 1.2em; font-size: 12.5px; line-height: 1.65; color: #3c3326; }
+.gb-pts li::marker { color: #a37a2c; }
+.gb-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.gb-table th { background: #a37a2c; color: #fff; font-weight: 700; padding: 4px 6px; }
+.gb-table td { text-align: center; padding: 3px 6px; border-bottom: 1px solid #eadfc4; }
+.gb-table tr:nth-child(even) td { background: rgba(163,122,44,.07); }
+.gb-table tr.low td { color: #c0392b; font-weight: 700; }
+.gb-note { margin: 4px 0 0; font-size: 10.5px; color: #8d7d61; }
+.gb-term.hit { animation: gbHit 2.4s ease-out; border-radius: 8px; }
+@keyframes gbHit { 0%, 30% { background: rgba(233,190,90,.45); box-shadow: 0 0 0 6px rgba(233,190,90,.45); } 100% { background: transparent; box-shadow: 0 0 0 6px transparent; } }
+.gb-idx button small { margin-left: 4px; font-size: 10px; color: #8d7d61; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gb-cover { text-align: center; padding: 6px 0 14px; border-bottom: 2px solid #d9c89f; margin-bottom: 12px; }
 .gb-cover small { font-size: 11px; letter-spacing: .3em; color: #a37a2c; }
 .gb-cover h1 { margin: 6px 0 2px; font-size: 30px; color: #2b241a; letter-spacing: .08em; }
@@ -766,7 +779,7 @@ html:not(.flow) #flow { display: none; }
   var entryState = {};
   window.addEventListener("message", function (e) {
     var d = e.data;
-    if (!d || (d.type !== "dash-signal" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert" && d.type !== "dash-open") || !SHEETS[d.key] || !SHEETS[d.key].el) return;
+    if (!d || (d.type !== "dash-signal" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert" && d.type !== "dash-open" && d.type !== "dash-gloss") || !SHEETS[d.key] || !SHEETS[d.key].el) return;
     if (e.source !== SHEETS[d.key].el.querySelector("iframe").contentWindow) return;  // only our own dashboards
     // While a dashboard shows its chart full screen, its own "back" button sits where ours does: hide ours
     if (d.type === "dash-chartfull") { SHEETS[d.key].el.querySelector(".dash-close").hidden = !!d.on; return; }
@@ -774,6 +787,7 @@ html:not(.flow) #flow { display: none; }
     if (d.type === "dash-levels") { keyLv[d.key] = d; paintKeyLv(); return; }
     if (d.type === "dash-score") { scoreOf[d.key] = d; paintScore(); return; }
     if (d.type === "dash-alert") { deskAlert(d); return; }
+    if (d.type === "dash-gloss") { if (window.openGlossary) window.openGlossary(String(d.term || "")); return; }
     if (d.type === "dash-open") {  // a dashboard's 「プレミアムで開く」: run its TradingView shortcut from the desk itself
       if (/^shortcuts:\/\/run-shortcut\?name=[^&]+$/.test(String(d.url))) location.href = d.url;
       return;
@@ -2179,7 +2193,7 @@ html:not(.flow) #flow { display: none; }
       ["レバレッジ", "", "預けた証拠金の何倍の金額まで取引できるか。国内の個人口座は最大25倍。大きいほど少ない資金で取引できるが、損失も速く膨らむ。"],
       ["証拠金", "", "取引の担保として口座に預けるお金。ポジションを持つのに必要な分を「必要証拠金」という。"],
       ["スワップポイント", "", "2つの通貨の金利差の調整分。ポジションを翌日に持ち越すと、毎日受け取り（または支払い）が発生する。"],
-      ["ボラティリティ", "", "値動きの大きさ・荒さ。高いほど短時間で大きく動く。このアプリではATRで確認できる。"]
+      ["ボラティリティ", "変動率", "値動きの大きさ・荒さ。高いほど短時間で大きく動く。年ごとの差も大きく、ドル円の年間の変動率は2019年の7.6％から2022年の33.9％まで開きがある（巻末の資料）。このアプリではATRで確認できる。"]
     ]},
     { t: "注文と取引", s: "成行・指値・逆指値など注文の出し方", terms: [
       ["成行注文", "なりゆき", "今の価格ですぐに売買する注文。確実に約定するが、価格は選べない。"],
@@ -2221,30 +2235,36 @@ html:not(.flow) #flow { display: none; }
       ["ヒゲ", "", "ローソク足の実体から上下に伸びた線。その時間に付けた高値・安値まで動いて戻ったことを表す。"],
       ["トレンド", "", "相場の方向。高値と安値を切り上げていれば上昇トレンド、切り下げていれば下降トレンド。"],
       ["レンジ", "もみ合い", "一定の幅の中を上下していて、はっきりした方向がない状態。"],
-      ["ダウ理論", "", "高値・安値の切り上げ（切り下げ）が続く限りトレンドは続く、という考え方。このアプリでは各時間足のトレンド判定に使っている。"],
+      ["ダウ理論", "", "高値・安値がともに切り上がっていれば上昇トレンド、ともに切り下がっていれば下降トレンド。その形が崩れるまでトレンドは続く、という考え方。このアプリでは各時間足のトレンド判定に使っている。", { fig: "dow" }],
       ["サポート", "支持線", "下落が止まりやすい価格帯。過去に何度も反発した安値をつないだ水平線。"],
       ["レジスタンス", "抵抗線", "上昇が止まりやすい価格帯。過去に何度も跳ね返された高値をつないだ水平線。"],
       ["水平線", "", "サポートやレジスタンスを示す横の線。このアプリでは2回以上反応した価格帯を自動で引き、R1・R2・S1・S2として表示する。"],
-      ["ロールリバーサル", "", "抜けたレジスタンスがサポートに（抜けたサポートがレジスタンスに）役割を変えること。"],
+      ["レジサポ転換", "ロールリバーサル", "上に抜けたレジスタンスがサポートに（下に抜けたサポートがレジスタンスに）役割を変えること。何度も意識された線ほど、抜けたあとの戻りで反発しやすい。", { aka: ["ロールリバーサル"] }],
       ["トレンドライン", "", "安値どうし（上昇）・高値どうし（下降）を結んだ斜めの線。"],
       ["チャネル", "", "平行な2本の線の間で価格が動く形。上の線を上弦、下の線を下弦と呼ぶ。上昇・下降・レンジ（水平）のチャネルがある。"],
       ["高値・安値の更新", "", "直近の高値を上に抜ける（安値を下に抜ける）こと。トレンドが続いているかの判断に使う。"],
       ["ブレイクアウト", "", "水平線やチャネル、レンジを価格が抜けること。抜けた方向に勢いが出やすい。"],
       ["ダマシ", "", "ブレイクしたように見えて、すぐ元に戻ること。"],
       ["押し目・戻り", "", "上昇中の一時的な下げが押し目、下降中の一時的な上げが戻り。"],
+      ["レンジができるしくみ", "", "急落のあと、上で売った人も下で買った人も含み益になる価格帯では、どちらも急いで決済しないため、もみ合い（レンジ）になりやすい。", { fig: "range", pts: ["売った人の建値（損益分岐ライン）は、レンジの上にある", "レンジを上に抜けて建値を超えると、売りの損切りが次々に出て上昇が加速しやすい", "下に抜けたときは、買いの損切りで下落が加速しやすい"] }],
+      ["損益分岐ライン", "建値", "ポジションを持った価格。ここを越えて逆に動くと含み損に変わるため、損切りや決済の注文が集まりやすい。"],
       ["マルチタイムフレーム分析", "MTF", "複数の時間足を見比べて判断すること。上の時間足の流れに沿った取引ほど成功しやすいとされる。"]
     ]},
     { t: "テクニカル指標", s: "移動平均線・RSI・ATR・フィボナッチなど", terms: [
-      ["移動平均線", "MA", "一定期間の終値の平均をつないだ線。向きでトレンド、価格との位置で強弱を見る。"],
+      ["移動平均線", "MA", "一定期間の終値の平均をつないだ線。向きでトレンド、価格との位置で強弱を見る。日足の75日線・200日線は多くの人が見る節目で、止まりやすい。"],
       ["SMA", "単純移動平均", "期間内の終値を単純に平均した移動平均線。このアプリはH1の120SMAを判定に使う。"],
       ["EMA", "指数平滑移動平均", "直近の価格を重く扱う移動平均線。SMAより早く反応する。このアプリでは10・20・80・200EMAを表示。"],
+      ["グランビルの法則", "", "移動平均線と価格の位置関係から、買い4つ・売り4つの合わせて8つのタイミングを示した売買の法則。", { fig: "granville", pts: ["買い①：横ばい〜上向きに変わった線を、価格が下から上に抜ける", "買い②：上向きの線を価格が一度下回ったあと、また上に戻る（押し目）", "買い③：上向きの線の手前まで下がって、割らずに反発する", "買い④：下向きの線から価格が大きく下に離れた（乖離が大きい）ときの反発", "売り①：下向きに変わった線を、価格が上から下に抜ける", "売り②：下向きの線を価格が一度上回ったあと、また下に突き抜ける", "売り③：下向きの線に向かって上がるが、抑えこまれて下がる", "売り④：上向きの線から価格が大きく上に離れた（乖離が大きい）ときの反落"] }],
+      ["乖離", "かいり・乖離率", "価格が移動平均線からどれだけ離れているか。大きく離れすぎると、線に引き戻されやすい（グランビルの買い④・売り④）。"],
       ["ゴールデンクロス", "", "短期の移動平均線が長期の線を下から上に抜けること。上昇のサイン。"],
       ["デッドクロス", "", "短期の移動平均線が長期の線を上から下に抜けること。下降のサイン。"],
       ["GMMA", "複合型移動平均線", "短期6本・長期6本のEMAの束。束の並びと広がりでトレンドの強さや転換を見る。"],
       ["RSI", "相対力指数", "一定期間の上げ幅と下げ幅から、買われすぎ・売られすぎを0〜100で表す。70以上は買われすぎ、30以下は売られすぎの目安。"],
       ["ATR", "アベレージ・トゥルー・レンジ", "足1本あたりの平均の値動きの幅。損切り幅を決めたり、今が荒いか静かかを見るのに使う。このアプリはM15のATR×1.2を損切りの目安にする。"],
       ["スーパートレンド", "", "ATRを使って、価格の下（上昇中）か上（下降中）に引かれる線。線の色と位置でトレンドの向きを見る。"],
-      ["フィボナッチ・リトレースメント", "", "直近の上げ（下げ）に対して、38.2％・50％（半値）・61.8％などの割合でどこまで戻るかの目安を引くもの。"],
+      ["フィボナッチ・リトレースメント", "", "直近の上げ（下げ）に対して、23.6・38.2・50（半値）・61.8・78.6％の割合で、どこまで戻るかの目安を引くもの。", { fig: "fib", pts: ["38.2〜61.8％は押し目買い（下降中は戻り売り）の候補", "何度も意識された水平線（レジサポ転換）と重なる水準は、特に反発しやすい"] }],
+      ["フィボナッチの重なり", "", "フィボナッチの水準と、何度も止められた水平線が同じ価格帯に重なる所。複数の根拠がそろうため、反発しやすい場面になる。", { fig: "fibconf" }],
+      ["フィボナッチ・エクステンション", "", "押し目のあと、元の上げ幅の何倍まで伸びるかの目安。161.8％が利確の目安としてよく使われる。", { fig: "fibext" }],
       ["ボリンジャーバンド", "", "移動平均線の上下に、値動きのばらつき（標準偏差）の幅で線を引いたもの。バンドの広がりで値動きの勢いを見る。"],
       ["MACD", "マックディー", "2本のEMAの差で、トレンドの向きと勢いを見る指標。シグナル線とのクロスを売買の目安にする。"],
       ["ストキャスティクス", "", "一定期間の高値・安値の範囲の中で、今の価格がどこにあるかで買われすぎ・売られすぎを見る指標。"],
@@ -2259,6 +2279,8 @@ html:not(.flow) #flow { display: none; }
       ["ネックライン", "", "チャートパターンの節目になる線。ここを抜けたかどうかでパターンが完成したかを判断する。"],
       ["三角保ち合い", "トライアングル", "高値は切り下げ、安値は切り上げて、だんだん値幅が狭くなる形。抜けた方向に動きやすい。"],
       ["フラッグ・ペナント", "", "強い動きのあとの小さな休憩の形。休憩を抜けると元の方向に続きやすい。"],
+      ["エリオット波動", "", "相場は「上昇の5つの波（推進波）」と「調整の3つの波（修正波）」をくり返す、という考え方。", { fig: "elliott", pts: ["推進5波：1・3・5波が進む波、2・4波が戻しの波", "修正3波：A・B・Cの3つの波で調整する", "3波はいちばん長く強いことが多い"] }],
+      ["エリオット波動の戻し", "2波・4波", "2波は1波の上げを深く戻しやすく（61.8〜78.6％）、4波は3波の上げを浅く戻しやすい（38.2〜50％）。フィボナッチと合わせて押し目の深さの目安にする。", { fig: "ewfib" }],
       ["BOS", "ボス／構造のブレイク", "今の流れと同じ向きに、直近の高値（安値）を終値で抜けること。流れが続いている合図。"],
       ["CHOCH", "チョック／性格の変化", "今の流れと逆向きに、直近の高値（安値）を終値で抜けること。流れが変わり始めたかもしれない合図。"],
       ["スイングハイ・スイングロー", "", "前後のローソク足より高い山（安い谷）。水平線やBOS・CHOCHの判定のもとになる。"],
@@ -2267,20 +2289,27 @@ html:not(.flow) #flow { display: none; }
     { t: "経済指標と市場", s: "雇用統計・FOMC・介入・取引時間", terms: [
       ["ファンダメンタルズ", "", "経済の状態・金利・政治など、通貨の価値を動かすおおもとの要因。チャートを使うテクニカル分析と対になる言葉。"],
       ["経済指標", "", "各国が発表する経済の統計。発表直後は大きく動きやすく、スプレッドも広がりやすい。"],
+      ["GDP", "国内総生産", "国の経済の大きさと成長の速さ。米国の速報値（年率）は四半期ごとに出て、予想との差で動く。"],
+      ["PCE", "個人消費支出・コアPCE", "米国の物価の指標で、FRBがいちばん重視する。食品とエネルギーを除いたものをコアPCEという。"],
+      ["雇用コスト指数", "ECI", "米国の賃金・福利厚生のコストの伸び。インフレが続くかの判断材料。"],
+      ["PMI", "購買担当者景気指数", "企業の購買担当者への調査で景気を表す指数。50を上回ると景気拡大、下回ると縮小の目安。シカゴPMIなどがある。"],
       ["米雇用統計", "NFP", "アメリカの雇用者数や失業率。原則毎月第1金曜日の夜（日本時間21:30、冬時間は22:30）に発表され、もっとも注目される指標の一つ。"],
-      ["CPI", "消費者物価指数", "物価の上がり方を表す指標。インフレの強さが分かり、金利の予想を大きく動かす。"],
+      ["CPI", "消費者物価指数", "物価の上がり方を表す指標。インフレの強さが分かり、金利の予想を大きく動かす。日本では、全国より約3週間早く出る東京都区部CPIも注目される。", { aka: ["東京都区部CPI"] }],
       ["政策金利", "", "中央銀行が決める基準の金利。金利が上がる通貨は買われやすい。"],
       ["FOMC", "米連邦公開市場委員会", "アメリカの政策金利を決める会合。年8回開かれ、結果発表と議長会見で大きく動く。"],
-      ["日銀金融政策決定会合", "", "日本の金融政策を決める会合。年8回。結果と総裁会見で円が大きく動くことがある。"],
+      ["日銀金融政策決定会合", "", "日本の金融政策を決める会合。年8回。正午前後の結果発表と15:30からの総裁会見で円が大きく動くことがある。1・4・7・10月は経済・物価の見通し（展望レポート）も出る。", { aka: ["展望レポート"] }],
       ["タカ派・ハト派", "", "利上げなど引き締めに前向きなのがタカ派（その通貨の買い材料）、緩和に前向きなのがハト派（売り材料）。"],
       ["為替介入", "", "政府・中央銀行が急な為替の動きを抑えるために自ら売買すること。日本では財務省が決め、日銀が実行する。"],
       ["要人発言", "", "中央銀行の総裁や財務大臣などの発言。金利や介入の見通しが変わると相場が動く。"],
       ["リスクオン・リスクオフ", "", "投資家が強気で株や高金利通貨が買われるのがリスクオン、弱気で円・金・米国債などに資金が逃げるのがリスクオフ。"],
       ["東京・ロンドン・NY時間", "", "主な取引時間帯。値動きはロンドン時間（日本の夕方〜）とNY時間（日本の夜）に大きくなりやすい。"],
-      ["仲値・ゴトー日", "", "仲値は銀行がその日の為替レートを決める9:55の価格。5・10日（ゴトー日）はドルの需要が増えやすい。"],
+      ["値決め", "フィキシング", "その日の為替レートを決める時間。大口の注文がこの時刻に集まるため、前後で乱高下しやすい。", { fig: "fix", aka: ["東京仲値", "ロンパチ", "ロンドンフィックス", "ロンフィク"], pts: ["東京仲値：9:55（日本の銀行がその日のレートを決める）", "ロンパチ：ロンドン8時＝日本時間17:00（夏時間は16:00）", "ロンドンフィックス（ロンフィク）：ロンドン16時＝日本時間 翌1:00（夏時間は0:00）"] }],
+      ["ゴトー日", "5・10日", "5日・10日（とその前後の営業日）は企業の決済が多く、東京仲値に向けてドル買いが増えやすい。", { aka: ["仲値"] }],
+      ["月末フロー", "", "月末や期末に、大口の投資家や企業がまとめて行う売買。値決めの時間に集中し、テクニカルもファンダメンタルズも関係なく動くことがある。", { pts: ["月末の東京仲値・ロンパチ・ロンフィクにかけては乱高下に注意", "突発的な動きが来ても、絶対に逆張りしない", "週末・月末はポジションの持ち越しを小さく"] }],
       ["窓開け", "ギャップ", "週末をはさんで、金曜の終値と月曜の始値の間に価格の空白ができること。"],
+      ["原油", "WTI", "代表的な原油の先物価格（WTI）。インフレの予想に響き、資源国の通貨（カナダドルなど）も動きやすい。"],
       ["流動性", "", "取引の多さ・売買のしやすさ。少ない時間帯（早朝・年末年始）はスプレッドが広がり、急に動きやすい。"],
-      ["サマータイム", "夏時間", "3月〜11月の米国夏時間。日本時間で指標の発表や市場の開閉が1時間早くなる。"]
+      ["サマータイム", "夏時間", "3月〜11月の米国夏時間（欧州は3月末〜10月末）。日本時間で指標の発表や値決め、市場の開閉が1時間早くなる。11月の第1日曜から冬時間に戻る。"]
     ]},
     { t: "トレードスタイル", s: "スキャルピング・デイトレード・スイング", terms: [
       ["スキャルピング", "", "数秒〜数分で数pipsを取る超短期の取引。このアプリでは5分足の水平線で利確を判断する。"],
@@ -2305,23 +2334,81 @@ html:not(.flow) #flow { display: none; }
       ["実質金利", "", "名目の金利から物価上昇率を引いた金利。金は利息が付かないため、実質金利が下がると買われやすい。"],
       ["BTC", "ビットコイン", "代表的な暗号資産（仮想通貨）。24時間365日取引でき、値動きが大きい。"],
       ["ドルインデックス", "DXY", "主要な通貨に対するドルの強さを表す指数。上がるとドル高で、金やドル以外の通貨は下がりやすい。"]
+    ]},
+    { t: "資料", s: "ドル円の年ごとの値動き", terms: [
+      ["ドル円の年間変動幅・変動率", "2010〜2026年", "1年間の高値と安値の差（変動幅）と、それを割合で表した変動率。2026年は10月28日までで7.8％と、過去最低（2019年の7.6％）に近い水準。", { table: { head: ["年", "変動幅", "変動率"], low: ["2019", "2026"], rows: [["2010", "14.75円", "18.4%"], ["2011", "9.97円", "13.2%"], ["2012", "10.66円", "14.0%"], ["2013", "18.80円", "21.7%"], ["2014", "21.09円", "20.9%"], ["2015", "10.00円", "8.6%"], ["2016", "22.70円", "22.9%"], ["2017", "11.29円", "10.5%"], ["2018", "9.91円", "9.5%"], ["2019", "7.95円", "7.6%"], ["2020", "11.05円", "10.9%"], ["2021", "12.93円", "12.6%"], ["2022", "38.48円", "33.9%"], ["2023", "24.69円", "19.4%"], ["2024", "22.37円", "16.0%"], ["2025", "18.99円", "13.6%"], ["2026", "11.90円", "7.8%"]] }, aka: ["変動幅", "変動率"] }]
     ]}
   ];
 
   (function () {
-    var YOMI = {"通貨ペア": "つうかぺあ", "基軸通貨・決済通貨": "きじくつうか", "円高・円安": "えんだか", "成行注文": "なりゆきちゅうもん", "指値注文": "さしねちゅうもん", "逆指値注文": "ぎゃくさしねちゅうもん", "約定": "やくじょう", "決済": "けっさい", "利確": "りかく", "損切り": "そんぎり", "両建て": "りょうだて", "有効証拠金": "ゆうこうしょうこきん", "必要証拠金": "ひつようしょうこきん", "証拠金維持率": "しょうこきんいじりつ", "証拠金": "しょうこきん", "追証": "おいしょう", "含み益・含み損": "ふくみえき", "確定損益": "かくていそんえき", "許容リスク": "きょようりすく", "資金管理": "しきんかんり", "勝率": "しょうりつ", "時間足": "じかんあし", "ダウ理論": "だうりろん", "水平線": "すいへいせん", "高値・安値の更新": "たかね", "押し目・戻り": "おしめ", "マルチタイムフレーム分析": "まるちたいむふれーむ", "移動平均線": "いどうへいきんせん", "三尊（ヘッドアンドショルダー）": "さんぞん", "逆三尊": "ぎゃくさんぞん", "三角保ち合い": "さんかくもちあい", "大口の決済": "おおぐちのけっさい", "経済指標": "けいざいしひょう", "米雇用統計": "べいこようとうけい", "政策金利": "せいさくきんり", "日銀金融政策決定会合": "にちぎんきんゆうせいさく", "タカ派・ハト派": "たかは", "為替介入": "かわせかいにゅう", "要人発言": "ようじんはつげん", "東京・ロンドン・NY時間": "とうきょう", "仲値・ゴトー日": "なかね", "窓開け": "まどあけ", "流動性": "りゅうどうせい", "順張り": "じゅんばり", "逆張り": "ぎゃくばり", "押し目買い": "おしめがい", "戻り売り": "もどりうり", "裁量トレード": "さいりょうとれーど", "先物価格": "さきものかかく", "有事の金": "ゆうじのきん", "実質金利": "じっしつきんり", "スポット価格": "すぽっとかかく", "クロス円": "くろすえん", "ローソク足": "ろーそくあし"};
-    var SHORT = ["基本", "注文・取引", "リスク管理", "チャート", "テクニカル指標", "パターン", "経済指標・市場", "スタイル", "金・BTC"];
+    var YOMI = {"通貨ペア": "つうかぺあ", "基軸通貨・決済通貨": "きじくつうか", "円高・円安": "えんだか", "成行注文": "なりゆきちゅうもん", "指値注文": "さしねちゅうもん", "逆指値注文": "ぎゃくさしねちゅうもん", "約定": "やくじょう", "決済": "けっさい", "利確": "りかく", "損切り": "そんぎり", "両建て": "りょうだて", "有効証拠金": "ゆうこうしょうこきん", "必要証拠金": "ひつようしょうこきん", "証拠金維持率": "しょうこきんいじりつ", "証拠金": "しょうこきん", "追証": "おいしょう", "含み益・含み損": "ふくみえき", "確定損益": "かくていそんえき", "許容リスク": "きょようりすく", "資金管理": "しきんかんり", "勝率": "しょうりつ", "時間足": "じかんあし", "ダウ理論": "だうりろん", "水平線": "すいへいせん", "高値・安値の更新": "たかね", "押し目・戻り": "おしめ", "マルチタイムフレーム分析": "まるちたいむふれーむ", "移動平均線": "いどうへいきんせん", "三尊（ヘッドアンドショルダー）": "さんぞん", "逆三尊": "ぎゃくさんぞん", "三角保ち合い": "さんかくもちあい", "大口の決済": "おおぐちのけっさい", "経済指標": "けいざいしひょう", "米雇用統計": "べいこようとうけい", "政策金利": "せいさくきんり", "日銀金融政策決定会合": "にちぎんきんゆうせいさく", "タカ派・ハト派": "たかは", "為替介入": "かわせかいにゅう", "要人発言": "ようじんはつげん", "東京・ロンドン・NY時間": "とうきょう", "窓開け": "まどあけ", "流動性": "りゅうどうせい", "順張り": "じゅんばり", "逆張り": "ぎゃくばり", "押し目買い": "おしめがい", "戻り売り": "もどりうり", "裁量トレード": "さいりょうとれーど", "先物価格": "さきものかかく", "有事の金": "ゆうじのきん", "実質金利": "じっしつきんり", "スポット価格": "すぽっとかかく", "クロス円": "くろすえん", "ローソク足": "ろーそくあし", "乖離": "かいり", "値決め": "ねぎめ", "月末フロー": "げつまつふろー", "原油": "げんゆ", "雇用コスト指数": "こようこすとしすう", "損益分岐ライン": "そんえきぶんきらいん", "ドル円の年間変動幅・変動率": "どるえんのねんかん", "東京仲値": "とうきょうなかね", "東京都区部CPI": "とうきょうとくぶしーぴーあい", "展望レポート": "てんぼうれぽーと", "仲値": "なかね", "変動幅": "へんどうはば", "変動率": "へんどうりつ", "グランビルの法則": "ぐらんびるのほうそく", "エリオット波動の戻し": "えりおっとはどうのもどし", "レンジができるしくみ": "れんじができるしくみ", "フィボナッチの重なり": "ふぃぼなっちのかさなり", "レジサポ転換": "れじさぽてんかん", "ゴトー日": "ごとーび"};
+    var SHORT = ["基本", "注文", "リスク", "チャート", "指標", "形・波", "経済", "スタイル", "金・BTC", "資料"];
     var total = GLOSSARY.reduce(function (n, c) { return n + c.terms.length; }, 0);
     var esc = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
     document.getElementById("gl-count").textContent = GLOSSARY.length + "章・" + total + "語";
     document.getElementById("gl-grid").innerHTML = GLOSSARY.map(function (c, i) {
-      return '<button type="button" data-gl="ch" data-ch="' + i + '"><b><i>' + (i + 1) + '</i>' + esc(SHORT[i] || c.t) + '</b><small>' + c.terms.length + '語</small></button>';
+      return '<button type="button" data-gl="ch" data-ch="' + i + '"><b><i>' + (i + 1) + '</i>' + esc(SHORT[i] || c.t) + '</b><small>' + (c.t === "資料" ? "変動率の表" : c.terms.length + '語') + '</small></button>';
     }).join("") + '<button type="button" data-gl="idx"><b><i>索</i>索引</b><small>あいうえお順</small></button>';
 
     var book = document.getElementById("gbook"), stage = document.getElementById("gb-stage"), spread = document.getElementById("gb-spread");
-    var pages = [], chStart = [], termPage = {}, idxStart = 0, cur = 0, two = false, opener = null, built = "";
+    var pages = [], chStart = [], termPage = {}, aliasOf = {}, idxStart = 0, cur = 0, two = false, opener = null, built = "";
     var BM = "gloss-page";
-    var termHtml = function (t) { return '<div class="gb-term"><h3>' + esc(t[0]) + (t[1] ? '<span>' + esc(t[1]) + '</span>' : '') + '</h3><p>' + esc(t[2]) + '</p></div>'; };
+    // 図：本の紙面に合わせた色で描いたSVG（上昇＝赤、下降＝青、水準＝金）
+    var C = { up: "#d24b4b", dn: "#3a6fd8", lv: "#b98a32", ma: "#e08a1e", band: "rgba(233,190,90,.28)", ink: "#4a3f2e", mute: "#9a8a6c" };
+    var svg = function (vb, body, h) { return '<svg class="gb-fig" viewBox="' + vb + '" role="img" style="max-height:' + (h || 170) + 'px">' + body + '</svg>'; };
+    var pl = function (pts, col, w, extra) { return '<polyline points="' + pts.map(function (p) { return p.join(","); }).join(" ") + '" fill="none" stroke="' + col + '" stroke-width="' + (w || 2.4) + '" stroke-linejoin="round" stroke-linecap="round"' + (extra || "") + '/>'; };
+    var arrow = function (x1, y1, x2, y2, col) { var a = Math.atan2(y2 - y1, x2 - x1), L = 8; return '<path d="M' + (x2 - L * Math.cos(a - .45)) + ' ' + (y2 - L * Math.sin(a - .45)) + ' L' + x2 + ' ' + y2 + ' L' + (x2 - L * Math.cos(a + .45)) + ' ' + (y2 - L * Math.sin(a + .45)) + '" fill="none" stroke="' + col + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'; };
+    var tx = function (x, y, t, col, size, anchor, bold) { return '<text x="' + x + '" y="' + y + '" fill="' + (col || C.ink) + '" font-size="' + (size || 10) + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + (bold ? ' font-weight="700"' : '') + '>' + t + '</text>'; };
+    var hl = function (x1, x2, y, col, dash, w) { return '<line x1="' + x1 + '" x2="' + x2 + '" y1="' + y + '" y2="' + y + '" stroke="' + col + '" stroke-width="' + (w || 1) + '"' + (dash ? ' stroke-dasharray="' + dash + '"' : '') + '/>'; };
+    var fibLines = function (x1, x2, y0, y1, rs, lab) { return rs.map(function (r) { var y = y0 + (y1 - y0) * r; return hl(x1, x2, y, r === 0.5 ? "#5aa05a" : C.lv, r === 0 || r === 1 ? "" : "3 3", .9) + tx(x2 + 3, y + 3, lab(r), C.mute, 8.5); }).join(""); };
+    var FIG = {
+      dow: function () { var P = [[14, 150], [74, 92], [104, 122], [168, 60], [198, 92], [262, 26]];
+        return svg("0 0 320 160", P.map(function (p) { return hl(p[0] - 18, p[0] + 18, p[1], C.ma, "", 2); }).join("") + pl(P.concat([[298, 10]]), C.up) + arrow(262, 26, 298, 10, C.up) +
+          tx(16, 22, "高値・安値がともに切り上がる", C.ink, 11, "", 1) + tx(16, 38, "＝上昇トレンド", C.up, 11, "", 1)); },
+      elliott: function () { var R = [[10, 150], [52, 108], [74, 130], [130, 52], [156, 86], [196, 18]], B = [[196, 18], [226, 76], [250, 50], [290, 116]];
+        var L = [["1", 52, 100], ["2", 74, 146], ["3", 130, 44], ["4", 160, 102], ["5", 196, 12]], M = [["A", 222, 92], ["B", 254, 44], ["C", 300, 124]];
+        return svg("0 0 320 160", pl(R, C.up) + pl(B, C.dn) + arrow(250, 50, 290, 116, C.dn) + L.map(function (l) { return tx(l[1], l[2], l[0], C.up, 13, "middle", 1); }).join("") + M.map(function (l) { return tx(l[1], l[2], l[0], C.dn, 13, "middle", 1); }).join("") +
+          tx(14, 22, "推進5波", C.up, 11, "", 1) + tx(68, 22, "＋", C.ink, 11) + tx(82, 22, "修正3波", C.dn, 11, "", 1)); },
+      ewfib: function () { var panel = function (ox, title, r1, r2, lab) { var top = 40, bot = 140, y = function (r) { return top + (bot - top) * r; };
+          return '<rect x="' + (ox + 8) + '" y="' + y(r1) + '" width="128" height="' + (y(r2) - y(r1)) + '" fill="' + C.band + '"/>' + hl(ox + 8, ox + 136, top, C.mute, "", .8) + hl(ox + 8, ox + 136, bot, C.mute, "", .8) +
+            pl([[ox + 10, bot], [ox + 62, top], [ox + 92, (y(r1) + y(r2)) / 2], [ox + 132, 18]], C.up) + tx(ox + 72, 14, title, C.ink, 10.5, "middle", 1) + tx(ox + 72, y(r2) + 14, lab, C.lv, 9.5, "middle", 1); };
+        return svg("0 0 320 160", panel(0, "2波：深い戻し", .618, .786, "61.8〜78.6％") + panel(166, "4波：浅い戻し", .382, .5, "38.2〜50％")); },
+      fib: function () { var top = 22, bot = 148, y = function (r) { return top + (bot - top) * r; };
+        return svg("0 0 320 164", '<rect x="20" y="' + y(.382) + '" width="250" height="' + (y(.618) - y(.382)) + '" fill="' + C.band + '"/>' + fibLines(20, 270, top, bot, [0, .236, .382, .5, .618, .786, 1], function (r) { return (r * 100).toFixed(r === .5 || r === 0 || r === 1 ? 0 : 1) + "%"; }) +
+          pl([[22, bot], [140, top], [176, 70], [198, 50], [226, y(.55)]], C.up) + pl([[226, y(.55)], [262, 14]], C.up) + arrow(226, y(.55), 262, 14, C.up) + tx(64, 159, "38.2〜61.8％の帯＝押し目買いの候補", C.lv, 10, "", 1), 176); },
+      fibconf: function () { var top = 30, bot = 150, y = function (r) { return top + (bot - top) * r; }, res = y(.5);
+        return svg("0 0 320 160", '<rect x="6" y="' + (res - 5) + '" width="270" height="10" fill="rgba(240,160,60,.35)"/>' + fibLines(150, 276, top, bot, [0, .382, .5, .618, 1], function (r) { return (r * 100).toFixed(r % 1 && r !== .5 ? 1 : 0) + "%"; }) +
+          pl([[6, 150], [36, res], [56, 128], [82, res], [102, 128], [128, res], [150, bot], [206, top], [234, 70], [250, res + 2]], C.up) + pl([[250, res + 2], [270, 12]], C.up) + arrow(250, res + 2, 270, 12, C.up) +
+          tx(8, res - 10, "何度も止められた抵抗線", C.ma, 9.5, "", 1) + tx(176, res + 34, "50％と抵抗線が重なる", C.lv, 9.5, "", 1) + tx(176, res + 46, "＝反発しやすい", C.lv, 9.5, "", 1)); },
+      fibext: function () { var b = 150, h = 74, y = function (r) { return b - (b - h) * r; };
+        return svg("0 0 320 160", '<rect x="20" y="' + y(.618) + '" width="230" height="' + (y(.382) - y(.618)) + '" fill="' + C.band + '"/>' + [0, .382, .5, .618, 1, 1.618].map(function (r) { return hl(20, 250, y(r), r === 1.618 ? C.dn : C.lv, r === 0 || r === 1 || r === 1.618 ? "" : "3 3", r === 1.618 ? 1.6 : .9) + tx(254, y(r) + 3, (r * 100).toFixed(r % 1 ? 1 : 0) + "%", r === 1.618 ? C.dn : C.mute, 8.5, "", r === 1.618); }).join("") +
+          pl([[22, b], [110, h], [140, y(.5)], [226, y(1.618)]], C.ink) + arrow(140, y(.5), 226, y(1.618), C.ink) + tx(24, y(1.618) - 6, "利確の目安（161.8％）", C.dn, 10, "", 1) + tx(148, y(.382) + 14, "押し目買い", C.lv, 10, "", 1)); },
+      range: function () { var hi = 64, lo = 104;
+        return svg("0 0 320 160", '<rect x="132" y="' + hi + '" width="96" height="' + (lo - hi) + '" fill="rgba(90,170,90,.2)"/>' + hl(110, 318, hi, C.ma, "", 1.6) + hl(110, 318, lo, C.ma, "", 1.6) + hl(34, 300, 20, C.up, "2 3") + hl(56, 290, 30, C.up, "2 3") +
+          pl([[6, 44], [22, 30], [34, 20], [46, 42], [56, 30], [78, 120], [92, 146], [108, 118], [120, 140], [132, lo], [150, hi], [170, lo], [190, hi], [212, lo], [232, hi - 6], [252, 34], [270, 26], [300, 6]], "#2a9bb5", 2) + arrow(270, 26, 300, 6, "#2a9bb5") +
+          '<circle cx="34" cy="20" r="6" fill="rgba(210,75,75,.3)"/><circle cx="56" cy="30" r="6" fill="rgba(210,75,75,.3)"/><circle cx="92" cy="146" r="6" fill="rgba(58,111,216,.3)"/><circle cx="120" cy="140" r="6" fill="rgba(58,111,216,.3)"/>' +
+          tx(64, 16, "売りの建値（損益分岐）", C.up, 8.5) + tx(180, lo + 16, "買いも売りも含み益→レンジ", "#3c8a3c", 9, "middle", 1) + tx(318, 84, "売りの損切りで加速", C.up, 8.5, "end") + tx(98, 158, "買い①②", C.dn, 8.5, "middle")); },
+      granville: function () {
+        var S = [["買い①", "上抜け", "M4 52 Q48 54 92 30", [[4, 64], [42, 60], [56, 50], [92, 14]], [52, 52]], ["買い②", "押し目", "M4 60 Q48 46 92 18", [[4, 40], [40, 24], [60, 52], [92, 6]], [66, 43]],
+          ["買い③", "反発", "M4 62 Q48 48 92 22", [[4, 34], [42, 20], [62, 36], [92, 4]], [62, 36]], ["買い④", "乖離", "M4 14 Q48 24 92 40", [[4, 20], [38, 40], [54, 66], [92, 36]], [54, 66]]];
+        var flip = function (d) { return d.replace(/(\d+) (\d+)/g, function (_, x, y) { return x + " " + (70 - y); }); };
+        var cell = function (k, i) { var sell = k >= 4, q = S[k % 4], ox = (i % 4) * 80, oy = Math.floor(i / 4) * 92, col = sell ? C.up : "#2f9e64", pts = q[3].map(function (p) { return [p[0], sell ? 70 - p[1] : p[1]]; }), c = q[4];
+          return '<g transform="translate(' + (ox + 2) + ' ' + (oy + 16) + ') scale(.8)"><rect x="0" y="0" width="96" height="72" rx="6" fill="rgba(255,255,255,.5)" stroke="#e3d6b8"/><path d="' + (sell ? flip(q[2]) : q[2]) + '" fill="none" stroke="' + C.ma + '" stroke-width="2" stroke-dasharray="4 3"/>' + pl(pts, "#2a9bb5", 2.2) +
+            '<circle cx="' + c[0] + '" cy="' + (sell ? 70 - c[1] : c[1]) + '" r="7" fill="none" stroke="' + col + '" stroke-width="2"/></g>' + tx(ox + 4, oy + 12, (sell ? "売り" : "買い") + "①②③④".charAt(k % 4), col, 10, "", 1) + tx(ox + 76, oy + 12, q[1], C.mute, 8.5, "end"); };
+        return svg("0 0 320 184", [0, 1, 2, 3, 4, 5, 6, 7].map(function (k) { return cell(k, k); }).join("") + tx(318, 182, "点線＝移動平均線　実線＝価格", C.mute, 8, "end"), 200); },
+      fix: function () { var x = function (h) { return 14 + (h - 8) * 15.5; }, m = function (h, lab, col, sub) { return '<line x1="' + x(h) + '" x2="' + x(h) + '" y1="54" y2="92" stroke="' + col + '" stroke-width="2"/><circle cx="' + x(h) + '" cy="92" r="4" fill="' + col + '"/>' + tx(x(h), 46, lab, col, 10, "middle", 1) + tx(x(h), 124, sub, C.mute, 8.5, "middle"); };
+        var ticks = [9, 12, 15, 18, 21, 24, 27].map(function (h) { return hl(x(h), x(h), 88, C.mute) + tx(x(h), 104, (h % 24) + "時", C.mute, 8, "middle"); }).join("");
+        return svg("0 0 320 132", hl(10, 312, 92, C.mute, "", 1.4) + ticks + m(9.92, "東京仲値", C.lv, "9:55") + m(17, "ロンパチ", C.dn, "17:00（夏16:00）") + m(25, "ロンフィク", C.up, "1:00（夏0:00）") +
+          '<rect x="' + (x(16.5)) + '" y="62" width="' + (x(25.5) - x(16.5)) + '" height="22" fill="rgba(210,75,75,.08)"/>' + tx(160, 18, "値決めの時間（日本時間・冬時間）", C.ink, 11, "middle", 1) + tx(x(21), 78, "月末は乱高下に注意", C.up, 9, "middle", 1), 140); }
+    };
+    var termHtml = function (t) {
+      var o = t[3] || {}, extra = "";
+      if (o.fig && FIG[o.fig]) extra += '<div class="gb-figbox">' + FIG[o.fig]() + '</div>';
+      if (o.pts) extra += '<ul class="gb-pts">' + o.pts.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join("") + '</ul>';
+      if (o.table) extra += '<table class="gb-table"><thead><tr>' + o.table.head.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join("") + '</tr></thead><tbody>' +
+        o.table.rows.map(function (r) { return '<tr' + (o.table.low.indexOf(r[0]) >= 0 ? ' class="low"' : '') + '>' + r.map(function (c, k) { return '<td>' + esc(c) + (k === 0 ? '年' : '') + '</td>'; }).join("") + '</tr>'; }).join("") + '</tbody></table><p class="gb-note">※2026年は10月28日まで。赤字は変動率の低い年</p>';
+      return '<div class="gb-term" data-term="' + esc(t[0]) + '"><h3>' + esc(t[0]) + (t[1] ? '<span>' + esc(t[1]) + '</span>' : '') + '</h3><p>' + esc(t[2]) + '</p>' + extra + '</div>';
+    };
     // ページの大きさ：見開き（横長の広い画面）なら2ページ、ほかは1ページ。中身は実際の大きさで測ってページに分ける
     function pageSize() {
       var w = stage.clientWidth - 28, h = stage.clientHeight - 8;
@@ -2337,7 +2424,7 @@ html:not(.flow) #flow { display: none; }
       document.body.appendChild(m);
       var inner = m.querySelector(".gb-in"), body = m.querySelector(".gb-body");
       var fits = function () { return inner.scrollHeight <= inner.clientHeight + 1; };
-      pages = []; chStart = []; termPage = {};
+      pages = []; chStart = []; termPage = {}; aliasOf = {};
       // 1ページ目：表紙と目次（ページ番号はあとで入れる）
       pages.push({ kind: "toc", run: "目次" });
       GLOSSARY.forEach(function (c, ci) {
@@ -2349,14 +2436,14 @@ html:not(.flow) #flow { display: none; }
           var h = termHtml(t);
           body.innerHTML = pg.html + h;
           if (!fits() && pg.html !== head && pg.html !== "") { pages.push(pg); pg = { kind: "ch", ch: ci, run: "第" + (ci + 1) + "章　" + c.t + "（つづき）", html: "" }; body.innerHTML = h; }
-          pg.html += h; termPage[t[0]] = pages.length;
+          pg.html += h; termPage[t[0]] = pages.length; ((t[3] || {}).aka || []).forEach(function (a) { termPage[a] = pages.length; aliasOf[a] = t[0]; });
         });
         pages.push(pg);
       });
       // 索引：用語をあいうえお順（英字・カタカナ・漢字の読みの近似）に並べ、ページへ飛べるボタン
       idxStart = pages.length;
       var all = [];
-      GLOSSARY.forEach(function (c) { c.terms.forEach(function (t) { all.push(t[0]); }); });
+      GLOSSARY.forEach(function (c) { c.terms.forEach(function (t) { all.push(t[0]); ((t[3] || {}).aka || []).forEach(function (a) { if (all.indexOf(a) < 0) all.push(a); }); }); });
       var kana = function (n) { var y = YOMI[n] || n; return y.replace(/[\u30a1-\u30f6]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0x60); }); };
       var ROWS = ["あ", "か", "さ", "た", "な", "は", "ま", "や", "ら", "わ"], ROWEND = "かさたなはまやらわん";
       var group = function (n) { var k = kana(n).replace(/^[ー・]/, ""), c = k.charAt(0); if (/[A-Za-z]/.test(c)) return "英字";
@@ -2392,7 +2479,7 @@ html:not(.flow) #flow { display: none; }
           (bm > 0 && bm < pages.length ? '<button type="button" class="gb-resume" data-go="' + bm + '">しおり：前回の続き（p.' + (bm + 1) + '）から読む</button>' : '');
       } else if (p.kind === "ch") inner = p.html;
       else inner = (p.run === "索引" ? '<div class="gb-chhead"><small>INDEX</small><h2>索引</h2><p>用語をタップするとそのページへ</p></div>' : '') +
-        '<div class="gb-idx">' + p.items.map(function (n) { return n.h ? '<h4>' + esc(n.h) + '</h4>' : '<button type="button" data-go="' + termPage[n] + '">' + esc(n) + '<em>p.' + (termPage[n] + 1) + '</em></button>'; }).join("") + '</div>';
+        '<div class="gb-idx">' + p.items.map(function (n) { return n.h ? '<h4>' + esc(n.h) + '</h4>' : '<button type="button" data-go="' + termPage[n] + '" data-term="' + esc(aliasOf[n] || n) + '">' + esc(n) + (aliasOf[n] ? '<small>→' + esc(aliasOf[n]) + '</small>' : '') + '<em>p.' + (termPage[n] + 1) + '</em></button>'; }).join("") + '</div>';
       return '<div class="gb-page' + (p.kind === "toc" ? " toc" : "") + '"><div class="gb-in"><div class="gb-run">' + esc(p.run) + '</div>' + inner + '</div><div class="gb-foot"><span>FX用語集</span><span>' + (i + 1) + ' / ' + pages.length + '</span></div></div>';
     }
     function show(i, dir) {
@@ -2419,9 +2506,21 @@ html:not(.flow) #flow { display: none; }
       book.querySelector('[data-gl="next"]').focus();
     }
     function close() { book.hidden = true; if (opener && opener.focus) opener.focus(); }
+    // 用語を光らせる（索引やダッシュボードの「?」から来たとき）
+    function mark(name) { var el = spread.querySelector('.gb-term[data-term="' + name.replace(/"/g, '\\"') + '"]'); if (!el) return; el.classList.remove("hit"); void el.offsetWidth; el.classList.add("hit"); }
+    // ダッシュボードの「?」ボタンなどから：用語名（または「ch:章の名前」）でそのページを開く
+    window.openGlossary = function (term) {
+      if (book.hidden) { opener = document.activeElement; book.hidden = false; built = ""; }
+      paginate();
+      if (/^ch:/.test(term)) { var ci = GLOSSARY.map(function (c) { return c.t; }).indexOf(term.slice(3)); show(ci >= 0 ? chStart[ci] : 0); }
+      else if (termPage[term] != null) { show(termPage[term]); mark(aliasOf[term] || term); }
+      else show(0);
+      book.querySelector('[data-gl="close"]').focus();
+    };
+    var hm = /[#&]gloss=([^&]+)/.exec(location.hash); if (hm) setTimeout(function () { window.openGlossary(decodeURIComponent(hm[1])); }, 300);
     document.addEventListener("click", function (e) {
       var g = e.target.closest("[data-gl],[data-go]"); if (!g) return;
-      if (g.hasAttribute("data-go")) { var to = +g.getAttribute("data-go"); show(to, to >= cur ? 1 : -1); return; }
+      if (g.hasAttribute("data-go")) { var to = +g.getAttribute("data-go"); show(to, to >= cur ? 1 : -1); if (g.getAttribute("data-term")) mark(g.getAttribute("data-term")); return; }
       var a = g.getAttribute("data-gl");
       if (a === "close") close();
       else if (a === "prev") show(cur - (two ? 2 : 1), -1);
