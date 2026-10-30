@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="cc5ed866cf">
+<meta name="build" content="4a0f3c13f7">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -49,11 +49,6 @@ body {
 }
 #bg { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 /* 背景の動く部分だけを別の層に：金色の光の筋は透明度のアニメーション（描き直しなし）、きらめく点は軽い低解像度の層 */
-#bg-glow, #bg-dots { position: fixed; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; mix-blend-mode: screen; mix-blend-mode: plus-lighter; }
-#bg-glow { opacity: .8; animation: bgBreath 10.5s ease-in-out infinite; will-change: opacity; }
-@keyframes bgBreath { 0%, 100% { opacity: .6; } 50% { opacity: 1; } }
-html.bg-still #bg-glow { animation-play-state: paused; }
-@media (prefers-reduced-motion: reduce) { #bg-glow { animation: none; } }
 #fit {
   position: fixed; inset: 0;
   padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
@@ -125,7 +120,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .mkt .sym { display: block; font-size: 19px; font-weight: 600; letter-spacing: .01em; }
 .mkt .sym small { font-size: 12px; font-weight: 500; color: var(--ink-2); margin-left: 4px; }
 .mkt .jp { display: block; font-size: 11.5px; color: var(--ink-3); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
-.mkt .price { font-family: var(--display); font-size: 36px; font-weight: 600; letter-spacing: -.01em; margin-top: 10px; line-height: 1.05; transition: color .4s; }
+.mkt .price { font-family: var(--display); font-size: 36px; font-weight: 600; letter-spacing: -.01em; margin-top: 10px; line-height: 1.05; }  /* no colour fade: prices tick twice a second */
 .mkt .price .tail { font-size: 26px; }
 .mkt .price.flash-up { color: #ffe6b0; }
 .mkt .price.flash-down { color: #c9d4ff; }
@@ -665,12 +660,11 @@ html:not(.beginner) .step-tag { display: none; }
 .dk-update button { font: inherit; font-weight: 700; min-height: 36px; padding: 4px 14px; border-radius: 999px; border: 1px solid rgba(227,184,103,.6); background: none; color: var(--gold); cursor: pointer; }
 .dk-update button[data-u="now"] { background: var(--gold); color: #14100a; }
 html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: none !important; transition: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
-html.lowpower #bg-glow, html.lowpower #bg-dots { display: none; }
 .flow #flow { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 52px); }
 </style>
 </head>
 <body>
-<canvas id="bg" aria-hidden="true"></canvas><canvas id="bg-glow" aria-hidden="true"></canvas><canvas id="bg-dots" aria-hidden="true"></canvas>
+<canvas id="bg" aria-hidden="true"></canvas>
 <div id="fit">
 <div id="stage">
 
@@ -1048,9 +1042,9 @@ html.lowpower #bg-glow, html.lowpower #bg-dots { display: none; }
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=26c02383a5", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=42ef745aae", title: "ドル円分析" },
-    btc: { src: "btc.html?v=6bf26624e1", title: "BTC分析" }
+    gold: { src: "gold.html?v=d9738911d5", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=3125895b18", title: "ドル円分析" },
+    btc: { src: "btc.html?v=22116b9bc4", title: "BTC分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -1466,6 +1460,9 @@ html.lowpower #bg-glow, html.lowpower #bg-dots { display: none; }
   };
   var CHIP = { live: "ライブ", fresh: "最新", delayed: "遅延", stale: "停止", closed: "休場中", unknown: "時刻不明", missing: "時刻なし" };
   Market.prototype.statusChip = function () {
+    var now = Date.now();
+    if (this.chip && now - this.chipAt < 1000 && this.chipFor === this.asOf + "|" + this.tf + "|" + !!this.held) return this.chip;
+    this.chipAt = now; this.chipFor = this.asOf + "|" + this.tf + "|" + !!this.held;
     var st = this.status(), lv = st.held ? "held" : st.price.level, b = document.createElement("button");
     var label = st.held ? "確認中" : st.market.state === "break" && lv === "closed" ? "休止中" : CHIP[lv];
     var sameDay = st.at && TDCore.dayKey(st.at) === TDCore.dayKey(Date.now());
@@ -1478,7 +1475,7 @@ html.lowpower #bg-glow, html.lowpower #bg-dots { display: none; }
     b.addEventListener("click", function (e) { e.stopPropagation(); openTools("status", b); });
     this.el.classList.toggle("is-stale", lv === "stale" || lv === "unknown");
     this.el.classList.toggle("an-stale", st.analysis.level === "stale");
-    return b;
+    return (this.chip = b);
   };
   Market.prototype.gen = function () {
     var real = this.series && this.series[TFKEY[this.tf]];
@@ -2228,19 +2225,15 @@ html.lowpower #bg-glow, html.lowpower #bg-dots { display: none; }
   });
 
   /* ---------- background ---------- */
-  /* The background is drawn once per resize into three stacked canvases: the still parts (glow, planet rim and city
-     lights, faint candles) in #bg, the golden streaks in #bg-glow (they breathe with a CSS opacity animation, so no
-     redraw), and the twinkling dots in #bg-dots. Only the dots are redrawn, on a half-resolution canvas about 10 times a second,
-     and nothing is drawn while the page is hidden or a dashboard, the book or the hazard panel covers the desk
-     (copying the whole retina-size background every frame used to keep the iPad busy). */
+  /* The background is one still picture, drawn once per resize: glow, planet rim and city lights, faint candles,
+     golden streaks and soft dots. Nothing in it moves: a moving or blended layer behind the blurred glass cards made
+     the iPad re-blur them on every frame. */
   var bg = (function () {
-    var book = document.getElementById("gbook"), hz = document.getElementById("hz"), root = document.documentElement;
-    var cv = document.getElementById("bg"), gcv = document.getElementById("bg-glow"), dcv = document.getElementById("bg-dots"), c, w, h, k = 1, parts = [], dot = null, last = 0, t0 = performance.now();
+    var cv = document.getElementById("bg"), c, w, h, k = 1, parts = [], dot = null;
     function layer(el) { el.width = Math.round(w * k); el.height = Math.round(h * k); var x = el.getContext("2d"); x.setTransform(k, 0, 0, k, 0, 0); return { cv: el, c: x }; }
     function resize() {
       k = Math.min(window.devicePixelRatio || 1, 2);
       w = innerWidth; h = innerHeight;
-      dcv.width = Math.round(w / 2); dcv.height = Math.round(h / 2); c = dcv.getContext("2d"); c.setTransform(0.5, 0, 0, 0.5, 0, 0);  // the dots are soft glows: half resolution is enough
       var r = rng(5), streaks = [], cityPts = [], i; parts = [];
       for (i = 0; i < 70; i++) parts.push({ x: r(), y: 0.35 + r() * 0.65, s: 0.6 + r() * 3.2, a: 0.08 + r() * 0.35, ph: r() * 6.3, sp: 0.4 + r() });
       for (i = 0; i < 7; i++) streaks.push({ y0: 0.55 + r() * 0.35, y1: 0.35 + r() * 0.4, bend: -0.2 + r() * 0.25, wd: 0.6 + r() * 1.4, a: 0.25 + r() * 0.5, ph: r() * 6.3 });
@@ -2267,7 +2260,7 @@ html.lowpower #bg-glow, html.lowpower #bg-dots { display: none; }
         x.fillStyle = "rgba(230,180,100," + (0.05 + i * 0.006) + ")"; x.fillRect(px, top, bw, hh); x.fillRect(px + bw / 2 - 0.5, top - hh * 0.5, 1, hh * 2);
       }
       // golden streaks layer (they breathe together in the frame)
-      var S = layer(gcv), y = S.c; y.globalCompositeOperation = "lighter";
+      var y = x; y.save(); y.globalCompositeOperation = "lighter"; y.globalAlpha = 0.8;  // painted into the one still layer (no blending on every frame)
       streaks.forEach(function (s) {
         y.strokeStyle = "rgba(255,190,90," + s.a + ")"; y.lineWidth = s.wd; y.shadowColor = "rgba(255,170,60,.9)"; y.shadowBlur = 14;
         y.beginPath(); y.moveTo(-20, h * s.y0); y.bezierCurveTo(w * 0.35, h * (s.y0 + s.bend), w * 0.6, h * (s.y1 + 0.25), w + 20, h * s.y1); y.stroke();
@@ -2276,27 +2269,19 @@ html.lowpower #bg-glow, html.lowpower #bg-dots { display: none; }
       dot = document.createElement("canvas"); dot.width = dot.height = 64;
       var d = dot.getContext("2d"), gg = d.createRadialGradient(32, 32, 0, 32, 32, 32);
       gg.addColorStop(0, "rgba(255,210,140,1)"); gg.addColorStop(1, "rgba(255,210,140,0)"); d.fillStyle = gg; d.fillRect(0, 0, 64, 64);
-      last = 0; draw(performance.now());
+      y.restore(); c = x; draw();
     }
-    function draw(now) {
-      var t = (now - t0) / 1000;
-      c.globalAlpha = 1; c.clearRect(0, 0, w, h);
+    function draw() {  // the soft glow dots, each at a fixed brightness
+      c.save(); c.globalCompositeOperation = "lighter";
       parts.forEach(function (p) {
         var r = p.s * 3;
-        c.globalAlpha = p.a * (0.55 + 0.45 * Math.sin(t * p.sp + p.ph));
+        c.globalAlpha = p.a * (0.55 + 0.45 * Math.sin(p.ph));
         c.drawImage(dot, p.x * w - r, p.y * h - r, r * 2, r * 2);
       });
-      c.globalAlpha = 1;
+      c.restore();
     }
-    function frame(now) {
-      requestAnimationFrame(frame);
-      if (now - last < 100) return;  // ~10 fps is plenty for slow twinkles
-      last = now;
-      var covered = document.hidden || root.classList.contains("lowpower") || (typeof openSheet !== "undefined" && openSheet) || !book.hidden || !hz.hidden;
-      root.classList.toggle("bg-still", !!covered);
-      if (!covered) draw(now);
-    }
-    return { resize: resize, start: function () { resize(); if (!reduce) requestAnimationFrame(frame); } };
+    // drawn once (and again on resize): a moving background made every blurred glass card redraw with it
+    return { resize: resize, start: function () { resize(); } };
   })();
 
   /* ---------- checkmarks (saved on this device, reset daily) ---------- */

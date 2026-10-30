@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="42ef745aae">
+<meta name="build" content="3125895b18">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -290,7 +290,8 @@ canvas{display:block;width:100%;height:340px;background:linear-gradient(180deg,#
 canvas.dragging{cursor:grabbing}
 /* 強い水平線（3回以上止まった線）だけを重ねたキャンバスで点滅させる */
 /* 目にやさしく：3.2秒でゆっくり、明るさの幅は小さく（消えずに半分ほど暗くなるだけ） */
-#chartBlink{position:absolute;inset:0;width:100%;height:100%;background:none;border:0;pointer-events:none;animation:srblink 2.4s ease-in-out infinite}
+#chartBlink{position:absolute;inset:0;width:100%;height:100%;background:none;border:0;pointer-events:none}
+#chartBlink.on{animation:srblink 2.4s ease-in-out infinite}  /* 点滅させる線があるときだけ動かす */
 /* 目にやさしく、でも分かりやすく：2.4秒でゆっくり光が強まって弱まる（チカチカしない。消えても本体の線は残る） */
 @keyframes srblink{0%,100%{opacity:1}50%{opacity:0}}
 @media (prefers-reduced-motion:reduce){#chartBlink{animation:none}}
@@ -1083,6 +1084,7 @@ function liveCalibrate(spot){
   LIVE.offs.push(d);if(LIVE.offs.length>20)LIVE.offs.shift();
 }
 function startLive(){
+  if(sheetHidden())return;  // デスクの裏ではリアルタイム配信をつながない（デスク自身が配信を受けている。判定は30秒ごとの価格で十分）
   const list=IS_GOLD?GOLD_WS:IS_BTC?BTC_WS:FX_WS,src=list[LIVE.tries%list.length];
   let ws,ping=0,got=false;
   try{ws=new WebSocket(src.url)}catch{return retryLive()}
@@ -2723,7 +2725,7 @@ function drawChart(){
   const bars=source.slice(startIdx,endIdx);
   if(!bars.length||!W){
     ctx.fillStyle='#93a0ad';ctx.font='14px sans-serif';ctx.fillText('チャートデータ接続中...',20,34);
-    {const b=sizeCanvas($('chartBlink'));b.ctx.clearRect(0,0,b.W,b.H)}
+    {const b=sizeCanvas($('chartBlink'));b.ctx.clearRect(0,0,b.W,b.H);$('chartBlink').classList.remove('on')}
     $('chartInfo').textContent='--';$('lvList').hidden=true;state.chartGeo=null;return;
   }
   const len=smaLen(),sm=smaSeries(source,len).slice(startIdx,endIdx);
@@ -2761,6 +2763,8 @@ function drawChart(){
   // 水平線：H1の線はどの時間足にも引き、表示中の時間足の強い線も足す
   // 強い線（どの時間足でも3回以上止まった）は点滅用のキャンバスに引く
   const bl=sizeCanvas($('chartBlink')).ctx;bl.clearRect(0,0,W,H);
+  let blUsed=false;const blStroke=CanvasRenderingContext2D.prototype.stroke;bl.stroke=function(){blUsed=true;return blStroke.apply(this,arguments)};
+  queueMicrotask(()=>$('chartBlink').classList.toggle('on',blUsed));  // 描き終わってから：点滅させる線がなければ点滅のアニメーションを止める
   const bigBoxes=[];  // 4時間足・日足の線の名前（ローソク足を描いたあとで左端に出す）
   levels.forEach(l=>{
     if(l.price<min||l.price>max)return;
@@ -3372,6 +3376,11 @@ function renderChecks(risk,reb){
 }
 
 function renderAll(){
+  if(sheetHidden()){  // デスクの裏で動いている間は、デスクへ知らせる判定だけ（画面の表や数字は開いたときにまとめて描く）
+    const s=calcSignal();if(mktClosed)s.entry=false;state.signal=s.sig;notifyDesk(s);
+    renderKeyLv();{const m=renderMtf();checkAlerts(m)}renderGmmaNow();
+    return;
+  }
   renderSnapshot();
   const reb=renderRebound();
   if(!sheetHidden())drawChart();  // デスクの裏に隠れている間はチャートを描かない（開いたときに描く）
@@ -3434,7 +3443,11 @@ window.addEventListener('message',e=>{if(e.source===window.parent&&e.data&&e.dat
 // トレードデスクの中で、このダッシュボードが閉じている（裏で動いている）か。デスクが開け閉めを知らせる。知らせが来る前は画面の大きさで判断
 let deskHidden=null;
 function sheetHidden(){return window.parent!==window&&(deskHidden!=null?deskHidden:innerWidth===0||innerHeight===0)}
-window.addEventListener('message',e=>{if(e.source===window.parent&&e.data&&e.data.type==='desk-sheet'){deskHidden=!e.data.on;if(e.data.on)renderAll()}});
+window.addEventListener('message',e=>{if(e.source===window.parent&&e.data&&e.data.type==='desk-sheet'){
+  deskHidden=!e.data.on;
+  if(e.data.on){renderAll();if(!LIVE.ws)startLive()}
+  else if(LIVE.ws){const ws=LIVE.ws;LIVE.ws=null;clearTimeout(LIVE.timer);try{ws.close()}catch{}}  // 閉じた配信は再接続しない（LIVE.wsを先に外す）
+}});
 $('fibNow').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)});
 $('gmmaNow').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)});
 $('maToggles').addEventListener('click',e=>{
