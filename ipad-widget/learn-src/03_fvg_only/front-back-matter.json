@@ -1,0 +1,27 @@
+[
+  {
+    "id": "cover",
+    "title": "表紙",
+    "html": "<section class=\"page cover nonlesson\" id=\"cover\"><div class=\"eyebrow\">FAIR VALUE GAP · VISUAL GUIDE</div><h1>FVG<br/>図解ガイド</h1><p class=\"sub\">3本の足から、帯の意味を理解する。<br/>成立から、戻りと失敗まで。</p><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 900 240\"><rect x=\"70\" y=\"110\" width=\"750\" height=\"45\" fill=\"#4765cc\"/><path d=\"M150 155V220M360 35V190M570 15V110\" stroke=\"#c1d3ff\" stroke-width=\"4\"/><rect x=\"127\" y=\"175\" width=\"46\" height=\"30\" fill=\"#d8f0e8\"/><rect x=\"337\" y=\"55\" width=\"46\" height=\"105\" fill=\"#d8f0e8\"/><rect x=\"547\" y=\"35\" width=\"46\" height=\"40\" fill=\"#d8f0e8\"/></svg><p>超初心者から読める、14の解説と図説。<br/>でき方・中央・埋まり方・失敗まで。</p><p class=\"meta\">図解資料 · 第1版 · 2026年10月30日<br/>全図オリジナル模式図。売買の確実性を示すものではありません。</p></section>"
+  },
+  {
+    "id": "start",
+    "title": "FVGを、順番に理解しよう。",
+    "html": "<section class=\"page guide nonlesson\" id=\"start\"><div class=\"kicker\">読み方ガイド</div><h2>FVGを、順番に理解しよう。</h2><p>この資料では、FVGの位置を自分で判定し、「触れただけ」「半分」「全埋め」を分けて説明できるようにします。</p><h3>読む順番</h3><p>① 3本の足で条件を確認する。<br/>② 上昇型と下落型の境界を見つける。<br/>③ 戻りと失敗の例を見比べる。<br/>④ 数字で計算し、練習問題を解く。</p><div class=\"note\">本書の基準：ヒゲ込みの高値・安値を使い、3本目が確定してから判定します。境界が同じ価格なら幅ゼロで、FVGとは数えません。全埋めは反対側境界への到達とします。</div><h3>図の約束</h3><p>色の帯がFVG、水平線が上下の境界。必要な図では中央線も表示します。陽線は青緑、陰線は赤。図と価格は説明用で、実際の時間・値幅を再現しない場合があります。</p><h3>最初に知っておきたいこと</h3><p>FVGはFair Value Gapの略で、主にICT・SMC系の分析で使われる3本の足の形です。約定量ゼロの証拠でも、必ず戻る価格帯でもありません。</p><p>定義や無効条件には手法差があります。この資料と、使用するインジケーターの条件が同じか確認してください。</p></section>"
+  },
+  {
+    "id": "contents1",
+    "title": "第1部　FVGを詳しく読む",
+    "html": "<section class=\"page guide nonlesson\" id=\"contents1\"><div class=\"kicker\">目次</div><h2>第1部　FVGを詳しく読む</h2><p>3本の条件・帯の計算・戻りと失敗</p><table class=\"toc\"><tr><th>No.</th><th>タイトル</th></tr><tr><td>01</td><td><a href=\"#fvg-01\">FVGの基本は「1本目と3本目」</a></td></tr><tr><td>02</td><td><a href=\"#fvg-02\">強気FVG：上昇で残る帯</a></td></tr><tr><td>03</td><td><a href=\"#fvg-03\">弱気FVG：下落で残る帯</a></td></tr><tr><td>04</td><td><a href=\"#fvg-04\">できていない例も見よう</a></td></tr><tr><td>05</td><td><a href=\"#fvg-05\">「取引がなかった穴」ではない</a></td></tr><tr><td>06</td><td><a href=\"#fvg-06\">帯の幅と50％地点を計算</a></td></tr><tr><td>07</td><td><a href=\"#fvg-07\">戻りは5段階で記録する</a></td></tr><tr><td>08</td><td><a href=\"#fvg-08\">3本目の確定を待つ理由</a></td></tr><tr><td>09</td><td><a href=\"#fvg-09\">戻らない・突き抜ける例</a></td></tr><tr><td>10</td><td><a href=\"#fvg-10\">無効・反転FVGは、ルールを分ける</a></td></tr><tr><td>11</td><td><a href=\"#fvg-11\">時間足と上位足</a></td></tr><tr><td>12</td><td><a href=\"#fvg-12\">実際の観察は、この順番</a></td></tr><tr><td>13</td><td><a href=\"#fvg-13\">練習問題：3つだけ</a></td></tr><tr><td>14</td><td><a href=\"#fvg-14\">練習問題：答えと記録</a></td></tr></table></section>"
+  },
+  {
+    "id": "glossary",
+    "title": "用語と数式を、ひと目で。",
+    "html": "<section class=\"page guide nonlesson\" id=\"glossary\"><div class=\"kicker\">巻末の早見表</div><h2>用語と数式を、ひと目で。</h2><table><tr><th>用語</th><th>意味・本書の扱い</th></tr><tr><td>強気FVG</td><td>3本目安値 ＞ 1本目高値。帯は1本目高値〜3本目安値。</td></tr><tr><td>弱気FVG</td><td>3本目高値 ＜ 1本目安値。帯は3本目高値〜1本目安値。</td></tr><tr><td>CE</td><td>Consequent Encroachment。帯の50％地点という呼称。</td></tr><tr><td>BISI／SIBI</td><td>それぞれ強気／弱気FVGの文脈で使われる呼称。売買の保証ではない。</td></tr><tr><td>IFVG</td><td>Inverse FVG。突破後の役割転換候補の呼称。条件には手法差がある。</td></tr><tr><td>帯の幅</td><td>上端−下端。</td></tr><tr><td>帯の中央</td><td>（上端＋下端）÷2。</td></tr><tr><td>全埋め</td><td>本書では、戻って反対側境界に到達した状態。</td></tr></table></section>"
+  },
+  {
+    "id": "sources",
+    "title": "参考資料と編集元について。",
+    "html": "<section class=\"page guide nonlesson\" id=\"sources\"><div class=\"kicker\">参考先を確認する</div><h2>参考資料と編集元について。</h2><h3>FVGの実装例</h3><p>TradingView上の公開スクリプト「ICT FVG [TheFundedRoad]」。1本目と3本目の高値・安値を比較する検出の説明を確認するための参考です。TradingViewが分析手法の有効性を保証するものではありません。</p><p class=\"source\"><a href=\"https://www.tradingview.com/script/cnjDLUHs-ICT-FVG-TheFundedRoad/\">公開スクリプトの説明を読む</a></p><h3>制作と範囲</h3><p>本文・図は新規作成。参考先の図や本文は転載していません。14項目の図説と対応する本文データを同梱しています。図は説明用で、約定量や未約定注文を再現するものではありません。</p><div class=\"note\">2026年10月30日・第1版。FVGの検出条件、無効条件、戻りの判定は統一規格ではありません。手法を検証する場合は、条件・期間・コスト・失敗例も含めて記録してください。</div></section>"
+  }
+]

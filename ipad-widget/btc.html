@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="dca8a1abfe">
+<meta name="build" content="387e547db3">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2438,6 +2438,8 @@ function notifyDesk(s){
   try{window.parent.postMessage(msg,'*')}catch{}
 }
 // セットアップ判定の下に、エントリー条件にしているチャートパターンを全部並べ、それぞれ条件がそろっているかを表示
+// パターン名 → デスクのパターン図鑑の項目（「?」で解説を開く）
+const PAT_BOOK={cup:'p22',icup:'p23',ihs:'p02',hs:'p01',db:'p03',dbot:'p04'};
 function renderPatList(s){
   const el=$('patList');if(!s.ready){el.hidden=true;return}
   const rows=[...(INSTR.cupHandle?[{id:'cup',tf:'m15',dir:0,name:'カップウィズハンドル',entry:true,useSma:1}]:[]),...PATTERNS.map(c=>({id:c.id,tf:c.tf,dir:c.dir,name:c.name,entry:c.entry,useSma:c.p.useSma}))];
@@ -2460,7 +2462,8 @@ function renderPatList(s){
       else if(c.ok){st='条件そろい → '+side(dir)+'エントリー';cls='go'+(dir<0?' sell':'')}
       else{st='ブレイク・条件不足';cls=''}
     }
-    return '<div class="prow '+cls+'"><span class="pn">'+esc(name)+'</span><span class="ps">'+esc(st)+'</span>'+(det?'<span class="pc">'+det+'</span>':'')+'</div>';
+    const pid=PAT_BOOK[r.id==='cup'&&dir<0?'icup':r.id==='db'&&dir>0?'dbot':r.id==='ihs'&&dir<0?'hs':r.id];
+    return '<div class="prow '+cls+'"><span class="pn">'+esc(name)+(pid?'<button type="button" class="gq" data-gloss="pattern:'+pid+'" aria-label="パターン図鑑：'+esc(name)+'">?</button>':'')+'</span><span class="ps">'+esc(st)+'</span>'+(det?'<span class="pc">'+det+'</span>':'')+'</div>';
   }).join('');
   el.innerHTML='<div class="ph">チャートパターン別のエントリー条件</div>'+html;el.hidden=false;
 }

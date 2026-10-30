@@ -54,6 +54,7 @@ jobs:
           cp ipad-widget/gold.html _site/gold.html
           cp ipad-widget/usdjpy.html _site/usdjpy.html
           cp ipad-widget/btc.html _site/btc.html
+          cp -r ipad-widget/learn _site/learn  # 学習の本（パターン図鑑・ドル円入門・FVG詳説）のデータと図。learn-src は公開しない
           cp ipad-widget/strategy.json _site/strategy.json || true  # daily recap and outlook (written by the morning report task)
       - name: Fetch economic calendar
         continue-on-error: true

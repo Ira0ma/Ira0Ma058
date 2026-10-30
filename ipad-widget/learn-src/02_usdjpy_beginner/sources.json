@@ -1,0 +1,30 @@
+[
+  {
+    "id": "fsa-fx",
+    "title": "金融庁：いわゆる外国為替証拠金取引について",
+    "url": "https://www.fsa.go.jp/ordinary/iwagai/",
+    "use": "国内個人向け店頭FXの証拠金・25倍上限・ロスカットとリスク",
+    "checked": true
+  },
+  {
+    "id": "boj-intervention",
+    "title": "日本銀行：為替介入とは何ですか？",
+    "url": "https://www.boj.or.jp/about/education/oshiete/intl/g19.htm",
+    "use": "財務大臣が実施を決定し、日本銀行が代理人として執行する役割",
+    "checked": true
+  },
+  {
+    "id": "bls-cpi",
+    "title": "米BLS：CPI公表予定",
+    "url": "https://www.bls.gov/schedule/news_release/cpi.htm",
+    "use": "CPIの公式発表予定の確認先",
+    "checked": true
+  },
+  {
+    "id": "fed-fomc",
+    "title": "FRB：FOMC会合・声明の公式入口",
+    "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+    "use": "最新の会合予定・声明・会見資料を確認するための参照リンク",
+    "checked": false
+  }
+]
