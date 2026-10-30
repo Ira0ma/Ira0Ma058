@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="d9738911d5">
+<meta name="build" content="33f75ad7bd">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -279,8 +279,10 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
   display:flex;flex-direction:column;padding:10px 12px calc(8px + env(safe-area-inset-bottom))}
 #secChart.full>*{flex:none}
 #secChart.full .chartwrap{flex:1 1 auto;min-height:200px}
+#chart{height:clamp(340px,66vh,720px)}  /* 画面の高さに合わせて大きく（iPad横で約550px、PCで約600px） */
 #secChart.full #chart{height:100%}
-#secChart.full #rsi{height:min(140px,16dvh)}#secChart.full #atrPane{height:min(110px,13dvh)}
+#secChart.full #rsi{height:min(100px,12dvh)}#secChart.full #atrPane{height:min(76px,9dvh)}
+#secChart.full #chNow,#secChart.full #fibNow,#secChart.full:not(.tv) #tvLayoutBox{display:none!important}  /* 大きく表示ではチャートを優先（チャネル・フィボはチャート上に引かれている） */
 #secChart.full .charthint,#secChart.full .tfcap{display:none}
 #secChart.full .matoggles{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
 #secChart.full .matoggles .seg{flex:none}
@@ -424,6 +426,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
  .hero{grid-template-columns:1fr;gap:14px}
  .hero>div+div{border-left:0;padding-left:0;border-top:1px solid #222b35;padding-top:14px}
  canvas{height:260px}
+ #chart{height:clamp(300px,50vh,460px)}  /* スマホ縦：画面の半分まで（チャートの上ではページがスクロールしないため） */
  .results{grid-template-columns:1fr 1fr}
  .form{grid-template-columns:1fr 1fr 1fr}
  .head-actions{width:100%}
