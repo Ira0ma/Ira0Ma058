@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="c34659edb9">
+<meta name="build" content="4be7bec11e">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -248,8 +248,21 @@ body {
 
 /* 地震・台風・花粉：天気のカードのボタンと全画面のパネル */
 .wx-hz { position: absolute; top: 10px; right: 12px; display: flex; gap: 4px; z-index: 1; }
-.wx-hz button { font: inherit; font-size: 10.5px; font-weight: 600; color: var(--ink-2); background: rgba(255,255,255,.07); border: 1px solid var(--glass-line); border-radius: 999px; padding: 2px 8px; cursor: pointer; }
-.wx-hz button:hover, .wx-hz button:focus-visible { color: #14100a; background: var(--gold); border-color: var(--gold); outline: none; }
+.wx-hz button { --hz: 255,255,255; font: inherit; font-size: 10.5px; font-weight: 700; color: rgb(var(--hz)); background: rgba(var(--hz),.12); border: 1px solid rgba(var(--hz),.5); border-radius: 999px; padding: 2px 8px 2px 7px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+.wx-hz button::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--hz)); opacity: .75; }
+.wx-hz [data-hz-open="eq"] { --hz: 255,146,92; }
+.wx-hz [data-hz-open="ty"] { --hz: 104,178,255; }
+.wx-hz [data-hz-open="pl"] { --hz: 132,214,120; }
+.wx-hz button:hover, .wx-hz button:focus-visible { color: #10141a; background: rgb(var(--hz)); outline: none; }
+.wx-hz button:hover::before, .wx-hz button:focus-visible::before { background: #10141a; }
+/* 天気の場所でいま起きているとき：その色で点滅 */
+.wx-hz button.alert { color: #10141a; background: rgb(var(--hz)); border-color: rgb(var(--hz)); animation: hzBlink 1.1s ease-in-out infinite; }
+.wx-hz button.alert::before { background: #10141a; opacity: 1; }
+@keyframes hzBlink { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(var(--hz),.7); } 50% { opacity: .35; box-shadow: 0 0 0 6px rgba(var(--hz),0); } }
+@media (prefers-reduced-motion: reduce) { .wx-hz button.alert { animation: none; box-shadow: 0 0 0 3px rgba(var(--hz),.45); } }
+.hz-tabs [data-hz="eq"].on { background: rgb(255,146,92); border-color: rgb(255,146,92); }
+.hz-tabs [data-hz="ty"].on { background: rgb(104,178,255); border-color: rgb(104,178,255); }
+.hz-tabs [data-hz="pl"].on { background: rgb(132,214,120); border-color: rgb(132,214,120); }
 #weather .wx-hl { margin-top: 18px; }
 .hz { position: fixed; inset: 0; z-index: 41; display: flex; flex-direction: column; background: radial-gradient(120% 90% at 50% 0%, #121a24 0%, #07090d 70%); color: var(--ink);
   padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
@@ -341,15 +354,23 @@ body {
 #xfeed .x-body { flex: 1; }
 /* FX用語集：みんなのFXのカードの下に目次の一覧、タップでデジタルブック */
 .gl-tile { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--glass-line); padding-top: 7px; }
-.gl-head { display: flex; align-items: baseline; gap: 8px; font: inherit; color: var(--ink); background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
-.gl-head b { font-size: 13.5px; font-weight: 700; color: var(--gold); }
-.gl-head span { font-size: 11px; color: var(--ink-3); }
-.gl-head em { margin-left: auto; font-style: normal; font-size: 11.5px; font-weight: 700; color: #14100a; background: var(--gold); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+.gl-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+#xfeed.gl-eco .gl-tile { --gl-acc: #6fd0d4; --gl-rgb: 111,208,212; }
+.gl-tile { --gl-acc: var(--gold); --gl-rgb: 227,184,103; }
+.gl-tabs { display: flex; padding: 2px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--glass-line); flex: none; }
+.gl-tabs button { font: inherit; font-size: 12px; font-weight: 700; color: var(--ink-3); background: none; border: 0; border-radius: 999px; padding: 3px 10px; cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
+.gl-tabs button.on { color: #14100a; background: var(--gold); }
+.gl-tabs button.on[data-glbook="eco"] { background: #6fd0d4; }
+.gl-head span { font-size: 11px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.gl-open { margin-left: auto; font: inherit; font-size: 11.5px; font-weight: 700; color: var(--gl-acc); background: rgba(var(--gl-rgb),.1); border: 1px solid rgba(var(--gl-rgb),.45); border-radius: 999px; padding: 3px 10px; white-space: nowrap; cursor: pointer; }
+.gl-open:hover { background: rgba(var(--gl-rgb),.2); }
+.gl-hint { margin: 0; font-size: 10.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gl-hint::before { content: "↔ "; color: var(--gl-acc); font-weight: 700; }
 .gl-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 5px; flex: 1; min-height: 0; }
-.gl-grid button { font: inherit; display: flex; flex-direction: row; justify-content: flex-start; align-items: center; gap: 4px; min-width: 0; padding: 2px 8px; border-radius: 9px; border: 1px solid rgba(227,184,103,.18); background: rgba(227,184,103,.06); color: var(--ink); cursor: pointer; text-align: left; }
-.gl-grid button:hover, .gl-grid button:focus-visible { background: rgba(227,184,103,.16); outline: none; }
+.gl-grid button { font: inherit; display: flex; flex-direction: row; justify-content: flex-start; align-items: center; gap: 4px; min-width: 0; padding: 2px 8px; border-radius: 9px; border: 1px solid rgba(var(--gl-rgb),.18); background: rgba(var(--gl-rgb),.06); color: var(--ink); cursor: pointer; text-align: left; }
+.gl-grid button:hover, .gl-grid button:focus-visible { background: rgba(var(--gl-rgb),.16); outline: none; }
 .gl-grid b { font-size: 11.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.gl-grid b i { font-style: normal; color: var(--gold); margin-right: 4px; }
+.gl-grid b i { font-style: normal; color: var(--gl-acc); margin-right: 4px; }
 .gl-grid small { display: none; }
 .flow #xfeed .gl-grid small { display: inline; font-size: 9.5px; color: var(--ink-3); margin-left: auto; }
 #xfeed:not(.x-ok) .x-body { flex: 0 0 auto; }
@@ -410,6 +431,19 @@ body {
 .gb-cover small { font-size: 11px; letter-spacing: .3em; color: #a37a2c; }
 .gb-cover h1 { margin: 6px 0 2px; font-size: 30px; color: #2b241a; letter-spacing: .08em; }
 .gb-cover p { margin: 0; font-size: 12px; color: #7b6b52; }
+.gb-cover .gb-hint { margin-top: 6px; font-size: 11px; color: #a08c66; }
+.gb-cover .gb-hint::before { content: "↔ "; font-weight: 700; color: #a37a2c; }
+/* 経済用語集：同じ本のしくみで、色だけ青緑に */
+.gbook.eco .gb-bar .gb-title, .gbook.eco .gb-prog i { color: #6fd0d4; }
+.gbook.eco .gb-prog i { background: #6fd0d4; }
+.gbook.eco .gb-btn.gb-x { background: #6fd0d4; border-color: #6fd0d4; }
+.gbook.eco .gb-page { background: linear-gradient(180deg, #f8f7f1, #eceee5); }
+.gbook.eco .gb-cover, .gbook.eco .gb-run { border-color: #bcd6d2; }
+.gbook.eco .gb-cover small, .gbook.eco .gb-chhead small, .gbook.eco .gb-term h3 span, .gbook.eco .gb-toc i, .gbook.eco .gb-idx button em, .gbook.eco .gb-cover .gb-hint::before { color: #1f7a80; }
+.gbook.eco .gb-idx h4, .gbook.eco .gb-table th { background: #1f7a80; }
+.gbook.eco .gb-pts li::marker { color: #1f7a80; }
+.gbook.eco .gb-figbox { border-color: #cfe0dc; }
+.gbook.eco .gb-resume { background: #dcecea; border-color: #bcd6d2; color: #175e63; }
 .gb-toc { list-style: none; margin: 0; padding: 0; }
 .gb-toc li + li { border-top: 1px solid #e6dabf; }
 .gb-toc button { font: inherit; width: 100%; display: flex; align-items: baseline; gap: 10px; padding: 9px 2px; background: none; border: 0; cursor: pointer; color: #2b241a; text-align: left; }
@@ -650,8 +684,12 @@ html:not(.flow) #flow { display: none; }
       <div class="x-fallback" hidden>この端末では X の投稿を表示できません。右上の「X で開く」から確認できます。</div>
     </div>
     <div class="gl-tile">
-      <button type="button" class="gl-head" data-gl="toc"><b>📖 FX用語集</b><span id="gl-count"></span><em>目次を開く ›</em></button>
+      <div class="gl-head">
+        <div class="gl-tabs" role="tablist" aria-label="用語集"><button type="button" role="tab" data-glbook="fx">📖 FX用語集</button><button type="button" role="tab" data-glbook="eco">📘 経済用語集</button></div>
+        <span id="gl-count"></span><button type="button" class="gl-open" data-gl="toc">目次を開く ›</button>
+      </div>
       <div class="gl-grid" id="gl-grid"></div>
+      <p class="gl-hint">本を開いたら、左右にスワイプか「次のページ ›」でめくれます</p>
     </div>
   </section>
 
@@ -1848,6 +1886,42 @@ html:not(.flow) #flow { display: none; }
           '<p class="hz-src">ウェザーニューズ ポールンロボの観測（1時間あたりの個数・' + hm(j.updated * 1000) + ' 取得）。多い・少ないは目安です。</p>' + pollenCal() + links;
       }).catch(function () { body.innerHTML = pollenCal() + '<p class="hz-src">' + link("https://tenki.jp/pollen/", "tenki.jp 花粉情報") + '</p>'; });
     }
+    /* 天気の場所でいま起きていたら、カードのボタンを点滅させる（5分ごとに確かめる）
+       地震：1時間以内に、天気の場所の都道府県で震度1以上を観測／台風：今の位置か48時間先までの予報の位置が300km（予報円が大きければその半径）以内
+       花粉：季節中で、いちばん近い観測地点の今日の最大が「多い」（1時間30個）以上 */
+    var PREF = [["北海道",43.06,141.35],["青森県",40.82,140.74],["岩手県",39.70,141.15],["宮城県",38.27,140.87],["秋田県",39.72,140.10],["山形県",38.24,140.36],["福島県",37.75,140.47],["茨城県",36.34,140.45],["栃木県",36.57,139.88],["群馬県",36.39,139.06],["埼玉県",35.86,139.65],["千葉県",35.61,140.12],["東京都",35.69,139.75],["神奈川県",35.44,139.64],["新潟県",37.90,139.02],["富山県",36.70,137.21],["石川県",36.59,136.63],["福井県",36.07,136.22],["山梨県",35.66,138.57],["長野県",36.65,138.18],["岐阜県",35.39,136.72],["静岡県",34.98,138.38],["愛知県",35.18,136.91],["三重県",34.73,136.51],["滋賀県",35.00,135.87],["京都府",35.02,135.76],["大阪府",34.69,135.50],["兵庫県",34.69,135.18],["奈良県",34.69,135.83],["和歌山県",34.23,135.17],["鳥取県",35.50,134.24],["島根県",35.47,133.05],["岡山県",34.66,133.93],["広島県",34.40,132.46],["山口県",34.19,131.47],["徳島県",34.07,134.56],["香川県",34.34,134.04],["愛媛県",33.84,132.77],["高知県",33.56,133.53],["福岡県",33.59,130.40],["佐賀県",33.25,130.30],["長崎県",32.74,129.87],["熊本県",32.79,130.74],["大分県",33.24,131.61],["宮崎県",31.91,131.42],["鹿児島県",31.56,130.56],["沖縄県",26.21,127.68]];
+    var km = function (a, b, c, d) { var r = Math.PI / 180, x = Math.sin((c - a) * r / 2), y = Math.sin((d - b) * r / 2); return 12742 * Math.asin(Math.sqrt(x * x + Math.cos(a * r) * Math.cos(c * r) * y * y)); };
+    var myPref = function (me) { return PREF.slice().sort(function (p, q) { return km(me.lat, me.lon, p[1], p[2]) - km(me.lat, me.lon, q[1], q[2]); })[0][0]; };
+    function flag(kind, on, why) {
+      var b = document.querySelector('.wx-hz [data-hz-open="' + kind + '"]'); if (!b) return;
+      b.classList.toggle("alert", !!on);
+      b.title = on ? why : "";
+      b.setAttribute("aria-label", b.textContent + (on ? "（" + why + "）" : ""));
+    }
+    function hzCheck() {
+      var me = window.wxLoc && wxLoc(); if (!me || !isFinite(me.lat)) return;
+      var pref = myPref(me);
+      getJson("https://api.p2pquake.net/v2/history?codes=551&limit=20").then(function (list) {
+        var hit = list.filter(function (m) { return m.earthquake && Date.now() - eqTime(m.earthquake.time) < 3600e3 && (m.points || []).some(function (p) { return p.pref === pref && p.scale >= 10; }); })[0];
+        var sc = hit && Math.max.apply(null, hit.points.filter(function (p) { return p.pref === pref; }).map(function (p) { return p.scale; }));
+        flag("eq", hit, hit ? pref + "で震度" + ((SC[sc] || [])[0] || "") + "の地震（" + hm(eqTime(hit.earthquake.time)) + "）" : "");
+      }).catch(function () {});
+      getJson("typhoon.json").then(function (j) {
+        var near = null;
+        (j.items || []).forEach(function (ty) { (ty.track || []).forEach(function (p, k) {
+          var t = Date.parse(p.t); if (!p.pos || (k && isFinite(t) && t - Date.now() > 48 * 3600e3)) return;  // 今の位置と48時間先までの予報
+          var d = km(me.lat, me.lon, parseFloat(p.pos[0]), parseFloat(p.pos[1])), lim = Math.max(300, parseFloat(p.circle) || 0);
+          if (d <= lim && (!near || d < near.d)) near = { d: d, n: ty.number ? +String(ty.number).slice(-2) : "" };
+        }); });
+        flag("ty", near, near ? "台風第" + near.n + "号が" + (me.name || "天気の場所") + "に近づくおそれ（約" + Math.round(near.d / 10) * 10 + "km）" : "");
+      }).catch(function () {});
+      getJson("pollen.json").then(function (j) {
+        if (!j.season || !(j.cities || []).length) { flag("pl", false); return; }
+        var c = j.cities.slice().sort(function (a, b) { return km(me.lat, me.lon, a.lat, a.lon) - km(me.lat, me.lon, b.lat, b.lon); })[0];
+        flag("pl", c.max != null && c.max >= 30, c.name + "の花粉が" + LV(c.max)[0] + "（1時間" + c.max + "個）");
+      }).catch(function () {});
+    }
+    setTimeout(hzCheck, 2500); setInterval(hzCheck, 5 * 60000);
     document.querySelectorAll("[data-hz-open]").forEach(function (b) { b.addEventListener("click", function (e) { e.stopPropagation(); open(b.getAttribute("data-hz-open"), b); }); });
     sheet.querySelectorAll(".hz-tabs button").forEach(function (b) { b.addEventListener("click", function () { tab = b.getAttribute("data-hz"); render(); }); });
     sheet.querySelector(".hz-x").addEventListener("click", close);
@@ -2559,20 +2633,125 @@ html:not(.flow) #flow { display: none; }
       ["ドル円の年間変動幅・変動率", "2010〜2026年", "1年間の高値と安値の差（変動幅）と、それを割合で表した変動率。2026年は10月28日までで7.8％と、過去最低（2019年の7.6％）に近い水準。", { table: { head: ["年", "変動幅", "変動率"], low: ["2019", "2026"], rows: [["2010", "14.75円", "18.4%"], ["2011", "9.97円", "13.2%"], ["2012", "10.66円", "14.0%"], ["2013", "18.80円", "21.7%"], ["2014", "21.09円", "20.9%"], ["2015", "10.00円", "8.6%"], ["2016", "22.70円", "22.9%"], ["2017", "11.29円", "10.5%"], ["2018", "9.91円", "9.5%"], ["2019", "7.95円", "7.6%"], ["2020", "11.05円", "10.9%"], ["2021", "12.93円", "12.6%"], ["2022", "38.48円", "33.9%"], ["2023", "24.69円", "19.4%"], ["2024", "22.37円", "16.0%"], ["2025", "18.99円", "13.6%"], ["2026", "11.90円", "7.8%"]] }, aka: ["変動幅", "変動率"] }]
     ]}
   ];
+  var ECONOMY = [
+    { t: "投資の考え方", s: "投資と投機の違い・リスクとリターン・分散", terms: [
+      ["投資と投機の違い", "", "投資は、会社の成長や利息・配当など「価値が育つこと」に時間をかけてお金を預けること。投機は、短い期間の値動きの差を狙うこと。FXの短期売買は投機に近い。どちらが良い悪いではなく、利益の出どころとリスクの取り方が違う。", { fig: "invspec", pts: ["投資：時間を味方にする。長く持つほど成長の恩恵を受けやすい", "投機：値動きそのものが利益の源。誰かの損が誰かの得になりやすい", "投機をするなら、資金管理（1回の損を小さく）がいちばん大事"] }],
+      ["貯蓄と投資", "", "貯蓄は元本が減らない代わりに、ほとんど増えない。投資は増える可能性がある代わりに、減ることもある。目的と期間で使い分ける。"],
+      ["リスクとリターン", "", "投資でいうリスクは「危険」ではなく、結果の振れ幅（不確実さ）のこと。大きなリターンを狙うものほど、振れ幅も大きい。", { fig: "riskreturn" }],
+      ["分散投資", "", "値動きの違う資産・地域・時期に分けて持つこと。どれかが下がっても全体の傷が浅くなる。「卵をひとつのかごに盛るな」。", { fig: "diversify" }],
+      ["長期投資", "", "何年・何十年と持ち続けること。短い間の上げ下げがならされ、複利の効果も大きくなる。"],
+      ["ドルコスト平均法", "", "毎月など決まった時期に、同じ金額ずつ買う方法。安いときは多く、高いときは少なく買えるので、平均の買値がならされる。", { fig: "dca" }],
+      ["ポートフォリオ", "アセットアロケーション", "持っている資産の組み合わせ。株・債券・現金・金などにどれだけ配分するかで、増え方と値動きの大きさが決まる。", { fig: "portfolio", aka: ["アセットアロケーション"] }],
+      ["リバランス", "", "値動きで崩れた配分を、決めた割合に戻すこと。上がった物を少し売り、下がった物を買い足すことになる。"],
+      ["期待値", "", "同じことを何度もくり返したときの平均の損益。勝率×平均の利益 −（1−勝率）×平均の損失。プラスでなければ続けるほど減る。"],
+      ["機会費用", "", "ある選択をしたことで、選ばなかった方から得られたはずの利益。現金のまま持つことにも、インフレで目減りするという機会費用がある。"]
+    ]},
+    { t: "経済のしくみ", s: "需要と供給・景気・インフレ", terms: [
+      ["需要と供給", "", "買いたい量（需要）と売りたい量（供給）がつり合う所で価格が決まる。欲しい人が増えると価格は上がり、売りたい人が増えると下がる。為替レートも同じしくみで動く。", { fig: "supdem" }],
+      ["景気", "", "経済全体の調子。モノが売れ、企業がもうかり、給料が上がる流れが強いときを好景気、弱いときを不景気という。"],
+      ["景気循環", "", "景気は、回復→好況→後退→不況をくり返す。株や通貨の値動きも、この波の影響を受ける。", { fig: "cycle" }],
+      ["GDP", "国内総生産", "一定の期間に国内で新しく生み出された価値の合計。その伸び率（経済成長率）で景気の強さを見る。"],
+      ["名目と実質", "", "名目は金額そのまま、実質は物価の上がり下がりを取り除いた値。給料が3％増えても物価が4％上がれば、実質ではマイナス。", { fig: "nominal" }],
+      ["インフレ", "インフレーション", "物価が上がり続け、お金の価値が下がること。同じ1万円で買える物が少なくなる。ゆるやかなインフレ（年2％程度）は健全とされる。", { fig: "inflation" }],
+      ["デフレ", "デフレーション", "物価が下がり続けること。買い控え→企業の売上が減る→給料が下がる→さらに買い控え、という悪循環（デフレスパイラル）になりやすい。"],
+      ["スタグフレーション", "", "景気が悪いのに物価が上がる状態。生活が苦しくなり、中央銀行も金利を上げにくく下げにくい難しい局面。"],
+      ["失業率", "", "働く意思があるのに仕事がない人の割合。景気の体温計のひとつで、低いほど景気が強い。"],
+      ["賃金と物価の好循環", "", "物価が上がり、それ以上に賃金が上がると、消費が増えて企業ももうかり、また賃金が上がる。日銀が目指している状態。"]
+    ]},
+    { t: "お金と金利", s: "金利・複利・中央銀行・債券", terms: [
+      ["お金の3つの役割", "", "①モノと交換できる（交換手段）、②値段を測れる（価値の尺度）、③価値をためておける（価値の保存）。インフレは③を弱める。"],
+      ["金利", "", "お金を借りるときの料金で、貸す側から見ると受け取る利息。金利が上がるとお金を借りにくくなり、景気は冷えやすい。"],
+      ["単利と複利", "", "単利は元本にだけ利息がつく。複利は増えた利息にもまた利息がつくので、時間がたつほど差が大きくなる（複利効果）。", { fig: "compound", aka: ["複利効果"] }],
+      ["72の法則", "", "72 ÷ 年利（％）＝ お金が2倍になるまでのおおよその年数。年3％なら約24年、年6％なら約12年。借金の利息にも同じように効く。", { fig: "rule72" }],
+      ["中央銀行", "", "国のお金の番人。日本は日本銀行、アメリカはFRB、ユーロ圏はECB。物価の安定を目標に、金利やお金の量を調整する。"],
+      ["金融緩和と金融引き締め", "", "金融緩和は金利を下げたりお金の量を増やしたりして景気を支えること。引き締めはその逆で、物価の上がりすぎを抑える。", { fig: "easing", aka: ["金融緩和", "金融引き締め"] }],
+      ["量的緩和", "QE", "中央銀行が国債などを大量に買って、世の中にお金を流すこと。金利をそれ以上下げられないときに使われる。"],
+      ["国債", "", "国が借金をするときに発行する証書。決まった利息を払い、期限が来たら元本を返す。"],
+      ["債券と利回り", "", "債券は国や企業へお金を貸す証書。債券の価格が上がると利回りは下がり、価格が下がると利回りは上がる（シーソーの関係）。", { fig: "bond" }],
+      ["長期金利と短期金利", "", "短期金利は中央銀行の政策で、長期金利（10年国債の利回りなど）は市場の景気や物価の予想で主に決まる。"],
+      ["イールドカーブ", "利回り曲線", "期間ごとの金利を結んだ線。ふつうは期間が長いほど金利が高い右上がり。短期の方が高い「逆イールド」は景気後退の前ぶれとされる。", { fig: "yield", aka: ["逆イールド"] }],
+      ["信用リスク", "", "お金を貸した相手が返せなくなるおそれ。信用の低い国や会社ほど、高い金利を払わないとお金を借りられない。"]
+    ]},
+    { t: "株式", s: "株価・指数・PER・PBR", terms: [
+      ["株式", "株", "会社に出資した証拠で、会社の持ち分。会社が成長すると株の価値も上がり、利益の一部が配当として分けられる。"],
+      ["配当", "", "会社が利益の一部を株主に分けるお金。株価に対する1年の配当の割合を配当利回りという。"],
+      ["株価指数", "", "たくさんの株価をまとめて市場全体の動きを表す数字。日経平均株価・TOPIX（日本）、S&P500・ダウ平均・ナスダック（米国）など。", { aka: ["日経平均株価", "TOPIX", "S&P500"] }],
+      ["時価総額", "", "株価 × 発行済みの株数。会社の規模を市場がいくらと見ているかを表す。"],
+      ["PER", "株価収益率", "株価 ÷ 1株あたりの利益。今の利益の何年分で株価になるかの目安で、高いほど期待が大きい（割高）とされる。", { fig: "per" }],
+      ["PBR", "株価純資産倍率", "株価 ÷ 1株あたりの純資産。1倍を下回ると、会社を解散したときの価値より株価が安いことになる。"],
+      ["ROE", "自己資本利益率", "株主から預かったお金（自己資本）で、どれだけ効率よく利益を出したか。日本では8％以上がひとつの目安とされる。"],
+      ["決算", "", "会社が一定期間の売上や利益をまとめて発表すること。予想との差で株価が大きく動く。"],
+      ["グロース株とバリュー株", "", "グロース株は利益の伸びが大きい成長株、バリュー株は実力より株価が割安な株。金利が上がる局面ではグロース株が売られやすい。"]
+    ]},
+    { t: "投資信託と制度", s: "投資信託・ETF・NISA・iDeCo", terms: [
+      ["投資信託", "ファンド", "たくさんの人から集めたお金を、専門家がまとめて株や債券に投資する商品。少ない金額でも分散投資ができる。", { fig: "fund" }],
+      ["インデックスファンドとアクティブファンド", "", "インデックスは日経平均やS&P500などの指数と同じ動きを目指し、コストが安い。アクティブは指数を上回る成績を目指すが、コストが高め。", { aka: ["インデックスファンド", "アクティブファンド"] }],
+      ["ETF", "上場投資信託", "株と同じように市場で売り買いできる投資信託。値段がリアルタイムで動く。金のETFもある。"],
+      ["信託報酬", "", "投資信託を持っている間、毎日少しずつかかる運用の手数料。年0.1％と1.5％では、長い目で見ると大きな差になる。"],
+      ["NISA", "少額投資非課税制度", "投資で得た利益に税金がかからない国の制度。2024年からの新NISAは、年360万円（つみたて投資枠120万円＋成長投資枠240万円）、生涯1,800万円まで。", { fig: "nisa" }],
+      ["iDeCo", "個人型確定拠出年金", "自分で掛金を出して老後のお金を運用する年金。掛金が所得から差し引かれて税金が軽くなるが、原則60歳まで引き出せない。"],
+      ["投資の税金", "20.315％", "国内では、株・投資信託・FXの利益には原則20.315％（所得税15％・住民税5％・復興特別所得税0.315％）の税金がかかる。NISAの中の利益は非課税。"]
+    ]},
+    { t: "財政と世界経済", s: "国の財布・貿易・円安円高", terms: [
+      ["財政", "", "国や自治体のお金のやりくり。税金などの収入で、社会保障・公共事業・教育などの支出をまかなう。"],
+      ["財政赤字", "", "支出が収入（税収）を上回ること。足りない分は国債で借りるため、国の借金が積み上がる。"],
+      ["貿易収支と経常収支", "", "貿易収支は輸出と輸入の差。経常収支は、それに海外からの利子・配当などを加えた、外国とのお金のやりとり全体の収支。", { aka: ["貿易収支", "経常収支"] }],
+      ["円安と円高の影響", "", "円安は輸出企業や訪日客には追い風だが、輸入品（エネルギー・食料）は値上がりする。円高はその逆。", { fig: "yenimpact" }],
+      ["関税", "", "輸入品にかける税金。国内の産業を守る一方で、輸入品が高くなり、貿易相手との対立のもとにもなる。"],
+      ["基軸通貨", "", "世界の貿易や金融で中心に使われる通貨。今は米ドルで、だから米国の金利や指標が世界中の相場を動かす。"],
+      ["地政学リスク", "", "戦争・紛争・国どうしの対立などが経済や相場に与えるリスク。高まると金や円が買われやすい。"]
+    ]},
+    { t: "市場と心理", s: "バブル・ブルとベア・人の心のクセ", terms: [
+      ["バブル", "", "実際の価値を大きく超えて価格が上がり続けること。「まだ上がる」という期待だけで買われ、やがてはじけて急落する。", { fig: "bubble" }],
+      ["リセッション", "景気後退", "景気が後退している状態。2四半期続けてGDPがマイナスになることが目安としてよく使われる。"],
+      ["ブル相場とベア相場", "強気・弱気", "ブル（牛）は角を突き上げる＝上昇相場、ベア（熊）は爪を振り下ろす＝下落相場。", { fig: "bullbear", aka: ["ブル相場", "ベア相場"] }],
+      ["恐怖指数", "VIX", "米国株の先行きの値動きの大きさを、オプション価格から表した指数。不安が高まると上がり、20を超えると警戒が強いとされる。"],
+      ["損失回避", "プロスペクト理論", "人は同じ金額でも、得をした喜びより損をした痛みを大きく感じる。そのため含み損を抱え込み、利益は早く確定しがちになる。", { fig: "prospect", aka: ["プロスペクト理論"] }],
+      ["確証バイアス", "", "自分の考えに合う情報ばかり集めてしまう心のクセ。ポジションを持つと、都合のいいニュースだけが目に入りやすい。"],
+      ["群集心理", "FOMO", "みんなが買っているから買う、乗り遅れたくない（FOMO）という心理。天井近くで飛びつく原因になる。", { aka: ["FOMO"] }],
+      ["アノマリー", "", "理屈では説明しにくいが、よく見られる相場の傾向。「月末にドル買いが増える」「年末は円高になりやすい」など。"]
+    ]},
+    { t: "くらしとお金", s: "インフレと預金・生活防衛資金", terms: [
+      ["インフレと預金", "", "物価が年2％上がり続けると、100万円で買える物は10年で約82万円分に減る。金利がほとんどつかない預金だけでは、実質的に目減りしていく。", { fig: "cashvalue" }],
+      ["可処分所得", "手取り", "給料から税金や社会保険料を引いた、自由に使えるお金。"],
+      ["生活防衛資金", "", "病気や失業に備えて、すぐ使える現金で持っておくお金。生活費の3〜6か月分が目安。投資やトレードはこの外側のお金で。"],
+      ["高利回りの詐欺", "", "「元本保証で月利◯％」「必ずもうかる」はありえない。リスクなしに高いリターンは得られない。知らない人が勧める投資話は疑う。"]
+    ]}
+  ];
 
   (function () {
-    var YOMI = {"通貨ペア": "つうかぺあ", "基軸通貨・決済通貨": "きじくつうか", "円高・円安": "えんだか", "成行注文": "なりゆきちゅうもん", "指値注文": "さしねちゅうもん", "逆指値注文": "ぎゃくさしねちゅうもん", "約定": "やくじょう", "決済": "けっさい", "利確": "りかく", "損切り": "そんぎり", "両建て": "りょうだて", "有効証拠金": "ゆうこうしょうこきん", "必要証拠金": "ひつようしょうこきん", "証拠金維持率": "しょうこきんいじりつ", "証拠金": "しょうこきん", "追証": "おいしょう", "含み益・含み損": "ふくみえき", "確定損益": "かくていそんえき", "許容リスク": "きょようりすく", "資金管理": "しきんかんり", "勝率": "しょうりつ", "時間足": "じかんあし", "ダウ理論": "だうりろん", "水平線": "すいへいせん", "高値・安値の更新": "たかね", "押し目・戻り": "おしめ", "マルチタイムフレーム分析": "まるちたいむふれーむ", "移動平均線": "いどうへいきんせん", "三尊（ヘッドアンドショルダー）": "さんぞん", "逆三尊": "ぎゃくさんぞん", "三角保ち合い": "さんかくもちあい", "大口の決済": "おおぐちのけっさい", "経済指標": "けいざいしひょう", "米雇用統計": "べいこようとうけい", "政策金利": "せいさくきんり", "日銀金融政策決定会合": "にちぎんきんゆうせいさく", "タカ派・ハト派": "たかは", "為替介入": "かわせかいにゅう", "要人発言": "ようじんはつげん", "東京・ロンドン・NY時間": "とうきょう", "窓開け": "まどあけ", "流動性": "りゅうどうせい", "順張り": "じゅんばり", "逆張り": "ぎゃくばり", "押し目買い": "おしめがい", "戻り売り": "もどりうり", "裁量トレード": "さいりょうとれーど", "先物価格": "さきものかかく", "有事の金": "ゆうじのきん", "実質金利": "じっしつきんり", "スポット価格": "すぽっとかかく", "クロス円": "くろすえん", "ローソク足": "ろーそくあし", "乖離": "かいり", "値決め": "ねぎめ", "月末フロー": "げつまつふろー", "原油": "げんゆ", "雇用コスト指数": "こようこすとしすう", "損益分岐ライン": "そんえきぶんきらいん", "ドル円の年間変動幅・変動率": "どるえんのねんかん", "東京仲値": "とうきょうなかね", "東京都区部CPI": "とうきょうとくぶしーぴーあい", "展望レポート": "てんぼうれぽーと", "仲値": "なかね", "変動幅": "へんどうはば", "変動率": "へんどうりつ", "グランビルの法則": "ぐらんびるのほうそく", "エリオット波動の戻し": "えりおっとはどうのもどし", "レンジができるしくみ": "れんじができるしくみ", "フィボナッチの重なり": "ふぃぼなっちのかさなり", "レジサポ転換": "れじさぽてんかん", "ゴトー日": "ごとーび", "ローソク足の読み方の基本": "ろーそくあしのよみかた", "大陽線・大陰線": "だいようせん", "十字線": "じゅうじせん", "同時線": "どうじせん", "丸坊主": "まるぼうず", "坊主": "ぼうず", "流れ星": "ながれぼし", "包み足": "つつみあし", "抱き線": "だきせん", "毛抜き底・毛抜き天井": "けぬきぞこ", "赤三兵・黒三兵": "あかさんぺい", "確定足": "かくていあし", "上位足のローソク足": "じょういあしのろーそくあし", "ローソク足でのエントリー手順": "ろーそくあしでのえんとりー", "ストップ狩り": "すとっぷがり", "指標発表の往って来い": "しひょうはっぴょうのいってこい", "東京レンジのフェイクブレイク": "とうきょうれんじ", "キリ番のダマシ": "きりばんのだまし", "キリ番": "きりばん", "ネックライン割れのダマシ": "ねっくらいんわれ", "金曜NYの巻き戻し": "きんようにゅーよーく", "ダマシの見分け方": "だましのみわけかた"};
+    var YOMI = {"通貨ペア": "つうかぺあ", "基軸通貨・決済通貨": "きじくつうか", "円高・円安": "えんだか", "成行注文": "なりゆきちゅうもん", "指値注文": "さしねちゅうもん", "逆指値注文": "ぎゃくさしねちゅうもん", "約定": "やくじょう", "決済": "けっさい", "利確": "りかく", "損切り": "そんぎり", "両建て": "りょうだて", "有効証拠金": "ゆうこうしょうこきん", "必要証拠金": "ひつようしょうこきん", "証拠金維持率": "しょうこきんいじりつ", "証拠金": "しょうこきん", "追証": "おいしょう", "含み益・含み損": "ふくみえき", "確定損益": "かくていそんえき", "許容リスク": "きょようりすく", "資金管理": "しきんかんり", "勝率": "しょうりつ", "時間足": "じかんあし", "ダウ理論": "だうりろん", "水平線": "すいへいせん", "高値・安値の更新": "たかね", "押し目・戻り": "おしめ", "マルチタイムフレーム分析": "まるちたいむふれーむ", "移動平均線": "いどうへいきんせん", "三尊（ヘッドアンドショルダー）": "さんぞん", "逆三尊": "ぎゃくさんぞん", "三角保ち合い": "さんかくもちあい", "大口の決済": "おおぐちのけっさい", "経済指標": "けいざいしひょう", "米雇用統計": "べいこようとうけい", "政策金利": "せいさくきんり", "日銀金融政策決定会合": "にちぎんきんゆうせいさく", "タカ派・ハト派": "たかは", "為替介入": "かわせかいにゅう", "要人発言": "ようじんはつげん", "東京・ロンドン・NY時間": "とうきょう", "窓開け": "まどあけ", "流動性": "りゅうどうせい", "順張り": "じゅんばり", "逆張り": "ぎゃくばり", "押し目買い": "おしめがい", "戻り売り": "もどりうり", "裁量トレード": "さいりょうとれーど", "先物価格": "さきものかかく", "有事の金": "ゆうじのきん", "実質金利": "じっしつきんり", "スポット価格": "すぽっとかかく", "クロス円": "くろすえん", "ローソク足": "ろーそくあし", "乖離": "かいり", "値決め": "ねぎめ", "月末フロー": "げつまつふろー", "原油": "げんゆ", "雇用コスト指数": "こようこすとしすう", "損益分岐ライン": "そんえきぶんきらいん", "ドル円の年間変動幅・変動率": "どるえんのねんかん", "東京仲値": "とうきょうなかね", "東京都区部CPI": "とうきょうとくぶしーぴーあい", "展望レポート": "てんぼうれぽーと", "仲値": "なかね", "変動幅": "へんどうはば", "変動率": "へんどうりつ", "グランビルの法則": "ぐらんびるのほうそく", "エリオット波動の戻し": "えりおっとはどうのもどし", "レンジができるしくみ": "れんじができるしくみ", "フィボナッチの重なり": "ふぃぼなっちのかさなり", "レジサポ転換": "れじさぽてんかん", "ゴトー日": "ごとーび", "ローソク足の読み方の基本": "ろーそくあしのよみかた", "大陽線・大陰線": "だいようせん", "十字線": "じゅうじせん", "同時線": "どうじせん", "丸坊主": "まるぼうず", "坊主": "ぼうず", "流れ星": "ながれぼし", "包み足": "つつみあし", "抱き線": "だきせん", "毛抜き底・毛抜き天井": "けぬきぞこ", "赤三兵・黒三兵": "あかさんぺい", "確定足": "かくていあし", "上位足のローソク足": "じょういあしのろーそくあし", "ローソク足でのエントリー手順": "ろーそくあしでのえんとりー", "ストップ狩り": "すとっぷがり", "指標発表の往って来い": "しひょうはっぴょうのいってこい", "東京レンジのフェイクブレイク": "とうきょうれんじ", "キリ番のダマシ": "きりばんのだまし", "キリ番": "きりばん", "ネックライン割れのダマシ": "ねっくらいんわれ", "金曜NYの巻き戻し": "きんようにゅーよーく", "ダマシの見分け方": "だましのみわけかた", "投資と投機の違い": "とうしととうき", "貯蓄と投資": "ちょちくととうし", "分散投資": "ぶんさんとうし", "長期投資": "ちょうきとうし", "期待値": "きたいち", "機会費用": "きかいひよう", "需要と供給": "じゅようときょうきゅう", "景気": "けいき", "景気循環": "けいきじゅんかん", "名目と実質": "めいもくとじっしつ", "失業率": "しつぎょうりつ", "賃金と物価の好循環": "ちんぎんとぶっか", "72の法則": "ななじゅうにのほうそく", "金利": "きんり", "単利と複利": "たんりとふくり", "複利効果": "ふくりこうか", "中央銀行": "ちゅうおうぎんこう", "金融緩和と金融引き締め": "きんゆうかんわと", "金融緩和": "きんゆうかんわ", "金融引き締め": "きんゆうひきしめ", "量的緩和": "りょうてきかんわ", "国債": "こくさい", "債券と利回り": "さいけんとりまわり", "長期金利と短期金利": "ちょうききんり", "信用リスク": "しんようりすく", "株式": "かぶしき", "配当": "はいとう", "株価指数": "かぶかしすう", "日経平均株価": "にっけいへいきんかぶか", "時価総額": "じかそうがく", "決算": "けっさん", "投資信託": "とうししんたく", "信託報酬": "しんたくほうしゅう", "投資の税金": "とうしのぜいきん", "財政": "ざいせい", "財政赤字": "ざいせいあかじ", "貿易収支と経常収支": "ぼうえきしゅうしと", "貿易収支": "ぼうえきしゅうし", "経常収支": "けいじょうしゅうし", "円安と円高の影響": "えんやすとえんだか", "関税": "かんぜい", "基軸通貨": "きじくつうか", "地政学リスク": "ちせいがくりすく", "恐怖指数": "きょうふしすう", "損失回避": "そんしつかいひ", "確証バイアス": "かくしょうばいあす", "群集心理": "ぐんしゅうしんり", "可処分所得": "かしょぶんしょとく", "生活防衛資金": "せいかつぼうえいしきん", "高利回りの詐欺": "こうりまわりのさぎ", "グロース株とバリュー株": "ぐろーすかぶ", "ブル相場とベア相場": "ぶるそうば", "ブル相場": "ぶるそうば", "ベア相場": "べあそうば", "インデックスファンドとアクティブファンド": "いんでっくすふぁんどと"};
     var SHORT = ["基本", "注文", "リスク", "チャート", "足の読み方", "指標", "形・波", "経済", "スタイル", "金・BTC", "金のダマシ", "資料"];
-    var total = GLOSSARY.reduce(function (n, c) { return n + c.terms.length; }, 0);
     var esc = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
-    document.getElementById("gl-count").textContent = GLOSSARY.length + "章・" + total + "語";
-    document.getElementById("gl-grid").innerHTML = GLOSSARY.map(function (c, i) {
-      return '<button type="button" data-gl="ch" data-ch="' + i + '" title="' + esc(c.t) + '"><b><i>' + (i + 1) + '</i>' + esc(SHORT[i] || c.t) + '</b><small>' + (c.t === "資料" ? "変動率の表" : c.terms.length + '語') + '</small></button>';
-    }).join("") + '<button type="button" data-gl="idx"><b><i>索</i>索引</b><small>あいうえお順</small></button>';
+    // 2冊の本：FX用語集と経済用語集。しくみは同じで、中身・表紙・しおりだけが違う
+    var BOOKS = {
+      fx: { id: "fx", data: GLOSSARY, title: "FX用語集", en: "FX GLOSSARY", icon: "📖", short: SHORT, bm: "gloss-page" },
+      eco: { id: "eco", data: ECONOMY, title: "経済用語集", en: "ECONOMICS GLOSSARY", icon: "📘", short: ["投資", "経済", "金利", "株式", "投信・制度", "財政・世界", "市場心理", "くらし"], bm: "eco-page" }
+    };
+    var BK = BOOKS.fx, tileBook = "fx", total = 0;
+    var count = function (b) { return b.data.reduce(function (n, c) { return n + c.terms.length; }, 0); };
+    try { if (BOOKS[localStorage.getItem("gloss-book")]) tileBook = localStorage.getItem("gloss-book"); } catch (e) {}
+    // カード：本の切り替えタブと、選んでいる本の章の一覧
+    function renderTile() {
+      var b = BOOKS[tileBook];
+      Array.prototype.forEach.call(document.querySelectorAll("[data-glbook]"), function (t) { var on = t.getAttribute("data-glbook") === tileBook; t.classList.toggle("on", on); t.setAttribute("aria-selected", on ? "true" : "false"); });
+      document.getElementById("xfeed").classList.toggle("gl-eco", tileBook === "eco");
+      document.getElementById("gl-count").textContent = b.data.length + "章・" + count(b) + "語";
+      document.getElementById("gl-grid").innerHTML = b.data.map(function (c, i) {
+        return '<button type="button" data-gl="ch" data-ch="' + i + '" title="' + esc(c.t) + '"><b><i>' + (i + 1) + '</i>' + esc(b.short[i] || c.t) + '</b><small>' + (c.t === "資料" ? "変動率の表" : c.terms.length + '語') + '</small></button>';
+      }).join("") + '<button type="button" data-gl="idx"><b><i>索</i>索引</b><small>あいうえお順</small></button>';
+    }
+    renderTile();
 
     var book = document.getElementById("gbook"), stage = document.getElementById("gb-stage"), spread = document.getElementById("gb-spread");
     var pages = [], chStart = [], termPage = {}, aliasOf = {}, idxStart = 0, cur = 0, two = false, opener = null, built = "";
-    var BM = "gloss-page";
+    function setBook(id) {
+      if (BK.id === id && total) return;
+      BK = BOOKS[id]; total = count(BK); built = "";
+      book.classList.toggle("eco", id === "eco");
+      book.setAttribute("aria-label", BK.title);
+      book.querySelector(".gb-title").textContent = BK.icon + " " + BK.title;
+    }
     // 図：本の紙面に合わせた色で描いたSVG（上昇＝赤、下降＝青、水準＝金）
     var C = { up: "#d24b4b", dn: "#3a6fd8", lv: "#b98a32", ma: "#e08a1e", band: "rgba(233,190,90,.28)", ink: "#4a3f2e", mute: "#9a8a6c" };
     var svg = function (vb, body, h) { return '<svg class="gb-fig" viewBox="' + vb + '" role="img" style="max-height:' + (h || 170) + 'px">' + body + '</svg>'; };
@@ -2916,7 +3095,95 @@ html:not(.flow) #flow { display: none; }
       realrate: function () { var a = [], b = []; for (var i = 0; i <= 28; i++) { var x = 14 + i * 10.3, v = Math.sin(i * .3) * 30; a.push([x, 70 - v]); b.push([x, 70 + v]); }
         return svg("0 0 320 140", pl(a, C.dn, 2.2) + pl(b, C.lv, 2.2) + tx(14, 22, "実質金利", C.dn, 10.5, "", 1) + tx(14, 128, "金の価格", C.lv, 10.5, "", 1) + tx(304, 22, "逆に動きやすい", C.mute, 9.5, "end")); },
       dxyfig: function () { var a = [], b = []; for (var i = 0; i <= 28; i++) { var x = 14 + i * 10.3, v = Math.sin(i * .25 + 1) * 28; a.push([x, 70 - v]); b.push([x, 70 + v * .9]); }
-        return svg("0 0 320 140", pl(a, C.dn, 2.2) + pl(b, C.lv, 2.2) + tx(14, 22, "ドルインデックス", C.dn, 10.5, "", 1) + tx(14, 128, "ゴールド・ユーロドル", C.lv, 10.5, "", 1) + tx(304, 22, "ドル高なら金は下がりやすい", C.mute, 9.5, "end")); }
+        return svg("0 0 320 140", pl(a, C.dn, 2.2) + pl(b, C.lv, 2.2) + tx(14, 22, "ドルインデックス", C.dn, 10.5, "", 1) + tx(14, 128, "ゴールド・ユーロドル", C.lv, 10.5, "", 1) + tx(304, 22, "ドル高なら金は下がりやすい", C.mute, 9.5, "end")); },
+      // ---- 経済用語集の図 ----
+      invspec: function () { var a = [], b = [[176, 92], [190, 70], [204, 100], [218, 62], [232, 96], [246, 58], [260, 104], [274, 66], [288, 88], [302, 60]];
+        for (var i = 0; i <= 26; i++) a.push([14 + i * 5.2, 120 - i * 2.7 - Math.sin(i * 1.3) * 5]);
+        return svg("0 0 320 150", box(6, 6, 150, 138, "rgba(47,158,100,.07)", "rgba(47,158,100,.35)") + box(164, 6, 150, 138, "rgba(210,75,75,.06)", "rgba(210,75,75,.3)") +
+          pl(a, UP, 2.6) + arrow(140, 50, 150, 44, UP) + tx(81, 24, "投資", UP, 13, "middle", 1) + tx(81, 138, "時間をかけて価値が育つ", C.ink, 9.5, "middle") +
+          pl(b, C.up, 2) + dot(190, 70, C.dn) + dot(204, 100, UP) + dot(246, 58, C.dn) + dot(260, 104, UP) + tx(239, 24, "投機", C.up, 13, "middle", 1) + tx(239, 138, "短い値動きの差を狙う", C.ink, 9.5, "middle") +
+          tx(222, 122, "●買い ●売り", C.mute, 8.5, "middle")); },
+      riskreturn: function () { var P = [[54, 118, "預金", 2], [102, 98, "債券", 8], [168, 70, "株式", 18], [232, 46, "新興国株", 30], [286, 30, "FX(レバ)", 40]];
+        return svg("0 0 320 150", hl(30, 312, 130, C.mute, "", 1) + '<line x1="30" x2="30" y1="10" y2="130" stroke="' + C.mute + '"/>' + arrow(30, 130, 312, 130, C.mute) + arrow(30, 130, 30, 10, C.mute) +
+          P.map(function (p) { return '<line x1="' + p[0] + '" x2="' + p[0] + '" y1="' + (p[1] - p[3]) + '" y2="' + (p[1] + p[3]) + '" stroke="rgba(185,138,50,.45)" stroke-width="6" stroke-linecap="round"/>' + dot(p[0], p[1], C.lv) + tx(p[0] + 8, p[1] - 4, p[2], C.ink, 9.5, "", 1); }).join("") +
+          tx(312, 145, "リスク＝振れ幅 →", C.mute, 9, "end") + tx(36, 16, "リターン", C.mute, 9) + tx(120, 145, "縦の帯＝結果のぶれ", C.lv, 8.5, "middle")); },
+      diversify: function () { var one = [], s = [[], [], []], avg = [];
+        for (var i = 0; i <= 24; i++) { var x = i * 5.6; one.push([14 + x, 60 + (i > 12 ? (i - 12) * 5.5 : -Math.sin(i * .6) * 6)]);
+          var v = [Math.sin(i * .5) * 22 - i * .6, Math.cos(i * .45) * 20 - i * .9, -Math.sin(i * .38 + 1) * 18 - i * .7];
+          v.forEach(function (d, k) { s[k].push([174 + x, 80 + d]); }); avg.push([174 + x, 80 + (v[0] + v[1] + v[2]) / 3]); }
+        return svg("0 0 320 150", tx(80, 18, "1つに集中", C.ink, 11, "middle", 1) + tx(240, 18, "分けて持つ", C.ink, 11, "middle", 1) + '<line x1="160" x2="160" y1="10" y2="140" stroke="#d9c89f"/>' +
+          pl(one, C.dn, 2.6) + tx(150, 138, "下がると全部が傷む", C.dn, 9.5, "end", 1) +
+          pl(s[0], "rgba(210,75,75,.45)", 1.6) + pl(s[1], "rgba(58,111,216,.45)", 1.6) + pl(s[2], "rgba(224,138,30,.5)", 1.6) + pl(avg, UP, 3) + tx(312, 138, "全体（緑）は振れが小さい", UP, 9.5, "end", 1)); },
+      dca: function () { var pr = [100, 80, 60, 75, 100, 120], y = function (p) { return 130 - p * .8; };
+        var bars = pr.map(function (p, i) { var x = 34 + i * 48, n = 10000 / p, h = n * .55; return '<rect x="' + (x - 12) + '" y="' + (130 - h) + '" width="24" height="' + h + '" rx="3" fill="rgba(47,158,100,.28)"/>' + tx(x, 126 - h, Math.round(n) + "口", UP, 8.5, "middle", 1) + tx(x, 144, (i + 1) + "月", C.mute, 8.5, "middle"); }).join("");
+        var avgP = 6 * 10000 / pr.reduce(function (s, p) { return s + 10000 / p; }, 0);
+        return svg("0 0 320 150", bars + pl(pr.map(function (p, i) { return [34 + i * 48, y(p)]; }), C.lv, 2.4) + pr.map(function (p, i) { return dot(34 + i * 48, y(p), C.lv); }).join("") +
+          hl(14, 306, y(avgP), C.up, "4 3", 1.4) + tx(306, y(avgP) - 4, "平均の買値 " + avgP.toFixed(0) + "円", C.up, 9, "end", 1) + tx(14, 14, "毎月1万円ずつ　●価格　■買えた口数", C.ink, 9.5, "", 1)); },
+      portfolio: function () { var D = [["株式", 40, C.up], ["債券", 30, C.dn], ["現金", 20, "#8a9a6a"], ["金", 10, C.lv]], a0 = -Math.PI / 2, cx = 80, cy = 75, R = 60, r = 34, out = "";
+        D.forEach(function (d, k) { var a1 = a0 + d[1] / 100 * Math.PI * 2, big = d[1] > 50 ? 1 : 0, P = function (rad, a) { return (cx + rad * Math.cos(a)).toFixed(1) + " " + (cy + rad * Math.sin(a)).toFixed(1); };
+          out += '<path d="M' + P(R, a0) + ' A' + R + ' ' + R + ' 0 ' + big + ' 1 ' + P(R, a1) + ' L' + P(r, a1) + ' A' + r + ' ' + r + ' 0 ' + big + ' 0 ' + P(r, a0) + 'Z" fill="' + d[2] + '" opacity=".85" stroke="#fbf6ea" stroke-width="2"/>';
+          out += '<rect x="170" y="' + (26 + k * 26) + '" width="12" height="12" rx="3" fill="' + d[2] + '"/>' + tx(190, 36 + k * 26, d[0] + "　" + d[1] + "％", C.ink, 11, "", 1); a0 = a1; });
+        return svg("0 0 320 150", out + tx(cx, cy + 4, "配分", C.ink, 11, "middle", 1) + tx(170, 138, "配分が値動きの大きさを決める", C.mute, 9)); },
+      supdem: function () { return svg("0 0 320 150", hl(40, 300, 134, C.mute) + '<line x1="40" x2="40" y1="10" y2="134" stroke="' + C.mute + '"/>' +
+          pl([[60, 24], [260, 124]], C.dn, 2.6) + pl([[60, 124], [260, 24]], C.up, 2.6) + hl(40, 160, 74, C.lv, "3 3") + '<line x1="160" x2="160" y1="74" y2="134" stroke="' + C.lv + '" stroke-dasharray="3 3"/>' + dot(160, 74, C.lv) +
+          tx(266, 128, "需要（買いたい）", C.dn, 10, "", 1) + tx(266, 28, "供給（売りたい）", C.up, 10, "", 1) + tx(172, 70, "釣り合う価格", C.lv, 10, "", 1) + tx(36, 16, "価格", C.mute, 9, "end") + tx(300, 147, "量", C.mute, 9, "end") +
+          tx(104, 20, "欲しい人が増えると", C.ink, 9) + tx(104, 32, "価格は上がる", C.up, 9, "", 1)); },
+      cycle: function () { var p = []; for (var i = 0; i <= 60; i++) p.push([14 + i * 4.9, 76 - Math.sin(i / 60 * Math.PI * 2 * 1.25 - .3) * 46 - i * .25]);
+        var L = [["回復", 50, 110], ["好況", 84, 22], ["後退", 140, 70], ["不況", 190, 140], ["回復", 250, 90]];
+        return svg("0 0 320 150", hl(10, 312, 76, "#d9c89f", "3 3") + pl(p, C.lv, 2.6) + L.map(function (l) { return tx(l[1], l[2], l[0], l[0] === "好況" ? C.up : l[0] === "不況" ? C.dn : C.ink, 10.5, "middle", 1); }).join("") +
+          tx(96, 46, "山", C.up, 9, "middle") + tx(178, 116, "谷", C.dn, 9, "middle") + tx(312, 146, "時間 →", C.mute, 9, "end")); },
+      nominal: function () { var B = [["名目の伸び", 3, C.lv], ["物価の上昇", 2, C.up], ["実質の伸び", 1, UP]];
+        return svg("0 0 320 150", hl(20, 300, 126, C.mute) + B.map(function (b, i) { var x = 50 + i * 92, h = b[1] * 30; return '<rect x="' + (x - 24) + '" y="' + (126 - h) + '" width="48" height="' + h + '" rx="4" fill="' + b[2] + '" opacity=".8"/>' +
+            tx(x, 120 - h, "+" + b[1] + "％", b[2], 12, "middle", 1) + tx(x, 142, b[0], C.ink, 10, "middle", 1); }).join("") + tx(96, 70, "−", C.ink, 18, "middle", 1) + tx(188, 90, "＝", C.ink, 18, "middle", 1)); },
+      inflation: function () { var row = function (y, n, lab, col) { var s = ""; for (var i = 0; i < n; i++) s += '<circle cx="' + (118 + i * 20) + '" cy="' + y + '" r="8" fill="' + col + '"/><path d="M' + (118 + i * 20) + ' ' + (y - 8) + ' q2 -5 5 -5" stroke="#5a7a3a" stroke-width="1.6" fill="none"/>'; return tx(14, y + 4, lab, C.ink, 10.5, "", 1) + s; };
+        return svg("0 0 320 120", row(34, 10, "1000円で 以前", C.up) + row(80, 8, "1000円で 今", "rgba(210,75,75,.55)") + tx(278, 84, "−2個", C.dn, 11, "", 1) + tx(14, 112, "物価が上がる＝お金の価値が下がる（同じお金で買える量が減る）", C.mute, 9)); },
+      compound: function () { var s = [], c = [], X = function (y) { return 34 + y * 9; }, Y = function (v) { return 136 - (v - 100) * .3; };
+        for (var y = 0; y <= 30; y++) { s.push([X(y), Y(100 + 5 * y)]); c.push([X(y), Y(100 * Math.pow(1.05, y))]); }
+        return svg("0 0 320 150", hl(34, 306, 136, C.mute) + pl(s, C.dn, 2.4) + pl(c, C.up, 2.6) + tx(300, 30, "複利 432万円", C.up, 10, "end", 1) + tx(306, 118, "単利 250万円", C.dn, 10, "end", 1) +
+          tx(34, 147, "0年", C.mute, 8.5, "middle") + tx(304, 147, "30年", C.mute, 8.5, "middle") + tx(40, 22, "100万円を年5％で運用", C.ink, 10, "", 1) + tx(40, 36, "利息にも利息がつくと差が広がる", C.mute, 9)); },
+      rule72: function () { var R = [[1, 72], [3, 24], [6, 12], [9, 8]];
+        return svg("0 0 320 130", R.map(function (r, i) { var y = 22 + i * 26, w = r[1] * 3.3; return tx(56, y + 5, "年" + r[0] + "％", C.ink, 10.5, "end", 1) + '<rect x="64" y="' + (y - 8) + '" width="' + w + '" height="16" rx="4" fill="' + C.lv + '" opacity="' + (.4 + i * .15) + '"/>' + tx(70 + w, y + 5, "約" + r[1] + "年で2倍", C.ink, 10, "", 1); }).join("") +
+          tx(160, 126, "72 ÷ 金利（％）＝ お金が2倍になる年数", C.up, 10, "middle", 1)); },
+      easing: function () { var col = function (x, title, c, rows) { return box(x, 6, 148, 138, "rgba(0,0,0,.02)", c) + tx(x + 74, 26, title, c, 12, "middle", 1) +
+          rows.map(function (r, i) { var y = 50 + i * 26; return tx(x + 74, y, r, C.ink, 10, "middle", i === rows.length - 1 ? 1 : 0) + (i < rows.length - 1 ? tx(x + 74, y + 13, "↓", C.mute, 9, "middle") : ""); }).join(""); };
+        return svg("0 0 320 150", col(6, "金融緩和", C.up, ["金利を下げる", "借りやすく使いやすい", "景気・物価を押し上げ", "通貨は安くなりやすい"]) + col(166, "金融引き締め", C.dn, ["金利を上げる", "借りにくく貯めたくなる", "景気・物価を冷ます", "通貨は高くなりやすい"])); },
+      bond: function () { return svg("0 0 320 140", '<path d="M160 92 L146 116 L174 116Z" fill="' + C.lv + '"/>' + '<line x1="40" y1="66" x2="280" y2="118" stroke="' + C.ink + '" stroke-width="4" stroke-linecap="round"/>' +
+          box(16, 26, 86, 30, "rgba(210,75,75,.1)", C.up) + tx(59, 46, "利回り ↑", C.up, 11, "middle", 1) + box(232, 72, 76, 30, "rgba(58,111,216,.1)", C.dn) + tx(270, 92, "価格 ↓", C.dn, 11, "middle", 1) +
+          tx(160, 16, "シーソーの関係", C.ink, 11, "middle", 1) + tx(160, 134, "金利が上がると、手持ちの債券の価格は下がる", C.mute, 9, "middle")); },
+      yield: function () { var X = function (t) { return 40 + t * 26; }, cur = function (f) { var p = []; for (var t = 0; t <= 10; t++) p.push([X(t), f(t)]); return p; };
+        return svg("0 0 320 150", hl(40, 306, 132, C.mute) + '<line x1="40" x2="40" y1="10" y2="132" stroke="' + C.mute + '"/>' +
+          pl(cur(function (t) { return 110 - Math.sqrt(t) * 26; }), UP, 2.6) + pl(cur(function () { return 78; }), C.lv, 2, ' stroke-dasharray="5 4"') + pl(cur(function (t) { return 40 + Math.sqrt(t) * 18; }), C.up, 2.6) +
+          tx(306, 16, "順イールド（ふつう）", UP, 9.5, "end", 1) + tx(306, 72, "フラット", C.lv, 9.5, "end", 1) + tx(306, 118, "逆イールド（景気後退の前ぶれ）", C.up, 9.5, "end", 1) +
+          tx(36, 18, "利回り", C.mute, 8.5, "end") + tx(44, 146, "短期", C.mute, 9) + tx(306, 146, "長期 → 期間", C.mute, 9, "end")); },
+      per: function () { var seg = ""; for (var i = 0; i < 10; i++) seg += '<rect x="' + (20 + i * 28) + '" y="40" width="26" height="26" rx="4" fill="' + (i === 0 ? C.lv : "rgba(185,138,50,.3)") + '"/>';
+        return svg("0 0 320 130", tx(20, 26, "株価 1000円", C.ink, 11, "", 1) + seg + tx(33, 82, "1株の利益", C.lv, 9, "middle", 1) + tx(33, 94, "100円", C.lv, 9, "middle") +
+          tx(300, 88, "1000 ÷ 100 ＝ PER 10倍", C.up, 11, "end", 1) + tx(20, 120, "利益の何年分の値段か。同じ業種どうしで比べて割安・割高をみる", C.mute, 9)); },
+      fund: function () { var ppl = ""; for (var i = 0; i < 5; i++) ppl += '<circle cx="24" cy="' + (22 + i * 24) + '" r="7" fill="' + C.ma + '"/>' + pl([[34, 22 + i * 24], [108, 72]], "rgba(224,138,30,.5)", 1.6) + arrow(34, 22 + i * 24, 108, 72, "rgba(224,138,30,.5)");
+        var A = ["国内株", "外国株", "債券", "REIT", "金"];
+        return svg("0 0 320 150", ppl + box(112, 50, 82, 44, "rgba(185,138,50,.15)", C.lv) + tx(153, 69, "ファンド", C.ink, 11, "middle", 1) + tx(153, 84, "プロが運用", C.mute, 9, "middle") +
+          A.map(function (a, i) { var y = 22 + i * 24; return pl([[196, 72], [236, y]], "rgba(185,138,50,.6)", 1.6) + arrow(196, 72, 236, y, "rgba(185,138,50,.6)") + box(240, y - 9, 70, 18, "#fff", "#d9c89f") + tx(275, y + 4, a, C.ink, 9.5, "middle", 1); }).join("") +
+          tx(24, 146, "大勢のお金", C.ma, 9, "middle", 1) + tx(275, 146, "まとめて分散", C.lv, 9, "middle", 1)); },
+      nisa: function () { var bar = function (x, title, tax) { var H = 100, t = H * tax; return tx(x + 40, 18, title, C.ink, 11, "middle", 1) + '<rect x="' + x + '" y="' + (128 - H + t) + '" width="80" height="' + (H - t) + '" rx="4" fill="' + UP + '" opacity=".75"/>' +
+          (tax ? '<rect x="' + x + '" y="' + (128 - H) + '" width="80" height="' + t + '" rx="4" fill="' + C.up + '" opacity=".6"/>' + tx(x + 88, 128 - H + t / 2 + 4, "税 約2万円", C.up, 9.5, "", 1) : "") +
+          tx(x + 40, 128 - (H - t) / 2 + 4, tax ? "手取り 約8万円" : "手取り 10万円", "#fff", 10, "middle", 1); };
+        return svg("0 0 320 146", bar(30, "ふつうの口座", .2032) + bar(196, "NISA", 0) + hl(20, 300, 128, C.mute) + tx(160, 142, "利益10万円のとき（税率20.315％）", C.mute, 9, "middle")); },
+      yenimpact: function () { var cell = function (x, y, c, t1, t2) { return box(x, y, 146, 52, "rgba(0,0,0,.02)", c) + tx(x + 73, y + 21, t1, c, 10.5, "middle", 1) + tx(x + 73, y + 39, t2, C.ink, 9.5, "middle"); };
+        return svg("0 0 320 150", tx(83, 16, "円安（1ドル＝150円→160円）", C.ink, 10, "middle", 1) + tx(239, 16, "円高（150円→140円）", C.ink, 10, "middle", 1) +
+          cell(8, 26, UP, "得しやすい", "輸出企業・外貨の資産") + cell(8, 86, C.up, "損しやすい", "輸入品・旅行・家計の物価") +
+          cell(166, 26, UP, "得しやすい", "輸入品が安く・海外旅行") + cell(166, 86, C.up, "損しやすい", "輸出企業・外貨の資産")); },
+      bubble: function () { var p = []; for (var i = 0; i <= 50; i++) { var x = 14 + i * 5.8, v = i < 38 ? 130 - Math.pow(i / 38, 3) * 108 - i * .3 : 22 + Math.pow((i - 38) / 12, .7) * 100; p.push([x, v]); }
+        return svg("0 0 320 150", pl(p, C.lv, 2.6) + tx(70, 118, "期待", C.ink, 10.5, "middle", 1) + tx(170, 70, "熱狂", C.up, 10.5, "middle", 1) + tx(236, 16, "天井", C.up, 9, "middle") + tx(290, 90, "崩壊", C.dn, 10.5, "middle", 1) +
+          tx(14, 16, "「今回は違う」と信じたくなる", C.mute, 9) + arrow(286, 116, 300, 126, C.dn)); },
+      bullbear: function () { var up = [], dn = []; for (var i = 0; i <= 20; i++) { up.push([18 + i * 6.6, 120 - i * 4.2 - Math.sin(i * 1.4) * 6]); dn.push([178 + i * 6.6, 30 + i * 4.2 + Math.sin(i * 1.4) * 6]); }
+        return svg("0 0 320 150", pl(up, C.up, 2.6) + arrow(146, 40, 152, 34, C.up) + pl(dn, C.dn, 2.6) + arrow(306, 112, 312, 118, C.dn) + '<line x1="160" x2="160" y1="10" y2="140" stroke="#d9c89f"/>' +
+          tx(20, 22, "🐂 ブル＝強気", C.up, 11, "", 1) + tx(20, 138, "角を下から突き上げる", C.mute, 9) + tx(312, 22, "🐻 ベア＝弱気", C.dn, 11, "end", 1) + tx(312, 138, "爪を上から振り下ろす", C.mute, 9, "end")); },
+      prospect: function () { var g = [], l = []; for (var i = 0; i <= 20; i++) { g.push([160 + i * 7, 75 - Math.pow(i / 20, .55) * 50]); l.push([160 - i * 7, 75 + Math.pow(i / 20, .55) * 100 * .7 + 0]); }
+        return svg("0 0 320 160", hl(16, 304, 75, C.mute) + '<line x1="160" x2="160" y1="8" y2="152" stroke="' + C.mute + '"/>' + pl(g, UP, 2.6) + pl(l, C.up, 2.6) +
+          tx(304, 88, "利益", C.mute, 9, "end") + tx(18, 70, "損失", C.mute, 9) + tx(232, 30, "得の喜び", UP, 10, "middle", 1) + tx(84, 40, "同じ額の損の痛みは約2倍", C.up, 10, "middle", 1) + tx(166, 16, "気持ち", C.mute, 9)); },
+      cashvalue: function () { var r = [], X = function (y) { return 40 + y * 13; }, Y = function (v) { return 134 - (v - 50) * 2; };
+        for (var y = 0; y <= 20; y++) r.push([X(y), Y(100 / Math.pow(1.02, y))]);
+        return svg("0 0 320 150", hl(40, 300, Y(100), C.lv, "", 2.4) + pl(r, C.up, 2.6) + tx(300, Y(100) - 6, "通帳の数字 100万円", C.lv, 10, "end", 1) + tx(300, Y(67) + 16, "買える力 約67万円分", C.up, 10, "end", 1) +
+          tx(40, 147, "今", C.mute, 9, "middle") + tx(300, 147, "20年後", C.mute, 9, "middle") + tx(44, 18, "物価が毎年2％上がると", C.ink, 10, "", 1)); }
     };
     var termHtml = function (t) {
       var o = t[3] || {}, extra = "";
@@ -2934,7 +3201,7 @@ html:not(.flow) #flow { display: none; }
       return { w: Math.floor(pw), h: Math.floor(h) };
     }
     function paginate() {
-      var sz = pageSize(), key = sz.w + "x" + sz.h + (two ? "2" : "1");
+      var sz = pageSize(), key = BK.id + sz.w + "x" + sz.h + (two ? "2" : "1");
       if (key === built) return; built = key;
       var m = document.createElement("div"); m.className = "gb-measure";
       m.innerHTML = '<div class="gb-page" style="width:' + sz.w + 'px;height:' + sz.h + 'px"><div class="gb-in"><div class="gb-run">x</div><div class="gb-body"></div></div><div class="gb-foot"><span>x</span></div></div>';
@@ -2944,7 +3211,7 @@ html:not(.flow) #flow { display: none; }
       pages = []; chStart = []; termPage = {}; aliasOf = {};
       // 1ページ目：表紙と目次（ページ番号はあとで入れる）
       pages.push({ kind: "toc", run: "目次" });
-      GLOSSARY.forEach(function (c, ci) {
+      BK.data.forEach(function (c, ci) {
         chStart[ci] = pages.length;
         var head = '<div class="gb-chhead"><small>第' + (ci + 1) + '章</small><h2>' + esc(c.t) + '</h2><p>' + esc(c.s) + '・' + c.terms.length + '語</p></div>';
         var pg = { kind: "ch", ch: ci, run: "第" + (ci + 1) + "章　" + c.t, html: head };
@@ -2960,7 +3227,7 @@ html:not(.flow) #flow { display: none; }
       // 索引：用語をあいうえお順（英字・カタカナ・漢字の読みの近似）に並べ、ページへ飛べるボタン
       idxStart = pages.length;
       var all = [];
-      GLOSSARY.forEach(function (c) { c.terms.forEach(function (t) { all.push(t[0]); ((t[3] || {}).aka || []).forEach(function (a) { if (all.indexOf(a) < 0) all.push(a); }); }); });
+      BK.data.forEach(function (c) { c.terms.forEach(function (t) { all.push(t[0]); ((t[3] || {}).aka || []).forEach(function (a) { if (all.indexOf(a) < 0) all.push(a); }); }); });
       var kana = function (n) { var y = YOMI[n] || n; return y.replace(/[\u30a1-\u30f6]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0x60); }); };
       var ROWS = ["あ", "か", "さ", "た", "な", "は", "ま", "や", "ら", "わ"], ROWEND = "かさたなはまやらわん";
       var group = function (n) { var k = kana(n).replace(/^[ー・]/, ""), c = k.charAt(0); if (/[A-Za-z]/.test(c)) return "英字";
@@ -2989,15 +3256,16 @@ html:not(.flow) #flow { display: none; }
       if (p.kind === "blank") return '<div class="gb-page blank"></div>';
       var inner = "";
       if (p.kind === "toc") {
-        var bm = 0; try { bm = +localStorage.getItem(BM) || 0; } catch (e) {}
-        inner = '<div class="gb-cover"><small>FX GLOSSARY</small><h1>FX用語集</h1><p>' + GLOSSARY.length + '章・' + total + '語｜章をタップするとそのページへ</p></div><ol class="gb-toc">' +
-          GLOSSARY.map(function (c, ci) { return '<li><button type="button" data-go="' + chStart[ci] + '"><i>第' + (ci + 1) + '章</i><span><b>' + esc(c.t) + '</b><small>' + esc(c.s) + '</small></span><em>p.' + (chStart[ci] + 1) + '</em></button></li>'; }).join("") +
+        var bm = 0; try { bm = +localStorage.getItem(BK.bm) || 0; } catch (e) {}
+        inner = '<div class="gb-cover"><small>' + BK.en + '</small><h1>' + BK.title + '</h1><p>' + BK.data.length + '章・' + total + '語｜章をタップするとそのページへ</p>' +
+          '<p class="gb-hint">左右にスワイプ、または下の「次のページ ›」「‹ 前のページ」でページをめくれます</p></div><ol class="gb-toc">' +
+          BK.data.map(function (c, ci) { return '<li><button type="button" data-go="' + chStart[ci] + '"><i>第' + (ci + 1) + '章</i><span><b>' + esc(c.t) + '</b><small>' + esc(c.s) + '</small></span><em>p.' + (chStart[ci] + 1) + '</em></button></li>'; }).join("") +
           '<li><button type="button" data-go="' + idxStart + '"><i>索引</i><span><b>索引</b><small>用語をあいうえお順に</small></span><em>p.' + (idxStart + 1) + '</em></button></li></ol>' +
           (bm > 0 && bm < pages.length ? '<button type="button" class="gb-resume" data-go="' + bm + '">しおり：前回の続き（p.' + (bm + 1) + '）から読む</button>' : '');
       } else if (p.kind === "ch") inner = p.html;
       else inner = (p.run === "索引" ? '<div class="gb-chhead"><small>INDEX</small><h2>索引</h2><p>用語をタップするとそのページへ</p></div>' : '') +
         '<div class="gb-idx">' + p.items.map(function (n) { return n.h ? '<h4>' + esc(n.h) + '</h4>' : '<button type="button" data-go="' + termPage[n] + '" data-term="' + esc(aliasOf[n] || n) + '">' + esc(n) + (aliasOf[n] ? '<small>→' + esc(aliasOf[n]) + '</small>' : '') + '<em>p.' + (termPage[n] + 1) + '</em></button>'; }).join("") + '</div>';
-      return '<div class="gb-page' + (p.kind === "toc" ? " toc" : "") + '"><div class="gb-in"><div class="gb-run">' + esc(p.run) + '</div>' + inner + '</div><div class="gb-foot"><span>FX用語集</span><span>' + (i + 1) + ' / ' + pages.length + '</span></div></div>';
+      return '<div class="gb-page' + (p.kind === "toc" ? " toc" : "") + '"><div class="gb-in"><div class="gb-run">' + esc(p.run) + '</div>' + inner + '</div><div class="gb-foot"><span>' + BK.title + '</span><span>' + (i + 1) + ' / ' + pages.length + '</span></div></div>';
     }
     function show(i, dir) {
       paginate();
@@ -3010,12 +3278,12 @@ html:not(.flow) #flow { display: none; }
       Array.prototype.forEach.call(spread.children, function (el) { el.style.width = sz.w + "px"; });
       if (dir) { void spread.offsetWidth; spread.classList.add(dir > 0 ? "turn-next" : "turn-prev"); }
       var p = pages[i], last = Math.min(pages.length, i + step);
-      document.getElementById("gb-chap").textContent = p.kind === "ch" ? "第" + (p.ch + 1) + "章　" + GLOSSARY[p.ch].t : p.kind === "idx" ? "索引" : "目次";
+      document.getElementById("gb-chap").textContent = p.kind === "ch" ? "第" + (p.ch + 1) + "章　" + BK.data[p.ch].t : p.kind === "idx" ? "索引" : "目次";
       document.getElementById("gb-pno").textContent = (two && last > i + 1 ? (i + 1) + "–" + last : (i + 1)) + " / " + pages.length;
       document.getElementById("gb-prog").style.width = (last / pages.length * 100) + "%";
       book.querySelector('[data-gl="prev"]').disabled = i === 0;
       book.querySelector('[data-gl="next"]').disabled = i + step >= pages.length;
-      if (i > 0) try { localStorage.setItem(BM, String(i)); } catch (e) {}
+      if (i > 0) try { localStorage.setItem(BK.bm, String(i)); } catch (e) {}
     }
     function open(i, from) {
       opener = from || document.activeElement;
@@ -3026,23 +3294,27 @@ html:not(.flow) #flow { display: none; }
     // 用語を光らせる（索引やダッシュボードの「?」から来たとき）
     function mark(name) { var el = spread.querySelector('.gb-term[data-term="' + name.replace(/"/g, '\\"') + '"]'); if (!el) return; el.classList.remove("hit"); void el.offsetWidth; el.classList.add("hit"); }
     // ダッシュボードの「?」ボタンなどから：用語名（または「ch:章の名前」）でそのページを開く
+    var has = function (b, term) { return b.data.some(function (c) { return /^ch:/.test(term) ? c.t === term.slice(3) : c.terms.some(function (t) { return t[0] === term || ((t[3] || {}).aka || []).indexOf(term) >= 0; }); }); };
     window.openGlossary = function (term) {
+      setBook(has(BOOKS.fx, term) || !has(BOOKS.eco, term) ? "fx" : "eco");
       if (book.hidden) { opener = document.activeElement; book.hidden = false; built = ""; }
       paginate();
-      if (/^ch:/.test(term)) { var ci = GLOSSARY.map(function (c) { return c.t; }).indexOf(term.slice(3)); show(ci >= 0 ? chStart[ci] : 0); }
+      if (/^ch:/.test(term)) { var ci = BK.data.map(function (c) { return c.t; }).indexOf(term.slice(3)); show(ci >= 0 ? chStart[ci] : 0); }
       else if (termPage[term] != null) { show(termPage[term]); mark(aliasOf[term] || term); }
       else show(0);
       book.querySelector('[data-gl="close"]').focus();
     };
     var hm = /[#&]gloss=([^&]+)/.exec(location.hash); if (hm) setTimeout(function () { window.openGlossary(decodeURIComponent(hm[1])); }, 300);
     document.addEventListener("click", function (e) {
+      var tb = e.target.closest("[data-glbook]");
+      if (tb) { tileBook = tb.getAttribute("data-glbook"); try { localStorage.setItem("gloss-book", tileBook); } catch (er) {} renderTile(); return; }
       var g = e.target.closest("[data-gl],[data-go]"); if (!g) return;
       if (g.hasAttribute("data-go")) { var to = +g.getAttribute("data-go"); show(to, to >= cur ? 1 : -1); if (g.getAttribute("data-term")) mark(g.getAttribute("data-term")); return; }
       var a = g.getAttribute("data-gl");
       if (a === "close") close();
       else if (a === "prev") show(cur - (two ? 2 : 1), -1);
       else if (a === "next") show(cur + (two ? 2 : 1), 1);
-      else if (book.hidden) { paginate(); built = ""; open(a === "idx" ? -1 : a === "ch" ? -2 : 0, g); if (a === "idx") show(idxStart); if (a === "ch") show(chStart[+g.getAttribute("data-ch")]); }
+      else if (book.hidden) { setBook(tileBook); paginate(); built = ""; open(a === "idx" ? -1 : a === "ch" ? -2 : 0, g); if (a === "idx") show(idxStart); if (a === "ch") show(chStart[+g.getAttribute("data-ch")]); }
       else if (a === "toc") show(0, -1);
       else if (a === "idx") show(idxStart, 1);
     });
