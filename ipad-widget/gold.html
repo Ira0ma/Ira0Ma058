@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="6b00f21d04">
+<meta name="build" content="26c02383a5">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2455,11 +2455,30 @@ function flashPrice(){
 }
 // トレードデスクの中で動いているときは、エントリーの状態を知らせる（デスク側で窓を点滅させる）
 let lastSignalMsg='';
+// 判定の中身（成立した条件・足りない条件・判定した足・有効期限・使ったデータの時刻）も一緒に送る。デスクはこれを履歴に残す
+function signalConditions(s){
+  if(!s.ready)return {met:[],unmet:['判定に必要なデータ（1時間足120本と現在値）がそろっていない'],dir:0};
+  const p=state.spot.price,d=s.sig==='BUY'?1:s.sig==='SELL'?-1:Math.sign(s.score)||1,word=d>0?'上':'下';
+  const c=[['現在値が1時間足120SMAより'+word,d>0?p>=s.sma:p<s.sma],
+    ['直近3本の勢いが'+(d>0?'上向き':'下向き')+'（基準 '+INSTR.momTh+'）',d>0?s.mom>INSTR.momTh:s.mom<-INSTR.momTh],
+    ['現在値が当日の高値・安値の中間より'+word,d>0?p>=s.mid:p<s.mid],
+    ['重要指標の注意時間（CAUTION）の外',!s.caution],
+    ['利確目安まで'+MIN_TP_PIPS+'pips以上',tpOkBy(s.plan)]];
+  const met=c.filter(x=>x[1]).map(x=>x[0]),unmet=c.filter(x=>!x[1]).map(x=>x[0]);
+  if(s.via&&s.via.length)met.push('チャートパターン：'+s.via.join('・'));
+  return {met,unmet,dir:d};
+}
 function notifyDesk(s){
   if(window.parent===window)return;
-  const msg={type:'dash-signal',key:INSTR.key,closed:mktClosed,entry:!!s.entry,sig:s.sig,tpPips:s.plan?Math.round(tpPipsBy(s.plan)):0};
-  const k=JSON.stringify(msg);if(k===lastSignalMsg)return;lastSignalMsg=k;
-  try{window.parent.postMessage(msg,'*')}catch{}
+  const now=Date.now(),h1=state.h1.at(-1),barEnd=h1?h1.t+3600000:0,cd=signalConditions(s);
+  const spotAt=state.spot?.asof||0,stale=!mktClosed&&(!spotAt||now-spotAt>10*60000||!h1||now-h1.t>3*3600000);
+  const reason=!s.ready?'データ不足のため見送り':s.forced?'重要指標の前後のため見送り':stale?'データが古いため判定を止めています':s.sig==='WAIT'?'条件がそろわず見送り':'';
+  const msg={type:'dash-signal',v:2,key:INSTR.key,closed:mktClosed,entry:!!s.entry&&!stale,sig:s.sig,tpPips:s.plan?Math.round(tpPipsBy(s.plan)):0,
+    tf:'H1',provisional:true,expiresAt:barEnd>now?barEnd:now+3600000,met:cd.met,unmet:cd.unmet,reason,stale,score:s.score,
+    cancelIf:'エントリー条件のどれかが崩れたとき、重要指標の注意時間に入ったとき、判定した1時間足が終わっても条件が続かないとき',
+    data:{priceAt:spotAt,priceSrc:state.src.spot||'',barAt:h1?h1.t:0,chartSrc:state.src.chart||''}};
+  const k=JSON.stringify([msg.closed,msg.entry,msg.sig,msg.tpPips,msg.met,msg.unmet,msg.reason,msg.stale,msg.expiresAt]);if(k===lastSignalMsg)return;lastSignalMsg=k;
+  try{window.parent.postMessage({...msg,price:state.spot?.price||0},'*')}catch{}
 }
 // セットアップ判定の下に、エントリー条件にしているチャートパターンを全部並べ、それぞれ条件がそろっているかを表示
 // パターン名 → デスクのパターン図鑑の項目（「?」で解説を開く）
@@ -3604,8 +3623,16 @@ function checkUpdate(){
   const cur=document.querySelector('meta[name="build"]');
   if(!cur||!location.protocol.startsWith('http'))return;
   fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():Promise.reject())
-    .then(t=>{const m=t.match(/<meta name="build" content="([^"]+)"/);if(m&&m[1]!==cur.content)location.replace(location.pathname+'?v='+m[1])})
+    .then(t=>{const m=t.match(/<meta name="build" content="([^"]+)"/);if(m&&m[1]!==cur.content){if(document.documentElement.classList.contains('embedded')||document.hidden)location.replace(location.pathname+'?v='+m[1]);else offerUpdate(m[1])}})
     .catch(()=>{});
+}
+let updBar=null;
+function offerUpdate(v){  // 単独で開いているときは、入力中の内容を消さないよう、更新のタイミングを選んでもらう
+  if(updBar)return;updBar=document.createElement('div');updBar.setAttribute('role','status');
+  updBar.style.cssText='position:fixed;z-index:99;left:50%;top:8px;transform:translateX(-50%);display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 32px);padding:8px 12px;border-radius:14px;background:#11131a;border:1px solid #e3b867;color:#eee;font-size:13px';
+  updBar.innerHTML='<span>新しい版があります。</span><button type="button" data-u="now" style="min-height:36px;padding:4px 14px;border-radius:999px;border:0;background:#e3b867;font-weight:700">今すぐ更新</button><button type="button" data-u="later" style="min-height:36px;padding:4px 14px;border-radius:999px;border:1px solid #e3b867;background:none;color:#e3b867;font-weight:700">あとで</button>';
+  updBar.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.u==='now')location.replace(location.pathname+'?v='+v);else{updBar.remove();updBar=null}});
+  document.body.appendChild(updBar);
 }
 checkUpdate();setInterval(checkUpdate,10*60000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});

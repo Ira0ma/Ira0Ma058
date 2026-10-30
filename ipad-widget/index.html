@@ -630,6 +630,28 @@ html:not(.beginner) .step-tag { display: none; }
   font: inherit; font-size: 12px; font-weight: 700; color: var(--gold); background: rgba(14,16,22,.85); border: 1px solid rgba(227,184,103,.5); border-radius: 999px; padding: 3px 11px; line-height: 1.4; cursor: pointer;
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 #layout-toggle:hover, #layout-toggle:focus-visible { background: var(--gold); color: #14100a; outline: none; }
+.dk-dock { position: fixed; z-index: 30; left: calc(env(safe-area-inset-left, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 4px); display: flex; gap: 8px; }
+.dk-dock #layout-toggle { position: static; }
+#tools-toggle { font: inherit; font-size: 12px; font-weight: 700; color: var(--gold); background: rgba(14,16,22,.85); border: 1px solid rgba(227,184,103,.5); border-radius: 999px; padding: 3px 11px; line-height: 1.4; cursor: pointer; }
+#tools-toggle:hover, #tools-toggle:focus-visible { background: var(--gold); color: #14100a; outline: none; }
+@media (pointer: coarse) { .dk-dock #layout-toggle, #tools-toggle { min-height: 36px; padding: 6px 14px; } }
+.mkt .chg .mst { font: inherit; font-size: 11px; font-weight: 600; color: var(--ink-3); margin-left: 8px; padding: 1px 7px; border-radius: 999px; border: 1px solid transparent; background: none; cursor: pointer; white-space: nowrap; vertical-align: 1px; }
+.mkt .chg .mst:hover, .mkt .chg .mst:focus-visible { border-color: var(--glass-line); outline: none; }
+.mst i { font-style: normal; margin-right: 3px; }
+.mst.lv-live i::before, .mst.lv-fresh i::before { content: "●"; color: #5fd99a; }
+.mst.lv-delayed i::before { content: "◔"; color: #ffd166; }
+.mst.lv-stale, .mst.lv-unknown, .mst.lv-held { color: #ffb4a8 !important; border-color: rgba(255,138,126,.45) !important; }
+.mst.lv-stale i::before, .mst.lv-unknown i::before { content: "⚠"; }
+.mst.lv-held i::before { content: "⏸"; }
+.mst.lv-closed i::before, .mst.lv-missing i::before { content: "☾"; color: var(--ink-3); }
+.mkt.is-stale .price { opacity: .55; }
+.mkt.an-stale .mscore b { opacity: .5; text-decoration: line-through; }
+.dk-update { position: fixed; z-index: 60; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 8px); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center;
+  max-width: calc(100vw - 32px); padding: 8px 12px; border-radius: 14px; background: rgba(14,16,22,.96); border: 1px solid rgba(227,184,103,.6); color: var(--ink); font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+.dk-update button { font: inherit; font-weight: 700; min-height: 36px; padding: 4px 14px; border-radius: 999px; border: 1px solid rgba(227,184,103,.6); background: none; color: var(--gold); cursor: pointer; }
+.dk-update button[data-u="now"] { background: var(--gold); color: #14100a; }
+html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: none !important; transition: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html.lowpower #bg-glow, html.lowpower #bg-dots { display: none; }
 .flow #flow { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 52px); }
 </style>
 
@@ -828,6 +850,7 @@ html:not(.beginner) .step-tag { display: none; }
   </div>
 </div>
 
+<script src="core.js"></script>
 <script>
 (function () {
   "use strict";
@@ -893,7 +916,11 @@ html:not(.beginner) .step-tag { display: none; }
     layoutBtn.setAttribute("aria-pressed", beginner ? "true" : "false");
     layoutBtn.title = beginner ? "STEP の番号札を隠します" : "各パネルに STEP 1〜6 の見る順番と、そこで見ることを表示します";
   };
-  paintLayoutBtn(); document.body.appendChild(layoutBtn);
+  var dock = document.createElement("div"); dock.className = "dk-dock";
+  var toolsBtn = document.createElement("button"); toolsBtn.type = "button"; toolsBtn.id = "tools-toggle"; toolsBtn.innerHTML = "🧰 ツール";
+  toolsBtn.title = "資金管理・取引前チェック・日誌・シグナル履歴・市場時間・データ状態・設定";
+  toolsBtn.addEventListener("click", function () { openTools("", toolsBtn); });
+  paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn); document.body.appendChild(dock);
   layoutBtn.addEventListener("click", function () {
     beginner = !beginner;
     try { localStorage.setItem("desk-layout", beginner ? "beginner" : "normal"); } catch (e) {}
@@ -1060,13 +1087,29 @@ html:not(.beginner) .step-tag { display: none; }
       if (/^shortcuts:\/\/run-shortcut\?name=[^&]+$/.test(String(d.url))) location.href = d.url;
       return;
     }
-    var was = entryState[d.key] && entryState[d.key].entry;
+    var res = TDCore.updateSignal(sigStore, sigInput(d), Date.now());
+    if (res.events.length) saveSignals();
     entryState[d.key] = d; paintEntries();
-    if (d.entry && !was && !marketClosed(d.key)) {  // a new entry call: sound once, and a device notification
+    if (res.notify && !marketClosed(d.key)) {  // a new entry call: sound once (not again for the same call within 30 min), and a device notification
       chime(d.sig === "BUY");
       sysNotify((ALERT_NAME[d.key] || d.key) + " " + (d.sig === "BUY" ? "買い" : "売り") + "エントリー", "セットアップ判定がエントリーになりました" + (d.tpPips ? "（利確目安まで" + d.tpPips + "pips）" : "") + "。タップでトレードデスクを開きます。", "entry-" + d.key);
     }
   });
+  /* Signal history (this device): what each dashboard called, on which candle, with the conditions met and
+     missing at that moment, until it was cancelled or expired. Kept in td-signals-v1; never rewritten later. */
+  var SIG_KEY = "td-signals-v1", sigStore = TDCore.loadStore((function () { try { return localStorage.getItem(SIG_KEY) || ""; } catch (e) { return ""; } })());
+  function saveSignals() { if (!TDCore.safeSet(localStorage, SIG_KEY, JSON.stringify(sigStore))) saveFailed("シグナル履歴"); }
+  function sigInput(d) {
+    return { key: d.key, dir: d.sig === "BUY" ? "buy" : d.sig === "SELL" ? "sell" : "wait", entry: !!d.entry && !d.closed, tf: d.tf || "H1",
+      provisional: d.provisional !== false, expiresAt: +d.expiresAt || 0, met: Array.isArray(d.met) ? d.met.map(String) : [], unmet: Array.isArray(d.unmet) ? d.unmet.map(String) : [],
+      reason: d.closed ? "市場が休場中" : String(d.reason || ""), score: +d.score, price: +d.price, data: d.data && typeof d.data === "object" ? d.data : null, stale: !!d.stale, cancelIf: String(d.cancelIf || "") };
+  }
+  setInterval(function () { if (TDCore.expireSignals(sigStore, Date.now())) saveSignals(); }, 60000);
+  var saveWarned = {};
+  function saveFailed(what) {  // private browsing or a full device: say once that nothing is being kept
+    if (saveWarned[what]) return; saveWarned[what] = 1;
+    deskToast("⚠ " + what + "を端末に保存できませんでした（プライベートブラウズや空き容量を確認してください）");
+  }
   /* Key levels: each dashboard reports the two H1 lines just above the price (R1, R2) and the two just below
      (S1, S2); the price panel showing that market lists them in one line above its chart. */
   /* Total score: each dashboard reports its rule-based call (買い優勢・売り優勢・様子見, agreement /100) and the arrow
@@ -1077,6 +1120,8 @@ html:not(.beginner) .step-tag { display: none; }
     markets.forEach(function (mk) {
       var d = scoreOf[mk.key], el = mk.el.querySelector('[data-f="score"]'), cls = d ? (d.dir > 0 ? "up" : d.dir < 0 ? "down" : "") : "";
       el.hidden = !d; mk.el.classList.toggle("has-score", !!d);
+      if (d) el.setAttribute("title", "時間足ごとの一致度（0〜100）：H4・H1・M15・M5でダウ理論・スーパートレンド・GMMA・RSIの向きを±1で数え、重み付き平均の大きさを100倍した値です。勝率や確率ではありません。" +
+        (mk.el.classList.contains("an-stale") ? "（自動分析が古いため参考外）" : ""));
       if (d) el.innerHTML = '<b class="' + cls + '">' + d.label + "<span>" + d.score + "</span></b>" +
         '<span class="mt">' + d.tfs.map(function (t) { return '<i class="' + t.cls + '">' + t.tf + "<em>" + t.arrow + "</em></i>"; }).join("") + "</span>";
     });
@@ -1373,15 +1418,62 @@ html:not(.beginner) .step-tag { display: none; }
       self.draw();
     }, { passive: false });
   };
-  var TFKEY = ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"];
+  var TFKEY = ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"], TFSEC = [60, 300, 900, 1800, 3600, 14400, 86400, 604800];
+  /* Put a quote on the candle its time belongs to. A quote after the last candle starts a new (forming) candle
+     on the timeframe's grid, up to an hour; longer candles follow the broker's server day, so those wait for the
+     site's next update rather than being guessed. A quote older than the last candle is ignored. */
+  Market.prototype.placePrice = function (p, atSec) {
+    var cs = this.c, last = cs && cs[cs.length - 1];
+    if (!last) return;
+    if (!last.t || !atSec) { last.c = p; last.h = Math.max(last.h, p); last.l = Math.min(last.l, p); return; }  // sample chart (preview)
+    var sec = TFSEC[this.tf];
+    if (atSec < last.t) return;
+    if (atSec < last.t + sec) { last.c = p; last.h = Math.max(last.h, p); last.l = Math.min(last.l, p); return; }
+    if (sec <= 3600) cs.push({ t: last.t + Math.floor((atSec - last.t) / sec) * sec, o: p, h: p, l: p, c: p });
+  };
+  /* What a card knows about its numbers: where the price came from and what kind it is, when it traded, how old
+     the candles and the site's analysis are, and whether the market is open (weekly hours; holidays unknown). */
+  var SRC = {};  // per data source: last success, last failure and why (the data status screen lists them)
+  function srcMark(id, ok, detail) {
+    var s = SRC[id] || (SRC[id] = { tries: 0 });
+    s.tries++; s.last = Date.now();
+    if (ok) { s.ok = Date.now(); s.err = ""; } else { s.fail = Date.now(); s.err = detail || "取得できませんでした"; }
+  }
+  Market.prototype.status = function () {
+    var now = Date.now(), ms = TDCore.marketState(this.key, now), closed = ms.state !== "open";
+    var at = this.asOf ? this.asOf * 1000 : NaN, m = market && (market.instruments || market)[this.key];
+    var an = m && m.updated ? Date.parse(m.updated) : NaN, ser = this.series && this.series[TFKEY[this.tf]];
+    var bar = ser && ser.length ? ser[ser.length - 1][0] * 1000 : NaN;
+    return { key: this.key, name: INST[this.key].name, at: at, an: an, bar: bar, tf: TF[this.tf].k, noData: !!this.noData, live: !!this.live,
+      price: TDCore.freshness("price", at, now, { closed: closed }), analysis: TDCore.freshness("analysis", an, now),
+      candle: TDCore.freshness("candle", bar, now, { tfMs: TFSEC[this.tf] * 1000, closed: closed }),
+      market: ms, prov: this.prov || { src: "—", type: "—" }, held: this.held || null };
+  };
+  var CHIP = { live: "ライブ", fresh: "最新", delayed: "遅延", stale: "停止", closed: "休場中", unknown: "時刻不明", missing: "時刻なし" };
+  Market.prototype.statusChip = function () {
+    var st = this.status(), lv = st.held ? "held" : st.price.level, b = document.createElement("button");
+    var label = st.held ? "確認中" : st.market.state === "break" && lv === "closed" ? "休止中" : CHIP[lv];
+    var sameDay = st.at && TDCore.dayKey(st.at) === TDCore.dayKey(Date.now());
+    b.type = "button"; b.className = "mst lv-" + lv;
+    var p = st.at ? TDCore.partsIn("Asia/Tokyo", st.at) : null;  // today: the time; an earlier day: the date only (the full time is in the label and the status screen)
+    b.innerHTML = '<i aria-hidden="true"></i>' + (!p ? "—" : sameDay ? p.h + ":" + String(p.mi).padStart(2, "0") : p.mo + "/" + p.d) + "・" + label;
+    var full = st.name + "：" + TDCore.jst(st.at) + "の価格（" + st.prov.src + "・" + st.prov.type + "）。状態：" + (st.held ? "データ確認中（" + st.held.join("・") + "）" : st.price.label) +
+      (st.analysis.level === "stale" ? "。自動分析は" + TDCore.ago(st.analysis.age) + "の計算で古くなっています" : "") + "。タップでデータ状態を表示";
+    b.setAttribute("aria-label", full); b.title = full;
+    b.addEventListener("click", function (e) { e.stopPropagation(); openTools("status", b); });
+    this.el.classList.toggle("is-stale", lv === "stale" || lv === "unknown");
+    this.el.classList.toggle("an-stale", st.analysis.level === "stale");
+    return b;
+  };
   Market.prototype.gen = function () {
     var real = this.series && this.series[TFKEY[this.tf]];
+    this.noData = false;
     if (real && real.length > 2) {
       this.c = real.map(function (k) { return { t: k[0], o: k[1], h: k[2], l: k[3], c: k[4] }; });
-      var last = this.c[this.c.length - 1], p = this.price;
-      last.c = p; last.h = Math.max(last.h, p); last.l = Math.min(last.l, p);
+      if (this.live) this.placePrice(this.price, this.asOf);
       return;
     }
+    if (!PREVIEW) { this.c = []; this.noData = true; return; }  // the real site never shows made-up candles
     var o = this.o, r = rng(o.seed + this.tf * 97), n = 120, f = TF[this.tf].v;
     var span = (o.hi - o.lo) * 0.75 * f, start = this.price - span * 0.82, path = [];
     for (var i = 0; i < n; i++) {
@@ -1400,6 +1492,13 @@ html:not(.beginner) .step-tag { display: none; }
   Market.prototype.draw = function () {
     var p = prep(this.cv), c = p.c, w = p.w, h = p.h, o = this.o;
     if (!this.live && !PREVIEW) return;  // no candles until real data has arrived
+    if (!this.c.length) {  // no history for this timeframe: say so instead of drawing anything
+      c.fillStyle = "rgba(244,241,234,.55)"; c.font = "600 12px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
+      c.fillText(TF[this.tf].k + "のデータは未取得です", w / 2, h / 2 - 8);
+      c.font = "500 10.5px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif"; c.fillStyle = "rgba(244,241,234,.4)";
+      c.fillText("ほかの期間を選ぶか、次の更新を待ってください", w / 2, h / 2 + 10);
+      return;
+    }
     var v = this.view, total = this.c.length, n = Math.min(v.n, total);
     v.back = Math.max(-Math.floor(n * 0.8), Math.min(total - n, v.back));
     var blank = Math.max(0, -v.back), back = Math.max(0, v.back);
@@ -1451,13 +1550,15 @@ html:not(.beginner) .step-tag { display: none; }
     }
     c.save(); c.beginPath(); c.rect(0, 0, cw, bot + 2); c.clip();  // candles stay inside the plot when scrolled
     c.shadowColor = "rgba(227,184,103,.45)"; c.shadowBlur = 6;
+    var sec = TFSEC[this.tf], nowS = Date.now() / 1000;
     cs.forEach(function (k, i) {
       var x = i * bw + bw / 2, up = k.c >= k.o;
       var col = up ? "#ecc67c" : "#a5834c";
       c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 1;
       c.beginPath(); c.moveTo(x, Y(k.h)); c.lineTo(x, Y(k.l)); c.stroke();
       var y1 = Y(Math.max(k.o, k.c)), y2 = Y(Math.min(k.o, k.c));
-      c.fillRect(x - body / 2, y1, body, Math.max(1.2, y2 - y1));
+      if (k.t && k.t + sec > nowS) c.strokeRect(x - body / 2 + .5, y1 + .5, Math.max(1, body - 1), Math.max(1.2, y2 - y1));  // still forming: hollow
+      else c.fillRect(x - body / 2, y1, body, Math.max(1.2, y2 - y1));
     });
     c.restore();
   };
@@ -1468,18 +1569,12 @@ html:not(.beginner) .step-tag { display: none; }
     } else { this.priceEl.textContent = s; }
     if (!this.live) {
       if (!PREVIEW) this.priceEl.textContent = "—";  // never show a made-up price on the real site
-      this.chgEl.textContent = this.failed ? "価格を取得できませんでした" : PREVIEW ? "サンプル表示" : "読み込み中…";
+      this.chgEl.textContent = this.held ? "データ確認中（" + this.held.join("・") + "）" : this.failed ? "価格を取得できませんでした" : PREVIEW ? "サンプル表示" : "読み込み中…";
       this.chgEl.style.color = "var(--ink-3)"; return;
     }
     var d = this.price - o.prev, pct = d / o.prev * 100, sign = d >= 0 ? "+" : "−";
     this.chgEl.textContent = sign + o.chgFmt(Math.abs(d)) + " (" + sign + Math.abs(pct).toFixed(2) + "%)";
-    if (this.asOf) {  // when this price traded, so a delayed or closed market is obvious
-      var at = new Date(this.asOf * 1000), now = new Date(), z = function (x) { return String(x).padStart(2, "0"); };
-      var stamp = (at.toDateString() === now.toDateString() ? "" : (at.getMonth() + 1) + "/" + at.getDate() + " ") + at.getHours() + ":" + z(at.getMinutes());
-      var sp = document.createElement("span"); sp.className = "asof";
-      sp.textContent = stamp + (now - at > 3 * 3600000 ? " 終値" : " 時点");
-      this.chgEl.appendChild(sp);
-    }
+    this.chgEl.appendChild(this.statusChip());
     this.chgEl.style.color = d >= 0 ? o.upColor : o.downColor;
     if (dir && !reduce) {
       var pe = this.priceEl; pe.classList.add(dir > 0 ? "flash-up" : "flash-down");
@@ -1491,10 +1586,7 @@ html:not(.beginner) .step-tag { display: none; }
     if (this.prevClose) { // real previous close from market.json
       var first0 = !this.live, dir0 = Math.sign(p - this.price);
       this.live = true; this.o.prev = this.prevClose; this.price = p;
-      if (first0) { this.gen(); } else {
-        var last0 = this.c[this.c.length - 1];
-        last0.c = p; last0.h = Math.max(last0.h, p); last0.l = Math.min(last0.l, p);
-      }
+      if (first0) { this.gen(); } else this.placePrice(p, this.asOf);
       this.render(dir0); this.draw(); return;
     }
     var k = "quote-" + this.el.id, today = new Date().toDateString(), st = null;
@@ -1504,10 +1596,7 @@ html:not(.beginner) .step-tag { display: none; }
     try { localStorage.setItem(k, JSON.stringify(st)); } catch (e) {}
     var first = !this.live, dir = Math.sign(p - this.price);
     this.live = true; this.o.prev = st.prev; this.price = p;
-    if (first) { this.gen(); } else {
-      var last = this.c[this.c.length - 1];
-      last.c = p; last.h = Math.max(last.h, p); last.l = Math.min(last.l, p);
-    }
+    if (first) { this.gen(); } else this.placePrice(p, this.asOf);
     this.render(dir); this.draw();
   };
   /* Gold/silver candles in market.json are futures moved onto the spot price. If a file ever arrives
@@ -1527,17 +1616,17 @@ html:not(.beginner) .step-tag { display: none; }
      (OKX, then Bitfinex, then Kraken's PAXG) less its median gap to the spot price polled every minute.
      A panel repaints at most twice a second. */
   var LIVE_SRC = {
-    usdjpy: [{ url: "wss://forex-api.coin.z.com/ws/public/v1", sub: { command: "subscribe", channel: "ticker", symbol: "USD_JPY" },
+    usdjpy: [{ name: "GMOコイン FX", url: "wss://forex-api.coin.z.com/ws/public/v1", sub: { command: "subscribe", channel: "ticker", symbol: "USD_JPY" },
       parse: function (m) { return m && m.symbol === "USD_JPY" ? +m.bid : 0; } }],
-    gold: [{ url: "wss://ws.okx.com:8443/ws/v5/public", sub: { op: "subscribe", args: [{ channel: "tickers", instId: "XAUT-USDT" }] }, ping: "ping",
+    gold: [{ name: "OKX XAUT", url: "wss://ws.okx.com:8443/ws/v5/public", sub: { op: "subscribe", args: [{ channel: "tickers", instId: "XAUT-USDT" }] }, ping: "ping",
       parse: function (m) { var d = m && m.data && m.data[0]; return d && +d.bidPx && +d.askPx ? (+d.bidPx + +d.askPx) / 2 : 0; } },
-      { url: "wss://api-pub.bitfinex.com/ws/2", sub: { event: "subscribe", channel: "ticker", symbol: "tXAUT:USD" },
+      { name: "Bitfinex XAUT", url: "wss://api-pub.bitfinex.com/ws/2", sub: { event: "subscribe", channel: "ticker", symbol: "tXAUT:USD" },
       parse: function (m) { return m && m[1] && m[1].length > 2 ? (m[1][0] + m[1][2]) / 2 : 0; } },
-      { url: "wss://ws.kraken.com/v2", sub: { method: "subscribe", params: { channel: "ticker", symbol: ["PAXG/USD"] } },
+      { name: "Kraken PAXG", url: "wss://ws.kraken.com/v2", sub: { method: "subscribe", params: { channel: "ticker", symbol: ["PAXG/USD"] } },
       parse: function (m) { var d = m && m.channel === "ticker" && m.data && m.data[0]; return d ? (d.bid + d.ask) / 2 : 0; } }],
-    btc: [{ url: "wss://ws-feed.exchange.coinbase.com", sub: { type: "subscribe", product_ids: ["BTC-USD"], channels: ["ticker"] },
+    btc: [{ name: "Coinbase", url: "wss://ws-feed.exchange.coinbase.com", sub: { type: "subscribe", product_ids: ["BTC-USD"], channels: ["ticker"] },
       parse: function (m) { return m && m.type === "ticker" && +m.best_bid && +m.best_ask ? (+m.best_bid + +m.best_ask) / 2 : 0; } },
-      { url: "wss://ws.kraken.com/v2", sub: { method: "subscribe", params: { channel: "ticker", symbol: ["BTC/USD"] } },
+      { name: "Kraken", url: "wss://ws.kraken.com/v2", sub: { method: "subscribe", params: { channel: "ticker", symbol: ["BTC/USD"] } },
       parse: function (m) { var d = m && m.channel === "ticker" && m.data && m.data[0]; return d ? (d.bid + d.ask) / 2 : 0; } }]
   };
   /* GOLD and USD/JPY are closed at the weekend (New York Fri 17:00 to Sun 17:00; gold also 17:00-18:00 daily and
@@ -1573,7 +1662,9 @@ html:not(.beginner) .step-tag { display: none; }
     var sc = key === "usdjpy" ? 1000 : 100, px = Math.round((L.raw - liveOffset(key)) * sc) / sc;
     markets.forEach(function (mk) {
       if (mk.key !== key || !mk.price || Math.abs(px - mk.price) > (key === "gold" ? 30 : key === "btc" ? mk.price * 0.02 : 0.5)) return;
-      mk.asOf = Date.now() / 1000; mk.applyLive(px);
+      mk.asOf = Date.now() / 1000;
+      mk.prov = { src: "リアルタイム配信（" + (L.name || "") + "）", type: key === "usdjpy" ? "売値（GMOの配信から、測った差を引いた補正値）" : key === "gold" ? "推定値（金連動トークンXAUTの仲値を現物価格に補正）" : "仲値（Bid・Askの中間）" };
+      mk.applyLive(px);
     });
   }
   function liveConnect(key) {
@@ -1586,7 +1677,7 @@ html:not(.beginner) .step-tag { display: none; }
     ws.onmessage = function (ev) {
       var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
       var px = src.parse(m); if (!px) return;
-      got = true; L.tries = 0; L.raw = px; L.at = Date.now();
+      got = true; L.tries = 0; L.raw = px; L.at = Date.now(); L.name = src.name; srcMark("ws-" + key, true);
       if (key === "gold" && !L.offs.length && L.spot && Date.now() - L.spotAt < 60000) liveCalibrate(key, L.spot);
       liveTick(key);
     };
@@ -1618,21 +1709,22 @@ html:not(.beginner) .step-tag { display: none; }
             if (off && Math.abs(off) < 0.1) px = Math.round((px - off) * 1000) / 1000;
             if (m && m.price && Math.abs(px - m.price) > 1) return;  // far from the site's price: a broken quote
             if (liveFresh(key)) return;  // the real-time feed is newer
-            mk.asOf = Date.now() / 1000;
+            mk.asOf = Date.now() / 1000; srcMark("coinbase", true);
+            mk.prov = { src: "Coinbase（為替レート）", type: off && Math.abs(off) < 0.1 ? "Coinbaseのレートから、サイトで測った売値との差を引いた値（補正値）" : "Coinbaseのレート（Bid/Askの区別は非公開）" };
             mk.applyLive(px);
           })
-          .catch(function () {});
+          .catch(function () { srcMark("coinbase", false); });
         return;
       }
       if (!spot) return;
-      var use = function (price, asOf) {
+      var use = function (price, asOf, prov) {
         if (!price || mk.key !== key) return;
         if (key === "gold") {
           var L = live.gold || (live.gold = { raw: 0, at: 0, offs: [], drawn: 0, tries: 0, ws: null, timer: 0 });
           L.spot = price; L.spotAt = Date.now(); liveCalibrate("gold", price);
           if (liveFresh("gold") && mk.price) return;  // the real-time feed is newer; this price only calibrates it
         }
-        mk.asOf = asOf;
+        mk.asOf = asOf; mk.prov = prov;
         mk.alignSpot(price);
         mk.applyLive(price);
       };
@@ -1642,17 +1734,19 @@ html:not(.beginner) .step-tag { display: none; }
       get("https://api.gold-api.com/price/" + spot)
         .then(function (j) {
           if (!j || !j.price) return Promise.reject();
-          use(+j.price, j.updatedAt ? Date.parse(j.updatedAt) / 1000 : Date.now() / 1000);
+          srcMark("goldapi", true);
+          use(+j.price, j.updatedAt ? Date.parse(j.updatedAt) / 1000 : Date.now() / 1000, { src: "Gold API", type: "提供元の現在値（Bid/Askの区別は非公開）" });
         })
         // backup: Swissquote's public quote (middle of bid and ask)
         .catch(function () {
           return get("https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/" + spot + "/USD")
             .then(function (q) {
               var p = q && q[0] && q[0].spreadProfilePrices && q[0].spreadProfilePrices[0];
-              if (p && p.bid && p.ask) use((p.bid + p.ask) / 2, q[0].ts ? q[0].ts / 1000 : Date.now() / 1000);
+              srcMark("goldapi", false, "Gold APIに接続できず、Swissquoteに切り替え");
+              if (p && p.bid && p.ask) { srcMark("swissquote", true); use((p.bid + p.ask) / 2, q[0].ts ? q[0].ts / 1000 : Date.now() / 1000, { src: "Swissquote（Gold APIの代替）", type: "仲値（Bid・Askの中間）" }); }
             });
         })
-        .catch(function () {});
+        .catch(function () { srcMark("swissquote", false); });
     });
   }
   var nf = function (dec) { return function (v) { return v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec }); }; };
@@ -1821,7 +1915,7 @@ html:not(.beginner) .step-tag { display: none; }
         .catch(function () { finish(); });
     }, fail, { timeout: 15000, maximumAge: 30 * 60000 });
   }
-  var wxLoaded = false;
+  var wxLoaded = false, wxAt = 0;
   function loadWeather() {
     if (!window.fetch) return;
     showCity();
@@ -1839,9 +1933,10 @@ html:not(.beginner) .step-tag { display: none; }
         renderHours([10, 13, 16, 19, 22].map(function (hr) {
           return [hr, codeIcon(j.hourly.weather_code[hr], hr), Math.round(j.hourly.temperature_2m[hr])];
         }));
-        wxLoaded = true;
+        wxLoaded = true; wxAt = Date.now(); srcMark("weather", true);
       })
       .catch(function () {
+        srcMark("weather", false);
         if (!wxLoaded && !PREVIEW) document.querySelector('[data-wx="desc"]').textContent = "天気を取得できませんでした";
       });
   }
@@ -2086,8 +2181,8 @@ html:not(.beginner) .step-tag { display: none; }
     if (!window.fetch) return;
     fetch("holidays.json?v=" + new Date().toDateString().replace(/ /g, ""), { cache: "no-store" })
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-      .then(function (j) { HOL_NAMES = j; HOL += " " + Object.keys(j).join(" "); renderCal(); })
-      .catch(function () {});
+      .then(function (j) { HOL_NAMES = j; HOL += " " + Object.keys(j).join(" "); renderCal(); srcMark("holidays", true); })
+      .catch(function () { srcMark("holidays", false); });
   }
   function key(y, m, d) { return y + "-" + String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0"); }
   function renderCal() {
@@ -2182,7 +2277,7 @@ html:not(.beginner) .step-tag { display: none; }
       requestAnimationFrame(frame);
       if (now - last < 100) return;  // ~10 fps is plenty for slow twinkles
       last = now;
-      var covered = document.hidden || (typeof openSheet !== "undefined" && openSheet) || !book.hidden || !hz.hidden;
+      var covered = document.hidden || root.classList.contains("lowpower") || (typeof openSheet !== "undefined" && openSheet) || !book.hidden || !hz.hidden;
       root.classList.toggle("bg-still", !!covered);
       if (!covered) draw(now);
     }
@@ -2416,11 +2511,12 @@ html:not(.beginner) .step-tag { display: none; }
         }).filter(function (e) { return !isNaN(e.t); });
         return fc.then(function (extra) {
           mergeActuals(evs, extra);
-          calEvents = evs; calUpdatedAt = Date.now();
+          calEvents = evs; calUpdatedAt = Date.now(); srcMark("calendar", true, ""); SRC.calendar.count = evs.length;
           renderIndicators(); renderStrategy(); paintUpdated();
         });
       })
       .catch(function () {
+        srcMark("calendar", false);
         if (!calEvents && !PREVIEW) document.getElementById("ind-list").innerHTML = '<li class="empty">経済指標を取得できませんでした。下の「経済カレンダーを表示」から確認してください。</li>';
       })
       .then(function () { scheduleCalendar(); });
@@ -2507,8 +2603,8 @@ html:not(.beginner) .step-tag { display: none; }
     if (!window.fetch) return;
     fetch("strategy.json", { cache: "no-cache" })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) { if (d && typeof d === "object") { report = d; renderStrategy(); } })
-      .catch(function () {});
+      .then(function (d) { if (d && typeof d === "object") { report = d; renderStrategy(); srcMark("report", true); } else srcMark("report", false, "まだ作成されていません"); })
+      .catch(function () { srcMark("report", false); });
   }
   function renderStrategy() {
     var li3 = document.querySelector('[data-check="p3"]'), useReport = reportIsCurrent(new Date());
@@ -2537,29 +2633,47 @@ html:not(.beginner) .step-tag { display: none; }
     else if (sel[0][0] && sel[0][0].atr) body = line1.split("\n")[0] + "\n値幅目安：" + sel[0][1] + " " + atrText(sel[0][2], sel[0][0].atr) + "/日";
     setPoint(3, "本日のトレード戦略", body);
   }
+  var marketSeq = TDCore.sequencer(), marketCheck = null;
   function loadMarket() {
     if (!window.fetch) return;
+    var id = marketSeq.next();
     fetch("market.json", { cache: "no-cache" })  // revalidates (304 when unchanged)
-      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)); })
       .then(function (d) {
+        if (!marketSeq.latest(id)) return;  // a later request already answered
+        var chk = TDCore.checkMarket(d, Date.now());
+        if (chk.global.length) return Promise.reject(new Error(chk.global.join("・")));
+        if (market && market.updated && d.updated && Date.parse(d.updated) < Date.parse(market.updated)) { srcMark("market", true); return; }  // an older copy (cache): keep the newer one
+        var old = market && market.instruments || {};
+        Object.keys(chk.ok).forEach(function (k) {  // an instrument failing the checks keeps its last good data (or none)
+          if (!chk.ok[k]) { if (old[k]) d.instruments[k] = old[k]; else delete d.instruments[k]; }
+        });
+        marketCheck = chk; srcMark("market", true);
         market = d;
         var all = d.instruments || d;
         markets.forEach(function (mk) {
           var m = all[mk.key];
-          if (!m) return;
+          mk.held = chk.ok[mk.key] === false ? chk.problems[mk.key] : null;
+          if (!m) { if (mk.held && !mk.live) mk.render(); return; }
           mk.series = m.candles; mk.prevClose = m.prevClose;
           mk.unadjusted = !!INST[mk.key].spot && m.spotAdjusted === false;
           // spot-priced instruments keep their fresher minute quote
           var keepSpot = mk.live && (INST[mk.key].spot || INST[mk.key].live) && mk.asOf > (m.asOf || 0);
           if (keepSpot) mk.alignSpot(mk.price);
-          if (!keepSpot) mk.asOf = m.asOf;
+          if (!keepSpot) {
+            mk.asOf = m.asOf;
+            mk.prov = { src: "サイトの定期取得（Yahoo Finance）", type: INST[mk.key].spot ? (m.spotAdjusted ? "先物の足を現物に換算した値（補正値）" : "先物の足の終値（換算前）")
+              : mk.key === "jxy" ? "6通貨の足から独自に計算した値" : "最新の足の終値（Bid/Askの区別は非公開）" };
+          }
           mk.applyLive(keepSpot ? mk.price : m.price);
           mk.gen(); mk.draw();
         });
         refreshPoints();
         loadPrices();  // live prices that wait for market.json (USD/JPY's bid offset)
       })
-      .catch(function () {
+      .catch(function (e) {
+        if (!marketSeq.latest(id)) return;
+        srcMark("market", false, e && e.message || "取得できませんでした");
         if (market || PREVIEW) return;
         setPoint(1, "分析データを取得できませんでした", "通信状態を確認してください。\n次の更新で自動的に再取得します。");
         setPoint(2, "", ""); if (!reportIsCurrent(new Date())) setPoint(3, "", "");
@@ -3748,10 +3862,50 @@ html:not(.beginner) .step-tag { display: none; }
       .then(function (r) { return r.ok ? r.text() : Promise.reject(); })
       .then(function (t) {
         var m = t.match(/<meta name="build" content="([^"]+)"/);
-        if (m && m[1] !== buildMeta.content) location.replace(location.pathname + "?v=" + m[1]);
+        if (m && m[1] !== buildMeta.content) offerUpdate(m[1]);
       })
       .catch(function () {});
   }
+  var updBar = null;
+  function offerUpdate(v) {
+    TDDesk.newBuild = v;
+    if (updBar) return;
+    updBar = document.createElement("div"); updBar.className = "dk-update"; updBar.setAttribute("role", "status");
+    updBar.innerHTML = '<span>新しい版があります。開いている本・入力中の内容は端末に保存済みです。</span><button type="button" data-u="now">今すぐ更新</button><button type="button" data-u="later">あとで</button>';
+    updBar.addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      if (b.getAttribute("data-u") === "now") location.replace(location.pathname + "?v=" + v);
+      else { updBar.remove(); updBar = null; setTimeout(function () { if (TDDesk.newBuild) offerUpdate(TDDesk.newBuild); }, 60 * 60000); }
+    });
+    document.body.appendChild(updBar);
+  }
+
+  /* ---------- tools (tools.js, loaded the first time it is opened) ---------- */
+  var toolsLoading = null;
+  function openTools(tab, from) {
+    if (window.TDTools) { window.TDTools.open(tab, from); return; }
+    if (toolsLoading) return;
+    toolsLoading = document.createElement("script"); toolsLoading.src = "tools.js?v=" + (buildMeta ? buildMeta.content : "");
+    toolsLoading.onload = function () { if (window.TDTools) window.TDTools.open(tab, from); };
+    toolsLoading.onerror = function () { toolsLoading.remove(); toolsLoading = null; deskToast("ツールを読み込めませんでした。通信状態を確認してください。"); };
+    document.head.appendChild(toolsLoading);
+  }
+  // what the tools read from the desk (nothing here sends data anywhere)
+  var TDDesk = window.TDDesk = {
+    build: buildMeta ? buildMeta.content : "", preview: PREVIEW, newBuild: "",
+    cards: function () { return markets.map(function (mk) { return mk.status(); }); },
+    market: function () { return market; }, check: function () { return marketCheck; }, sources: function () { return SRC; },
+    instName: function (k) { return INST[k] ? INST[k].name : k; },
+    signals: function () { return sigStore; }, saveSignals: saveSignals, saveFailed: saveFailed,
+    live: function () { var o = {}; Object.keys(live).forEach(function (k) { o[k] = { open: !!live[k].ws, at: live[k].at, name: live[k].name || "" }; }); return o; },
+    calendar: function () { return { events: calEvents, at: calUpdatedAt }; }, weatherAt: function () { return wxAt; },
+    notify: function () { return { permission: window.Notification ? Notification.permission : "unsupported", sound: localStorage.getItem("desk_sound") || "" }; },
+    toast: function (t) { deskToast(t); }, entries: function () { return entryState; }, scores: function () { return scoreOf; },
+    setPower: function (on) { document.documentElement.classList.toggle("lowpower", !!on); try { localStorage.setItem("td-power", on ? "low" : ""); } catch (e) {} },
+    refresh: function (what) { ({ market: loadMarket, prices: loadPrices, calendar: loadCalendar, weather: loadWeather, report: loadReport })[what](); }
+  };
+  try { if (localStorage.getItem("td-power") === "low") document.documentElement.classList.add("lowpower"); } catch (e) {}
+  setInterval(function () { markets.forEach(function (mk) { if (mk.live) mk.render(); }); }, 15000);  // keep the age on each card current
 
   /* ---------- boot ---------- */
   if (!PREVIEW) {
