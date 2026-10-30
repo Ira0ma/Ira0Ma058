@@ -51,6 +51,15 @@ test("weekly hours are shown in Japan time and follow US summer time", () => {
   assert.match(C.marketState("usdjpy", summer).note, /夏時間中/);
 });
 
+test("next opening time of a closed market, in Japan time", () => {
+  assert.equal(C.nextOpen("usdjpy", U("2026-10-31T00:00:00Z")), "月 7:00", "Sat: FX opens Sunday 17:00 NY = Mon 7:00 JST (US back on winter time on 1 Nov)");
+  assert.equal(C.nextOpen("gold", U("2026-10-31T00:00:00Z")), "月 8:00");
+  assert.equal(C.nextOpen("usdjpy", U("2026-07-11T00:00:00Z")), "月 6:00", "summer");
+  assert.equal(C.nextOpen("gold", U("2026-07-08T21:30:00Z")), "木 7:00", "daily pause ends 18:00 NY");
+  assert.equal(C.nextOpen("usdjpy", U("2026-07-08T12:00:00Z")), "", "open now");
+  assert.equal(C.nextOpen("btc", U("2026-07-11T00:00:00Z")), "");
+});
+
 test("sessions: London opens at 8:00 local in winter and summer, overlap with New York", () => {
   let s = C.sessions(U("2026-07-08T13:00:00Z"));  // 14:00 London, 9:00 NY
   assert.deepEqual(s.overlap, ["ロンドン", "ニューヨーク"]);

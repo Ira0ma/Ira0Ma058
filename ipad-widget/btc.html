@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="f3105d3244">
+<meta name="build" content="f45b370280">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -836,6 +836,7 @@ function toMs(v){
   return Number.isFinite(p)?p:0;
 }
 function setStatus(type,text){
+  if(mktClosed&&type!=='error'){text=closedLabel()+(reopenText?'（再開 '+reopenText+'）':'');type=''}  // 休場中は「LIVE」ではなく休場中と出す
   $('mainStatus').textContent=text;
   $('mainDot').className='dot '+(type==='live'?'live':type==='error'?'error':'');
 }
@@ -1055,9 +1056,28 @@ function marketClosed(t){
   return d===6||(d===5&&h>=17)||(d===0&&h<(IS_GOLD?18:17))||(IS_GOLD&&h>=17&&h<18);
 }
 let mktClosed=marketClosed();
+// 再開の日時（日本時間「月 7:00」）。休場中に1分ごとに計算し直す
+const JST_DOW=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Tokyo',weekday:'short',hour:'numeric',minute:'2-digit',hourCycle:'h23'});
+let reopenText='';
+function findReopen(){
+  if(!mktClosed)return '';
+  let t=Math.ceil(Date.now()/300000)*300000;
+  for(let i=0;i<864&&marketClosed(t);i++)t+=300000;  // 5分ずつ、3日先まで
+  if(marketClosed(t))return '';
+  const p={};JST_DOW.formatToParts(new Date(t)).forEach(x=>p[x.type]=x.value);
+  return {Sun:'日',Mon:'月',Tue:'火',Wed:'水',Thu:'木',Fri:'金',Sat:'土'}[p.weekday]+' '+(+p.hour)+':'+p.minute;
+}
+// 週末の休場は「休場中」、ゴールドの毎日の休止（NY 17〜18時）は「休止中」
+function closedLabel(){
+  if(!mktClosed)return '';
+  const p={};NY_FMT.formatToParts(new Date()).forEach(x=>p[x.type]=x.value);
+  const d=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(p.weekday),h=+p.hour+ +p.minute/60;
+  return d===6||(d===5&&h>=17)||(d===0&&h<18)?'休場中':'休止中';
+}
 function checkClosed(){
   const c=marketClosed();document.body.classList.toggle('mkt-closed',c);
-  if(c!==mktClosed){mktClosed=c;renderAll()}
+  const was=mktClosed;mktClosed=c;reopenText=findReopen();
+  if(c!==was){setStatus('live','LIVE');renderAll()}else if(c){setStatus('live','LIVE')}
 }
 const LIVE={raw:0,rawAt:0,src:'',offs:[],ws:null,tries:0,lastDraw:0,timer:0,mins:[]};
 const GOLD_WS=[
@@ -2536,7 +2556,7 @@ function renderPatList(s){
 // エントリー待ちのとき、どの条件がそろっていて、あと何を待っているかを表示
 function renderWait(s){
   const el=$('waitFor');
-  if(!s.ready||s.entry||!state.spot){el.hidden=true;return}
+  if(!s.ready||s.entry||!state.spot||mktClosed){el.hidden=true;return}  // 休場中は待つ条件も出さない
   const price=state.spot.price,th=INSTR.momTh,item=(ok,txt)=>'<span class="'+(ok?'ok':'ng')+'">'+(ok?'✓':'○')+' '+esc(txt)+'</span>';
   const smaD=price>=s.sma?1:-1,momD=s.mom>th?1:s.mom<-th?-1:0,rngD=price>=s.mid?1:-1;
   const d=s.score>0?1:s.score<0?-1:smaD,side=d>0?'買い':'売り',lines=[];
@@ -2613,14 +2633,14 @@ function renderSnapshot(){
   state.signal=s.sig;
   notifyDesk(s);
   const el=$('signal');
-  const sub=!s.ready?'データ取得中':mktClosed?'市場休場中のためエントリー判定は停止（週明けに再開）':s.forced?'重要指標前後のため待機':
+  const sub=!s.ready?'データ取得中':mktClosed?(closedLabel()==='休止中'?'毎日の休止時間のためエントリー判定は停止':'市場休場中のためエントリー判定は停止'):s.forced?'重要指標前後のため待機':
     s.via.length?(s.entry3?'3条件一致＋':'')+s.via.join('・')+'（'+(s.sig==='BUY'?'買い':'売り')+'）・利確目安（'+TP_BASIS_NAME[state.tpBasis]+'）まで'+Math.round(tpPipsBy(s.plan))+'pips':
     s.sig==='WAIT'?'条件がそろうまで待機':
     s.entry?'3条件一致・利確目安（'+TP_BASIS_NAME[state.tpBasis]+'）まで'+Math.round(tpPipsBy(s.plan))+'pips':
     s.aligned?'3条件一致｜利確余地（'+TP_BASIS_NAME[state.tpBasis]+'）が'+MIN_TP_PIPS+'pips未満のため見送り':'3条件中2つが一致｜エントリー待ち';
-  const label=s.entry?(s.sig==='BUY'?'買いエントリー':'売りエントリー'):s.sig;
-  el.innerHTML=esc(label)+'<small>'+esc(sub)+'</small>';
-  el.className='signal '+(s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait')+(s.entry?' entry':'');
+  const label=mktClosed?closedLabel():s.entry?(s.sig==='BUY'?'買いエントリー':'売りエントリー'):s.sig;
+  el.innerHTML=esc(label)+'<small>'+esc(mktClosed&&reopenText?sub+'｜再開 '+reopenText+'（日本時間）':sub)+'</small>';
+  el.className='signal '+(mktClosed?'wait':s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait')+(s.entry?' entry':'');
   renderWait(s);
   const conf=s.ready?Math.min(100,Math.round(Math.abs(s.score)/3*100)):0;
   $('meter').style.width=conf+'%';
@@ -2632,7 +2652,7 @@ function renderSnapshot(){
   $('goldPrice').textContent=fmt(state.spot.price);
   $('goldChange').textContent=chg;
   $('goldChange').className='change '+(pct>=0?'up':'down');
-  $('goldFresh').textContent=(mktClosed?'市場休場中':state.spot.freshness==='stale'?'⚠ 遅延データ':'LIVE')+'｜'+localTime(state.spot.asof)+(state.src.spot?'｜'+state.src.spot:'');
+  $('goldFresh').textContent=(mktClosed?(closedLabel()==='休止中'?'休止中（毎日の休止時間）':'市場休場中'):state.spot.freshness==='stale'?'⚠ 遅延データ':'LIVE')+'｜'+localTime(state.spot.asof)+(state.src.spot?'｜'+state.src.spot:'');
   $('dayHigh').textContent=d.hi?fmt(d.hi):'--';$('dayLow').textContent=d.lo?fmt(d.lo):'--';$('dayRange').textContent=d.hi&&d.lo?INSTR.dist(d.hi-d.lo):'--';
   if(!IS_FX){
     $('usdjpy').textContent=state.fx?fmt(state.fx,3):'--';
@@ -2686,8 +2706,8 @@ function renderSnapshot(){
   $('miniPrice').textContent=fmt(state.spot.price);
   $('miniChange').textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%';
   $('miniChange').className=pct>=0?'up':'down';
-  $('miniSignal').textContent=s.entry?(s.sig==='BUY'?'買いエントリー':'売りエントリー'):s.sig;
-  $('miniSignal').className='chip signal '+(s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait')+(s.entry?' entry':'');
+  $('miniSignal').textContent=mktClosed?closedLabel():s.entry?(s.sig==='BUY'?'買いエントリー':'売りエントリー'):s.sig;
+  $('miniSignal').className='chip signal '+(mktClosed?'wait':s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait')+(s.entry?' entry':'');
 }
 // エントリーポイント・利確目安・損切り目安（BUY/SELLのとき表示。エントリー条件を満たすと強調）
 function renderPlan(s){

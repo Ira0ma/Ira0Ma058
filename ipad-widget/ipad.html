@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="1d0de49eaf">
+<meta name="build" content="3d5a4cac71">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -654,6 +654,9 @@ html:not(.beginner) .step-tag { display: none; }
 .mst.lv-held i::before { content: "⏸"; }
 .mst.lv-closed i::before, .mst.lv-missing i::before { content: "☾"; color: var(--ink-3); }
 .mkt.is-stale .price { opacity: .55; }
+.mkt .mscore b.closed { color: #e8dfcc; border-color: rgba(232,223,204,.45); background: rgba(255,255,255,.06); }
+.mkt .mscore .reopen { font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
+.mkt.mk-closed .price { opacity: .7; }
 .mkt.an-stale .mscore b { opacity: .5; text-decoration: line-through; }
 .dk-update { position: fixed; z-index: 60; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 8px); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center;
   max-width: calc(100vw - 32px); padding: 8px 12px; border-radius: 14px; background: rgba(14,16,22,.96); border: 1px solid rgba(227,184,103,.6); color: var(--ink); font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
@@ -1042,9 +1045,9 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=d216ac29d8", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=36f57b42a5", title: "ドル円分析" },
-    btc: { src: "btc.html?v=f3105d3244", title: "BTC分析" }
+    gold: { src: "gold.html?v=83c855ef4b", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=08166532c5", title: "ドル円分析" },
+    btc: { src: "btc.html?v=f45b370280", title: "BTC分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -1128,6 +1131,14 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     if (!markets) return;
     markets.forEach(function (mk) {
       var d = scoreOf[mk.key], el = mk.el.querySelector('[data-f="score"]'), cls = d ? (d.dir > 0 ? "up" : d.dir < 0 ? "down" : "") : "";
+      var shut = marketClosed(mk.key);
+      mk.el.classList.toggle("mk-closed", shut);
+      if (shut) {  // closed: say so instead of a call made on the last prices before the close
+        var ms = TDCore.marketState(mk.key, Date.now()), re = TDCore.nextOpen(mk.key, Date.now());
+        el.hidden = false; mk.el.classList.add("has-score"); el.removeAttribute("title");
+        el.innerHTML = '<b class="closed">' + (ms.state === "break" ? "休止中" : "休場中") + "</b>" + (re ? '<span class="reopen">再開 ' + re + "</span>" : "");
+        return;
+      }
       el.hidden = !d; mk.el.classList.toggle("has-score", !!d);
       if (d) el.setAttribute("title", "時間足ごとの一致度（0〜100）：H4・H1・M15・M5でダウ理論・スーパートレンド・GMMA・RSIの向きを±1で数え、重み付き平均の大きさを100倍した値です。勝率や確率ではありません。" +
         (mk.el.classList.contains("an-stale") ? "（自動分析が古いため参考外）" : ""));
@@ -1463,8 +1474,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var now = Date.now();
     if (this.chip && now - this.chipAt < 1000 && this.chipFor === this.asOf + "|" + this.tf + "|" + !!this.held) return this.chip;
     this.chipAt = now; this.chipFor = this.asOf + "|" + this.tf + "|" + !!this.held;
-    var st = this.status(), lv = st.held ? "held" : st.price.level, b = document.createElement("button");
-    var label = st.held ? "確認中" : st.market.state === "break" && lv === "closed" ? "休止中" : CHIP[lv];
+    var st = this.status(), closed = st.market.state !== "open", lv = st.held ? "held" : closed && st.at ? "closed" : st.price.level, b = document.createElement("button");
+    var label = st.held ? "確認中" : closed ? (st.market.state === "break" ? "休止中" : "休場中") : CHIP[lv];
     var sameDay = st.at && TDCore.dayKey(st.at) === TDCore.dayKey(Date.now());
     b.type = "button"; b.className = "mst lv-" + lv;
     var p = st.at ? TDCore.partsIn("Asia/Tokyo", st.at) : null;  // today: the time; an earlier day: the date only (the full time is in the label and the status screen)

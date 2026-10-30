@@ -73,6 +73,26 @@
     return res("open", "取引時間内（祝日は未判定）", false);
   }
 
+  // when a closed market opens again, as "月 7:00" in Japan time (weekly hours; holidays unknown), or "" if it is open
+  var openMemo = {};
+  function nextOpen(key, t) {
+    if (marketState(key, t).state === "open") return "";
+    var mk = (KIND[key] || "fx") + Math.floor(t / (5 * MIN));  // the same answer for five minutes (the cards ask every few seconds)
+    if (openMemo[mk] != null) return openMemo[mk];
+    if (Object.keys(openMemo).length > 50) openMemo = {};
+    return (openMemo[mk] = findOpen(key, t));
+  }
+  function findOpen(key, t) {
+    var s = Math.ceil(t / (5 * MIN)) * 5 * MIN;
+    for (var i = 0; i < 3 * 24 * 12; i++, s += 5 * MIN) {  // 5-minute steps, up to three days ahead
+      if (marketState(key, s).state === "open") {
+        var p = partsIn("Asia/Tokyo", s);
+        return ["日", "月", "火", "水", "木", "金", "土"][p.dow] + " " + p.h + ":" + String(p.mi).padStart(2, "0");
+      }
+    }
+    return "";
+  }
+
   /* Tokyo, London and New York sessions (local business hours, summer time from each city's own clock). */
   var SESSIONS = [
     { id: "tokyo", name: "東京", zone: "Asia/Tokyo", open: 9, close: 18 },
@@ -418,7 +438,7 @@
   }
 
   return { MIN: MIN, HOUR: HOUR, DAY: DAY, partsIn: partsIn, zoneOffset: zoneOffset, zoneTime: zoneTime, isDst: isDst,
-    KIND: KIND, marketState: marketState, hoursNote: hoursNote, sessions: sessions, RULES: RULES, freshness: freshness, ago: ago, jst: jst,
+    KIND: KIND, marketState: marketState, hoursNote: hoursNote, nextOpen: nextOpen, sessions: sessions, RULES: RULES, freshness: freshness, ago: ago, jst: jst,
     checkMarket: checkMarket, realCandles: realCandles, sequencer: sequencer,
     positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey,
     newStore: newStore, updateSignal: updateSignal, expireSignals: expireSignals, loadStore: loadStore, COOLDOWN: COOLDOWN,
