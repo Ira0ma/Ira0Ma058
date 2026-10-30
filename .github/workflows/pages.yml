@@ -39,7 +39,7 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p prev
-          for f in market.json calendar.json holidays.json spothist.json news.json; do
+          for f in market.json calendar.json holidays.json spothist.json news.json typhoon.json pollen.json; do
             curl -fsSL --retry 2 "${{ steps.pages.outputs.base_url }}/$f" -o "prev/$f" || rm -f "prev/$f"
           done
           ls -la prev
@@ -89,6 +89,9 @@ jobs:
         run: |
           python3 ipad-widget/news.py _site/news.json prev/news.json \
             || cp prev/news.json _site/news.json || true
+      - name: Fetch typhoons (JMA) and pollen (Weathernews) for the weather card
+        continue-on-error: true
+        run: python3 ipad-widget/hazards.py _site prev
       - name: Fetch prices and build chart analysis
         continue-on-error: true
         run: |
