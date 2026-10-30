@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="27bba97ec1">
+<meta name="build" content="04ae47bd7f">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1507,7 +1507,7 @@ function channelOf(tf){
 }
 const CH_COL={up:'79,195,247',down:'244,143,177',flat:'255,209,102'};
 const CH_NAME={up:'上昇チャネル',down:'下降チャネル',flat:'レンジ（水平チャネル）'};
-const chPos=c=>c.pos>1?'上抜け気味':c.pos<0?'下抜け気味':c.pos>=.75?'上限付近':c.pos<=.25?'下限付近':'中ほど';
+const chPos=c=>c.pos>1?'上抜け気味':c.pos<0?'下抜け気味':c.pos>=.75?'上弦付近':c.pos<=.25?'下弦付近':'中ほど';
 // 全時間足のチャネルの状態をチャートの上に並べる（タップでその時間足へ）。参考は淡い色と「参考」の字で区別
 function renderChNow(){
   const el=$('chNow');if(!el)return;
@@ -2842,14 +2842,14 @@ function drawChart(){
     ctx.fillStyle=`rgba(${L.col},1)`;ctx.fillText(L.txt,lx+4,ly);
     swingBoxes.push({x:lx,y:ly-7,w:tw,h:14});
   });
-  // チャネル：範囲の始まりから右端（右側の空白を含む）まで。上下の線と、薄い帯・中心の点線。名前と今の上限・下限を線の近くに。
-  // 上限・下限は実線、半値（中心）は点線。参考（はっきりしたチャネルがない時間足）は少し淡く
+  // チャネル：範囲の始まりから右端（右側の空白を含む）まで。上下の線と、薄い帯・中心の点線。名前と今の上弦・下弦を線の近くに。
+  // 上弦・下弦は実線、半値（中心）は点線。参考（はっきりしたチャネルがない時間足）は少し淡く
   const ch=state.maOn.ch?channelOf(state.tf):null;
   if(ch){
     const col=CH_COL[ch.kind],g0=ch.i0,g1=endIdx-1+blank+1,X0=x(g0-startIdx),X1=x(g1-startIdx),Y=(off,i)=>y(off+ch.s*i);
     ctx.save();ctx.beginPath();ctx.rect(P.l,P.t,W-P.l-P.r,H-P.t-P.b);ctx.clip();
     ctx.fillStyle=`rgba(${col},${ch.ref?.035:.06})`;ctx.beginPath();ctx.moveTo(X0,Y(ch.up,g0));ctx.lineTo(X1,Y(ch.up,g1));ctx.lineTo(X1,Y(ch.lo,g1));ctx.lineTo(X0,Y(ch.lo,g0));ctx.closePath();ctx.fill();
-    ctx.strokeStyle=`rgba(${col},${ch.ref?.7:.95})`;ctx.lineWidth=ch.ref?1:1.2;  // 上限・下限はいつも実線（参考は少し淡く）
+    ctx.strokeStyle=`rgba(${col},${ch.ref?.7:.95})`;ctx.lineWidth=ch.ref?1:1.2;  // 上弦・下弦はいつも実線（参考は少し淡く）
     [ch.up,ch.lo].forEach(off=>{ctx.beginPath();ctx.moveTo(X0,Y(off,g0));ctx.lineTo(X1,Y(off,g1));ctx.stroke()});
     ctx.strokeStyle=`rgba(${col},.4)`;ctx.lineWidth=.8;ctx.setLineDash([3,4]);const mid=(ch.up+ch.lo)/2;
     ctx.beginPath();ctx.moveTo(X0,Y(mid,g0));ctx.lineTo(X1,Y(mid,g1));ctx.stroke();ctx.setLineDash([]);ctx.restore();
@@ -2858,7 +2858,7 @@ function drawChart(){
     const xi=X=>g0+(X-X0)/((X1-X0)||1)*(g1-g0),yAtU=X=>Y(ch.up,xi(X)),yAtL=X=>Y(ch.lo,xi(X));
     const nm=ch.kind==='flat'?'レンジ':CH_NAME[ch.kind];
     const narrow=W-P.l-P.r<520;
-    const txt=`${ch.ref?'参考 ':''}${nm}（${state.tf.toUpperCase()}） 上限 ${pxt(ch.upNow)}・下限 ${pxt(ch.loNow)}`,XR=W-P.r-6,yu=yAtU(XR),yl=yAtL(XR);
+    const txt=`${ch.ref?'参考 ':''}${nm}（${state.tf.toUpperCase()}） 上弦 ${pxt(ch.upNow)}・下弦 ${pxt(ch.loNow)}`,XR=W-P.r-6,yu=yAtU(XR),yl=yAtL(XR);
     // スマホなど幅の狭いチャートは、フィボの文字などで混み合うので名前は書かない（チャートの上の「チャネル」欄と下の説明に出る）
     if(narrow){}
     else if(yu>P.t+20&&yu<H-P.b-8)lowLabels.push({right:true,yAt:yAtU,yy:yu,col,dir:-1,txt});
@@ -3020,7 +3020,7 @@ function drawChart(){
     tls.map(t=>`<span class="legend"><i style="background:${t.kind==='up'?TL_UP:TL_DOWN}"></i>${t.kind==='up'?'上昇':'下降'}トレンドライン <b>${fmt(t.p1+t.slope*(endIdx-1-t.i1))}</b>（接点${t.touches}）</span>`).join('')+
     tags.map(({l})=>`<span class="legend"><i style="background:${l.kind==='r'?'#ff6969':'#42d59c'}"></i>${l.kind==='r'?'抵抗線':'支持線'}${l.big?'（'+TF_JA[l.big]+'）':l.tf!=='h1'?'（'+l.tf.toUpperCase()+'）':''}${l.touches>=3?'★':''} <b>${fmt(l.price)}</b></span>`).join('')+
     (fib&&fib.prov?`<span class="legend"><i style="background:${FIB_COLOR}"></i>暫定フィボナッチ（${fibTag}${fib.dir>0?'上昇':'下降'}中・次の${fib.dir>0?'押し目':'戻り'}の目安） 38.2% <b>${fmt(fib.levels.find(l=>l.r===.382).p)}</b>・半値 <b>${fmt(fib.levels.find(l=>l.r===.5).p)}</b>・61.8% <b>${fmt(fib.levels.find(l=>l.r===.618).p)}</b></span>`:'')+
-    (ch?`<span class="legend"><i style="background:rgb(${CH_COL[ch.kind]})"></i>${ch.ref?'参考 ':''}${CH_NAME[ch.kind]}（${state.tf.toUpperCase()}） 上限 <b>${fmt(ch.upNow)}</b>・下限 <b>${fmt(ch.loNow)}</b>｜今はチャネルの${chPos(ch)}（接点 上${ch.th}・下${ch.tl}${ch.ref?'・はっきりしたチャネルではありません':''}）</span>`:'')+
+    (ch?`<span class="legend"><i style="background:rgb(${CH_COL[ch.kind]})"></i>${ch.ref?'参考 ':''}${CH_NAME[ch.kind]}（${state.tf.toUpperCase()}） 上弦 <b>${fmt(ch.upNow)}</b>・下弦 <b>${fmt(ch.loNow)}</b>｜今はチャネルの${chPos(ch)}（接点 上${ch.th}・下${ch.tl}${ch.ref?'・はっきりしたチャネルではありません':''}）</span>`:'')+
     (fib&&!fib.prov?`<span class="legend"><i style="background:${FIB_COLOR}"></i>フィボナッチ（${fibTag}直近の${fib.dir>0?'上昇':'下降'}の${fib.dir>0?'押し':'戻り'}） 今 <b>${Math.round(fib.cur*100)}%</b>（最深 ${Math.round(fib.deep*100)}%${fib.half?'・半値戻し':''}）${fib.hit!=null?`｜${FIB_NAME(fib.hit)}（${fmt(fib.levels.find(l=>l.r===fib.hit).p)}）で${fib.held?'反発':'到達'}`:''}</span>`:'')+
     `<span class="legend"><i style="background:#d9b458"></i>現在値</span>`;
   $('chartMeta').textContent=TF_NAME[state.tf]+'（'+state.tf.toUpperCase()+'）/ '+len+'SMA'+' / 10・20・80・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
