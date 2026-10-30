@@ -68,16 +68,17 @@ def typhoons():
                   "wind": pick(p, "maximumWind", "sustained", "m/s") or pick(p, "maximumWind", "sustained", "ms"),
                   "course": p.get("course"),
                   "speed": pick(p, "speed", "km/h") or pick(p, "speed", "km_h"),
-                  "circle": (pick(p, "probabilityCircle", "radius", "km") or pick(p, "forecastCircle", "radius", "km")
+                  "circle": (pick(p, "probabilityCircleRadius", "km") or pick(p, "probabilityCircle", "radius", "km") or pick(p, "forecastCircle", "radius", "km")
                              or pick(p, "probabilityCircle", "radius") or pick(p, "forecastCircle", "radius")),
                   "storm": pick(p, "stormWarning", "radius", "km") or pick(p, "stormArea", "radius", "km")}
             if head is None and (p.get("name") or p.get("typhoonNumber")):
                 head = {"id": tc, "number": p.get("typhoonNumber") or tc[2:],
                         "name": pick(p, "name", "jp") or pick(p, "name", "en") or "",
                         "category": pick(p, "category", "jp") or "",
-                        "size": pick(p, "scale", "jp") or "", "strength": pick(p, "intensity", "jp") or ""}
+                        "size": "", "strength": ""}
             if head is not None and pos and not head["size"] and not head["strength"]:
-                head["size"], head["strength"] = pick(p, "scale", "jp") or "", pick(p, "intensity", "jp") or ""
+                txt = lambda v: (v.get("jp") if isinstance(v, dict) else v) if v not in (None, "-") else ""
+                head["size"], head["strength"] = txt(p.get("scale")) or "", txt(p.get("intensity")) or ""
             if pos:
                 track.append(pt)
         if head is None:
