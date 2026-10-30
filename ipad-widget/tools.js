@@ -18,7 +18,7 @@
   var SIDE = { buy: "買い", sell: "売り" };
 
   /* ---------- dialog ---------- */
-  var TABS = [["money", "資金管理"], ["check", "取引前チェック"], ["journal", "日誌"], ["signals", "シグナル履歴"], ["hours", "市場時間"], ["status", "データ状態"], ["settings", "設定"]];
+  var TABS = [["guide", "使い方"], ["money", "資金管理"], ["check", "取引前チェック"], ["journal", "日誌"], ["signals", "シグナル履歴"], ["hours", "市場時間"], ["status", "データ状態"], ["settings", "設定"]];
   var css = document.createElement("style");
   css.textContent = [
     ".tdt{position:fixed;inset:0;z-index:45;background:rgba(4,5,8,.72);display:flex;align-items:stretch;justify-content:center;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}",
@@ -53,6 +53,11 @@
     ".tdt details{border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px 12px;margin:8px 0}.tdt summary{cursor:pointer;min-height:32px}",
     ".tdt .tag{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:999px;border:1px solid currentColor;margin-right:6px}",
     ".tdt .buy{color:#5fd99a}.tdt .sell{color:#ff9d90}",
+    ".tdt-tip{margin:0 0 12px;padding:8px 12px;border-radius:12px;background:rgba(227,184,103,.08);border:1px solid rgba(227,184,103,.3);font-size:13px;color:#e8dfcc}",
+    ".tdt-more{min-height:36px;margin-left:6px;padding:0 12px;border-radius:999px;border:1px solid rgba(227,184,103,.55);background:none;color:#e3b867;font-weight:700;cursor:pointer}",
+    ".tdt .steps{margin:6px 0 6px 1.2em;padding:0}.tdt .steps li{margin:4px 0}",
+    ".tdt .flow{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin:8px 0}",
+    ".tdt .flow div{border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px 10px;font-size:13px}.tdt .flow b{color:#e3b867;display:block}",
     "@media (max-width:600px){.tdt{padding:0}.tdt-box{border-radius:0}.tdt-body{padding:12px}}"
   ].join("\n");
   document.head.appendChild(css);
@@ -63,7 +68,7 @@
     '<div class="tdt-body" role="tabpanel" tabindex="-1"></div></div>';
   document.body.appendChild(box);
   var body = box.querySelector(".tdt-body"), opener = null, tab = "money", timer = 0;
-  try { tab = LS.getItem("td-tools-tab") || "money"; } catch (e) {}
+  try { tab = LS.getItem("td-tools-tab") || "guide"; } catch (e) { tab = "guide"; }  // the first time: how to use
   function open(t, from) {
     opener = from || document.activeElement; if (t) tab = t;
     box.hidden = false; show(tab);
@@ -74,7 +79,12 @@
     tab = t; try { LS.setItem("td-tools-tab", t); } catch (e) {}
     box.querySelectorAll("[data-tab]").forEach(function (b) { b.setAttribute("aria-selected", b.getAttribute("data-tab") === t ? "true" : "false"); });
     clearInterval(timer);
-    (VIEWS[t] || VIEWS.money)();
+    (VIEWS[t] || VIEWS.guide)();
+    var h = HELP[t];
+    if (h) {  // one line on top of each tab, and the full guide one tap away
+      body.insertAdjacentHTML("afterbegin", '<p class="tdt-tip">💡 ' + esc(h[0]) + ' <button type="button" class="tdt-more" data-help="' + t + '">くわしい使い方</button></p>');
+      body.querySelector(".tdt-more").addEventListener("click", function () { show("guide"); var a = body.querySelector("#g-" + t); if (a) { a.open = true; a.scrollIntoView({ block: "start" }); a.querySelector("summary").focus(); } });
+    }
     body.scrollTop = 0;
   }
   box.querySelector(".tdt-x").addEventListener("click", close);
@@ -83,7 +93,7 @@
     if (box.hidden) return;
     if (e.key === "Escape") { e.stopPropagation(); close(); return; }
     if (e.key === "Tab") {  // keep the focus inside the dialog
-      var f = [].filter.call(box.querySelectorAll("button,input,select,textarea,summary,a[href],[tabindex='0']"), function (x) { return !x.disabled && x.offsetParent; });
+      var f = [].filter.call(box.querySelectorAll("button,input,select,textarea,summary,a[href],[tabindex='0']"), function (x) { var d = x.closest("details:not([open])"); return !x.disabled && x.offsetParent && (!d || x.tagName === "SUMMARY" && x.parentNode === d); });  // nothing hidden in a closed section
       if (!f.length) return;
       if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
       else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
@@ -114,7 +124,74 @@
   /* ---------- money: position size, risk/reward, daily loss ---------- */
   var JOURNAL = "td-journal-v1", RISK = "td-risk-v1", CHECKS = "td-checks-v1";
   function journal() { var j = get(JOURNAL, []); return Array.isArray(j) ? j : []; }
+  var HELP = {
+    money: ["口座の条件と損切り価格を入れると、許容損失に収まる数量が出ます。足りない項目があると数量は出しません。", "money"],
+    check: ["入る前に7つの項目を確かめて「記録する」。次の重要指標と今日の損失も自動で表示します。"],
+    journal: ["取引のあとに、理由・結果・反省を残します。CSVで書き出し・読み込みができます。"],
+    signals: ["ダッシュボードの判定（買い候補・売り候補・見送り）と、その時点の根拠の記録です。売買の指示ではありません。"],
+    hours: ["東京・ロンドン・ニューヨークの時間と、銘柄ごとの取引時間（目安）を日本時間で表示します。"],
+    status: ["価格・ローソク足・自動分析が、いつ・どこから届いたかを確かめる画面です。数字がおかしいと思ったらまずここ。"],
+    settings: ["省電力、通知の注意点、バックアップ（書き出し・読み込み）、初期化です。"]
+  };
+  var GUIDE = [
+    ["money", "資金管理（ポジションサイズ・リスクリワード・損失上限）", [
+      "「銘柄」と「口座通貨」を選び、「銘柄の一般的な値を入れる」を押す（契約サイズ・刻み・最小数量が入ります）。",
+      "入った値が自分の口座の条件と同じか確かめ、違えば直す（業者・口座で違います）。",
+      "口座残高と許容リスク（％）、または許容損失額を入れる。",
+      "エントリー価格と損切り価格を入れると、数量（lot）と、損切りでの損失・取引金額が出ます。",
+      "円口座でゴールドやBTCを計算するときは換算レート（1ドル＝何円）が必要です。「デスクのドル円を換算レートに使う」で参考値を入れられます。"],
+      "数量は刻みで切り下げます。最小数量に届かないときは「見送り」と表示します（切り上げると許容損失を超えるため）。リスクリワードは向き・エントリー・損切り・利確を入れ、コストを入れると「コスト込み」も出ます。1日の損失上限を入れると、日誌の今日の損益と比べて注意を出します。"],
+    ["check", "取引前チェック", [
+      "銘柄と向きを選ぶ。上の枠に、次の重要指標までの時間・その銘柄のデータの鮮度・今日の損失が出ます。",
+      "7つの項目を確かめてチェックを入れる。",
+      "取引の理由を一文で書き、「記録する」。",
+      "そのまま取引した場合は「記録して日誌を書く」で、日誌に銘柄・向き・理由が入った状態で移れます。"],
+      "枠が赤いとき（損失上限に達した・データが古い）は、入る前に理由を確かめてください。チェックがそろっても利益を保証するものではありません。"],
+    ["journal", "トレード日誌", [
+      "日時・銘柄・向き・価格・数量・確定損益（手数料込み）を入れる。",
+      "判断の理由・結果・反省を書き、「ルールを守れたか」を選んで「記録する」。",
+      "下の一覧の「編集」で直せます。「削除」は元に戻せません。",
+      "「CSVに書き出す」で表計算ソフトに、「CSVを読み込む」で別の端末から取り込めます（同じ記録は二重に入りません）。"],
+      "成績のまとめは日誌に入れた実際の取引だけで計算します。20件未満の区分は勝ちの割合を出しません。"],
+    ["signals", "シグナル履歴", [
+      "「いまの判定」で、各銘柄が買い候補・売り候補・見送りのどれかと、その理由が分かります。",
+      "履歴の行をタップすると、成立した条件・足りなかった条件・判定時の価格と時刻・有効期限・取り消しになった理由が見られます。",
+      "「CSVに書き出す」で全イベントを保存できます。"],
+      "判定は形成中の1時間足を使った暫定判定で、その足が終わると期限切れになります。同じ判定は30分以内に重ねて鳴らしません。デスクを開いている間に届いた分だけ記録されます。"],
+    ["hours", "市場時間", [
+      "3つの市場の今日の時間（日本時間）と、開いているか・重なっているかを見る。",
+      "下の表で、銘柄ごとに今が取引時間内か・休場か・休止中かを見る。"],
+      "夏時間は自動で計算します。祝日・短縮取引は含めていないので、平日の「取引時間内」は目安です。"],
+    ["status", "データ状態", [
+      "上の表で、表示中の3銘柄の価格の時刻・提供元・価格の種類・ローソク足と自動分析の時刻を確かめる。",
+      "「データの取得元」で、どのデータがいつ最後に届いたか、失敗していればその理由を見る。",
+      "古いものがあれば、下の「再読み込み」ボタンでそのデータだけ取り直せます。"],
+      "価格カードの札をタップしてもこの画面が開きます。"],
+    ["settings", "設定・バックアップ", [
+      "iPadが熱いとき・電池を持たせたいときは「省電力モード」をオン。",
+      "端末を替える前やブラウザのデータを消す前に「すべて書き出す（JSON）」。新しい端末では「読み込む」。",
+      "表示だけ・通知だけ・資金管理と日誌だけ、など分けて初期化できます（元に戻せません）。"],
+      "データはこの端末のブラウザの中だけに保存しています。音や通知は、このページを開いている間だけ届きます。"]
+  ];
   var VIEWS = {
+    guide: function () {
+      body.innerHTML = '<h3>🧰 ツールの使い方</h3><p class="note">デスクの数字を確かめ、入る前の準備と、あとからの振り返りに使う道具です。売買をすすめるものではありません。入力した内容はこの端末の中だけに保存され、どこにも送信しません。</p>' +
+        '<h3>おすすめの使い方（1回の取引の流れ）</h3><div class="flow">' +
+        [["① 確かめる", "データ状態で、価格と分析が新しいか"], ["② 時間を見る", "市場時間・取引前チェックで、指標や休場が近くないか"], ["③ 数量を決める", "資金管理で、損切りまでの損失が許容内の数量"],
+          ["④ チェックする", "取引前チェックで7項目を確かめて記録"], ["⑤ 記録する", "取引のあと日誌に結果と反省"], ["⑥ 振り返る", "日誌の成績のまとめ・シグナル履歴を見直す"]]
+          .map(function (x) { return "<div><b>" + esc(x[0]) + "</b>" + esc(x[1]) + "</div>"; }).join("") + "</div>" +
+        '<h3>価格カードの札の読み方</h3><div class="tw"><table><tr><th>札</th><th>意味</th></tr>' +
+        [["● ライブ", "20秒以内に届いた価格"], ["● 最新", "2分以内"], ["◔ 遅延", "15分以内。少し古い"], ["⚠ 停止", "15分より前のまま更新されていない（通信や提供元の問題）"],
+          ["☾ 休場中", "市場が閉まっている間の最後の価格（故障ではありません）"], ["⏸ 確認中", "届いたデータに不自然な点があり、前の値を表示している"]]
+          .map(function (x) { return "<tr><td>" + esc(x[0]) + "</td><td>" + esc(x[1]) + "</td></tr>"; }).join("") +
+        '</table></div><p class="note">札の時刻は日本時間です。札をタップするとデータ状態の画面が開きます。一致度（例「買い優勢 97」）に取り消し線が出ているときは、自動分析が古いので参考にしないでください。一致度は勝率や確率ではありません。</p>' +
+        "<h3>タブごとの使い方</h3>" + GUIDE.map(function (g) {
+          return '<details id="g-' + g[0] + '"><summary><b>' + esc(g[1]) + '</b></summary><ol class="steps">' + g[2].map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") +
+            '</ol><p class="note">' + esc(g[3]) + '</p><div class="btns"><button type="button" class="btn" data-gtab="' + g[0] + '">このタブを開く</button></div></details>';
+        }).join("") +
+        '<h3>操作のヒント</h3><p class="note">閉じるは右上の「閉じる」かEscキー。キーボードではTabで移動し、Enterで押せます。最後に開いたタブは次回も開きます。この「使い方」はいつでも左端のタブから開けます。</p>';
+      body.querySelectorAll("[data-gtab]").forEach(function (b) { b.addEventListener("click", function () { show(b.getAttribute("data-gtab")); }); });
+    },
     money: function () {
       var r = get(RISK, {}) || {}, ref = usdjpyRef();
       body.innerHTML = '<h3>ポジションサイズ</h3><p class="note">許容損失と損切り幅から数量を出します。契約サイズ・数量の刻み・最小数量・通貨換算は業者や口座で違うため、<b>自分の口座の条件を入れてください</b>。足りない項目があるときは数量を出しません。</p>' +
