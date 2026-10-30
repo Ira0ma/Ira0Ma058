@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="97a23a4b9d">
+<meta name="build" content="3ebf81e914">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -60,9 +60,9 @@ h1 em{font-style:normal;color:var(--gold2)}
 .notice.show{display:block}
 .notice.err{background:#35181b;border-color:#71343a;color:#ffd1d1}
 .caution{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid #6c4f16;
-background:linear-gradient(180deg,#39280e,#1f170d);border-radius:17px;padding:13px 15px;margin-bottom:12px;animation:pulse 2s ease-in-out infinite}
+background:linear-gradient(180deg,#39280e,#1f170d);border-radius:17px;padding:13px 15px;margin-bottom:12px;--glow-sh:0 0 0 4px rgba(255,202,101,.12);--glow-t:2s}
 .caution.hidden{display:none}
-@keyframes pulse{50%{box-shadow:0 0 0 4px rgba(255,202,101,.12)}}
+
 .caution-title{font-size:20px;font-weight:950;color:#ffd57a;letter-spacing:.06em}
 .caution-sub{font-size:12px;color:#ffe0a4;margin-top:3px}
 .caution-count{font-size:22px;font-weight:950;white-space:nowrap}
@@ -168,12 +168,12 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .signal.sell{background:#35181b;border:1px solid #71343a;color:var(--red)}
 .signal.wait{background:#2c2414;border:1px solid #654f1f;color:var(--amber)}
 /* 3条件すべて一致：エントリー表示 */
-.signal.entry{color:#08110d;letter-spacing:.04em;animation:entryGlow 1.6s ease-in-out infinite}
+.signal.entry{color:#08110d;letter-spacing:.04em;--glow-sh:0 0 0 6px var(--glow);--glow-t:1.6s}
 .signal.entry.buy{background:linear-gradient(180deg,#5fe8b2,#2bb682);border-color:#7ff0c4;--glow:rgba(66,213,156,.45)}
 .signal.entry.sell{background:linear-gradient(180deg,#ff8a8a,#e04f55);border-color:#ffb0b0;color:#1a0708;--glow:rgba(255,105,105,.45)}
 .signal.entry small{opacity:1;font-weight:800}
-@keyframes entryGlow{50%{box-shadow:0 0 0 6px var(--glow)}}
-@media (prefers-reduced-motion:reduce){.signal.entry{animation:none}}
+
+
 .talkalert{margin-top:8px;border:1px solid #6b4fd1;background:rgba(124,92,255,.10);border-radius:10px;padding:7px 10px;font-size:11px;color:#d9d0ff}
 .talkalert b{color:#fff}
 .talk{display:grid;gap:6px;margin-top:6px}
@@ -181,7 +181,7 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .talkitem .tt{color:var(--muted);font-size:11px;white-space:nowrap}
 .talkitem .tags{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 8px;font-size:10.5px;color:var(--muted)}
 .talkitem .who{color:#b9a6ff;font-weight:700}.talkitem .hawk{color:#ff9d6b;font-weight:700}.talkitem .dove{color:#6bc8ff;font-weight:700}.talkitem .intv{color:#ffb547;font-weight:700}
-.talkitem.fresh{border-color:#7c5cff;box-shadow:0 0 0 1px #7c5cff inset;animation:entryGlow 1.6s ease-in-out infinite;--glow:rgba(124,92,255,.35)}
+.talkitem.fresh{border-color:#7c5cff;box-shadow:0 0 0 1px #7c5cff inset;--glow:rgba(124,92,255,.35);--glow-sh:0 0 0 6px var(--glow);--glow-t:1.6s}
 .talkhead{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px}
 .waitfor{margin-top:8px;background:#0d1217;border:1px solid #654f1f;border-radius:10px;padding:8px 10px;font-size:11px;display:grid;gap:5px}
 .waitfor .wh{color:var(--amber);font-weight:800}
@@ -295,7 +295,7 @@ canvas.dragging{cursor:grabbing}
 @keyframes srblink{0%,100%{opacity:1}50%{opacity:0}}
 @media (prefers-reduced-motion:reduce){#chartBlink{animation:none}}
 /* 市場休場中は点滅・光る演出をすべて止める */
-body.mkt-closed #chartBlink,body.mkt-closed .fibnow,body.mkt-closed .gmmanow,body.mkt-closed .signal,body.mkt-closed .talkitem,body.mkt-closed .caution{animation:none!important}
+body.mkt-closed #chartBlink,body.mkt-closed .fibnow::after,body.mkt-closed .gmmanow::after,body.mkt-closed .signal::after,body.mkt-closed .talkitem::after,body.mkt-closed .caution::after{animation:none!important}
 .chartreset{position:absolute;left:10px;top:10px;z-index:1;font-size:11px;font-weight:800;color:#101114;background:var(--gold);border-radius:999px;padding:5px 11px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .charthint{font-size:10px;color:var(--muted);margin-top:4px}
 .lvlist{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:6px;font-size:11px;color:var(--muted)}
@@ -317,13 +317,13 @@ body.mkt-closed #chartBlink,body.mkt-closed .fibnow,body.mkt-closed .gmmanow,bod
 .tfgrid .fibstar{font-style:normal;color:#ffd666;font-size:10px;margin-left:2px}.tfgrid button.cur .fibstar{color:#7a5200}
 .tfgrid button.fibbest{box-shadow:0 0 0 1px rgba(255,214,102,.7)}
 /* 今効いているフィボナッチの知らせ：目にやさしい、ゆっくりした光り方（3.2秒、明るさの幅は小さく） */
-.fibnow{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:6px 0;padding:7px 10px;border:1px solid rgba(255,214,102,.55);border-radius:10px;background:#16130b;font-size:11.5px;color:#e8d9a8;animation:fibglow 3.2s ease-in-out infinite}
+.fibnow{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:6px 0;padding:7px 10px;border:1px solid rgba(255,214,102,.55);border-radius:10px;background:#16130b;font-size:11.5px;color:#e8d9a8;--glow-sh:0 0 10px 1px rgba(255,214,102,.35);--glow-t:3.2s}
 .fibnow[hidden]{display:none}
 /* GMMAのクロスの知らせ（フィボと同じく、ゆっくり光る） */
 .gmmanow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:6px 0;padding:7px 10px;border:1px solid #34404c;border-radius:10px;background:#0d1217;font-size:11.5px;color:#c9d2db}
 .gmmanow[hidden]{display:none}.gmmanow .gx{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
 .gmmanow .gx.up b{color:#42d59c}.gmmanow .gx.down b{color:#ff6969}.gmmanow .seg{padding:3px 9px;font-size:11px}
-.gmmanow.golden{border-color:rgba(66,213,156,.6);animation:gxglowU 3.2s ease-in-out infinite}.gmmanow.dead{border-color:rgba(255,105,105,.6);animation:gxglowD 3.2s ease-in-out infinite}
+.gmmanow.golden{border-color:rgba(66,213,156,.6);--glow-sh:0 0 10px 1px rgba(66,213,156,.35);--glow-t:3.2s}.gmmanow.dead{border-color:rgba(255,105,105,.6);--glow-sh:0 0 10px 1px rgba(255,105,105,.35);--glow-t:3.2s}
 .gmmanow .gxrow{background:none;border:1px solid #34404c;border-radius:999px;padding:4px 11px;font:inherit;font-size:12px;cursor:pointer}
 .gmmanow .gxrow.up{border-color:rgba(66,213,156,.55);color:#42d59c}.gmmanow .gxrow.down{border-color:rgba(255,105,105,.55);color:#ff6969}
 .gmmanow .gxrow.cur{background:#16201b}.gmmanow .gxrow.down.cur{background:#211416}
@@ -333,12 +333,14 @@ body.mkt-closed #chartBlink,body.mkt-closed .fibnow,body.mkt-closed .gmmanow,bod
 .gxtoast.up{color:#42d59c;border-color:rgba(66,213,156,.7)}.gxtoast.down{color:#ff6969;border-color:rgba(255,105,105,.7)}
 @keyframes gxin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.gxtoast{animation:none}}
-@keyframes gxglowU{0%,100%{box-shadow:0 0 0 0 rgba(66,213,156,0)}50%{box-shadow:0 0 10px 1px rgba(66,213,156,.35)}}
-@keyframes gxglowD{0%,100%{box-shadow:0 0 0 0 rgba(255,105,105,0)}50%{box-shadow:0 0 10px 1px rgba(255,105,105,.35)}}
-@media (prefers-reduced-motion:reduce){.gmmanow{animation:none!important}}
+
 .fibnow b{color:#ffd666;font-size:12.5px}.fibnow .seg{padding:4px 10px;font-size:11px;margin-left:auto}
-@keyframes fibglow{0%,100%{box-shadow:0 0 0 0 rgba(255,214,102,0)}50%{box-shadow:0 0 10px 1px rgba(255,214,102,.35)}}
-@media (prefers-reduced-motion:reduce){.fibnow{animation:none}}
+
+/* 光る枠：影そのものを毎フレーム描き直すと重いので、影を描いた薄い層を重ね、その透明度だけを動かす（描き直しなし） */
+.caution,.signal.entry,.talkitem.fresh,.gmmanow.golden,.gmmanow.dead,.fibnow{position:relative}
+.caution::after,.signal.entry::after,.talkitem.fresh::after,.gmmanow.golden::after,.gmmanow.dead::after,.fibnow::after{content:"";position:absolute;inset:-1px;border-radius:inherit;box-shadow:var(--glow-sh);opacity:0;pointer-events:none;will-change:opacity;animation:glowfade var(--glow-t) ease-in-out infinite}
+@keyframes glowfade{0%,100%{opacity:0}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.caution::after,.signal.entry::after,.talkitem.fresh::after,.gmmanow::after,.fibnow::after{animation:none}}
 .tfgrid button.cur{background:linear-gradient(180deg,#e6c973,#b5872d);border-color:#b5872d;color:#101114}
 .tfgrid button.cur small,.tfgrid button.cur .up,.tfgrid button.cur .down,.tfgrid button.cur .warn{color:#101114}
 @media(max-width:560px){.tfgrid{grid-template-columns:repeat(4,minmax(0,1fr))}.matoggles{gap:5px}.matoggles .seg{padding:4px 8px;font-size:10.5px;gap:4px}}
