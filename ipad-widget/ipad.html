@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="50723038f3">
+<meta name="build" content="651dd2115c">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -533,6 +533,43 @@ html:not(.flow) #flow { display: none; }
 .flow #xfeed .x-body { flex: none; }
 
 @media (prefers-reduced-motion: reduce) { .mkt .price { transition: none; } }
+
+/* 初心者の並び（🔰ボタン）：横画面の配置。上の段＝STEP1・2、中の段＝STEP3・4、下の段＝STEP5・6 */
+html.beg-rows:not(.flow):not(.phone) #clock { left: 27px; top: 35px; width: 241px; height: 276px; }
+html.beg-rows:not(.flow):not(.phone) #cal { left: 281px; top: 35px; width: 517px; height: 276px; }
+html.beg-rows:not(.flow):not(.phone) #ind { left: 811px; top: 35px; width: 373px; height: 276px; }
+html.beg-rows:not(.flow):not(.phone) #markets { left: 27px; top: 324px; width: 903px; height: 276px; }
+html.beg-rows:not(.flow):not(.phone) #points { left: 943px; top: 324px; width: 241px; height: 482px; padding: 18px 16px; }
+html.beg-rows:not(.flow):not(.phone) #weather { left: 27px; top: 613px; width: 305px; height: 193px; }
+html.beg-rows:not(.flow):not(.phone) #xfeed { left: 345px; top: 613px; width: 585px; height: 193px; }
+html.beg-rows:not(.flow):not(.phone) #xfeed .gl-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.step-tag { position: absolute; z-index: 3; display: inline-flex; align-items: center; gap: 7px; height: 21px; padding: 0 11px 0 3px; border-radius: 999px; background: rgba(14,16,22,.94); border: 1px solid rgba(227,184,103,.55);
+  color: var(--ink); font-size: 11px; font-weight: 600; white-space: nowrap; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,.45); }
+.step-tag b { background: var(--gold); color: #14100a; border-radius: 999px; padding: 2px 8px; font-size: 10.5px; font-weight: 800; letter-spacing: .02em; }
+html:not(.beginner) .step-tag { display: none; }
+.flow .step-tag, .phone .step-tag { position: relative; align-self: flex-start; flex: none; margin: 0 0 -25px 16px; }
+#layout-toggle { position: fixed; z-index: 30; left: calc(env(safe-area-inset-left, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+  font: inherit; font-size: 12px; font-weight: 700; color: var(--gold); background: rgba(14,16,22,.85); border: 1px solid rgba(227,184,103,.5); border-radius: 999px; padding: 3px 11px; line-height: 1.4; cursor: pointer;
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+#layout-toggle:hover, #layout-toggle:focus-visible { background: var(--gold); color: #14100a; outline: none; }
+.flow #flow { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 52px); }
+#stepnav { position: fixed; z-index: 31; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 4px); display: flex; align-items: center; gap: 10px;
+  padding: 4px; border-radius: 999px; background: rgba(14,16,22,.9); border: 1px solid rgba(227,184,103,.45); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); max-width: calc(100vw - 24px); }
+#stepnav[hidden] { display: none; }
+#stepnav span { font-size: 12px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#stepnav span b { color: var(--gold); margin-right: 8px; }
+#stepnav button { font: inherit; font-size: 12px; font-weight: 700; color: #14100a; background: var(--gold); border: 0; border-radius: 999px; padding: 4px 12px; cursor: pointer; white-space: nowrap; }
+#stepnav button:disabled { opacity: .3; cursor: default; }
+html.beg-steps #pdots { display: none; }
+html.steps-tall .pstage { flex-direction: column; }
+html.steps-tall .card { width: 340px !important; }
+html.steps-tall #markets { height: auto; grid-template-columns: 1fr; grid-template-rows: auto 1px auto 1px auto; }
+html.steps-tall #markets .sep { margin: 0 22px; }
+html.steps-tall #cal { height: auto; grid-template-columns: 1fr; grid-template-rows: auto 1px auto; }
+html.steps-tall #xfeed { height: auto; min-height: 202px; }
+html.steps-tall #xfeed .x-body { flex: none; }
+html.beg-steps #layout-toggle { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 6px); }
+html.beg-steps .page { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 44px); padding-top: max(40px, env(safe-area-inset-top, 0px)); }
 </style>
 </head>
 <body>
@@ -761,18 +798,71 @@ html:not(.flow) #flow { display: none; }
      flow:  one or two columns scrolled vertically (any upright or narrow screen) */
   var isPhone = Math.min(screen.width, screen.height) < 600, mode = "", pages = [], pageIdx = 0;
   var cards = Array.prototype.slice.call(stage.querySelectorAll(":scope > .card"));
+
+  /* ---------- 初心者の並び：左下の🔰ボタンで「いつもの並び」と切り替え。STEPの札で見る順番と見ることを示す ---------- */
+  var beginner = false, begStyle = "rows";  // rows＝3段に並べ替え、tags＝配置はそのまま札だけ、steps＝1ステップずつ大きく
+  try { beginner = localStorage.getItem("desk-layout") === "beginner"; begStyle = localStorage.getItem("desk-beginner-style") || "rows"; } catch (e) {}
+  var paintRoot = function () { var r = document.documentElement; r.classList.toggle("beginner", beginner); ["rows", "tags", "steps"].forEach(function (s) { r.classList.toggle("beg-" + s, beginner && begStyle === s); }); if (!(beginner && begStyle === "steps")) r.classList.remove("steps-tall"); };
+  paintRoot();
+  var STEPS = { clock: [1, "今日の日付と時間を確認"], cal: [1, "休みの日・ゴトー日をチェック"], ind: [2, "荒れやすい発表の時間を知る"],
+    markets: [3, "今の値段と向きを見る（タップで詳しい分析）"], points: [4, "今日の作戦を読む"], weather: [5, "地震・台風など安全の確認"], xfeed: [6, "分からない言葉は用語集で調べる"] };
+  var cardOf = function (id) { for (var i = 0; i < cards.length; i++) if (cards[i].id === id) return cards[i]; };
+  var stepTags = {};
+  Object.keys(STEPS).forEach(function (id) {
+    var t = document.createElement("div"); t.className = "step-tag"; t.setAttribute("aria-hidden", "true");
+    t.innerHTML = "<b>STEP " + STEPS[id][0] + "</b>" + STEPS[id][1]; stepTags[id] = t;
+  });
+  // 札はカードのすぐ前に置く（横画面はカードの左上の縁に重ねる、縦画面・スマホは列の中でカードの上に重ねる）
+  function placeSteps() {
+    Object.keys(stepTags).forEach(function (id) {
+      var t = stepTags[id], card = cardOf(id);
+      if (t.nextSibling !== card) card.parentNode.insertBefore(t, card);
+      if (mode === "stage") { var cs = getComputedStyle(card); t.style.left = (parseFloat(cs.left) + 16) + "px"; t.style.top = (parseFloat(cs.top) - 10) + "px"; }
+      else { t.style.left = ""; t.style.top = ""; }
+    });
+  }
+  var layoutBtn = document.createElement("button");
+  layoutBtn.type = "button"; layoutBtn.id = "layout-toggle";
+  var paintLayoutBtn = function () {
+    layoutBtn.innerHTML = beginner ? "↩ いつもの並びに戻す" : "🔰 初心者の並び";
+    layoutBtn.setAttribute("aria-pressed", beginner ? "true" : "false");
+    layoutBtn.title = beginner ? "パネルを元の配置に戻します" : "パネルを STEP 1〜6 の見る順番に並べ替えます";
+  };
+  paintLayoutBtn(); document.body.appendChild(layoutBtn);
+  // 1ステップずつ表示のときの下の案内：前へ／次へと、今のステップで見ること
+  var stepNav = document.createElement("div"); stepNav.id = "stepnav";
+  stepNav.innerHTML = '<button type="button" data-step="-1">‹ 前へ</button><span></span><button type="button" data-step="1">次へ ›</button>';
+  document.body.appendChild(stepNav);
+  stepNav.addEventListener("click", function (e) { var b = e.target.closest("[data-step]"); if (!b || !pager) return; pager.scrollTo({ left: (pageIdx + +b.getAttribute("data-step")) * pager.clientWidth, behavior: "smooth" }); });
+  function paintStepNav() {
+    var on = beginner && begStyle === "steps" && mode === "pager";
+    stepNav.hidden = !on; if (!on) return;
+    var ids = PAGER_STEPS[pageIdx] ? PAGER_STEPS[pageIdx].map(function (c) { return c[0]; }) : [], s = STEPS[ids[0]] || [1, ""];
+    stepNav.querySelector("span").innerHTML = "<b>STEP " + s[0] + " / 6</b>" + (ids.length > 1 ? "今日の日付・休みの日を確認" : s[1]);
+    stepNav.querySelector('[data-step="-1"]').disabled = pageIdx <= 0;
+    stepNav.querySelector('[data-step="1"]').disabled = pageIdx >= PAGER_STEPS.length - 1;
+  }
+  layoutBtn.addEventListener("click", function () {
+    beginner = !beginner;
+    try { localStorage.setItem("desk-layout", beginner ? "beginner" : "normal"); } catch (e) {}
+    paintRoot();
+    if (mode === "flow") flowCols = 0;
+    mode = ""; paintLayoutBtn(); layout(); paintStepNav();
+  });
   var byId = function (id) { return document.getElementById(id); };
   function pickMode() {
     var w = innerWidth, h = innerHeight;
+    if (beginner && begStyle === "steps") return "pager";  // 1ステップずつ：どの画面でも1ページ＝1ステップ
     if (isPhone && w > h) return "pager";
     if (w >= h * 1.15 && w >= 700) return "stage";
     return "flow";
   }
   var pager, pcols = [];
   function buildPager() {
-    pager = document.createElement("div"); pager.id = "pager";
-    var layoutSpec = [[["clock"], ["markets"]], [["ind"], ["points"]], [["weather"], ["cal", "xfeed"]]];
-    layoutSpec.forEach(function (cols) {
+    var spec = pagerSpec();
+    if (pager) { pager.remove(); document.getElementById("pdots").remove(); pages = []; pcols = []; pageIdx = 0; }
+    pager = document.createElement("div"); pager.id = "pager"; pager.setAttribute("data-spec", JSON.stringify(spec));
+    spec.forEach(function (cols) {
       var pg = document.createElement("section"); pg.className = "page";
       var ps = document.createElement("div"); ps.className = "pstage";
       cols.forEach(function (ids) {
@@ -782,21 +872,23 @@ html:not(.flow) #flow { display: none; }
       pg.appendChild(ps); pager.appendChild(pg); pages.push(pg);
     });
     var dots = document.createElement("div"); dots.id = "pdots";
-    dots.innerHTML = "<i></i><i></i><i></i>";
+    dots.innerHTML = spec.map(function () { return "<i></i>"; }).join("");
     document.body.appendChild(pager); document.body.appendChild(dots);
     var paint = function () {
       pageIdx = Math.round(pager.scrollLeft / Math.max(pager.clientWidth, 1));
       dots.querySelectorAll("i").forEach(function (d, i) { d.classList.toggle("on", i === pageIdx); });
+      paintStepNav();
     };
     pager.addEventListener("scroll", paint, { passive: true }); paint();
   }
   function layoutPhone() {
     var maxK = 0;
+    document.documentElement.classList.toggle("steps-tall", beginner && begStyle === "steps" && innerHeight > innerWidth);  // 縦長の画面ではカードを縦に積む
     pages.forEach(function (pg) {
       var ps = pg.firstChild, cs = getComputedStyle(pg);
       var aw = pg.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
       var ah = pg.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
-      var k = Math.min(aw / ps.offsetWidth, ah / ps.offsetHeight);
+      var k = Math.min(aw / ps.offsetWidth, ah / ps.offsetHeight, beginner && begStyle === "steps" ? 1.6 : 9);  // 1ステップずつ表示では、小さいカードだけ極端に大きくならないように
       ps.style.transform = "scale(" + k + ")"; maxK = Math.max(maxK, k);
     });
     scale = maxK;
@@ -805,6 +897,13 @@ html:not(.flow) #flow { display: none; }
   var flow, fsizer, fstage, flowCols = 0;
   var FLOW_1 = [["clock", "markets", "ind", "points", "cal", "weather", "xfeed"]];
   var FLOW_2 = [["clock", "markets", "weather"], ["ind", "points", "cal", "xfeed"]];
+  // 初心者の並び：STEP 1〜6 の順（今日を知る→指標→相場→作戦→安全→用語）
+  var FLOW_B1 = [["clock", "cal", "ind", "markets", "points", "weather", "xfeed"]];
+  var FLOW_B2 = [["clock", "ind", "points", "weather"], ["cal", "markets", "xfeed"]];
+  var PAGER_N = [[["clock"], ["markets"]], [["ind"], ["points"]], [["weather"], ["cal", "xfeed"]]];
+  var PAGER_B = [[["clock"], ["cal"]], [["ind"], ["markets"]], [["points"], ["weather", "xfeed"]]];
+  var PAGER_STEPS = [[["clock"], ["cal"]], [["ind"]], [["markets"]], [["points"]], [["weather"]], [["xfeed"]]];
+  function pagerSpec() { return !beginner || begStyle === "tags" ? PAGER_N : begStyle === "steps" ? PAGER_STEPS : PAGER_B; }
   function buildFlow() {
     flow = document.createElement("div"); flow.id = "flow";
     fsizer = document.createElement("div"); fsizer.className = "fsizer";
@@ -813,9 +912,9 @@ html:not(.flow) #flow { display: none; }
   }
   function fillFlow(n) {
     fstage.innerHTML = "";
-    (n === 2 ? FLOW_2 : FLOW_1).forEach(function (ids) {
+    (beginner && begStyle !== "tags" ? (n === 2 ? FLOW_B2 : FLOW_B1) : (n === 2 ? FLOW_2 : FLOW_1)).forEach(function (ids) {
       var col = document.createElement("div"); col.className = "pcol";
-      ids.forEach(function (id) { col.appendChild(byId(id)); });
+      ids.forEach(function (id) { col.appendChild(cardOf(id)); });  // カードは並べ替えのあいだ文書の外に出るので、id ではなく手元の参照で拾う
       fstage.appendChild(col);
     });
     flowCols = n;
@@ -836,8 +935,8 @@ html:not(.flow) #flow { display: none; }
     root.classList.toggle("phone", m === "pager");
     root.classList.toggle("flow", m === "flow");
     if (m === "pager") {
-      if (!pager) buildPager();
-      pcols.forEach(function (c) { c[1].forEach(function (id) { c[0].appendChild(byId(id)); }); });
+      if (!pager || pager.getAttribute("data-spec") !== JSON.stringify(pagerSpec())) buildPager();
+      pcols.forEach(function (c) { c[1].forEach(function (id) { c[0].appendChild(cardOf(id)); }); });
     } else if (m === "flow") {
       if (!flow) buildFlow();
       flowCols = 0;
@@ -859,6 +958,7 @@ html:not(.flow) #flow { display: none; }
       stage.style.transform = "scale(" + scale + ")";
       stage.style.margin = ((H * scale - H) / 2) + "px " + ((W * scale - W) / 2) + "px";
     }
+    placeSteps();
     drawScenes(); markets.forEach(function (m) { m.draw(); }); bg.resize();
   }
 
