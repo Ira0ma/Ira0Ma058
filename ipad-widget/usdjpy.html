@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="08166532c5">
+<meta name="build" content="be7712ad66">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1141,7 +1141,7 @@ function onLiveTick(){
   // 描画は1秒に1回まで（iPadの負担を抑える）
   const now=Date.now();if(now-LIVE.lastDraw<(sheetHidden()?5000:1000))return;LIVE.lastDraw=now;  // デスクの裏に隠れている間は5秒に1回
   // 毎秒は価格の欄とチャートだけ。ページ全体（表・指標・アラートなど）は3秒に1回（毎秒ページ全体を描き直すとiPadが重くなる）
-  if(sheetHidden()||now-(LIVE.lastFull||0)>=3000){LIVE.lastFull=now;renderAll()}else{renderSnapshot();drawChart()}
+  if(sheetHidden()||now-(LIVE.lastFull||0)>=3000){LIVE.lastFull=now;renderAll()}else{renderSnapshot();if(chartOnScreen)drawChart()}
   flashPrice();
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!LIVE.ws)startLive()});
@@ -2739,6 +2739,9 @@ function renderRebound(){
   return r;
 }
 
+// チャートが画面に見えているか（スクロールして外にある間は毎秒の描き直しをしない。見えたらすぐ描く）
+let chartOnScreen=true;
+if(window.IntersectionObserver)new IntersectionObserver(es=>{const v=es.some(e=>e.isIntersecting);if(v&&!chartOnScreen&&state.h1.length&&!sheetHidden()){chartOnScreen=true;drawChart()}chartOnScreen=v},{rootMargin:'200px 0px'}).observe(document.getElementById('secChart'));
 // キャンバスの大きさは ResizeObserver で覚えておく（描くたびに getBoundingClientRect で測ると、直前の文字の更新のせいでページ全体の配置計算が毎回走る）
 const CV_SIZE=new WeakMap(),cvRO=window.ResizeObserver?new ResizeObserver(es=>{let ch=false;es.forEach(e=>{
   const bb=e.borderBoxSize&&e.borderBoxSize[0],v=bb?{width:bb.inlineSize,height:bb.blockSize}:{width:e.target.offsetWidth,height:e.target.offsetHeight},o=CV_SIZE.get(e.target);
@@ -3179,7 +3182,10 @@ function atrMood(v,avg){return !v||!avg?'':v>=avg*1.3?'荒い（普段の'+(v/av
 function drawAtr(source,startIdx,endIdx,nb,P,step,hi){
   const c=$('atrPane');c.hidden=!state.maOn.atr;if(c.hidden)return;
   const {ctx,W,H}=sizeCanvas(c);ctx.clearRect(0,0,W,H);
-  const all=atrSeries(source),r=all.slice(startIdx,endIdx),avg=all.map((_,i)=>{const w=all.slice(Math.max(0,i-49),i+1).filter(v=>v!=null);return w.length>=10?w.reduce((t,v)=>t+v,0)/w.length:null}).slice(startIdx,endIdx);
+  const all=atrSeries(source),r=all.slice(startIdx,endIdx),avg=new Array(endIdx-startIdx).fill(null);
+  {let sum=0,cnt=0;for(let i=Math.max(0,startIdx-49);i<endIdx;i++){  // 直近50本の平均を足し引きで（1本ごとに50本を切り出さない）
+    const v=all[i];if(v!=null){sum+=v;cnt++}const o=all[i-50];if(i>=50&&o!=null){sum-=o;cnt--}
+    if(i>=startIdx)avg[i-startIdx]=cnt>=10?sum/cnt:null}}
   const vals=r.concat(avg).filter(v=>v!=null);if(!vals.length)return;
   const mx=Math.max(...vals)*1.08,mn=Math.min(...vals)*.92,T=6,B=6,y=v=>T+(mx-v)*(H-T-B)/((mx-mn)||1),x=i=>P.l+step*(i+.5);
   ctx.font='10px -apple-system,sans-serif';ctx.textBaseline='middle';ctx.textAlign='left';
@@ -3429,7 +3435,7 @@ function renderAll(){
   }
   renderSnapshot();
   const reb=renderRebound();
-  if(!sheetHidden())drawChart();  // デスクの裏に隠れている間はチャートを描かない（開いたときに描く）
+  if(!sheetHidden()&&chartOnScreen)drawChart();  // デスクの裏に隠れている間・チャートが画面の外にある間は描かない（見えたときに描く）
   renderEvents();renderNext();renderResults();
   renderKeyLv();
   {const m=renderMtf();renderTech();checkAlerts(m)}
@@ -3716,6 +3722,17 @@ renderMaToggles();
 $('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);
 $('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);
 $('fvgBtn').classList.toggle('on',state.showFvg);$('fvgBtn').setAttribute('aria-pressed',state.showFvg);
+// 毎秒の価格更新で、内容が変わっていない欄は書き直さない（書き直すたびにページ全体の配置計算が走り、iPadで重くなる）
+(function(){
+  const H=Object.getOwnPropertyDescriptor(Element.prototype,'innerHTML'),T=Object.getOwnPropertyDescriptor(Node.prototype,'textContent');
+  const html=el=>Object.defineProperty(el,'innerHTML',{configurable:true,get(){return H.get.call(this)},
+    set(v){v=v==null?'':String(v);if(this.__html===v&&this.__last===this.lastChild)return;H.set.call(this,v);this.__html=v;this.__last=this.lastChild}});
+  const text=el=>Object.defineProperty(el,'textContent',{configurable:true,get(){return T.get.call(this)},
+    set(v){v=v==null?'':String(v);if(T.get.call(this)===v)return;T.set.call(this,v)}});
+  ['tfGrid','dxyBox','fibNow','chNow','keyLv','waitFor','patList','signal'].forEach(id=>{const e=$(id);if(e)html(e)});
+  ['confidence','dayHigh','dayLow','dayRange','goldChange','goldFresh','goldJpy','goldPrice','miniChange','miniPrice','miniSignal','sma120','usdjpy','lastUpdate','srcLine','nextInfo','mainStatus',
+   'reasonSma','reasonMom','reasonRange','reasonTp','reasonTp15','reasonTp5','reasonTpDay','reasonCup','cautionText','cautionCount'].forEach(id=>{const e=$(id);if(e)text(e)});
+})();
 loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(scheduler,1000);
 checkClosed();setInterval(checkClosed,60000);
 refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(releaseHot())refreshLiveTalk()},5000);startLive();setTimeout(fillRecentGold,20000);setInterval(fillRecentGold,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
