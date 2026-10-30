@@ -40,16 +40,28 @@
      certain and the screens say so; a weekend answer is. */
   var KIND = { usdjpy: "fx", eurjpy: "fx", gbpjpy: "fx", audjpy: "fx", eurusd: "fx", gbpusd: "fx", audusd: "fx", nzdusd: "fx",
     usdchf: "fx", usdcad: "fx", jxy: "fx", gold: "cme", silver: "cme", usoil: "cme", dxy: "ice", btc: "crypto", vix: "vix" };
-  var HOURS_NOTE = {
-    fx: "外国為替：NY時間 日曜17時〜金曜17時（週末のみ判定。祝日・年末年始は含めていません）",
-    cme: "先物（CME）：NY時間 日曜18時〜金曜17時、平日17〜18時は休止（祝日の短縮取引は含めていません）",
-    ice: "ドル指数（ICE）：NY時間 日曜18時〜金曜17時を目安（祝日は含めていません）",
-    crypto: "暗号資産：24時間・年中無休（取引所の臨時メンテナンスは判定できません）",
-    vix: "VIX：NY時間 平日3:15〜16:15を目安（祝日は含めていません）"
-  };
+  // the Japan clock time of a New York wall-clock time on the New York date of t (summer time included)
+  function nyInJst(t, h, mi) {
+    var p = partsIn("America/New_York", t), q = partsIn("Asia/Tokyo", zoneTime("America/New_York", p.y, p.mo, p.d, h, mi || 0));
+    return q.h + ":" + String(q.mi).padStart(2, "0");
+  }
+  // the weekly hours in Japan time, for the date of t (they move by an hour with US summer time)
+  function hoursNote(kind, t) {
+    var us = isDst("America/New_York", t) ? "米国の夏時間中" : "米国の冬時間中";
+    if (kind === "crypto") return "暗号資産：24時間・年中無休（取引所の臨時メンテナンスは判定できません）";
+    if (kind === "vix") return "VIX：日本時間 平日" + nyInJst(t, 3, 15) + "〜翌朝" + nyInJst(t, 16, 15) + "を目安（" + us + "。祝日は含めていません）";
+    var close = nyInJst(t, 17, 0), open = kind === "fx" ? close : nyInJst(t, 18, 0);
+    if (kind === "fx") return "外国為替：日本時間 月曜" + open + "〜土曜" + close + "（" + us + "。週末のみ判定し、祝日・年末年始は含めていません）";
+    if (kind === "cme") return "先物（CME）：日本時間 月曜" + open + "〜土曜" + close + "、毎朝" + close + "〜" + open + "は休止（" + us + "。祝日の短縮取引は含めていません）";
+    return "ドル指数（ICE）：日本時間 月曜" + open + "〜土曜" + close + "を目安（" + us + "。祝日は含めていません）";
+  }
   function marketState(key, t) {
     var kind = KIND[key] || "fx", p = partsIn("America/New_York", t), h = p.h + p.mi / 60, d = p.dow;
-    var res = function (state, reason, certain) { return { state: state, reason: reason, certain: certain, kind: kind, note: HOURS_NOTE[kind] }; };
+    var res = function (state, reason, certain) {  // the note is worked out only when read (the cards ask for the state every second)
+      var o = { state: state, reason: reason, certain: certain, kind: kind };
+      Object.defineProperty(o, "note", { enumerable: true, get: function () { return hoursNote(kind, t); } });
+      return o;
+    };
     if (kind === "crypto") return res("open", "24時間取引", false);
     if (kind === "vix") {
       if (d === 0 || d === 6) return res("closed", "週末", true);
@@ -57,7 +69,7 @@
     }
     var openH = kind === "fx" ? 17 : 18;
     if (d === 6 || (d === 5 && h >= 17) || (d === 0 && h < openH)) return res("closed", "週末", true);
-    if (kind !== "fx" && h >= 17 && h < 18) return res("break", "毎日の休止時間（NY 17〜18時）", true);
+    if (kind !== "fx" && h >= 17 && h < 18) return res("break", "毎日の休止時間（日本時間 " + nyInJst(t, 17, 0) + "〜" + nyInJst(t, 18, 0) + "）", true);
     return res("open", "取引時間内（祝日は未判定）", false);
   }
 
@@ -77,7 +89,7 @@
     });
     var open = list.filter(function (s) { return s.open; });
     return { list: list, overlap: open.length > 1 ? open.map(function (s) { return s.name; }) : [], weekend: weekend,
-      note: "各都市の現地時間の営業時間（東京9〜18時・ロンドン8〜17時・NY8〜17時）を目安にした区分です。祝日は含めていません。" };
+      note: "各市場の営業時間の目安（現地の朝から夕方まで）を日本時間に直した区分です。祝日は含めていません。" };
   }
 
   /* ---------- freshness ----------
@@ -406,7 +418,7 @@
   }
 
   return { MIN: MIN, HOUR: HOUR, DAY: DAY, partsIn: partsIn, zoneOffset: zoneOffset, zoneTime: zoneTime, isDst: isDst,
-    KIND: KIND, marketState: marketState, sessions: sessions, RULES: RULES, freshness: freshness, ago: ago, jst: jst,
+    KIND: KIND, marketState: marketState, hoursNote: hoursNote, sessions: sessions, RULES: RULES, freshness: freshness, ago: ago, jst: jst,
     checkMarket: checkMarket, realCandles: realCandles, sequencer: sequencer,
     positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey,
     newStore: newStore, updateSignal: updateSignal, expireSignals: expireSignals, loadStore: loadStore, COOLDOWN: COOLDOWN,

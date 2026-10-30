@@ -38,6 +38,19 @@ test("gold and oil: daily 17-18 break, Sunday opens at 18:00; BTC never closes",
   assert.equal(C.marketState("vix", U("2026-07-11T15:00:00Z")).state, "closed");
 });
 
+test("weekly hours are shown in Japan time and follow US summer time", () => {
+  const summer = U("2026-07-08T03:00:00Z"), winter = U("2026-12-09T03:00:00Z");
+  assert.match(C.hoursNote("fx", summer), /日本時間 月曜6:00〜土曜6:00/);
+  assert.match(C.hoursNote("fx", winter), /日本時間 月曜7:00〜土曜7:00/);
+  assert.match(C.hoursNote("cme", summer), /月曜7:00〜土曜6:00、毎朝6:00〜7:00は休止/);
+  assert.match(C.hoursNote("cme", winter), /月曜8:00〜土曜7:00、毎朝7:00〜8:00は休止/);
+  assert.match(C.hoursNote("vix", summer), /平日16:15〜翌朝5:15/);
+  assert.match(C.hoursNote("vix", winter), /平日17:15〜翌朝6:15/);
+  assert.doesNotMatch(C.hoursNote("fx", summer) + C.hoursNote("cme", summer) + C.hoursNote("ice", summer) + C.hoursNote("vix", summer), /NY|ニューヨーク/);
+  assert.match(C.marketState("gold", U("2026-07-08T21:30:00Z")).reason, /日本時間 6:00〜7:00/);
+  assert.match(C.marketState("usdjpy", summer).note, /夏時間中/);
+});
+
 test("sessions: London opens at 8:00 local in winter and summer, overlap with New York", () => {
   let s = C.sessions(U("2026-07-08T13:00:00Z"));  // 14:00 London, 9:00 NY
   assert.deepEqual(s.overlap, ["ロンドン", "ニューヨーク"]);

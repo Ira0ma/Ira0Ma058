@@ -434,7 +434,7 @@
           '<div class="tw"><table><tr><th>市場</th><th>今日の時間（日本時間）</th><th>状態</th><th>夏時間</th></tr>' + s.list.map(function (x) {
             return "<tr><td>" + esc(x.name) + "</td><td>" + esc(C.jst(x.start, false).replace(" JST", "")) + "〜" + esc(C.jst(x.end, false).replace(" JST", "")) + "</td><td>" + (x.open ? "● 開いている" : "○ 時間外") + "</td><td>" + (x.zone === "Asia/Tokyo" ? "なし" : x.dst ? "夏時間" : "冬時間") + "</td></tr>";
           }).join("") + "</table></div>" + (s.weekend ? '<p class="ok">週末のため為替市場は休場中です。</p>' : s.overlap.length ? '<p class="ok">重なっている時間：' + esc(s.overlap.join("・")) + "（取引が集まりやすい時間帯）</p>" : "") +
-          '<h3>銘柄ごとの取引時間</h3><div class="tw"><table><tr><th>銘柄</th><th>今の状態</th><th>基準</th></tr>' + ["gold", "usdjpy", "btc", "silver", "usoil", "dxy", "vix"].map(function (k) {
+          '<h3>銘柄ごとの取引時間</h3><div class="tw"><table><tr><th>銘柄</th><th>今の状態</th><th>取引時間（日本時間）</th></tr>' + ["gold", "usdjpy", "btc", "silver", "usoil", "dxy", "vix"].map(function (k) {
             var m = C.marketState(k, now);
             return "<tr><td>" + esc(D.instName(k)) + "</td><td>" + esc({ open: "取引時間内", closed: "休場", "break": "休止中" }[m.state]) + (m.certain ? "" : "（目安）") + "</td><td>" + esc(m.note) + "</td></tr>";
           }).join("") + "</table></div>";
