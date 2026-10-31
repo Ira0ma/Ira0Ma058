@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="ce6aa5e9fd">
+<meta name="build" content="f97a5813f0">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -656,6 +656,8 @@ html:not(.beginner) .step-tag { display: none; }
 .mst.lv-held i::before { content: "⏸"; }
 .mst.lv-closed i::before, .mst.lv-missing i::before { content: "☾"; color: var(--ink-3); }
 .mkt.is-stale .price { opacity: .55; }
+button.retry { font: inherit; font-size: 12px; font-weight: 700; color: var(--gold); background: none; border: 1px solid rgba(227,184,103,.55); border-radius: 999px; padding: 3px 12px; margin-left: 4px; cursor: pointer; min-height: 28px; }
+button.retry:disabled { opacity: .6; cursor: default; }
 .mkt .mscore b.closed { color: #e8dfcc; border-color: rgba(232,223,204,.45); background: rgba(255,255,255,.06); }
 .mkt .mscore .reopen { font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
 .mkt.mk-closed .price { opacity: .7; }
@@ -680,8 +682,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <button class="notify-btn" id="notify-btn" type="button" aria-pressed="false" title="この端末の通知（アラート・エントリー）"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 11V7a4 4 0 0 1 8 0v4l1.3 1.5H2.7z"/><path d="M6.5 14a1.6 1.6 0 0 0 3 0" stroke-linecap="round"/></svg><span>通知</span></button>
     <button class="sound-btn" id="sound-btn" type="button" title="エントリー通知音（タップで 大→中→小→オフ）"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M2.5 6h2.5l3.5-3v10L5 10H2.5z" fill="currentColor"/><path class="w1" d="M11 5.5a3.5 3.5 0 0 1 0 5" stroke-linecap="round"/><path class="w2" d="M12.8 3.5a6.3 6.3 0 0 1 0 9" stroke-linecap="round"/><path class="mute" d="M11 6l4 4M15 6l-4 4" stroke-linecap="round"/></svg><span></span></button>
     <div class="content">
-      <div class="time num" data-clock="hm">9:41</div>
-      <div class="date" data-clock="md">5月27日(火)</div>
+      <div class="time num" data-clock="hm">--:--</div>
+      <div class="date" data-clock="md">読み込み中…</div>
       <div class="note q-text" id="q-text">継続が、
 未来の自分を変えていく。</div>
     </div>
@@ -749,12 +751,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   <section class="card" id="ind" aria-label="今日の重要指標">
     <div class="card-title">
       <svg class="ico" viewBox="0 0 26 26" fill="none" stroke="#f4f1ea" stroke-width="1.6"><rect x="3.5" y="5" width="19" height="17" rx="3"/><path d="M3.5 10h19M8.5 2.8v4M17.5 2.8v4"/><path d="M8 14.5h2M12 14.5h2M16 14.5h2M8 18h2M12 18h2" stroke-linecap="round"/></svg>
-      今日の重要指標<span class="aside num" id="ind-day">5月27日(火)</span>
+      今日の重要指標<span class="aside num" id="ind-day"></span>
     </div>
     <ul class="ind-list" id="ind-list">
-      <li><div class="t num">21:30</div><div><div class="n">米・耐久財受注 (前月比)</div><div class="s">4月</div></div><div class="stars" data-v="3"></div></li>
-      <li><div class="t num">23:00</div><div><div class="n">米・消費者信頼感指数</div><div class="s">5月</div></div><div class="stars" data-v="3"></div></li>
-      <li><div class="t num">23:00</div><div><div class="n">米・新築住宅販売件数</div><div class="s">4月</div></div><div class="stars" data-v="2"></div></li>
+      <li class="empty">今日の経済指標を読み込んでいます…</li>
     </ul>
     <div class="ind-foot">
       <a class="more" href="https://jp.investing.com/economic-calendar/" target="_blank" rel="noopener">経済カレンダーを表示 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></a>
@@ -770,14 +770,11 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     </div>
     <ul class="pt-list">
       <li data-check="p1"><button class="ck" type="button" aria-label="チェックを切り替え"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <div><h3><button class="pt-pick" type="button" data-slot="0" aria-label="この注目ポイントの銘柄を変える"><span data-pt="1h">ドル円：押し目買い目線</span><svg class="chev" width="9" height="6" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></h3><p data-pt="1p">156.00付近のサポートに注目。
-上抜けで156.80を目指す。</p></div></li>
-      <li data-check="p2"><button class="ck" type="button" aria-label="チェックを切り替え"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <div><h3><button class="pt-pick" type="button" data-slot="1" aria-label="この注目ポイントの銘柄を変える"><span data-pt="2h">ゴールド：重要ラインを確認</span><svg class="chev" width="9" height="6" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></h3><p data-pt="2p">2,350の攻防。上抜けで2,370、
-下抜けで2,330を意識。</p></div></li>
-      <li data-check="p3"><button class="ck" type="button" aria-label="チェックを切り替え"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <div><h3 data-pt="3h">本日のトレード戦略</h3><p data-pt="3p">重要指標前はポジションを軽く、
-値動きに応じて柔軟に対応する。</p><button class="pt-more" type="button">前日の振り返りと今日の予想<svg width="6" height="9" viewBox="0 0 7 10"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></div></li>
+        <div><h3><button class="pt-pick" type="button" data-slot="0" aria-label="この注目ポイントの銘柄を変える"><span data-pt="1h">分析データを読み込んでいます…</span><svg class="chev" width="9" height="6" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></h3><p data-pt="1p"></p></div></li>
+      <li data-check="p2" hidden><button class="ck" type="button" aria-label="チェックを切り替え"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div><h3><button class="pt-pick" type="button" data-slot="1" aria-label="この注目ポイントの銘柄を変える"><span data-pt="2h"></span><svg class="chev" width="9" height="6" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></h3><p data-pt="2p"></p></div></li>
+      <li data-check="p3" hidden><button class="ck" type="button" aria-label="チェックを切り替え"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div><h3 data-pt="3h">本日のトレード戦略</h3><p data-pt="3p"></p><button class="pt-more" type="button">前日の振り返りと今日の予想<svg width="6" height="9" viewBox="0 0 7 10"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></div></li>
     </ul>
     <div class="picker pt-picker" hidden><div class="picker-h"><span>注目ポイントの銘柄</span><button type="button" class="picker-close">閉じる</button></div><div class="picker-list"></div></div>
     <div class="rep" id="rep" hidden role="dialog" aria-label="前日の振り返りと今日の予想"><div class="rep-h"><b>本日のトレード戦略</b><small id="rep-when"></small><button type="button" class="rep-close">閉じる</button></div><div class="rep-body" id="rep-body"></div></div>
@@ -793,7 +790,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
         <div class="x-fallback" hidden>この端末では X の投稿を表示できません。「X で開く」から確認できます。</div>
       </div>
     </div>
-    <div class="pt-foot" id="pt-foot">サンプル表示（自動分析の読み込み前）</div>
+    <div class="pt-foot" id="pt-foot"></div>
   </section>
 
   <!-- weather -->
@@ -802,10 +799,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <svg class="big" data-wx-main viewBox="0 0 58 46"></svg>
       <div>
         <button class="wx-city" type="button" aria-label="天気の場所を変える"><svg width="10" height="12" viewBox="0 0 10 12"><path d="M5 11.2S1 7.2 1 4.6a4 4 0 0 1 8 0c0 2.6-4 6.6-4 6.6z" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="5" cy="4.6" r="1.4" fill="currentColor"/></svg><span data-wx="city">東京</span></button>
-        <div class="wx-temp num"><span data-wx="temp">24</span><sup>°C</sup></div>
-        <div class="wx-desc" data-wx="desc">やや曇り</div>
+        <div class="wx-temp num"><span data-wx="temp">--</span><sup>°C</sup></div>
+        <div class="wx-desc" data-wx="desc">読み込み中…</div>
       </div>
-      <div class="wx-hl num">最高 <span data-wx="hi">26</span>°<br>最低 <span data-wx="lo">18</span>°</div>
+      <div class="wx-hl num">最高 <span data-wx="hi">--</span>°<br>最低 <span data-wx="lo">--</span>°</div>
     </div>
     <div class="wx-hours num" data-wx="hours"></div>
     <div class="wx-hz" role="group" aria-label="防災・季節の情報"><button type="button" data-hz-open="eq">地震</button><button type="button" data-hz-open="ty">台風</button><button type="button" data-hz-open="pl">花粉</button></div>
@@ -1600,7 +1597,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     } else { this.priceEl.textContent = s; }
     if (!this.live) {
       if (!PREVIEW) this.priceEl.textContent = "—";  // never show a made-up price on the real site
-      this.chgEl.textContent = this.held ? "データ確認中（" + this.held.join("・") + "）" : this.failed ? "価格を取得できませんでした" : PREVIEW ? "サンプル表示" : "読み込み中…";
+      this.chgEl.textContent = this.held ? "データ確認中（" + this.held.join("・") + "）" : this.failed ? "価格を取得できませんでした " : PREVIEW ? "サンプル表示" : "読み込み中…";
+      if (this.failed && !this.held) this.chgEl.insertAdjacentHTML("beforeend", '<button type="button" class="retry" data-retry="market">再読み込み</button>');
       this.chgEl.style.color = "var(--ink-3)"; return;
     }
     var d = this.price - o.prev, pct = d / o.prev * 100, sign = d >= 0 ? "+" : "−";
@@ -1964,7 +1962,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       })
       .catch(function () {
         srcMark("weather", false);
-        if (!wxLoaded && !PREVIEW) document.querySelector('[data-wx="desc"]').textContent = "天気を取得できませんでした";
+        if (!wxLoaded && !PREVIEW) document.querySelector('[data-wx="desc"]').innerHTML = "天気を取得できませんでした " + '<button type="button" class="retry" data-retry="weather">再読み込み</button>';
       });
   }
 
@@ -2532,7 +2530,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       })
       .catch(function () {
         srcMark("calendar", false);
-        if (!calEvents && !PREVIEW) document.getElementById("ind-list").innerHTML = '<li class="empty">経済指標を取得できませんでした。下の「経済カレンダーを表示」から確認してください。</li>';
+        if (!calEvents && !PREVIEW) document.getElementById("ind-list").innerHTML = '<li class="empty">経済指標を取得できませんでした。下の「経済カレンダーを表示」から確認できます。 ' + '<button type="button" class="retry" data-retry="calendar">再読み込み</button>' + '</li>';
       })
       .then(function () { scheduleCalendar(); });
   }
@@ -2692,7 +2690,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
         if (market || PREVIEW) return;
         setPoint(1, "分析データを取得できませんでした", "通信状態を確認してください。\n次の更新で自動的に再取得します。");
         setPoint(2, "", ""); if (!reportIsCurrent(new Date())) setPoint(3, "", "");
-        document.getElementById("pt-foot").textContent = "";
+        document.getElementById("pt-foot").innerHTML = '<button type="button" class="retry" data-retry="market">再読み込み</button>';
         markets.forEach(function (mk) { if (!mk.live) { mk.failed = true; mk.render(); } });
       });
   }
@@ -3898,6 +3896,16 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     });
     document.body.appendChild(updBar);
   }
+
+  // 「再読み込み」ボタン（取得に失敗したときだけ出る）：そのデータを取り直す
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-retry]"); if (!b) return;
+    e.stopPropagation(); b.disabled = true; b.textContent = "再読み込み中…";
+    var w = b.getAttribute("data-retry");
+    if (w === "market") { markets.forEach(function (mk) { mk.failed = false; if (!mk.live) mk.render(); }); loadMarket(); loadPrices(); }
+    else if (w === "calendar") loadCalendar();
+    else if (w === "weather") loadWeather();
+  });
 
   /* ---------- tools (tools.js, loaded the first time it is opened) ---------- */
   var toolsLoading = null;
