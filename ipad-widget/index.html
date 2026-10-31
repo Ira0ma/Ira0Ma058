@@ -566,13 +566,15 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 #pager { position: fixed; inset: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; overscroll-behavior: contain; }
 #pager::-webkit-scrollbar { display: none; }
 .page { flex: 0 0 100%; height: 100%; scroll-snap-align: start; display: flex; align-items: center; justify-content: center; overflow: hidden;
-  padding: max(8px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 20px) max(12px, env(safe-area-inset-left, 0px)); }
+  padding: max(8px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 40px) max(12px, env(safe-area-inset-left, 0px)); }  /* room for the page names */
 .pstage { display: flex; gap: 14px; align-items: flex-start; flex: none; transform-origin: center center; }
 .pcol { display: flex; flex-direction: column; gap: 14px; }
 .phone .card { position: relative !important; left: auto !important; top: auto !important; flex: none; }  /* beats the per-card #id positions */
-#pdots { position: fixed; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7px); display: flex; justify-content: center; gap: 8px; z-index: 3; pointer-events: none; }
-#pdots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.3); }
-#pdots i.on { background: rgba(255,255,255,.9); }
+#pdots { position: fixed; left: 0; right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 4px); display: flex; justify-content: flex-end; gap: 6px; z-index: 3; pointer-events: none; }  /* right side: the 🔰・🧰 buttons sit at the left */
+#pdots button { pointer-events: auto; font: inherit; font-size: 12px; font-weight: 700; min-height: 30px; padding: 0 14px; border-radius: 999px; cursor: pointer;
+  color: var(--ink-2); background: rgba(14,16,22,.85); border: 1px solid rgba(255,255,255,.18); }
+#pdots button[aria-current="true"] { color: #14100a; background: var(--gold); border-color: var(--gold); }
+#pdots button:focus-visible { outline: 2px solid #ffd166; outline-offset: 2px; }
 /* GOLD dashboard: opens full-screen over the desk; closing keeps it loaded so it reopens instantly */
 .dash-open { position: absolute; left: 18px; right: 10px; bottom: 18px; z-index: 1; display: flex; gap: 6px; }
 .dash-open .gold-open { padding: 7px 10px; gap: 4px; font-size: 12.5px; }  /* three dashboards: GOLD, ドル円, BTC */
@@ -944,12 +946,17 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       });
       pg.appendChild(ps); pager.appendChild(pg); pages.push(pg);
     });
-    var dots = document.createElement("div"); dots.id = "pdots";
-    dots.innerHTML = spec.map(function () { return "<i></i>"; }).join("");
+    // page names instead of dots: where you are, and a tap goes to that page
+    var dots = document.createElement("nav"); dots.id = "pdots"; dots.setAttribute("aria-label", "ページ");
+    dots.innerHTML = spec.map(function (cols, i) { return '<button type="button" data-page="' + i + '">' + (PAGE_NAMES[i] || "ページ" + (i + 1)) + "</button>"; }).join("");
+    dots.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-page]"); if (!b) return;
+      pager.scrollTo({ left: +b.getAttribute("data-page") * pager.clientWidth, behavior: reduce ? "auto" : "smooth" });
+    });
     document.body.appendChild(pager); document.body.appendChild(dots);
     var paint = function () {
       pageIdx = Math.round(pager.scrollLeft / Math.max(pager.clientWidth, 1));
-      dots.querySelectorAll("i").forEach(function (d, i) { d.classList.toggle("on", i === pageIdx); });
+      dots.querySelectorAll("button").forEach(function (d, i) { d.setAttribute("aria-current", i === pageIdx ? "true" : "false"); });
     };
     pager.addEventListener("scroll", paint, { passive: true }); paint();
   }
@@ -969,6 +976,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   var FLOW_1 = [["clock", "markets", "ind", "points", "cal", "weather", "xfeed"]];
   var FLOW_2 = [["clock", "markets", "weather"], ["ind", "points", "cal", "xfeed"]];
   var PAGER_N = [[["clock"], ["markets"]], [["ind"], ["points"]], [["weather"], ["cal", "xfeed"]]];
+  var PAGE_NAMES = ["相場", "指標・戦略", "天気・学ぶ"];
   function pagerSpec() { return PAGER_N; }
   function buildFlow() {
     flow = document.createElement("div"); flow.id = "flow";
