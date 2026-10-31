@@ -1,0 +1,67 @@
+{
+  "title": "はじめてのゴールド取引",
+  "subtitle": "超初心者向け・詳しい入門編",
+  "edition": 1,
+  "date": "2026-10-30",
+  "pages": 91,
+  "lessons": 72,
+  "figures": 72,
+  "chapters": [
+    {
+      "number": 1,
+      "title": "まず、ゴールドを知る"
+    },
+    {
+      "number": 2,
+      "title": "単位と数量を理解する"
+    },
+    {
+      "number": 3,
+      "title": "お金の流れをつかむ"
+    },
+    {
+      "number": 4,
+      "title": "注文と証拠金の仕組み"
+    },
+    {
+      "number": 5,
+      "title": "なぜ価格が動くのか"
+    },
+    {
+      "number": 6,
+      "title": "予定と時間帯を読む"
+    },
+    {
+      "number": 7,
+      "title": "チャートの基礎を固める"
+    },
+    {
+      "number": 8,
+      "title": "基本の形を使ってみる"
+    },
+    {
+      "number": 9,
+      "title": "失敗を小さくする計画"
+    },
+    {
+      "number": 10,
+      "title": "見る順番と記録を作る"
+    },
+    {
+      "number": 11,
+      "title": "初心者がつまずく場所"
+    },
+    {
+      "number": 12,
+      "title": "総合練習と次の一歩"
+    }
+  ],
+  "primary_content": "lessons.json",
+  "front_back_matter": "front-back-matter.json",
+  "related_materials": [
+    "ゴールド超初心者向け70パターン図鑑",
+    "ドル円入門",
+    "FVG専用版"
+  ],
+  "interactive_html": "gold-introduction.html"
+}

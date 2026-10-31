@@ -39,7 +39,7 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p prev
-          for f in market.json calendar.json holidays.json spothist.json news.json; do
+          for f in market.json calendar.json holidays.json spothist.json news.json typhoon.json pollen.json; do
             curl -fsSL --retry 2 "${{ steps.pages.outputs.base_url }}/$f" -o "prev/$f" || rm -f "prev/$f"
           done
           ls -la prev
@@ -50,10 +50,13 @@ jobs:
           cp ipad-widget/ipad.html _site/index.html
           cp ipad-widget/icon-cup.png _site/icon-cup.png
           cp ipad-widget/sw.js _site/sw.js  # notifications only (no caching)
+          cp ipad-widget/core.js _site/core.js  # rules shared by the desk and its tools (market hours, freshness, sizing, signal history)
+          cp ipad-widget/tools.js _site/tools.js  # the 🧰 tools, loaded when first opened
           cp ipad-widget/manifest.webmanifest _site/manifest.webmanifest
           cp ipad-widget/gold.html _site/gold.html
           cp ipad-widget/usdjpy.html _site/usdjpy.html
           cp ipad-widget/btc.html _site/btc.html
+          cp -r ipad-widget/learn _site/learn  # 学習の本（パターン図鑑・ドル円入門・FVG詳説）のデータと図。learn-src は公開しない
           cp ipad-widget/strategy.json _site/strategy.json || true  # daily recap and outlook (written by the morning report task)
       - name: Fetch economic calendar
         continue-on-error: true
@@ -89,6 +92,9 @@ jobs:
         run: |
           python3 ipad-widget/news.py _site/news.json prev/news.json \
             || cp prev/news.json _site/news.json || true
+      - name: Fetch typhoons (JMA) and pollen (Weathernews) for the weather card
+        continue-on-error: true
+        run: python3 ipad-widget/hazards.py _site prev
       - name: Fetch prices and build chart analysis
         continue-on-error: true
         run: |
