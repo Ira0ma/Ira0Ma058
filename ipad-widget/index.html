@@ -409,9 +409,10 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gl-tile[data-book="pattern"] { --gl-acc: #9cc996; --gl-rgb: 156,201,150; }
 .gl-tile[data-book="usdjpy"] { --gl-acc: #a9bdf0; --gl-rgb: 169,189,240; }
 .gl-tile[data-book="fvg"] { --gl-acc: #c8b6ec; --gl-rgb: 200,182,236; }
+.gl-tile[data-book="first"] { --gl-acc: #8fd8a8; --gl-rgb: 143,216,168; }
 .gl-tile { --gl-acc: var(--gold); --gl-rgb: 227,184,103; }
-.gl-tabs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; padding: 2px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--glass-line); flex: none; }
-.gl-tabs button { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: inherit; font-size: 11.5px; font-weight: 700; color: var(--ink-3); background: none; border: 0; border-radius: 999px; padding: 4px 2px; cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
+.gl-tabs { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; padding: 2px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--glass-line); flex: none; }
+.gl-tabs button { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: inherit; font-size: 10.5px; font-weight: 700; color: var(--ink-3); background: none; border: 0; border-radius: 999px; padding: 4px 0; cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
 .gl-tabs button.on { color: #14100a; background: var(--gl-acc); }
 .gl-title { font-size: 14px; font-weight: 700; color: var(--ink); letter-spacing: .04em; }
 .gl-wait { grid-column: 1 / -1; margin: 0; font-size: 11.5px; color: var(--ink-3); align-self: center; }
@@ -495,7 +496,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gbook.eco .gb-figbox { border-color: #cfe0dc; }
 .gbook.eco .gb-resume { background: #dcecea; border-color: #bcd6d2; color: #175e63; }
 /* 学習の本（パターン図鑑・ドル円入門・FVG詳説）：用語集と同じ紙面に、ひと言→図→見る所→待つこと→例→勘違い→詳しく の順 */
-.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; }
+.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; } .gbook.bk-first { --bk: #8fd8a8; --bk-ink: #2f7a4c; }
 .gbook.bk-learn .gb-bar .gb-title { color: var(--bk); } .gbook.bk-learn .gb-prog i { background: var(--bk); } .gbook.bk-learn .gb-btn.gb-x { background: var(--bk); border-color: var(--bk); }
 .gbook.bk-learn .gb-cover small, .gbook.bk-learn .gb-chhead small, .gbook.bk-learn .gb-toc i, .gbook.bk-learn .gb-idx button em, .gbook.bk-learn .gb-cover .gb-hint::before, .gbook.bk-learn .gb-pts li::marker { color: var(--bk-ink); }
 .gbook.bk-learn .gb-idx h4, .gbook.bk-learn .gb-table th { background: var(--bk-ink); }
@@ -684,7 +685,7 @@ html:not(.flow) #flow { display: none; }
 .flow #markets .sep { margin: 0 22px; }
 .flow #cal { height: auto; grid-template-columns: 1fr; grid-template-rows: none; }
 .flow #xfeed { height: auto; min-height: 202px; }
-.flow #xfeed .gl-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 14px; }
+.flow #xfeed .gl-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); border-radius: 14px; }
 
 @media (prefers-reduced-motion: reduce) { .mkt .price { transition: none; } }
 
@@ -885,7 +886,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <div class="gl-head">
         <b class="gl-title">学ぶ</b><span id="gl-count"></span><button type="button" class="gl-open" data-gl="toc">目次を開く ›</button>
       </div>
-      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ"><button type="button" role="tab" data-glbook="fx">FX用語集</button><button type="button" role="tab" data-glbook="eco">経済用語集</button><button type="button" role="tab" data-glbook="gold">ゴールド入門</button><button type="button" role="tab" data-glbook="pattern">パターン図鑑</button><button type="button" role="tab" data-glbook="usdjpy">ドル円入門</button><button type="button" role="tab" data-glbook="fvg">FVG詳説</button></div>
+      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ"><button type="button" role="tab" data-glbook="first" title="はじめての投資とトレード（最初に読む本）">最初の1冊</button><button type="button" role="tab" data-glbook="fx">FX用語集</button><button type="button" role="tab" data-glbook="eco">経済用語集</button><button type="button" role="tab" data-glbook="gold">ゴールド入門</button><button type="button" role="tab" data-glbook="pattern">パターン図鑑</button><button type="button" role="tab" data-glbook="usdjpy">ドル円入門</button><button type="button" role="tab" data-glbook="fvg">FVG詳説</button></div>
       <div class="gl-grid" id="gl-grid"></div>
       <p class="gl-hint">本を開いたら、左右にスワイプか「次のページ ›」でめくれます</p>
     </div>
@@ -916,7 +917,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <span class="gb-title">📖 FX用語集</span><span class="gb-chap" id="gb-chap"></span>
     <button type="button" class="gb-btn" data-gl="back" aria-label="戻る（移動する前のページへ）" title="関連・目次・索引・検索で移動する前のページへ戻ります" disabled>↩<span class="gb-bl"> 戻る</span></button><button type="button" class="gb-btn" data-gl="search" aria-label="検索">🔍<span class="gb-bl"> 検索</span></button><button type="button" class="gb-btn" data-gl="toc">目次</button><button type="button" class="gb-btn" data-gl="idx">索引</button><button type="button" class="gb-btn gb-x" data-gl="close">閉じる</button>
   </div>
-  <div class="gb-search" id="gb-search" hidden role="search"><input type="search" placeholder="用語・別名・説明の言葉で検索（5冊すべて）" aria-label="用語集を検索" enterkeyhint="search"><ul aria-live="polite"></ul></div>
+  <div class="gb-search" id="gb-search" hidden role="search"><input type="search" placeholder="用語・別名・説明の言葉で検索（すべての本）" aria-label="用語集を検索" enterkeyhint="search"><ul aria-live="polite"></ul></div>
   <div class="gb-stage" id="gb-stage"><div class="gb-spread" id="gb-spread"></div></div>
   <div class="gb-zoom" id="gb-zoom" hidden role="dialog" aria-label="図の拡大"><div class="gb-zwrap"><img alt=""></div><p class="gb-zcap"></p><button type="button" class="gb-btn gb-x gb-zx">閉じる</button><p class="gb-zhint">図をタップすると2倍。指で動かせます</p></div>
   <div class="gb-nav">
@@ -3452,7 +3453,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     { t: "お金と金利", s: "金利・複利・中央銀行・債券", terms: [
       ["お金の3つの役割", "", "お金には3つの役割がある。①物と交換できる、②値段を比べるものさしになる、③価値をためておける。インフレになると、③の「ためておく力」が弱くなる。"],
       ["金利", "", "お金を借りるときに払うレンタル料。貸す側から見れば受け取る利息。金利が上がると借りにくくなるので、お金を使う人が減って景気は冷えやすい。"],
-      ["単利と複利", "", "単利は、最初の元本にだけ利息がつく。複利は、ついた利息にもまた利息がつく。雪だるまのように、時間がたつほど差がどんどん大きくなる（複利効果）。", { fig: "compound", aka: ["複利効果"] }],
+      ["単利と複利", "", "単利は、最初の元本にだけ利息がつく。複利は、ついた利息にもまた利息がつく。雪だるまのように、時間がたつほど差がどんどん大きくなる（複利効果）。", { fig: "compound", aka: ["複利効果", "複利"], rel: ["first:first-04"] }],
       ["72の法則", "", "72 ÷ 年利（％）で、お金が2倍になるまでのだいたいの年数が分かる計算。年3％なら約24年、年6％なら約12年。借金の利息にも同じように効くので要注意（年18％なら4年で2倍）。", { fig: "rule72" }],
       ["中央銀行", "", "国のお金の番人となる特別な銀行。日本は日本銀行（日銀）、アメリカはFRB、ユーロ圏はECB。物価が上がりすぎたり下がりすぎたりしないよう、金利や世の中のお金の量を調整する。"],
       ["金融緩和と金融引き締め", "", "金融緩和は、金利を下げたり世の中のお金を増やしたりして、景気を元気づけること（アクセル）。金融引き締めはその逆で、物価の上がりすぎを抑えること（ブレーキ）。", { fig: "easing", aka: ["金融緩和", "金融引き締め"] }],
@@ -3519,12 +3520,14 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       fx: { id: "fx", data: GLOSSARY, title: "FX用語集", en: "FX GLOSSARY", icon: "📖", short: SHORT, bm: "gloss-page" },
       eco: { id: "eco", data: ECONOMY, title: "経済用語集", en: "ECONOMICS GLOSSARY", icon: "📘", short: ["投資", "経済", "金利", "株式", "投信・制度", "財政・世界", "市場心理", "くらし"], bm: "eco-page" },
       // 学習の本：中身は learn/*.json（開いたときに読み込む。トップの表示では読まない）
+      // 0冊目（第6部）：最初に読む本。タブの先頭
+      first: { id: "first", src: "learn/first.json", title: "はじめての投資とトレード", en: "FIRST STEPS", icon: "🔰", bm: "learn-first-page", learn: true },
       gold: { id: "gold", src: "learn/gold.json", title: "ゴールド入門", en: "GOLD TRADING BASICS", icon: "🪙", bm: "learn-gold-page", learn: true },
       pattern: { id: "pattern", src: "learn/pattern.json", title: "パターン図鑑", en: "CHART PATTERNS", icon: "📗", bm: "learn-pattern-page", learn: true },
       usdjpy: { id: "usdjpy", src: "learn/usdjpy.json", title: "ドル円入門", en: "USD/JPY BASICS", icon: "💴", bm: "learn-usdjpy-page", learn: true },
       fvg: { id: "fvg", src: "learn/fvg.json", title: "FVG詳説", en: "FAIR VALUE GAP", icon: "📐", bm: "learn-fvg-page", learn: true }
     };
-    var ORDER = ["fx", "eco", "gold", "pattern", "usdjpy", "fvg"], LEARN = ["gold", "pattern", "usdjpy", "fvg"];
+    var ORDER = ["fx", "eco", "first", "gold", "pattern", "usdjpy", "fvg"], LEARN = ["first", "gold", "pattern", "usdjpy", "fvg"];
     // learn/*.json の1項目を、用語集と同じ [名前, 読み, 説明, 付録] の形にする（付録の L に元の項目を持つ）
     function learnBook(b, j) {
       b.version = j.version; b.lead = j.lead; b.short = j.chapters.map(function (c) { return c.short || c.t; });
@@ -3543,7 +3546,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     }
     // 関連リンクの名前や検索のため、本を開くときに学習の本もまとめて読む（失敗しても用語集は開ける）
     function ensureAll() { return Promise.all(LEARN.map(function (id) { return ensureBook(id).catch(function () { return null; }); })); }
-    var BK = BOOKS.fx, tileBook = "fx", total = 0;
+    var BK = BOOKS.fx, tileBook = "first", total = 0;  // 第6部：はじめての人は「最初の1冊」から（選んだ本は端末に保存）
     var count = function (b) { return b.data ? b.data.reduce(function (n, c) { return n + c.terms.length; }, 0) : 0; };
     try { if (BOOKS[localStorage.getItem("gloss-book")]) tileBook = localStorage.getItem("gloss-book"); } catch (e) {}
     // カード：本の切り替えタブと、選んでいる本の章の一覧
@@ -4273,8 +4276,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var hasName = function (b, term) { return b.data && b.data.some(function (c) { return c.terms.some(function (t) { return t[0] === term; }); }); };
     // 用語名・別名・"本:キー" から、どの本のどの項目かを決める（名前の完全一致 → 別名の順、本は FX → 経済 → 図鑑 → ドル円 → FVG）
     function resolve(term) {
-      var m = /^(fx|eco|gold|pattern|usdjpy|fvg):(.+)$/.exec(term);
-      if (m) { var b = BOOKS[m[1]], k = m[2]; return { book: m[1], key: (b.ids && b.ids[k]) || k }; }
+      var m = /^(\w+):(.+)$/.exec(term);  // "本:キー"（登録したどの本でも）
+      if (m && BOOKS[m[1]]) { var b = BOOKS[m[1]], k = m[2]; return { book: m[1], key: (b.ids && b.ids[k]) || k }; }
       for (var i = 0; i < ORDER.length; i++) if (hasName(BOOKS[ORDER[i]], term)) return { book: ORDER[i], key: term };
       for (i = 0; i < ORDER.length; i++) if (has(BOOKS[ORDER[i]], term)) return { book: ORDER[i], key: term };
       return null;
@@ -4305,7 +4308,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       if (e.target.closest(".gb-zx") || e.target === zoom) closeZoom();
       else if (e.target === zoomImg) zoom.classList.toggle("big");
     });
-    // 検索：5冊の名前・別名・本文から探す
+    // 検索：すべての本の名前・別名・本文から探す
     var sbox = document.getElementById("gb-search"), sin = sbox.querySelector("input"), slist = sbox.querySelector("ul");
     var flat = function (x) { return Array.isArray(x) ? x.map(flat).filter(Boolean).join(" ") : /^https?:/.test(x || "") ? "" : (x || ""); };
     var plain = function (t) {
@@ -4318,7 +4321,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var norm = function (s) { return String(s).toLowerCase().normalize("NFKC").replace(/[\u30a1-\u30f6]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0x60); }); };
     function runSearch() {
       var q = norm(sin.value.trim()), out = [];
-      if (!q) { slist.innerHTML = '<li class="gb-sempty">用語の名前・別名・説明の言葉で探せます（5冊すべて）。</li>'; return; }
+      if (!q) { slist.innerHTML = '<li class="gb-sempty">用語の名前・別名・説明の言葉で探せます（すべての本）。</li>'; return; }
       ORDER.forEach(function (id) {
         var b = BOOKS[id]; if (!b.data) return;
         b.data.forEach(function (c, ci) { c.terms.forEach(function (t) {
