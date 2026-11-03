@@ -1611,65 +1611,63 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     v.back = Math.max(-Math.floor(n * 0.8), Math.min(total - n, v.back));
     var blank = Math.max(0, -v.back), back = Math.max(0, v.back);
     var cs = this.c.slice(total - back - (n - blank), total - back);
+    /* 第3部：ホームのミニチャートは線グラフ（終値を結ぶ）。役目は選んだ期間の流れの形を見せることだけ。
+       目盛りは出さず、期間の始まりと終わりの日時を両端に、上にトレンドの言葉と変化率。色は上昇＝緑・下降＝赤・横ばい＝金。
+       トレンドの判定：期間の最初の足の終値から最新の終値までの変化率が、その期間のしきい値（TREND_TH）以上なら上昇、
+       −しきい値以下なら下降、その間は横ばい */
+    if (!cs.length) return;
+    var first = cs[0].c, last = cs[cs.length - 1].c, chg = first ? (last - first) / first * 100 : 0;
+    var th = TREND_TH[TFKEY[this.tf]] || 0.5, dir = chg >= th ? 1 : chg <= -th ? -1 : 0;
+    var col = dir > 0 ? [66, 213, 156] : dir < 0 ? [255, 106, 92] : [227, 184, 103];
+    var rgb = function (a) { return "rgba(" + col.join(",") + "," + a + ")"; };
     var mn = Infinity, mx = -Infinity;
-    cs.forEach(function (k) { mn = Math.min(mn, k.l); mx = Math.max(mx, k.h); });
-    var span0 = (mx - mn) || mx * 0.001; mn += v.shift * span0; mx += v.shift * span0;  // vertical scroll
-    var nStep = Math.max(1.5, Math.min(3.5, (h - 22) / 20));  // fewer price labels when the chart is short (it shrinks to fit the card)
-    var raw = (mx - mn) / nStep, mag = Math.pow(10, Math.floor(Math.log10(raw))), step = mag;
-    [1, 2, 2.5, 5, 10].some(function (m) { step = m * mag; return step >= raw; });
-    var lo = Math.floor(mn / step) * step, hi = Math.ceil(mx / step) * step;
-    if (hi - lo < step * Math.min(3, Math.ceil(nStep))) { hi = lo + step * Math.min(3, Math.ceil(nStep)); }
-    c.font = "500 10.5px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif";
-    var lab = function (v) { return step < 1 ? v.toFixed(step < 0.01 ? 3 : step < 0.1 ? 2 : 1) : v.toLocaleString("en-US", { maximumFractionDigits: 0 }); };
-    var hasT = cs[0] && cs[0].t, axisW = this.axisW = Math.max(30, c.measureText(lab(hi)).width + 6), cw = w - axisW, top = 6, bot = h - (hasT ? 16 : 6);
-    var Y = function (v) { return bot - (v - lo) / (hi - lo) * (bot - top); };
-    c.font = "500 10.5px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif";
-    c.textBaseline = "middle"; c.textAlign = "left";
-    for (var v = lo; v <= hi + 1e-9; v += step) {
-      var y = Y(v);
-      c.strokeStyle = "rgba(255,236,200,.07)"; c.lineWidth = 1; c.setLineDash([2, 3]);
-      c.beginPath(); c.moveTo(0, Math.round(y) + .5); c.lineTo(cw - 4, Math.round(y) + .5); c.stroke();
-      c.setLineDash([]); c.fillStyle = "rgba(244,241,234,.5)";
-      c.fillText(lab(v), cw + 2, y);
-    }
-    var bw = cw / (cs.length + blank), body = Math.max(2, bw * 0.55);
-    if (hasT) {  // a few time labels so a scrolled chart stays readable
+    cs.forEach(function (k) { mn = Math.min(mn, k.c); mx = Math.max(mx, k.c); });
+    var span0 = (mx - mn) || mx * 0.002 || 1; mn -= span0 * 0.08; mx += span0 * 0.08;
+    mn += v.shift * span0; mx += v.shift * span0;  // vertical scroll (drag) as before
+    var top = 20, bot = h - 14, cw = w, bw = cw / (cs.length + blank);
+    this.axisW = 0;
+    var X = function (i) { return i * bw + bw / 2; }, Y = function (val) { return bot - (val - mn) / (mx - mn) * (bot - top); };
+    // trend label (word, arrow, change for this period)
+    var word = dir > 0 ? "↗ 上昇トレンド" : dir < 0 ? "↘ 下降トレンド" : "→ 横ばい", pct = (chg >= 0 ? "+" : "−") + Math.abs(chg).toFixed(Math.abs(chg) < 10 ? 2 : 1) + "%（この期間）";
+    c.textBaseline = "top"; c.textAlign = "left";
+    c.font = "700 11px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif"; c.fillStyle = rgb(1); c.fillText(word, 0, 2);
+    var ww = c.measureText(word).width;
+    c.font = "600 10.5px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif"; c.fillStyle = "rgba(244,241,234,.7)"; c.fillText(pct, ww + 8, 2.5);
+    this.trend = { dir: dir, chg: chg, word: word };
+    // start and end of the period at the two ends
+    if (cs[0].t) {
       var tf = TFKEY[this.tf], z = function (x) { return String(x).padStart(2, "0"); };
       var tl = function (t) {
         var d = new Date(t * 1000);
-        if (tf === "1w") return d.getFullYear() + "/" + (d.getMonth() + 1);
-        if (tf === "1d") return (d.getMonth() + 1) + "/" + d.getDate();
-        if (tf === "4h") return (d.getMonth() + 1) + "/" + d.getDate() + " " + d.getHours() + "時";
-        if (tf === "1m" || tf === "5m") return z(d.getHours()) + ":" + z(d.getMinutes());
+        if (tf === "1w" || tf === "1d") return (d.getMonth() + 1) + "/" + d.getDate();
+        if (tf === "4h" || tf === "1h") return (d.getMonth() + 1) + "/" + d.getDate() + " " + z(d.getHours()) + ":00";
         return (d.getMonth() + 1) + "/" + d.getDate() + " " + z(d.getHours()) + ":" + z(d.getMinutes());
       };
-      c.save(); c.font = "500 9.5px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif"; c.fillStyle = "rgba(244,241,234,.42)"; c.textBaseline = "bottom";
-      [0.08, 0.5, 0.92].forEach(function (f, j) {
-        var i = Math.min(cs.length - 1, Math.round(f * (cs.length - 1)));
-        if (blank && j > 0) {  // empty space on the right: label the middle and the newest candle where they are
-          i = j === 1 ? Math.round((cs.length - 1) / 2) : cs.length - 1;
-          var x = i * bw + bw / 2, tw = c.measureText(tl(cs[i].t)).width;
-          c.textAlign = "center"; c.fillText(tl(cs[i].t), Math.max(tw / 2, Math.min(cw - tw / 2, x)), h); return;
-        }
-        c.textAlign = j === 0 ? "left" : j === 2 ? "right" : "center";
-        c.fillText(tl(cs[i].t), j === 0 ? 0 : j === 2 ? cw - 2 : i * bw + bw / 2, h);
-      });
-      c.restore();
+      c.font = "500 9.5px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif"; c.fillStyle = "rgba(244,241,234,.45)"; c.textBaseline = "bottom";
+      c.textAlign = "left"; c.fillText(tl(cs[0].t), 0, h);
+      c.textAlign = "right"; c.fillText(tl(cs[cs.length - 1].t), Math.min(cw, X(cs.length - 1) + 30), h);
+      c.textAlign = "center"; c.fillStyle = "rgba(244,241,234,.3)"; c.fillText("―", cw / 2, h);
     }
-    c.save(); c.beginPath(); c.rect(0, 0, cw, bot + 2); c.clip();  // candles stay inside the plot when scrolled
-    c.shadowColor = "rgba(227,184,103,.45)"; c.shadowBlur = 6;
-    var sec = TFSEC[this.tf], nowS = Date.now() / 1000;
-    cs.forEach(function (k, i) {
-      var x = i * bw + bw / 2, up = k.c >= k.o;
-      var col = up ? "#ecc67c" : "#a5834c";
-      c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 1;
-      c.beginPath(); c.moveTo(x, Y(k.h)); c.lineTo(x, Y(k.l)); c.stroke();
-      var y1 = Y(Math.max(k.o, k.c)), y2 = Y(Math.min(k.o, k.c));
-      if (k.t && k.t + sec > nowS) c.strokeRect(x - body / 2 + .5, y1 + .5, Math.max(1, body - 1), Math.max(1.2, y2 - y1));  // still forming: hollow
-      else c.fillRect(x - body / 2, y1, body, Math.max(1.2, y2 - y1));
-    });
+    c.save(); c.beginPath(); c.rect(0, top - 2, cw, bot - top + 4); c.clip();
+    // start level (dashed), filled area, line
+    var y0 = Math.round(Y(first)) + .5;
+    c.strokeStyle = "rgba(244,241,234,.28)"; c.lineWidth = 1; c.setLineDash([3, 3]);
+    c.beginPath(); c.moveTo(0, y0); c.lineTo(cw, y0); c.stroke(); c.setLineDash([]);
+    var g = c.createLinearGradient(0, top, 0, bot); g.addColorStop(0, rgb(.28)); g.addColorStop(1, rgb(0));
+    c.beginPath(); c.moveTo(X(0), bot);
+    cs.forEach(function (k, i) { c.lineTo(X(i), Y(k.c)); });
+    c.lineTo(X(cs.length - 1), bot); c.closePath(); c.fillStyle = g; c.fill();
+    c.beginPath(); cs.forEach(function (k, i) { if (i) c.lineTo(X(i), Y(k.c)); else c.moveTo(X(i), Y(k.c)); });
+    c.strokeStyle = rgb(1); c.lineWidth = 1.8; c.lineJoin = "round"; c.stroke();
+    // start point and the current point
+    var dot = function (x, y, r, fill) { c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fillStyle = fill; c.fill(); };
+    dot(X(0), Y(first), 2.5, "rgba(244,241,234,.6)");
+    var xe = X(cs.length - 1), ye = Y(last);
+    dot(xe, ye, 5, rgb(.25)); dot(xe, ye, 3, rgb(1));
     c.restore();
   };
+  // トレンドのしきい値（期間の変化率・%）：短い期間ほど小さく
+  var TREND_TH = { "1m": 0.05, "5m": 0.1, "15m": 0.2, "30m": 0.3, "1h": 0.4, "4h": 0.8, "1d": 2, "1w": 4 };
   Market.prototype.render = function (dir) {
     var o = this.o, s = o.fmt(this.price);
     if (o.tailDigits) {
