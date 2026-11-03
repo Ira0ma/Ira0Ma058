@@ -39,7 +39,7 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p prev
-          for f in market.json calendar.json holidays.json spothist.json news.json typhoon.json pollen.json; do
+          for f in market.json calendar.json holidays.json market_holidays.json spothist.json news.json typhoon.json pollen.json; do
             curl -fsSL --retry 2 "${{ steps.pages.outputs.base_url }}/$f" -o "prev/$f" || rm -f "prev/$f"
           done
           ls -la prev
@@ -88,6 +88,9 @@ jobs:
           else
             echo "holiday fetch failed; keeping the published copy"; cp prev/holidays.json _site/holidays.json
           fi
+      - name: Work out US and UK market holidays (from their rules; no outside source)
+        continue-on-error: true
+        run: python3 ipad-widget/market_holidays.py _site/market_holidays.json || cp prev/market_holidays.json _site/market_holidays.json || true
       - name: Fetch remarks by central bankers and officials
         continue-on-error: true
         run: |

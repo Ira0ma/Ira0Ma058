@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="a3836c3c9e">
+<meta name="build" content="8a2e6dbd92">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -356,30 +356,23 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .q-count { font-size: 11px; color: var(--ink-3); }
 
 /* calendar */
-/* X feed (みんなのFX) */
+/* 学ぶ（用語集・図鑑・入門）のカード。id は以前のXの欄の名残 */
 #xfeed { left: 667px; top: 566px; width: 517px; height: 240px; padding: 12px 16px 12px; display: flex; flex-direction: column; gap: 7px; }
-.x-head { display: flex; align-items: center; gap: 10px; }
-.x-logo { width: 30px; height: 30px; border-radius: 50%; background: #000; display: grid; place-items: center; box-shadow: 0 0 0 1px rgba(255,255,255,.15); flex: none; }
-.x-head .who { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
-.x-head .who b { font-size: 14px; font-weight: 600; }
-.x-head .who span { font-size: 11.5px; color: var(--ink-3); }
-.x-open { margin-left: auto; font-size: 12px; font-weight: 600; color: #14100a; background: var(--gold); border-radius: 999px; padding: 5px 12px; text-decoration: none; white-space: nowrap; }
-.x-body { flex: 0 1 auto; min-height: 0; max-height: 100%; overflow: hidden; border-radius: 10px; position: relative; }
-.x-body a.twitter-timeline { font-size: 12.5px; color: var(--ink-3); text-decoration: none; }
-.x-fallback { font-size: 12px; line-height: 1.6; color: var(--ink-2); padding: 2px; }
 /* on/off switch for the notices (saved on the device; off at first) */
 /* みんなのFX は注目ポイントのカードの下に（X の埋め込みが読めないときは1行の案内） */
 #points { display: flex; flex-direction: column; padding-bottom: 12px; }
 #points .pt-foot { position: static; margin-top: 6px; flex: none; }
 #points .pt-list { flex: 0 1 auto; min-height: 0; overflow: hidden; }
-.pt-x { margin-top: auto; flex: none; border-top: 1px solid var(--glass-line); padding-top: 8px; display: flex; flex-direction: column; gap: 5px; }
-.pt-x .x-head { gap: 8px; }
-.pt-x .x-logo { width: 22px; height: 22px; }
-.pt-x .x-head .who b { font-size: 12px; } .pt-x .x-head .who span { font-size: 10.5px; }
-.pt-x .x-open { font-size: 11px; padding: 3px 10px; }
-.pt-x .x-body { max-height: 104px; }
-.pt-x .x-fallback { font-size: 11px; line-height: 1.5; padding: 0; }
-/* FX用語集：みんなのFXのカードの下に目次の一覧、タップでデジタルブック */
+.pt-next { margin-top: auto; flex: none; border: 0; border-top: 1px solid var(--glass-line); background: none; color: inherit; font: inherit; text-align: left; padding: 9px 0 2px; display: flex; flex-direction: column; gap: 2px; cursor: pointer; }
+.pt-next .pn-h { font-size: 11px; color: var(--ink-3); font-weight: 600; }
+.pt-next .pn-l1 { font-size: 14px; font-weight: 600; }
+.pt-next .pn-l2 { font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pt-next .pn-l2 .stars { color: var(--star); letter-spacing: 1px; margin-left: 4px; }
+.pt-next.soon .pn-l1 { color: var(--gold); }  /* 発表30分前から：指標一覧の「あと◯分」と同じ金色 */
+.pt-next.soon { border-top-color: rgba(227,184,103,.55); }
+.pt-next:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+#ind.flash { box-shadow: 0 0 0 2px rgba(227,184,103,.6), 0 18px 40px rgba(0,0,0,.45); }
+/* FX用語集：目次の一覧、タップでデジタルブック */
 .gl-tile { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding-top: 0px; }
 .gl-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .gl-tile[data-book="eco"] { --gl-acc: #6fd0d4; --gl-rgb: 111,208,212; }
@@ -581,7 +574,32 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .grid7 .wd.sun, .grid7 .wd.sat, .grid7 .d.sun, .grid7 .d.sat, .grid7 .d.hol { color: var(--gold); }
 .grid7 .d { position: relative; font-size: 13px; height: 22px; display: grid; place-items: center; }
 .grid7 .d.today::before { content: ""; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%,-50%); border-radius: 50%; border: 1.5px solid var(--gold); box-shadow: 0 0 10px rgba(227,184,103,.55), inset 0 0 8px rgba(227,184,103,.25); }
-.grid7 .d.hol::after { content: ""; position: absolute; left: 50%; bottom: -1px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--gold); }
+/* 日付の印：下の点＝その日の指標（金色＝★3、灰色＝それ以外）、右上の輪＝米・英の市場休場（目安）。日本の祝日は金色の数字 */
+.grid7 .d { height: 20px; cursor: pointer; border-radius: 6px; }
+.grid7 .d:hover { background: rgba(255,255,255,.06); }
+.grid7 .d.sel { background: rgba(227,184,103,.16); }
+.grid7 .d.today::before { width: 20px; height: 20px; }
+.grid7 .d.ev::after, .grid7 .d.ev3::after { content: ""; position: absolute; left: 50%; bottom: 0; width: 3px; height: 3px; margin-left: -1.5px; border-radius: 50%; background: var(--ink-3); }
+.grid7 .d.ev3::after { width: 5px; height: 5px; margin-left: -2.5px; bottom: -1px; background: var(--gold); }
+.grid7 .d.mh i { position: absolute; right: 3px; top: 2px; width: 5px; height: 5px; border-radius: 50%; border: 1px solid var(--ink-2); }
+.cal-legend { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 10px; line-height: 12px; color: var(--ink-3); margin-top: -8px; }
+.cal-legend i { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-right: 4px; vertical-align: 1px; }
+.cal-legend i.ev3 { background: var(--gold); } .cal-legend i.ev { width: 3px; height: 3px; background: var(--ink-3); } .cal-legend i.mh { border: 1px solid var(--ink-2); }
+.cal-legend b { color: var(--gold); font-weight: 600; }
+.cal-today { font: inherit; font-size: 10.5px; font-weight: 600; color: var(--gold); background: none; border: 1px solid rgba(227,184,103,.45); border-radius: 999px; padding: 0 7px; height: 22px; white-space: nowrap; flex: none; cursor: pointer; margin-right: 2px; align-self: center; }
+/* 日付をタップ：カレンダーのすぐ下に、その日の祝日・市場休場・指標（ふだんは畳んだまま） */
+#cal.open { height: auto; z-index: 6; background: rgba(14,16,22,.97); }  /* 下の「学ぶ」のカードに重なるので透けないように */
+.cal-detail { grid-column: 1 / -1; border-top: 1px solid var(--glass-line); padding-top: 8px; font-size: 12.5px; }
+.cal-detail .cd-h { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.cal-detail .cd-h b { font-size: 13.5px; }
+.cal-detail .cd-h button, .cal-detail .cd-btn { font: inherit; font-size: 11.5px; font-weight: 600; color: var(--gold); background: none; border: 1px solid rgba(227,184,103,.45); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.cal-detail .cd-h button { margin-left: auto; }
+.cal-detail ul { list-style: none; margin: 4px 0; padding: 0; max-height: 150px; overflow-y: auto; }
+.cal-detail li { display: grid; grid-template-columns: 46px 1fr auto; gap: 6px; padding: 3px 0; border-bottom: 1px solid var(--glass-line); }
+.cal-detail li .st { color: var(--star); letter-spacing: 1px; }
+.cal-detail p { margin: 3px 0; color: var(--ink-2); }
+.flow #cal .month[data-offset="1"], .flow #cal > .sep { display: none; }  /* 狭い幅（縦に並ぶ表示）は1か月 */
+.ind-list.filtered { overflow-y: auto; min-height: 0; flex: 1 1 auto; }
 
 
 /* iPhone: the widgets split into three swipeable pages, each scaled to fit the landscape screen */
@@ -635,7 +653,7 @@ html:not(.flow) #flow { display: none; }
 .flow .card { position: relative !important; left: auto !important; top: auto !important; width: 340px !important; flex: none; }
 .flow #markets { height: auto; grid-template-columns: 1fr; grid-template-rows: auto 1px auto 1px auto 1px auto; }
 .flow #markets .sep { margin: 0 22px; }
-.flow #cal { height: auto; grid-template-columns: 1fr; grid-template-rows: auto 1px auto; }
+.flow #cal { height: auto; grid-template-columns: 1fr; grid-template-rows: none; }
 .flow #xfeed { height: auto; min-height: 202px; }
 .flow #xfeed .gl-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 14px; }
 
@@ -804,18 +822,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     </ul>
     <div class="picker pt-picker" hidden><div class="picker-h"><span>注目ポイントの銘柄</span><button type="button" class="picker-close">閉じる</button></div><div class="picker-list"></div></div>
     <div class="rep" id="rep" hidden role="dialog" aria-label="前日の振り返りと今日の予想"><div class="rep-h"><b>本日のトレード戦略</b><small id="rep-when"></small><button type="button" class="rep-close">閉じる</button></div><div class="rep-body" id="rep-body"></div></div>
-    <!-- みんなのFX（X）：注目ポイントの下に -->
-    <div class="pt-x">
-      <div class="x-head pt-xhead">
-        <div class="x-logo"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="#fff" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
-        <div class="who"><b>みんなのFX</b><span>トレイダーズ証券 @Min_FX</span></div>
-        <a class="x-open" href="https://x.com/Min_FX" target="_blank" rel="noopener">X で開く</a>
-      </div>
-      <div class="x-body">
-        <a class="twitter-timeline" data-theme="dark" data-chrome="noheader nofooter noborders transparent" data-height="104" data-dnt="true" data-lang="ja" href="https://twitter.com/Min_FX?ref_src=twsrc%5Etfw">@Min_FX のポストを読み込んでいます…</a>
-        <div class="x-fallback" hidden>この端末では X の投稿を表示できません。「X で開く」から確認できます。</div>
-      </div>
-    </div>
+    <!-- 次の重要指標までのカウントダウン（注目ポイントの下に）：タップで今日の重要指標へ -->
+    <button type="button" class="pt-next" id="pt-next" aria-label="次の重要指標（タップで今日の重要指標の一覧へ）"><span class="pn-h">次の重要指標</span><span class="pn-l1">指標データを読み込んでいます…</span><span class="pn-l2"></span></button>
     <div class="pt-foot" id="pt-foot"></div>
   </section>
 
@@ -859,6 +867,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <div class="month" data-offset="0"></div>
     <div class="sep"></div>
     <div class="month" data-offset="1"></div>
+    <div class="cal-legend"><span><i class="ev3"></i>重要指標（★3）</span><span><i class="ev"></i>指標</span><span><i class="mh"></i>米・英の市場休場（目安）</span><span><b>金色の日付</b>＝日本の祝日・土日</span></div>
+    <div class="cal-detail" id="cal-detail" hidden aria-live="polite"></div>
   </section>
 
 
@@ -2326,15 +2336,31 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (j) { HOL_NAMES = j; HOL += " " + Object.keys(j).join(" "); renderCal(); srcMark("holidays", true); })
       .catch(function () { srcMark("holidays", false); });
+    // 米国・英国の市場休場（サイトが規則から作る market_holidays.json。臨時の休場・短縮取引は含まない＝目安）
+    fetch("market_holidays.json?v=" + new Date().toDateString().replace(/ /g, ""), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (j) { MKT_HOL = j || {}; renderCal(); }).catch(function () {});
   }
+  var MKT_HOL = {}, calSel = "", indDay = "";
+  var MKT_NAME = { US: "米国", UK: "英国" };
+  function evDay(t) { return key(t.getFullYear(), t.getMonth(), t.getDate()); }  // 指標の日付（端末の日付＝日本時間）
+  function evRange() {  // 指標データが届いている期間（週単位の配信なので、最初と最後の指標の週の日曜〜土曜）
+    if (!calEvents || !calEvents.length) return null;
+    var ts = calEvents.map(function (e) { return +e.t; }), a = new Date(Math.min.apply(null, ts)), b = new Date(Math.max.apply(null, ts));
+    a = new Date(a.getFullYear(), a.getMonth(), a.getDate() - a.getDay()); b = new Date(b.getFullYear(), b.getMonth(), b.getDate() + 6 - b.getDay());
+    return { from: evDay(a), to: evDay(b) };
+  }
+  function eventsOn(k) { return (calEvents || []).filter(function (e) { return evDay(e.t) === k; }).sort(function (a, b) { return a.t - b.t || b.stars - a.stars; }); }
   function key(y, m, d) { return y + "-" + String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0"); }
+  var evMarks = {};
   function renderCal() {
     var now = new Date();
+    evMarks = {}; (calEvents || []).forEach(function (e) { var k = evDay(e.t); evMarks[k] = Math.max(evMarks[k] || 0, e.stars === 3 ? 3 : 1); });
     document.querySelectorAll("#cal .month").forEach(function (box) {
       var off = +box.getAttribute("data-offset");
       var d0 = new Date(calBase.getFullYear(), calBase.getMonth() + off, 1);
       var y = d0.getFullYear(), m = d0.getMonth(), first = d0.getDay(), days = new Date(y, m + 1, 0).getDate();
-      var html = '<div class="cal-head"><h2 class="num">' + y + "年 " + (m + 1) + '月</h2><div class="cal-nav">' +
+      var html = '<div class="cal-head"><h2 class="num">' + y + "年 " + (m + 1) + '月</h2><div class="cal-nav">' + (off === 0 ? '<button type="button" class="cal-today" data-today aria-label="今月に戻る">今日</button>' : "") +
         '<button type="button" data-step="-1" aria-label="前の月"><svg width="8" height="12" viewBox="0 0 8 12"><path d="M6.5 1L1.5 6l5 5" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button>' +
         '<button type="button" data-step="1" aria-label="次の月"><svg width="8" height="12" viewBox="0 0 8 12"><path d="M1.5 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button></div></div><div class="grid7 num">';
       WD.forEach(function (w, i) { html += '<div class="wd' + (i === 0 ? " sun" : i === 6 ? " sat" : "") + '">' + w + "</div>"; });
@@ -2342,18 +2368,45 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       for (var d = 1; d <= days; d++) {
         var wd = (first + d - 1) % 7, cls = "d";
         if (wd === 0) cls += " sun"; if (wd === 6) cls += " sat";
-        var k = key(y, m, d), title = HOL_NAMES[k] ? ' title="' + HOL_NAMES[k] + '"' : "";
+        var k = key(y, m, d), title = HOL_NAMES[k] ? ' title="' + HOL_NAMES[k] + '"' : "", evs = evMarks[k];
         if (HOL.indexOf(k) >= 0) cls += " hol";
         if (y === now.getFullYear() && m === now.getMonth() && d === now.getDate()) cls += " today";
-        html += '<div class="' + cls + '"' + title + ">" + d + "</div>";
+        if (evs) cls += evs === 3 ? " ev3" : " ev";
+        if (MKT_HOL[k]) cls += " mh";
+        if (k === calSel) cls += " sel";
+        html += '<div class="' + cls + '" data-k="' + k + '" role="button" tabindex="0" aria-label="' + (m + 1) + "月" + d + "日" + (HOL_NAMES[k] ? "・" + HOL_NAMES[k] : "") + (evs ? "・指標あり" : "") + (MKT_HOL[k] ? "・海外市場休場（目安）" : "") + '"' + title + ">" + d + (MKT_HOL[k] ? "<i></i>" : "") + "</div>";
       }
       box.innerHTML = html + "</div>";
     });
   }
+  // 日付の詳細（カレンダーのすぐ下。同じ日をもう一度タップ／閉じるで畳む）
+  function calDetail() {
+    var box = document.getElementById("cal-detail"), cal = document.getElementById("cal");
+    if (!calSel) { box.hidden = true; box.innerHTML = ""; cal.classList.remove("open"); return; }
+    var p = calSel.split("-"), dt = new Date(+p[0], +p[1] - 1, +p[2]), rg = evRange(), evs = eventsOn(calSel), lines = [];
+    if (HOL_NAMES[calSel]) lines.push("<p>🎌 日本の祝日：" + esc(HOL_NAMES[calSel]) + "</p>");
+    (MKT_HOL[calSel] || []).forEach(function (h) { lines.push("<p>" + esc(MKT_NAME[h[0]] || h[0]) + "市場は休場（目安）：" + esc(h[1]) + "</p>"); });
+    var inRange = rg && calSel >= rg.from && calSel <= rg.to;
+    if (evs.length) lines.push("<ul>" + evs.map(function (e) { return '<li><span class="num">' + e.t.getHours() + ":" + String(e.t.getMinutes()).padStart(2, "0") + "</span><span>" + esc(jaTitle(e)) + '</span><span class="st">' + "★★★".slice(0, e.stars) + "</span></li>"; }).join("") + "</ul>" +
+      '<button type="button" class="cd-btn" data-ind-day="' + calSel + '">この日の指標を一覧に表示</button>');
+    else if (!calEvents) lines.push("<p>指標データを読み込めていません。</p>");
+    else if (!inRange) lines.push("<p>指標データの範囲外です（指標の予定は" + (rg ? +rg.from.slice(5, 7) + "/" + +rg.from.slice(8) + "〜" + +rg.to.slice(5, 7) + "/" + +rg.to.slice(8) : "今週") + "の分まで）。</p>");
+    else if (!lines.length) lines.push("<p>予定なし</p>");
+    else lines.push("<p>指標の予定はありません。</p>");
+    box.innerHTML = '<div class="cd-h"><b>' + (dt.getMonth() + 1) + "月" + dt.getDate() + "日(" + WD[dt.getDay()] + ')</b><button type="button" data-cd-close>閉じる</button></div>' + lines.join("");
+    box.hidden = false; cal.classList.add("open");
+  }
   document.getElementById("cal").addEventListener("click", function (e) {
-    var b = e.target.closest("button[data-step]"); if (!b) return;
-    calBase.setMonth(calBase.getMonth() + (+b.getAttribute("data-step"))); renderCal();
+    var b = e.target.closest("button[data-step]");
+    if (b) { calBase.setMonth(calBase.getMonth() + (+b.getAttribute("data-step"))); renderCal(); return; }
+    if (e.target.closest("[data-today]")) { var n = new Date(); calBase = new Date(n.getFullYear(), n.getMonth(), 1); renderCal(); return; }
+    if (e.target.closest("[data-cd-close]")) { calSel = ""; renderCal(); calDetail(); return; }
+    var f = e.target.closest("[data-ind-day]");
+    if (f) { indDay = f.getAttribute("data-ind-day"); renderIndicators(); var ic = document.getElementById("ind"); ic.scrollIntoView({ block: "nearest" }); return; }
+    var d = e.target.closest(".d[data-k]"); if (!d) return;
+    calSel = calSel === d.getAttribute("data-k") ? "" : d.getAttribute("data-k"); renderCal(); calDetail();
   });
+  document.getElementById("cal").addEventListener("keydown", function (e) { if ((e.key === "Enter" || e.key === " ") && e.target.matches(".d[data-k]")) { e.preventDefault(); e.target.click(); } });
 
   /* ---------- background ---------- */
   /* The background is one still picture, drawn once per resize: glow, planet rim and city lights, faint candles,
@@ -2514,6 +2567,18 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   }
   function renderIndicators() {
     if (!calEvents) return;
+    var ulF = document.getElementById("ind-list");
+    ulF.classList.toggle("filtered", !!indDay);
+    if (indDay) {  // カレンダーの「この日の指標を一覧に表示」：その日だけ（「すべて表示」でいつでも元に戻る）
+      var p = indDay.split("-"), dt = new Date(+p[0], +p[1] - 1, +p[2]), evs = eventsOn(indDay);
+      document.getElementById("ind-day").textContent = (dt.getMonth() + 1) + "月" + dt.getDate() + "日(" + WD[dt.getDay()] + ")だけ";
+      ulF.innerHTML = evs.map(function (e) {
+        var sub = [e.actual ? "結果 " + e.actual : "", e.forecast ? "予想 " + e.forecast : "", e.previous ? "前回 " + e.previous : ""].filter(Boolean).join(" / ");
+        return '<li><div class="t num">' + e.t.getHours() + ":" + String(e.t.getMinutes()).padStart(2, "0") + '</div><div><div class="n">' + esc(jaTitle(e)) + '</div><div class="s num">' + esc(sub || "　") + '</div></div><div class="stars" data-v="' + e.stars + '"></div></li>';
+      }).join("") + '<li class="empty"><button type="button" class="retry" data-ind-all>すべて表示</button></li>';
+      ulF.querySelectorAll(".stars").forEach(paintStars);
+      return;
+    }
     var now = new Date(), day = tradingDay(now);
     document.getElementById("ind-day").textContent = (day.start.getMonth() + 1) + "月" + day.start.getDate() + "日(" + WD[day.start.getDay()] + ")";
     var today = calEvents.filter(function (e) {
@@ -2642,16 +2707,40 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
         }).filter(function (e) { return !isNaN(e.t); });
         return fc.then(function (extra) {
           mergeActuals(evs, extra);
-          calEvents = evs; calUpdatedAt = Date.now(); srcMark("calendar", true, ""); SRC.calendar.count = evs.length;
-          renderIndicators(); renderStrategy(); paintUpdated();
+          calEvents = evs; calUpdatedAt = Date.now(); calFailed = false; srcMark("calendar", true, ""); SRC.calendar.count = evs.length;
+          renderIndicators(); renderStrategy(); paintUpdated(); renderCal(); if (calSel) calDetail(); renderNext();
         });
       })
       .catch(function () {
-        srcMark("calendar", false);
+        srcMark("calendar", false); calFailed = true; renderNext();
         if (!calEvents && !PREVIEW) document.getElementById("ind-list").innerHTML = '<li class="empty">経済指標を取得できませんでした。下の「経済カレンダーを表示」から確認できます。 ' + '<button type="button" class="retry" data-retry="calendar">再読み込み</button>' + '</li>';
       })
       .then(function () { scheduleCalendar(); });
   }
+
+  /* ---------- 次の重要指標までのカウントダウン（注目ポイントの下） ----------
+     「次の重要指標」は取引前チェックと同じ決め方：★3（High）で、まだ時刻が来ていない一番早いもの。表示は分単位
+     （30秒ごとの点検で書き直す）。データは経済指標の取得（通常5分・発表の前後は1分）に乗っている。発表30分前から金色 */
+  var calFailed = false;
+  function renderNext() {
+    var el = document.getElementById("pt-next"); if (!el) return;
+    var l1 = el.querySelector(".pn-l1"), l2 = el.querySelector(".pn-l2");
+    el.classList.remove("soon");
+    if (!calEvents) { if (calFailed) { l1.textContent = "経済指標を取得できませんでした"; l2.textContent = ""; } return; }
+    var now = new Date(), nx = calEvents.filter(function (e) { return e.stars === 3 && e.t > now; }).sort(function (a, b) { return a.t - b.t; })[0];
+    if (!nx) { l1.textContent = "今週これからの重要指標（★3）はありません"; l2.textContent = ""; return; }
+    var mins = Math.max(1, Math.ceil((nx.t - now) / 60000)), h = Math.floor(mins / 60), m = mins % 60, t = nx.t;
+    var tom = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    var day = t.toDateString() === now.toDateString() ? "" : t.toDateString() === tom.toDateString() ? "明日 " : (t.getMonth() + 1) + "/" + t.getDate() + "(" + WD[t.getDay()] + ") ";
+    l1.textContent = "次の指標まで あと" + (h ? h + "時間" : "") + (h && !m ? "" : m + "分");
+    l2.innerHTML = esc(day + t.getHours() + ":" + String(t.getMinutes()).padStart(2, "0") + "（日本時間） " + jaTitle(nx)) + '<span class="stars">★★★</span>';
+    el.classList.toggle("soon", mins <= 30);
+  }
+  document.getElementById("pt-next").addEventListener("click", function () {  // 今日の重要指標の一覧へ
+    var ic = document.getElementById("ind"); if (indDay) { indDay = ""; renderIndicators(); }
+    ic.scrollIntoView({ block: "nearest" }); ic.classList.add("flash"); setTimeout(function () { ic.classList.remove("flash"); }, 1200);
+  });
+  document.addEventListener("click", function (e) { if (e.target.closest("[data-ind-all]")) { indDay = ""; renderIndicators(); } });
 
   /* ---------- automatic analysis (market.json, refreshed hourly by the Pages workflow) ---------- */
   function setPoint(i, title, body) {
@@ -2818,28 +2907,6 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
         document.getElementById("pt-foot").innerHTML = '<button type="button" class="retry" data-retry="market">再読み込み</button>';
         markets.forEach(function (mk) { if (!mk.live) { mk.failed = true; mk.render(); } });
       });
-  }
-
-  /* ---------- X feed: official embed when the device allows it, otherwise a note and the open-in-X link ---------- */
-  function loadX() {
-    var body = document.querySelector("#points .x-body"), fb = body.querySelector(".x-fallback"), done = false;
-    var fail = function () {
-      if (done) return; done = true;
-      var a = body.querySelector("a.twitter-timeline"); if (a) a.hidden = true;
-      fb.hidden = false;
-    };
-    var sc = document.createElement("script");
-    sc.async = true; sc.src = "https://platform.twitter.com/widgets.js"; sc.charset = "utf-8";
-    sc.onerror = fail;
-    sc.onload = function () {
-      if (!window.twttr || !twttr.events) { fail(); return; }
-      twttr.events.bind("rendered", function () { done = true; document.getElementById("points").classList.add("x-ok"); });
-    };
-    document.body.appendChild(sc);
-    setTimeout(function () {
-      var f = body.querySelector("iframe");
-      if (!f || f.offsetHeight < 60) { done = false; fail(); }
-    }, 12000);
   }
 
   /* ---------- FX用語集：カードに章の一覧、タップで目次つきのデジタルブック（ページ送り・スワイプ・索引） ---------- */
@@ -4094,9 +4161,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   loadCalendar();
   loadMarket(); setInterval(loadMarket, 5 * 60000);
   loadReport(); setInterval(loadReport, 10 * 60000);
-  loadHolidays(); setInterval(function () { renderIndicators(); paintUpdated(); if (calendarHot()) scheduleSoon(); }, 30000);
+  loadHolidays(); setInterval(function () { renderIndicators(); renderNext(); paintUpdated(); if (calendarHot()) scheduleSoon(); }, 30000);
   // X's script is slow and third-party: start it only after the page itself has finished loading
-  if (document.readyState === "complete") loadX(); else window.addEventListener("load", loadX);
   // start both dashboards in the background so their entry calls reach the desk
   // BTC only while a market panel shows it (three dashboards at once weigh on an iPad)
   // all four run in the background so their entry calls, levels, scores and alerts reach the desk
