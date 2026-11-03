@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="42eab40397">
+<meta name="build" content="449657f313">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1293,6 +1293,9 @@ const OKX_TF={m5:'5m',m15:'15m',m30:'30m',h1:'1H'};
 function okxRows(d){return (d?.data||[]).map(r=>({t:n(r[0]),o:n(r[1]),h:n(r[2]),l:n(r[3]),c:n(r[4])})).filter(b=>b.t&&b.c).sort((a,b)=>a.t-b.t)}
 const NY_OFF_FMT=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',hourCycle:'h23',day:'numeric'});
 function serverH4(t){const d=new Date(t),u=d.getUTCHours(),ny=+NY_OFF_FMT.formatToParts(d).find(x=>x.type==='hour').value,off=((u-ny)+24)%24;return Math.floor((t+(7-off)*3600000)/14400000)}
+/* 第2部 A2：取得（時間がかかる）と反映（一度に）を分ける。以前はサイトの CL=F の足を入れてから OKX の足を取りに行き、
+   その待ち時間に描いた回だけ CL=F の足で水平線・120SMA を計算していた（オイルの重要価格帯が2組の値を行き来した原因）。
+   いまは OKX の足を先に取ってきて、サイトの足と同じ一度の処理で入れ替える */
 async function oilBarsFromOkx(){
   try{
     const got={};
@@ -1301,17 +1304,25 @@ async function oilBarsFromOkx(){
     // 1時間足は300本×2（4時間足を十分な本数でまとめるため）
     try{const older=okxRows(await getJSON(URLS.okxClHist+'1H&after='+got.h1[0].t,8000));got.h1=older.filter(b=>b.t<got.h1[0].t).concat(got.h1)}catch{}
     const h4=[];for(const b of got.h1){const k=serverH4(b.t),last=h4.at(-1);if(last&&last.k===k){last.h=Math.max(last.h,b.h);last.l=Math.min(last.l,b.l);last.c=b.c}else h4.push({k,t:b.t,o:b.o,h:b.h,l:b.l,c:b.c})}
+    return {got,h4};
+  }catch{return null}
+}
+function oilApplyOkx(r,siteFresh){
+  if(!r){state.oilBars='site';return}
+  const {got,h4}=r;
+  {
     // パーペチュアルとCL=Fの差：同じ時刻の1時間足の終値どうし（いちばん新しい重なり）
-    const cl=new Map(state.h1.map(b=>[b.t,b.c]));let gap=null,gapAt=0;
+    // 差はサイトの足を読み直した回だけ測り直す（そうでない回の state.h1 は前回の OKX の足なので比べられない）
+    const cl=new Map(siteFresh?state.h1.map(b=>[b.t,b.c]):[]);let gap=null,gapAt=0;
     for(let i=got.h1.length-1;i>=0;i--){const c=cl.get(got.h1[i].t);if(c){gap=got.h1[i].c-c;gapAt=got.h1[i].t;break}}
     for(const tf in OKX_TF)state[tf]=got[tf];
     state.h4=h4.map(({k,...b})=>b);
-    if(gap!=null){for(const tf of ['d1','w1','mn'])state[tf]=state[tf].map(b=>({...b,o:b.o+gap,h:b.h+gap,l:b.l+gap,c:b.c+gap}));
+    if(gap!=null&&siteFresh){for(const tf of ['d1','w1','mn'])state[tf]=state[tf].map(b=>({...b,o:b.o+gap,h:b.h+gap,l:b.l+gap,c:b.c+gap}));
       const was=state.oilGap?.v;state.oilGap={v:gap,at:gapAt};if(was!==gap)saveCache()}  // 差の換算が変わったら、ホームのカードにも同じ値をすぐ渡す
-    state.oilBars='okx';state.src.chart='OKX（WTI連動パーペチュアル）'+(gap!=null?'・日足以上はCL=Fを差だけずらした足':'・日足以上はCL=F');
+    state.oilBars='okx';state.src.chart='OKX（WTI連動パーペチュアル）'+(state.oilGap?'・日足以上はCL=Fを差だけずらした足':'・日足以上はCL=F');
     state.health.h1=state.health.m15=true;
     replayLive();if(state.spot)mergeSpotAll(state.spot.price,state.spot.asof);
-  }catch{state.oilBars='site'}
+  }
 }
 // 先物市場（NYMEX）が休場中でも、パーペチュアルは取引が続く。休場中は参考として値だけ覚えておく
 async function oilPerpWhileClosed(){
@@ -1457,7 +1468,7 @@ async function refreshSpot(){
 }
 
 async function refreshCharts(){
-  let changed=false;
+  let changed=false;const okxGot=IS_OIL?await oilBarsFromOkx():null;  // オイル：OKXの足を先に取ってくる（反映は下でサイトの足と続けて）
   // サイトのmarket.json（H1・M15とも150本）を優先し、だめならXAUSを試す
   try{
     const inst=(await getSite()).instruments[INSTR.site],g=inst.candles;
@@ -1476,7 +1487,7 @@ async function refreshCharts(){
       if(state.spot)mergeSpotAll(state.spot.price,state.spot.asof);
     }
   }catch{}
-  if(IS_OIL)await oilBarsFromOkx();
+  if(IS_OIL)oilApplyOkx(okxGot,changed);
   if(!changed&&IS_GOLD){
   try{
     const h1d=await firstSuccess([()=>getJSON(URLS.h1),()=>getJSON(URLS.h1alt)]);
@@ -1883,8 +1894,17 @@ function keyPost(k){
   const j=JSON.stringify(msg);if(j===keyPosted)return;keyPosted=j;
   try{window.parent.postMessage(msg,'*')}catch{}
 }
+/* 第2部 A2：水平線は「確定した足」が変わったときだけ計算し直す。形成中の最新足は価格が動くたびに高値・安値が変わり、
+   サイトの読み直し（約9分遅れの足）とライブ価格の足とで交互に線が出たり消えたりしていた（ドル円の R2 が 158.993 と
+   159.712 を行き来した原因）。線の決め方は同じで、同じ確定足の間は最初に計算した1つの結果を使う */
+const srMemo=new Map();
 function srLevels(bars){
   if(!bars||bars.length<30)return [];
+  const n0=bars.length,pv=bars[n0-2],mk=n0+'|'+bars[0].t+'|'+pv.t+'|'+pv.h+'|'+pv.l+'|'+pv.c,hit=srMemo.get(bars[0].t+'#'+(bars[1].t-bars[0].t));
+  if(hit&&hit.k===mk)return hit.v;
+  const v=srLevels0(bars);srMemo.set(bars[0].t+'#'+(bars[1].t-bars[0].t),{k:mk,v});if(srMemo.size>40)srMemo.clear();return v;
+}
+function srLevels0(bars){
   const k=3,a=atr(bars,14)||1,tol=Math.max(INSTR.tolMin,a*.35),n=bars.length,piv=[];
   for(let i=k;i<n-k;i++){
     let isH=true,isL=true;
