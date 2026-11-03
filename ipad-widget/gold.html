@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="73b4bdc385">
+<meta name="build" content="86153701db">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2774,8 +2774,11 @@ function signalConditions(s){
   if(s.via&&s.via.length)met.push('チャートパターン：'+s.via.join('・'));
   return {met,unmet,dir:d};
 }
+let resPosted='';
 function notifyDesk(s){
   if(window.parent===window)return;
+  {const ev=(state.events||[]).filter(e=>e.actual&&!e.speech&&Date.now()-e.ts<3*3600000).map(e=>({ts:e.ts,title:e.title,currency:e.currency,actual:e.actual}));
+   const j=JSON.stringify(ev);if(ev.length&&j!==resPosted){resPosted=j;try{window.parent.postMessage({type:'dash-results',key:INSTR.key,ev},'*')}catch{}}}  // 発表結果をデスクの一覧にも（第2部 B1）
   const now=Date.now(),h1=state.h1.at(-1),barEnd=h1?h1.t+3600000:0,cd=signalConditions(s);
   const spotAt=state.spot?.asof||0,stale=!mktClosed&&(!spotAt||now-spotAt>10*60000||!h1||now-h1.t>3*3600000);
   const reason=!s.ready?'データ不足のため見送り':s.forced?'重要指標の前後のため見送り':stale?'データが古いため判定を止めています':s.sig==='WAIT'?'条件がそろわず見送り':'';

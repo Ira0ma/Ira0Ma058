@@ -188,6 +188,8 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .ind-list .stars { color: var(--star); font-size: 13px; letter-spacing: 1px; padding-top: 2px; }
 .ind-list .stars span { color: rgba(255,255,255,.18); }
 .ind-list li.past { opacity: .45; }
+.ind-list .s.warn { color: #f0c36a; font-size: 10.5px; margin-top: 1px; }
+.ind-note { margin: 6px 0 0; font-size: 10px; line-height: 1.5; color: var(--ink-3); }
 .ind-list li.empty { display: block; color: var(--ink-2); font-size: 13px; line-height: 1.7; border-bottom: 0; }
 .more { margin-top: auto; font-size: 13px; color: var(--ink-2); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
 .more:hover { color: var(--gold); }
@@ -813,6 +815,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <ul class="ind-list" id="ind-list">
       <li class="empty">今日の経済指標を読み込んでいます…</li>
     </ul>
+    <p class="ind-note">★3＝最も重要・★2＝重要・★1＝参考。発表済みは結果つきで2時間残し、今日の予定が少ない日は今週このあとの指標（日付つき）も載せます。</p>
     <div class="ind-foot">
       <a class="more" href="https://jp.investing.com/economic-calendar/" target="_blank" rel="noopener">経済カレンダーを表示 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></a>
       <span class="ind-upd num" id="ind-upd"></span>
@@ -836,7 +839,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <div class="picker pt-picker" hidden><div class="picker-h"><span>注目ポイントの銘柄</span><button type="button" class="picker-close">閉じる</button></div><div class="picker-list"></div></div>
     <div class="rep" id="rep" hidden role="dialog" aria-label="前日の振り返りと今日の予想"><div class="rep-h"><b>本日のトレード戦略</b><small id="rep-when"></small><button type="button" class="rep-close">閉じる</button></div><div class="rep-body" id="rep-body"></div></div>
     <!-- 次の重要指標までのカウントダウン（注目ポイントの下に）：タップで今日の重要指標へ -->
-    <button type="button" class="pt-next" id="pt-next" aria-label="次の重要指標（タップで今日の重要指標の一覧へ）"><span class="pn-h">次の重要指標</span><span class="pn-l1">指標データを読み込んでいます…</span><span class="pn-l2"></span></button>
+    <button type="button" class="pt-next" id="pt-next" aria-label="次の★3指標（タップで今日の重要指標の一覧へ）"><span class="pn-h">次の★3指標（最も重要）</span><span class="pn-l1">指標データを読み込んでいます…</span><span class="pn-l2"></span></button>
     <div class="pt-foot" id="pt-foot"></div>
   </section>
 
@@ -1150,12 +1153,25 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   var entryState = {};
   window.addEventListener("message", function (e) {
     var d = e.data;
-    if (!d || (d.type !== "dash-signal" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert" && d.type !== "dash-open" && d.type !== "dash-gloss") || !SHEETS[d.key] || !SHEETS[d.key].el) return;
+    if (!d || (d.type !== "dash-signal" && d.type !== "dash-results" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert" && d.type !== "dash-open" && d.type !== "dash-gloss") || !SHEETS[d.key] || !SHEETS[d.key].el) return;
     if (e.source !== SHEETS[d.key].el.querySelector("iframe").contentWindow) return;  // only our own dashboards
     // While a dashboard shows its chart full screen, its own "back" button sits where ours does: hide ours
     if (d.type === "dash-chartfull") { SHEETS[d.key].el.querySelector(".dash-close").hidden = !!d.on; return; }
     if (d.type === "dash-gmma") return;  // GMMA crosses are no longer listed on the desk
     if (d.type === "dash-levels") { keyLv[d.key] = d; paintKeyLv(); return; }
+    if (d.type === "dash-results" && Array.isArray(d.ev) && calEvents) {  // 第2部 B1：ダッシュボードが受けた発表結果（同じ指標カレンダーの同じ名前・時刻）を一覧にも
+      var put = false;
+      d.ev.forEach(function (x) {
+        var cc = x.currency === "USD" ? "USD" : x.currency === "JPY" ? "JPY" : x.currency;
+        calEvents.forEach(function (e) {
+          if (e.actual || e.title !== x.title || e.country !== cc || Math.abs(e.t - x.ts) > 3 * 60000) return;
+          var want = valUnit(e.forecast) || valUnit(e.previous); if (want && valUnit(x.actual) !== want) return;
+          e.actual = String(x.actual); put = true;
+        });
+      });
+      if (put) { renderIndicators(); if (typeof calDetail === "function") try { calDetail(); } catch (er) {} }
+      return;
+    }
     if (d.type === "dash-score") { scoreOf[d.key] = d; paintScore(); return; }
     if (d.type === "dash-alert") { deskAlert(d); return; }
     if (d.type === "dash-gloss") { if (window.openGlossary) window.openGlossary(String(d.term || "")); return; }
@@ -2771,6 +2787,9 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var start = new Date(roll - off), end = new Date(start.getTime() + 86400000);
     return { start: start, end: end };
   }
+  var IND_KEEP = 2 * 3600000, indSig = "", indShownAt = 0;
+  // 数値の発表がない大きな予定（選挙・会議など）は「イベント」と書く（指標の発表と区別する）
+  function isEventOnly(e) { return !e.forecast && !e.previous && !e.actual && !/ Speaks$/.test(e.title); }
   function renderIndicators() {
     if (!calEvents) return;
     var ulF = document.getElementById("ind-list");
@@ -2780,7 +2799,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       document.getElementById("ind-day").textContent = (dt.getMonth() + 1) + "月" + dt.getDate() + "日(" + WD[dt.getDay()] + ")だけ";
       ulF.innerHTML = evs.map(function (e) {
         var sub = [e.actual ? "結果 " + e.actual : "", e.forecast ? "予想 " + e.forecast : "", e.previous ? "前回 " + e.previous : ""].filter(Boolean).join(" / ");
-        return '<li><div class="t num">' + HHMM(e.t) + '</div><div><div class="n">' + esc(jaTitle(e)) + '</div><div class="s num">' + esc(sub || "　") + '</div></div><div class="stars" data-v="' + e.stars + '"></div></li>';
+        return '<li><div class="t num"><span class="date">' + MDW(e.t) + "</span>" + HHMM(e.t) + '<span class="tz">JST</span></div><div class="stars" data-v="' + e.stars + '"></div><div class="b"><div class="n">' + esc(jaTitle(e)) + '</div><div class="s num">' + esc(sub || (isEventOnly(e) ? "イベント（数値の発表なし）" : "　")) + '</div></div></li>';
       }).join("") + '<li class="empty"><button type="button" class="retry" data-ind-all>すべて表示</button></li>';
       ulF.querySelectorAll(".stars").forEach(paintStars);
       return;
@@ -2790,7 +2809,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var today = calEvents.filter(function (e) {
       return e.t >= day.start && e.t < day.end;
     }).sort(function (a, b) { return a.t - b.t || b.stars - a.stars; });
-    var upcoming = today.filter(function (e) { return e.t > now - 60 * 60000; });
+    var upcoming = today.filter(function (e) { return e.t > now - IND_KEEP; });  // 発表済みは結果つきで2時間残す
     var list = (upcoming.length ? upcoming : today);
     if (list.length > 3) { // keep the most important ones, then show them in time order
       list = list.slice().sort(function (a, b) { return b.stars - a.stars || a.t - b.t; }).slice(0, 3)
@@ -2814,22 +2833,31 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       // every row carries its own date and time on one line: 11/4（水）00:16 JST
       li.children[0].innerHTML = '<span class="date">' + MDW(e.t) + "</span>" + hm + '<span class="tz">JST</span>';
       if (e.later) li.classList.add("later");
-      li.querySelector(".n").textContent = jaTitle(e);
+      li.querySelector(".n").textContent = jaTitle(e) + (isEventOnly(e) ? "（イベント）" : "");
       var s = li.querySelector(".s");
       if (mins <= 0 && e.actual) {
         var a = numOf(e.actual), f = numOf(e.forecast);
         var cmp = a != null && f != null ? (a > f ? "（予想より上）" : a < f ? "（予想より下）" : "（予想どおり）") : "";
         s.innerHTML = '<span class="res"></span>';
         s.firstChild.textContent = "結果 " + e.actual + cmp;
+      } else if (mins <= 0 && isEventOnly(e)) {
+        s.textContent = "イベント（数値の発表なし）・開始済み";
       } else if (mins <= 0 && mins > -30) {
         s.innerHTML = '<span class="soon">発表済み・結果を取得中…</span>';
+      } else if (mins <= 0) {
+        s.textContent = "発表済み（結果は未取得）" + (sub ? "｜" + sub : "");
       } else if (mins > 0 && mins <= 60) {
         s.innerHTML = '<span class="soon"></span>';
         s.firstChild.textContent = "あと" + Math.ceil(mins) + "分" + (sub ? "｜" + sub : "");
-      } else s.textContent = sub || "　";
+      } else s.textContent = sub || (isEventOnly(e) ? "イベント（数値の発表なし）" : "　");
+      if (e.stars === 3 && mins > -30) {  // ★3：発表前後の注意を自動で添える
+        var w = document.createElement("div"); w.className = "s warn"; w.textContent = "発表前後は値動きとスプレッドに注意"; li.querySelector(".b").appendChild(w);
+      }
       var st = li.querySelector(".stars"); st.setAttribute("data-v", e.stars); paintStars(st);
       ul.appendChild(li);
     });
+    // 表示の中身が変わったら、更新の時刻もその時刻にする（第2部 B4）
+    var sig = ul.textContent; if (sig !== indSig) { indSig = sig; indShownAt = Date.now(); paintUpdated(); }
   }
   /* Indicators refresh every 5 minutes, and every minute from 5 minutes before to 30 minutes after
      a release that has no result yet. Forex Factory's feed carries no results, so they are taken from
@@ -2888,7 +2916,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   function paintUpdated() {
     var el = document.getElementById("ind-upd");
     if (!calUpdatedAt) { el.textContent = ""; return; }
-    var d = new Date(calUpdatedAt);
+    var d = new Date(Math.max(calUpdatedAt, indShownAt));
     el.innerHTML = "<i></i>" + updAt(d);
     el.title = calendarHot() ? "発表前後のため1分ごとに更新中" : "5分ごとに自動更新";
   }
@@ -2937,7 +2965,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     if (!nx) { l1.textContent = "今週これからの重要指標（★3）はありません"; l2.textContent = ""; return; }
     var mins = Math.max(1, Math.ceil((nx.t - now) / 60000)), h = Math.floor(mins / 60), m = mins % 60, t = nx.t;
     var day = t.toDateString() === now.toDateString() ? "" : MDW(t);  // tomorrow too: the date, not 「明日」
-    l1.textContent = "次の指標まで あと" + (h ? h + "時間" : "") + (h && !m ? "" : m + "分");
+    l1.textContent = "次の★3指標まで あと" + (h ? h + "時間" : "") + (h && !m ? "" : m + "分");
     l2.innerHTML = esc(day + HHMM(t) + " JST " + jaTitle(nx)) + '<span class="stars">★★★</span>';
     el.classList.toggle("soon", mins <= 30);
   }
@@ -2978,6 +3006,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     });
     picker.querySelector(".picker-close").addEventListener("click", function () { picker.hidden = true; });
   })();
+  var ptSig = "", ptShownAt = 0;
   function refreshPoints() {
     var all = market && (market.instruments || market);
     [0, 1].forEach(function (i) {
@@ -2989,7 +3018,11 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     if (!market) return;
     var u = new Date(market.updated), foot = document.getElementById("pt-foot");
     var stale = Date.now() - u > 3 * 3600000;
-    foot.textContent = "チャートから自動分析・" + (stale ? MDHM(u) + " 更新" : updAt(u)) + (stale ? "（更新が止まっています）" : "（参考情報）");
+    // 表示の中身が変わったのに分析の時刻が同じとき（銘柄の切り替えなど）は、表示を更新した時刻も添える（第2部 B4）
+    var sig = [1, 2].map(function (i) { return document.querySelector('[data-pt="' + i + 'p"]').textContent; }).join("|");
+    if (sig !== ptSig) { if (ptSig) ptShownAt = Date.now(); ptSig = sig; }
+    var shown = ptShownAt > +u + 60000 ? "・表示 " + updAt(new Date(ptShownAt)) : "";
+    foot.textContent = "チャートから自動分析・" + (stale ? MDHM(u) + " 更新" : (shown ? "分析 " + stampAt(u) : updAt(u))) + shown + (stale ? "（更新が止まっています）" : "（参考情報）");
     foot.style.color = stale ? "var(--up-red)" : "";
     renderStrategy();
   }
@@ -3037,14 +3070,14 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     if (useReport) { setPoint(3, report.title || "本日のトレード戦略", report.headline); return; }
     document.getElementById("rep").hidden = true;
     if (!market) return;
-    var now = new Date(), line1 = "本日は米国・日本の重要指標なし。\nテクニカル主導の値動きを想定。";
+    var now = new Date(), line1 = "このあと本日は米国・日本の重要な発表なし。\nテクニカル主導の値動きを想定。";
     if (calEvents) {
       var next = calEvents.filter(function (e) {
         return e.stars === 3 && e.t > now && e.t < tradingDay(now).end;
       }).sort(function (a, b) { return a.t - b.t; })[0];
-      if (next) line1 = (sameDay(next.t, now) ? HHMM(next.t) : MDHM(next.t)) + " " + jaTitle(next) + "に注意。";
+      if (next) line1 = (sameDay(next.t, now) ? HHMM(next.t) : MDHM(next.t)) + " " + jaTitle(next) + (isEventOnly(next) ? "（イベント）" : "") + "に注意。";
       else if (calEvents.some(function (e) { return e.t > now && e.t < tradingDay(now).end; }))
-        line1 = "本日は大型指標なし（小型指標のみ）。\nテクニカル主導の値動きを想定。";
+        line1 = "このあと本日は大型の数値発表なし（小型の指標のみ）。\nテクニカル主導の値動きを想定。";
     }
     var all = market.instruments || market, notes2 = [];
     var sel = [0, 1].map(function (i) { var k = pointKey(i); return [all[k] && all[k].analysis, INST[k].name, k]; });
