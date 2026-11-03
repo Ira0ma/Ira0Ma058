@@ -159,12 +159,20 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .mkt .sg.blink { animation: sgBlink 1s steps(2, start) infinite; }
 @keyframes sgBlink { 50% { opacity: .25; } }
 @media (prefers-reduced-motion: reduce) { .mkt .sg.blink { animation: none; } }
-.dk-toasts { position: fixed; left: 0; right: 0; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 200; display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; padding: 0 16px; }
-.dk-toast { pointer-events: auto; font: inherit; font-size: 13.5px; font-weight: 700; color: #ffd57a; background: rgba(14,15,20,.96); border: 1px solid rgba(255,213,122,.7); border-radius: 12px; padding: 10px 16px; box-shadow: 0 8px 24px rgba(0,0,0,.55); cursor: pointer; max-width: 640px; text-align: left; }
+.dk-toasts { position: fixed; left: 260px; right: 12px; bottom: calc(4px + env(safe-area-inset-bottom, 0px)); z-index: 200; display: flex; flex-direction: row; justify-content: flex-end; align-items: center; gap: 6px; pointer-events: none; height: 30px; overflow: hidden; }
+.dk-toasts.stack { left: 10px; right: 10px; bottom: calc(44px + env(safe-area-inset-bottom, 0px)); height: auto; flex-direction: column; align-items: stretch; }
+.dk-toast .tt { font-style: normal; color: var(--ink-3); font-weight: 600; font-size: 11px; margin-right: 6px; }
+/* 縦に並ぶ表示：スクロールする枠（#flow）の下端を、下の帯（ボタンと通知）の上で止める。カードは帯の下に入らない */
+.flow #flow { bottom: calc(env(safe-area-inset-bottom, 0px) + 44px + var(--tbar, 0px)) !important; padding-bottom: 8px !important; }
+.dk-toast { pointer-events: auto; font: inherit; font-size: 12px; font-weight: 700; color: #ffd57a; background: rgba(14,15,20,.96); border: 1px solid rgba(255,213,122,.7); border-radius: 10px; padding: 5px 10px; box-shadow: 0 4px 14px rgba(0,0,0,.5); cursor: pointer; max-width: 360px; min-width: 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; }
 .dk-toast small { color: var(--ink-3); font-weight: 600; margin-right: 6px; }
 .mkt canvas.chart { width: 100%; height: 108px; display: block; margin-top: 8px; touch-action: none; cursor: grab; }
 .chart-reset { position: absolute; left: 20px; top: 132px; z-index: 2; font: inherit; font-size: 11px; font-weight: 600; color: #14100a; background: var(--gold); border: 0; border-radius: 999px; padding: 3px 10px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
-.tabs { display: flex; gap: 2px; margin-top: 6px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 6px; align-items: center; }
+.tabs .tf-opt { display: none; }
+.tabs.open .tf-opt { display: block; }
+.tabs .tf-cur { flex: 1 1 auto; text-align: left; color: var(--gold); border-color: rgba(227,184,103,.35); }
+.tabs.open .tf-cur { flex-basis: 100%; }
 .tabs button { flex: 1 1 0; min-width: 0; white-space: nowrap; letter-spacing: -.03em; font: inherit; font-size: 10.5px; color: var(--ink-2); background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 4px 0; cursor: pointer; }
 .tabs .tv-go { flex: none; font-size: 10px; font-weight: 700; color: #9fdcff; text-decoration: none; border: 1px solid rgba(92,200,255,.4); border-radius: 7px; padding: 3px 6px; margin-left: 3px; white-space: nowrap; align-self: center; }
 .tabs button[aria-pressed="true"] { color: var(--gold); border-color: rgba(227,184,103,.55); background: rgba(227,184,103,.10); }
@@ -1230,22 +1238,46 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   /* Alerts set on a dashboard (price reached, 120SMA, CHOCH/BOS, indicator in 30 min, score, remarks) pop up here
      while the dashboard runs behind the desk; a tap opens that dashboard. */
   var ALERT_NAME = { gold: "GOLD", usdjpy: "ドル円", btc: "BTC" };
-  function deskToast(text, onTap) {
+  /* タスク7：通知のトースト。画面の下の空いた帯（下のボタンの右）に横に並べ、カードの本文に重ねない。
+     同時に出すのは3件まで（狭い画面は2件）で、古いものから消す。各トーストに時刻。同じ銘柄の相反する通知
+     （上昇と下降、買いと売り、ゴールデンとデッドなど）は新しい方だけを残す */
+  var TOAST_MAX = function () { return innerWidth < 700 ? 2 : 3; };
+  function toastBox() {
     var box = document.querySelector(".dk-toasts");
-    if (!box) { box = document.createElement("div"); box.className = "dk-toasts"; box.setAttribute("aria-live", "polite"); document.body.appendChild(box); }
-    var t = document.createElement("button"); t.type = "button"; t.className = "dk-toast"; t.textContent = text;
-    t.addEventListener("click", function () { t.remove(); if (onTap) onTap(t); });
-    box.appendChild(t); setTimeout(function () { t.remove(); }, 15000);
+    if (!box) { box = document.createElement("div"); box.className = "dk-toasts"; box.setAttribute("aria-live", "polite"); document.body.appendChild(box); placeToasts(); if (window.MutationObserver) new MutationObserver(placeToasts).observe(box, { childList: true }); }
+    return box;
+  }
+  function placeToasts() {  // 下のボタン（見る順番・ツール）の右から始める。狭い画面ではボタンの上の1段に
+    var box = document.querySelector(".dk-toasts"), dock = document.querySelector(".dk-dock"); if (!box) return;
+    var r = dock ? dock.getBoundingClientRect() : null, narrow = innerWidth < 700 || !r;
+    box.classList.toggle("stack", narrow);
+    box.style.left = narrow ? "" : Math.round(r.right + 8) + "px";
+    document.documentElement.style.setProperty("--tbar", narrow && box.children.length ? box.offsetHeight + 6 + "px" : "0px");  // 狭い画面：通知の段の分だけ本文を上で止める
+  }
+  window.addEventListener("resize", placeToasts);
+  function toastDir(t) { return /上昇|買い|ゴールデン|上抜け|↑|↗/.test(t) ? 1 : /下降|売り|デッド|下抜け|↓|↘/.test(t) ? -1 : 0; }
+  function pushToast(t, key, text) {
+    var box = toastBox(), dir = toastDir(text);
+    t.dataset.key = key || ""; t.dataset.dir = dir;
+    if (key && dir) [].slice.call(box.children).forEach(function (o) { if (o.dataset.key === key && +o.dataset.dir === -dir) o.remove(); });  // 相反する古い通知は消す
+    var tm = document.createElement("i"); tm.className = "tt"; tm.textContent = HHMM(new Date()); t.insertBefore(tm, t.firstChild);
+    box.appendChild(t);
+    while (box.children.length > TOAST_MAX()) box.firstChild.remove();  // 古いものから
+    placeToasts();
+    setTimeout(function () { t.remove(); }, 15000);
     return t;
+  }
+  function deskToast(text, onTap) {
+    var t = document.createElement("button"); t.type = "button"; t.className = "dk-toast"; t.appendChild(document.createTextNode(text)); t.title = text;
+    t.addEventListener("click", function () { t.remove(); if (onTap) onTap(t); });
+    return pushToast(t, "", text);
   }
   function deskAlert(d) {
     sysNotify((ALERT_NAME[d.key] || d.key) + " アラート", d.text, "al-" + d.key + "-" + d.kind);
-    var box = document.querySelector(".dk-toasts");
-    if (!box) { box = document.createElement("div"); box.className = "dk-toasts"; box.setAttribute("aria-live", "polite"); document.body.appendChild(box); }
     var t = document.createElement("button"); t.type = "button"; t.className = "dk-toast";
-    t.innerHTML = "<small>🔔 " + (ALERT_NAME[d.key] || d.key) + "</small>"; t.appendChild(document.createTextNode(d.text));
+    t.innerHTML = "<small>🔔 " + (ALERT_NAME[d.key] || d.key) + "</small>"; t.appendChild(document.createTextNode(d.text)); t.title = (ALERT_NAME[d.key] || d.key) + "：" + d.text;
     t.addEventListener("click", function () { t.remove(); openDash(d.key, t); });
-    box.appendChild(t); setTimeout(function () { t.remove(); }, 15000);
+    pushToast(t, d.key, d.text);
     chime(true);
   }
   var keyLv = {};
@@ -1429,6 +1461,17 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   var TF = [{ k: "1分", v: 0.03 }, { k: "5分", v: 0.06 }, { k: "15分", v: 0.12 }, { k: "30分", v: 0.18 },
             { k: "1時間", v: 0.25 }, { k: "4時間", v: 0.5 }, { k: "1日", v: 1 }, { k: "1週", v: 2.2 }];
   var TF_DEFAULT = 6;  // 1日
+  var TF_SHARED = { i: TF_DEFAULT };
+  try { var tfs = +localStorage.getItem("desk-tf"); if (tfs >= 0 && tfs < 8 && localStorage.getItem("desk-tf") !== null) TF_SHARED.i = tfs; } catch (e) {}
+  function setSharedTf(i) {  // 全カードを同じ時間足に
+    TF_SHARED.i = i; try { localStorage.setItem("desk-tf", String(i)); } catch (e) {}
+    (window.__mkts || []).forEach(function (mk) {
+      mk.tf = i; var tb = mk.el.querySelector(".tabs"); tb.classList.remove("open");
+      tb.querySelectorAll(".tf-opt").forEach(function (x, j) { x.setAttribute("aria-pressed", j === i); });
+      if (mk.tfCur) { mk.tfCur.textContent = "期間：" + TF[i].k + " ▾（全銘柄）"; mk.tfCur.setAttribute("aria-expanded", "false"); }
+      mk.resetView(); mk.gen(); mk.draw();
+    });
+  }
   var VIEW_N = 38, MIN_N = 12;  // candles shown by default / at the closest zoom
   function Market(el, key) {
     this.el = el; this.tf = TF_DEFAULT; this.resetView();
@@ -1437,15 +1480,19 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     this.chgEl = el.querySelector('[data-f="chg"]');
     this.srcEl = document.createElement("div"); this.srcEl.className = "msrc"; this.chgEl.after(this.srcEl);  // 出典（どこから・どんな種類の値か）を表に
     var self = this, tabs = el.querySelector(".tabs");
+    /* タスク7：時間足は全銘柄で連動（1か所で選ぶと全カードに効く）。カードには今の期間のボタン1つだけを出し、
+       タップで8つの期間が開く。選ぶと全カードがその期間になり、閉じる */
+    this.tf = TF_SHARED.i;
+    var cur = document.createElement("button"); cur.type = "button"; cur.className = "tf-cur"; cur.setAttribute("aria-expanded", "false");
+    cur.addEventListener("click", function () { var open = !tabs.classList.contains("open"); tabs.classList.toggle("open", open); cur.setAttribute("aria-expanded", String(open)); });
+    tabs.appendChild(cur); this.tfCur = cur;
     TF.forEach(function (t, i) {
       var b = document.createElement("button");
-      b.type = "button"; b.textContent = t.k; b.setAttribute("aria-pressed", i === self.tf);
-      b.addEventListener("click", function () {
-        self.tf = i; tabs.querySelectorAll("button").forEach(function (x, j) { x.setAttribute("aria-pressed", j === i); });
-        self.resetView(); self.gen(); self.draw();
-      });
+      b.type = "button"; b.className = "tf-opt"; b.textContent = t.k; b.setAttribute("aria-pressed", i === self.tf);
+      b.addEventListener("click", function () { setSharedTf(i); });
       tabs.appendChild(b);
     });
+    cur.textContent = "期間：" + TF[this.tf].k + " ▾（全銘柄）";
     this.tvEl = document.createElement("a"); this.tvEl.className = "tv-go"; this.tvEl.target = "_blank"; this.tvEl.rel = "noopener"; this.tvEl.textContent = "TV ↗";
     this.tvEl.addEventListener("click", function (e) {
       self.tvEl.href = tvUrl(self);  // the saved chart may have been set on a dashboard meanwhile
@@ -2050,6 +2097,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   window.addEventListener("storage", function (e) { if (e.key === OIL_KEY || e.key === "usoil_auto_cache_final") oilRefeed(); });  // saved by the oil dashboard
   setInterval(oilRefeed, 30000);  // freshness and the 35 days
   markets.push(oilMk);
+  window.__mkts = markets;  // 時間足の連動（setSharedTf）用
   (function () {  // the ›: shows that the row scrolls to the oil card; tapping it goes there, at the end it hides
     var row = document.getElementById("markets"), cue = row.querySelector(".mk-cue");
     var mark = function () { row.classList.toggle("at-end", row.scrollLeft + row.clientWidth >= row.scrollWidth - 4); };
@@ -3074,8 +3122,13 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
         return e.stars === 3 && e.t > now && e.t < tradingDay(now).end;
       }).sort(function (a, b) { return a.t - b.t; })[0];
       if (next) line1 = (sameDay(next.t, now) ? HHMM(next.t) : MDHM(next.t)) + " " + jaTitle(next) + (isEventOnly(next) ? "（イベント）" : "") + "に注意。";
-      else if (calEvents.some(function (e) { return e.t > now && e.t < tradingDay(now).end; }))
-        line1 = "このあと本日は大型の数値発表なし（小型の指標のみ）。\nテクニカル主導の値動きを想定。";
+      else {
+        // タスク7：今日すでに★3が出ていれば、それを書く（重要指標カードと食い違う「大型指標なし」は出さない）
+        var dd = tradingDay(now), done = calEvents.filter(function (e) { return e.stars === 3 && e.t >= dd.start && e.t <= now; }).sort(function (a, b) { return b.t - a.t; })[0];
+        var small = calEvents.some(function (e) { return e.t > now && e.t < dd.end; });
+        if (done) line1 = "本日の大型" + (isEventOnly(done) ? "イベント" : "指標") + "（" + HHMM(done.t) + " " + jaTitle(done) + "）は" + (isEventOnly(done) ? "開始済み" : "発表済み") + "。\nこのあとは" + (small ? "小型の指標のみ。" : "予定なし。") + "結果のあとの値動きに注意。";
+        else if (small) line1 = "このあと本日は大型の数値発表なし（小型の指標のみ）。\nテクニカル主導の値動きを想定。";
+      }
     }
     var all = market.instruments || market, notes2 = [];
     var sel = [0, 1].map(function (i) { var k = pointKey(i); return [all[k] && all[k].analysis, INST[k].name, k]; });
