@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="16863afae0">
+<meta name="build" content="3b8934ded1">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -687,7 +687,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 
   <!-- ===== OILCash（補正表示）：USオイル版だけ表示 ===== -->
   <section id="secOil" class="panel s12" hidden>
-    <div class="cardhead"><div><div class="title">OILCash（補正表示）</div><div class="sub" id="oilSub">このページのUSオイルの価格に、入力されたMT5値との差を加えた推定表示です。XMの配信値そのものではありません</div></div><span class="tag">OILCash</span></div>
+    <div class="cardhead"><div><div class="title">OILCash（補正表示）</div><div class="sub" id="oilSub">このページのUSオイルの価格に、入力されたMT5値との差を加えた推定表示です。XMの配信値そのものではありません</div></div><span class="tag" id="oilSpotTag">現物：確認中</span></div>
     <div class="oilbox">
       <div class="oilhead"><b>OILCash（補正表示）</b><span class="oilpx" id="oilAdjPx">--</span></div>
       <div class="oilchip" id="oilAdjChip">補正なし</div>
@@ -766,13 +766,13 @@ const INSTRUMENTS={
     brokerNote:'XMのBTCUSDは1lot＝1BTCです。XSの契約量・スプレッドはご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,0),
     footer:'データ: Coinbase・Kraken・OKX（BTCのリアルタイム価格）／GitHub Actionsで定期取得したYahoo Finance足（チャート）・Forex Factory（経済指標）。'},
-  // USオイル（WTI原油）：価格はSwissquoteの公開レート（XTI/USD・現物の中値）を30秒ごと、取れないときはサイトの定期取得（CL=F 先物）。
-  // チャートの足はサイトのCL=F（先物）を、現物の価格との差だけ平行移動して合わせる（ゴールドと同じ流儀）
+  // USオイル（WTI原油）：価格と足はサイトの定期取得（Yahoo CL=F 先物）。サイト側でSwissquoteのXTI/USD（現物）が取れた回は、
+  // ゴールドと同じく先物の足を現物に合わせて届く（spotAdjusted）。ブラウザからSwissquoteは読めない（CORSなし）ので取りに行かない
   usoil:{key:'usoil',site:'usoil',title:'USOIL',label:'USOIL (WTI)',short:'USOIL',name:'USオイル',asset:'原油',sub:'USオイル（WTI原油）専用｜自動更新｜iPad・iPhone・Android対応',
     dp:2,pip:0.01,minTp:15,pipNote:'1pips＝$0.01',momTh:0.02,slMin:0.05,tolMin:0.015,unit:'バレル',contract:'100',patterns:true,spread:{xm:'5',xs:'5'},
     brokerNote:'原油の1lotの量（バレル数）は業者・口座で違います。XMのOILCashなど、ご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,2),
-    footer:'データ: GitHub Actionsで定期取得したYahoo Finance足（WTI原油先物 CL=F・価格とチャート）／Swissquote（XTI/USD の現物レート。取れたときだけ）・Forex Factory（経済指標）。'}
+    footer:'データ: GitHub Actionsで定期取得したYahoo Finance足（WTI原油先物 CL=F・価格とチャート。SwissquoteのXTI/USDが取れた回は現物に換算）・Forex Factory（経済指標）。更新は1時間に1回ほどです。'}
 };
 const INSTR=INSTRUMENTS[window.INSTR_KEY||(/usdjpy/i.test(location.pathname)?'usdjpy':/btc/i.test(location.pathname)?'btc':/oil/i.test(location.pathname)?'usoil':'gold')];
 const IS_GOLD=INSTR.key==='gold',IS_FX=INSTR.key==='usdjpy',IS_BTC=INSTR.key==='btc',IS_OIL=INSTR.key==='usoil';
@@ -829,7 +829,6 @@ const URLS = {
   xausSpot:'https://xaus.com/api/v1/spot?currency=JPY&unit=oz&compact=1',
   goldApi:'https://api.gold-api.com/price/XAU',
   sqSpot:'https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/XAU/USD',
-  sqOil:'https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/XTI/USD',
   fx:'https://api.frankfurter.dev/v2/rate/usd/jpy',
   h1:'https://xaus.com/api/v1/chart?symbol=xau&range=1mo&interval=1h',
   h1alt:'https://xaus.com/api/v1/chart?symbol=xau&range=1mo&interval=60m',
@@ -880,6 +879,7 @@ function toMs(v){
   return Number.isFinite(p)?p:0;
 }
 function setStatus(type,text){
+  if(IS_OIL&&text==='LIVE'){type='';text=oilSpot?'定期取得（現物）':'定期取得（CL=F）'}  // 原油はリアルタイムではないので LIVE とは出さない
   if(mktClosed&&type!=='error'){text=closedLabel()+(reopenText?'（再開 '+reopenText+'）':'');type=''}  // 休場中は「LIVE」ではなく休場中と出す
   $('mainStatus').textContent=text;
   $('mainDot').className='dot '+(type==='live'?'live':type==='error'?'error':'');
@@ -1229,15 +1229,14 @@ async function refreshSpotBtc(){
   if(!px)throw new Error('BTC price missing');
   return {px,asof,src};
 }
-// USオイル：Swissquoteの公開レート（XTI/USD・現物の売値と買値の中値）→ サイトのmarket.json（CL=F 先物・定期取得）
+// USオイル：サイトのmarket.json（定期取得）。現物（Swissquote XTI/USD）に換算できた回かどうかを価格の出どころに出す
+let oilSpot=false;  // いま表示している価格が現物に換算された値か（OILCashの補正はこのときだけ）
 async function refreshSpotOil(){
-  let px=0,asof=Date.now(),src='';
-  try{
-    const q=await getJSON(URLS.sqOil,8000),p=q?.[0]?.spreadProfilePrices?.[0];
-    if(p&&n(p.bid)&&n(p.ask)){px=(n(p.bid)+n(p.ask))/2;asof=toMs(q[0].ts)||Date.now();src='Swissquote（XTI/USD 現物）'}
-  }catch{}
-  if(!px){const g=(await getSite()).instruments.usoil;px=n(g.price);asof=toMs(g.asOf)||Date.now();src='サイト（定期取得・CL=F 先物）'}
+  const g=(await getSite()).instruments.usoil,px=n(g.price),asof=toMs(g.asOf)||Date.now();
   if(!px)throw new Error('USOIL price missing');
+  oilSpot=g.spotAdjusted===true;
+  const at=g.basisAt?new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'}).format(new Date(g.basisAt*1000)):'';
+  const src=oilSpot?(g.spotNow===false?'サイト（定期取得・現物に換算。'+at+'の差を使用）':'サイト（定期取得・現物 XTI/USD に換算）'):'サイト（定期取得・CL=F 先物。現物は未取得）';
   return {px,asof,src};
 }
 // 休場中（週末・ゴールドの毎日の休止）は、週末も動き続ける取得先（Gold API・Swissquote・Coinbase）の値を使わず、
@@ -1245,6 +1244,7 @@ async function refreshSpotOil(){
 async function closedSpot(){
   const g=(await getSite()).instruments[INSTR.site],px=n(g.price);
   if(!px)throw new Error('price missing');
+  if(IS_OIL)oilSpot=g.spotAdjusted===true;
   const changed=!state.spot||state.spot.price!==px;
   state.src.spot='サイト（休場前の最終値）';
   state.spot={price:px,asof:toMs(g.asOf)||Date.now(),freshness:'fresh',age:0};
@@ -1262,10 +1262,9 @@ async function refreshSpot(){
       state.prevPrice=state.spot?.price??null;
       state.spot={price:px,asof,freshness:Date.now()-asof>10*60000?'stale':'fresh',age:0};
       if(fx)state.goldJpy=px*fx;
-      if(!src.startsWith('サイト'))alignSiteBars(px);  // 先物の足を現物の価格に合わせる
       updateRolling(px);mergeSpotAll(px,asof);
       state.health.spot=true;state.lastOk=Date.now();state.nextSpot=Date.now()+INTERVALS.spot;
-      saveCache();setStatus('live','LIVE');showError('');renderAll();flashPrice();
+      saveCache();setStatus('',oilSpot?'定期取得（現物）':'定期取得（CL=F）');showError('');renderAll();if(state.prevPrice!==px)flashPrice();  // リアルタイムではないので LIVE とは出さない
     }catch(e){
       state.health.spot=false;
       setStatus(state.lastOk?'live':'error',state.lastOk?'キャッシュ表示中':'接続再試行中');
@@ -1388,7 +1387,7 @@ async function refreshCharts(){
       for(const tf of ['m5','m15','m30','h1'])fixTail(state[tf],TFS[tf].min);
       state.health.h1=state.health.m15=true;changed=true;state.src.chart='サイト';
       // サイトの金のローソク足は先物（GC=F）をスポット価格に合わせたもの。合わせられなかった回は、ここでライブのスポット価格に合わせる
-      state.siteUnadjusted=(IS_GOLD&&inst.spotAdjusted===false)||IS_OIL;  // 原油の足は先物（CL=F）のまま届くので、毎回現物に合わせる
+      state.siteUnadjusted=IS_GOLD&&inst.spotAdjusted===false;
       if(state.spot&&!String(state.src.spot||'').startsWith('サイト'))alignSiteBars(state.spot.price);
       replayLive();
       if(state.spot)mergeSpotAll(state.spot.price,state.spot.asof);
@@ -2729,7 +2728,7 @@ function renderSnapshot(){
   $('goldPrice').textContent=fmt(state.spot.price);
   $('goldChange').textContent=chg;
   $('goldChange').className='change '+(pct>=0?'up':'down');
-  $('goldFresh').textContent=(mktClosed?(closedLabel()==='休止中'?'休止中（毎日の休止時間）':'市場休場中'):state.spot.freshness==='stale'?'⚠ 遅延データ':'LIVE')+'｜'+localTime(state.spot.asof)+(state.src.spot?'｜'+state.src.spot:'');
+  $('goldFresh').textContent=(mktClosed?(closedLabel()==='休止中'?'休止中（毎日の休止時間）':'市場休場中'):state.spot.freshness==='stale'?'⚠ 遅延データ':IS_OIL?'定期取得':'LIVE')+'｜'+localTime(state.spot.asof)+(state.src.spot?'｜'+state.src.spot:'');
   $('dayHigh').textContent=d.hi?fmt(d.hi):'--';$('dayLow').textContent=d.lo?fmt(d.lo):'--';$('dayRange').textContent=d.hi&&d.lo?INSTR.dist(d.hi-d.lo):'--';
   if(!IS_FX){
     $('usdjpy').textContent=state.fx?fmt(state.fx,3):'--';
@@ -3815,8 +3814,8 @@ loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(sche
 checkClosed();setInterval(checkClosed,60000);
 refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(releaseHot())refreshLiveTalk()},5000);startLive();setTimeout(fillRecentGold,20000);setInterval(fillRecentGold,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
 // ===== OILCash（補正表示）：USオイル版だけ =====
-// 差＝入力したMT5のOILCash値−そのときのこのページの現物の価格（Swissquote XTI/USD）。現物の価格が取れていないとき
-// （サイトの先物 CL=F で表示中）は保存しない。入力から35日を過ぎた差は使わない（補正なし）。
+// 差＝入力したMT5のOILCash値−そのときのこのページの価格（サイトが現物 XTI/USD に換算した値）。現物に換算できていないとき
+// （CL=F 先物のまま）は保存せず、補正も加えない。入力から35日を過ぎた差は使わない（補正なし）。
 // 保存は usoil_oilcash_adj（以前のCL=F基準の記録 btc_oil_adj は基準が違うため使わない。消さずに残す）
 (function(){
   if(!IS_OIL)return;
@@ -3825,7 +3824,7 @@ refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(release
   const JST=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
   const jst=ms=>JST.format(new Date(ms))+' JST';
   const f2=v=>Number(v).toFixed(2),sg=v=>(v>=0?'+':'−')+f2(Math.abs(v));
-  const isSpot=()=>state.spot&&!String(state.src.spot||'').startsWith('サイト');
+  const isSpot=()=>!!state.spot&&oilSpot;
   function hist(){try{const h=JSON.parse(lsGet(KEY,'null'));return Array.isArray(h?.hist)?h.hist:[]}catch{return []}}
   function active(){const h=hist()[0];return h&&Number.isFinite(h.diff)&&Date.now()-h.t<=MAX_AGE?h:null}
   function draw(cv,bars,add){
@@ -3853,8 +3852,9 @@ refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(release
   function render(){
     if(sheetHidden())return;  // デスクの裏では描かない（開いたときの renderAll で描く）
     const a=active(),h=hist(),px=state.spot?.price,c=$('oilAdjChip'),use=a&&isSpot();
-    $('oilSub').textContent=(isSpot()?'USオイルの現物の価格（'+state.src.spot+'）に、入力されたMT5値との差を加えた推定表示です。'
-      :'いまはUSオイルの価格をサイトの定期取得（CL=F 先物）で表示しています。現物の価格が取れるまでは補正を加えず、そのままの値を出します。')+'XMの配信値そのものではありません';
+    const tag=$('oilSpotTag');tag.textContent=!state.spot?'現物：確認中':isSpot()?'現物の価格：取得済み':'現物の価格：未取得（CL=F）';tag.style.color=isSpot()?'#42d59c':'#f0c36a';
+    $('oilSub').textContent=(isSpot()?'USオイルの現物の価格（サイトの定期取得。SwissquoteのXTI/USDに換算）に、入力されたMT5値との差を加えた推定表示です。'
+      :'いまは現物の価格が取れていないため、USオイルの価格をサイトの定期取得（CL=F 先物）で表示しています。現物の価格が取れるまでは補正を加えず、そのままの値を出します。')+'XMの配信値そのものではありません';
     $('oilAdjPx').textContent=px?f2(px+(use?a.diff:0)):'--';
     const st=mktClosed?'休場中':state.spot?.freshness==='stale'?'遅延':'最新';
     if(use){c.className='oilchip';c.textContent='補正あり：'+jst(a.t)+'入力・差 '+sg(a.diff)+'（推定表示）・元の価格 '+state.src.spot+'・'+st}
@@ -3868,15 +3868,15 @@ refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(release
   $('oilForm').addEventListener('submit',async e=>{
     e.preventDefault();const v=Number($('oilIn').value),msg=$('oilMsg'),btn=$('oilSave');
     if(!(v>0)){msg.textContent='数字を入れてください';return}
-    btn.disabled=true;msg.textContent='いまの現物の価格を取得中…';
-    state.nextSpot=0;try{await refreshSpot()}catch{}
+    btn.disabled=true;msg.textContent='いまの価格を確認中…';
+    siteCache.t=0;state.nextSpot=0;try{await refreshSpot()}catch{}
     btn.disabled=false;
-    if(!isSpot()||Date.now()-state.spot.asof>3*60000){msg.textContent='現物の価格（Swissquote）を取得できなかったため保存していません。少しあとでもう一度どうぞ';return}
-    const q=state.spot;
+    if(!isSpot()){msg.textContent='現物の価格が取れていない（CL=F 先物で表示中）ため保存していません。現物の価格が届いてからもう一度どうぞ';return}
+    const q=state.spot,old=Date.now()-q.asof>15*60000;
     if(Math.abs(v/q.price-1)>.15){msg.textContent='現物の価格（'+f2(q.price)+'）と15%以上離れているため保存していません。数字を確かめてください';return}
     const rec={t:Date.now(),input:v,base:q.price,baseAt:q.asof,src:state.src.spot,diff:Math.round((v-q.price)*1000)/1000};
     lsSet(KEY,JSON.stringify({hist:[rec,...hist()].slice(0,KEEP)}));
-    $('oilIn').value='';msg.textContent='保存しました（差 '+sg(rec.diff)+'）';
+    $('oilIn').value='';msg.textContent='保存しました（差 '+sg(rec.diff)+'）'+(old?'。このページの価格は'+jst(q.asof)+'のもので、MT5の今の値と時刻がずれています。差がずれやすいので、価格が新しくなった直後に入れ直すと正確です':'');
     render();
   });
   const base=renderAll;renderAll=function(){base();render()};  // 価格・チャートの描き直しに合わせて描く

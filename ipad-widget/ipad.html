@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="d3f9cd42b9">
+<meta name="build" content="d049584feb">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1076,10 +1076,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=a6f56c31a3", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=49ab07350f", title: "ドル円分析" },
-    btc: { src: "btc.html?v=279d81a661", title: "BTC分析" },
-    oil: { src: "oil.html?v=16863afae0", title: "オイル分析" }
+    gold: { src: "gold.html?v=b7fdd0755f", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=8850c4217e", title: "ドル円分析" },
+    btc: { src: "btc.html?v=988ffd0186", title: "BTC分析" },
+    oil: { src: "oil.html?v=3b8934ded1", title: "オイル分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -1921,23 +1921,15 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     el.querySelector(".picker-close").addEventListener("click", function () { picker.hidden = true; });
     return mk;
   });
-  /* 4th card: OILCash（補正表示）. Like the BTC card, the desk fetches no oil price of its own: the US oil dashboard
-     (oil.html, kept running behind the desk) saves its current price (Swissquote XTI/USD spot) in usoil_auto_cache_final.
-     A fresh one (3 minutes) outranks the site's CL=F futures; the CL=F candles are then moved onto it. The difference
-     saved on that dashboard (MT5's OILCash minus the spot price, usoil_oilcash_adj) is added only on top of the spot
-     price, and only for 35 days. Otherwise the card shows the price as it is and says 補正なし. Its head opens the dashboard. */
-  var OIL_KEY = "usoil_oilcash_adj", OIL_CACHE = "usoil_auto_cache_final", OIL_MAX = 35 * 86400000;
+  /* 4th card: OILCash（補正表示）. US oil from market.json (the site's CL=F futures; on runs where the site got
+     Swissquote's XTI/USD spot quote, moved onto the spot price: spotAdjusted). The difference saved on the US oil
+     dashboard (MT5's OILCash minus that spot-based price, usoil_oilcash_adj) is added only on a spot-based price and
+     only for 35 days; otherwise the card shows the price as it is and says 補正なし. Its head opens the dashboard. */
+  var OIL_KEY = "usoil_oilcash_adj", OIL_MAX = 35 * 86400000;
   function oilAdj() {
     var h = null; try { h = JSON.parse(localStorage.getItem(OIL_KEY) || "null"); } catch (e) {}
     var r = h && Array.isArray(h.hist) && h.hist[0];
     return r && isFinite(r.diff) && Date.now() - r.t <= OIL_MAX ? r : null;
-  }
-  function oilDashPrice(site) {  // same rules as btcDashPrice
-    var px = 0, asof = 0;
-    try { var c = JSON.parse(localStorage.getItem(OIL_CACHE) || "null"), sp = c && c.spot; px = sp && +sp.price; asof = sp && +sp.asof; } catch (e) {}
-    if (!px || !asof || Date.now() - asof > 3 * 60000) return null;
-    if (site && px === +site.price && Math.abs(asof - (site.asOf || 0) * 1000) < 5000) return null;  // the dashboard fell back to the site's price
-    return { price: px, asOf: asof / 1000 };
   }
   var oilMk = new Market(document.getElementById("m-3"), "usoil");
   oilMk.oil = true; oilMk.cv.__mkt = oilMk; if (chartRO) chartRO.observe(oilMk.cv);
@@ -1948,33 +1940,32 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     return b;
   };
   oilMk.feed = function (m) {
-    var a = oilAdj(), dash = m ? oilDashPrice(m) : null, use = a && dash ? a : null, d = use ? a.diff : 0, h = this.el.querySelector(".head");
+    var a = oilAdj(), spot = !!(m && m.spotAdjusted === true), use = a && spot ? a : null, d = use ? a.diff : 0, h = this.el.querySelector(".head");
     this.adjUsed = use;
     h.querySelector(".sym").innerHTML = "OILCash<small>(補正表示)</small>";
-    h.querySelector(".jp").textContent = use ? "USオイル現物＋MT5との差・推定" : dash ? "USオイル現物（XTI/USD）の値のまま" : "USオイル（CL=F）の値のまま";
+    h.querySelector(".jp").textContent = !m ? "USオイル" : (spot ? "現物（XTI/USD換算）" : "CL=F 先物・現物は未取得") + (use ? "＋MT5との差・推定" : "");
     var adjEl = this.el.querySelector('[data-f="oiladj"]');
     adjEl.innerHTML = use ? "差 " + (d >= 0 ? "+" : "−") + Math.abs(d).toFixed(2) + "（" + TDCore.jst(a.t) + " 入力・推定）"
       : a ? "補正なし（現物の価格が届くまで）" : '補正なし <button type="button" data-oil-open>MT5の値を入れる →</button>';
     this.chip = null;
     if (!m) return;
-    var px = dash ? dash.price : m.price, gap = px - m.price + d;
-    var sh = function (r) { return [r[0], r[1] + gap, r[2] + gap, r[3] + gap, r[4] + gap]; }, c = {};
-    Object.keys(m.candles || {}).forEach(function (tf) { c[tf] = (m.candles[tf] || []).map(sh); });
-    this.series = c; this.prevClose = m.prevClose != null ? m.prevClose + gap : null; this.asOf = dash ? dash.asOf : m.asOf;
-    this.prov = dash ? { src: "USオイルのダッシュボード（Swissquote XTI/USD 現物）", type: use ? "現物の価格に、" + TDCore.jst(a.t) + "に入力されたMT5値との差（" + (d >= 0 ? "+" : "−") + Math.abs(d).toFixed(2) + "）を加えた推定値。XMの配信値そのものではありません" : "補正なし（現物の中値のまま）" }
-      : { src: "サイトの定期取得（Yahoo Finance・USオイル CL=F 先物）", type: "補正なし（CL=Fの最新の足の終値のまま）" };
-    this.applyLive(px + d); this.gen(); this.draw();
+    var sh = function (r) { return [r[0], r[1] + d, r[2] + d, r[3] + d, r[4] + d]; }, c = {};
+    Object.keys(m.candles || {}).forEach(function (tf) { c[tf] = d ? (m.candles[tf] || []).map(sh) : m.candles[tf]; });
+    this.series = c; this.prevClose = m.prevClose != null ? m.prevClose + d : null; this.asOf = m.asOf;
+    this.prov = { src: "サイトの定期取得（Yahoo Finance CL=F" + (spot ? "・Swissquote XTI/USD の現物に換算）" : "・先物のまま。現物の価格は未取得）"),
+      type: use ? "現物の価格に、" + TDCore.jst(a.t) + "に入力されたMT5値との差（" + (d >= 0 ? "+" : "−") + Math.abs(d).toFixed(2) + "）を加えた推定値。XMの配信値そのものではありません" : "補正なし（" + (spot ? "現物に換算した値" : "CL=F の最新の足の終値") + "のまま）" };
+    this.applyLive(m.price + d); this.gen(); this.draw();
   };
   oilMk.feed(null);
   oilMk.el.querySelector(".head").addEventListener("click", function () { openDash("oil", this); });
   oilMk.el.addEventListener("click", function (e) { var b = e.target.closest("[data-oil-open]"); if (b) { e.stopPropagation(); openDash("oil", b); } });
   var oilFedFor = "";
-  var oilRefeed = function () {  // only when the price, the correction or its freshness changed (moving every candle costs)
+  var oilRefeed = function () {  // only when the price or the correction changed (moving every candle costs)
     var m = market && (market.instruments || market).usoil; if (!m) return;
-    var a = oilAdj(), d = oilDashPrice(m), key = [m.asOf, m.price, d ? d.price + "@" + d.asOf : "-", a ? a.t : "-"].join("|");
+    var a = oilAdj(), key = [m.asOf, m.price, m.spotAdjusted, a ? a.t : "-"].join("|");
     if (key === oilFedFor) return; oilFedFor = key; oilMk.feed(m);
   };
-  window.addEventListener("storage", function (e) { if (e.key === OIL_KEY || e.key === OIL_CACHE) oilRefeed(); });  // saved by the oil dashboard
+  window.addEventListener("storage", function (e) { if (e.key === OIL_KEY) oilRefeed(); });  // saved on the oil dashboard
   setInterval(oilRefeed, 30000);  // freshness and the 35 days
   markets.push(oilMk);
   (function () {  // the ›: shows that the row scrolls to the oil card; tapping it goes there, at the end it hides
@@ -4100,7 +4091,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   // start both dashboards in the background so their entry calls reach the desk
   // BTC only while a market panel shows it (three dashboards at once weigh on an iPad)
   // all four run in the background so their entry calls, levels, scores and alerts reach the desk
-  var preload = function () { setTimeout(function () { ensureSheet("gold"); ensureSheet("usdjpy"); ensureSheet("btc"); ensureSheet("oil"); }, 1500); };  // oil: its dashboard is the oil price's only source
+  var preload = function () { setTimeout(function () { ensureSheet("gold"); ensureSheet("usdjpy"); ensureSheet("btc"); ensureSheet("oil"); }, 1500); };  // oil too: its calls and levels reach the OILCash card like the others'
   if (document.readyState === "complete") preload(); else window.addEventListener("load", preload);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); loadCalendar(); loadMarket(); loadReport(); eqHistory(); } });
   setInterval(loadWeather, 30 * 60000);

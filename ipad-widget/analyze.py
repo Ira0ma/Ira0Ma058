@@ -31,7 +31,7 @@ INSTRUMENTS = {
     "usdcad": ("CAD=X", "ドルカナダ", 0.0005, 4, None),
     "gold": ("GC=F", "ゴールド", 5.0, 0, "XAU"),
     "silver": ("SI=F", "シルバー", 0.05, 2, "XAG"),
-    "usoil": ("CL=F", "USオイル", 0.05, 2, None),
+    "usoil": ("CL=F", "USオイル", 0.05, 2, "XTI"),  # WTI futures moved onto Swissquote's XTI/USD spot (if it answers)
     "btc": ("BTC-USD", "BTC/USD", 100.0, 0, None),
     "dxy": ("DX-Y.NYB", "ドル指数", 0.05, 2, None),
     "jxy": (None, "円指数", 0.05, 2, None),  # computed below from six yen crosses
@@ -133,9 +133,10 @@ def get_json(url):
 
 
 def spot_price(spot_sym):
-    """Spot price of a metal (XAU/XAG in USD) and when it was quoted (unix seconds): Swissquote's public
-    quote feed first (its bid, the side MT4/MT5 charts at XM/XS are drawn from, with an exact quote time),
-    then gold-api.com, whose time stamp can trail its price by minutes in a fast market."""
+    """Spot price of a metal (XAU/XAG in USD) or of WTI oil (XTI) and when it was quoted (unix seconds): Swissquote's
+    public quote feed first (its bid, the side MT4/MT5 charts at XM/XS are drawn from, with an exact quote time),
+    then, for the metals only, gold-api.com, whose time stamp can trail its price by minutes in a fast market.
+    Oil has no second source (none was chosen): without Swissquote it stays on the futures price."""
     errs = []
     try:
         feed = get_json(f"https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/{spot_sym}/USD")
@@ -146,6 +147,8 @@ def spot_price(spot_sym):
         errs.append("swissquote: no prices")
     except Exception as e:
         errs.append(f"swissquote: {e}")
+    if spot_sym not in ("XAU", "XAG"):
+        raise RuntimeError("; ".join(errs))
     try:
         d = get_json(f"https://api.gold-api.com/price/{spot_sym}")
         try:
@@ -697,6 +700,8 @@ def one(key, sym, spot_sym, fixture, prev=None):
             "basis": shift if adjusted else None,
             # when the gap was measured: a reused gap keeps its original time so it ages out
             "basisAt": (prev or {}).get("basisAt") if adjusted and spot is None else int(time.time()),
+            # whether a spot quote answered this run (false: an earlier gap stands in, or none)
+            "spotNow": spot is not None,
         }),
         "candles": candles,
         **({"volume": volume} if volume else {}),
