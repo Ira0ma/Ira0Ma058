@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="725b582ff8">
+<meta name="build" content="f02b4133f6">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -193,6 +193,7 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .talkitem .who{color:#b9a6ff;font-weight:700}.talkitem .hawk{color:#ff9d6b;font-weight:700}.talkitem .dove{color:#6bc8ff;font-weight:700}.talkitem .intv{color:#ffb547;font-weight:700}
 .talkitem.fresh{border-color:#7c5cff;box-shadow:0 0 0 1px #7c5cff inset;--glow:rgba(124,92,255,.35);--glow-sh:0 0 0 6px var(--glow);--glow-t:1.6s}
 .talkhead{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px}
+.waitfor[hidden]{display:none}  /* 下の display:grid が hidden 属性より強く、エントリーに変わっても前回の待ち条件が残っていた */
 .waitfor{margin-top:8px;background:#0d1217;border:1px solid #654f1f;border-radius:10px;padding:8px 10px;font-size:11px;display:grid;gap:5px}
 .waitfor .wh{color:var(--amber);font-weight:800}
 .waitfor .wl{display:flex;flex-wrap:wrap;gap:3px 10px;color:var(--muted)}.waitfor .wl b{color:var(--text);font-weight:700;margin-right:2px}
@@ -2224,7 +2225,17 @@ function chartPatterns(){
   }
   patCache={k,v:out,at:Date.now()};return out;
 }
+/* セットアップ判定は1つの評価結果を全表示（大結論・待ち条件・内訳・チェック・ロット欄・デスクへの通知）で使う。
+   同じ価格・同じ足・同じ設定・同じ1秒の間は、同じ結果を返す（表示ごとに計算し直して食い違わないように） */
+let sigMemo={k:'',v:null};
 function calcSignal(){
+  const L=b=>b&&b.length?b.length+'@'+b.at(-1).t+'@'+b.at(-1).c:'-';
+  const k=[state.spot?.price,state.spot?.asof,L(state.h1),L(state.m15),L(state.m5),state.tpBasis,mktClosed,$('slMult')?.value,$('rrTarget')?.value,Math.floor(Date.now()/1000)].join('|');
+  if(sigMemo.k===k&&sigMemo.v)return sigMemo.v;
+  const v=calcSignal0();if(mktClosed)v.entry=false;  // 休場中はエントリーを出さない（どの表示でも同じ）
+  sigMemo={k,v};return v;
+}
+function calcSignal0(){
   if(!state.spot||state.h1.length<120)return {sig:'WAIT',entry:false,score:0,sma:0,mom:0,mid:state.spot?.price||0,hi:0,lo:0,forced:false,ready:false};
   const sma=smaSeries(state.h1,120).at(-1)||0;
   const closes=state.h1.map(b=>b.c);
@@ -2256,7 +2267,7 @@ function calcSignal(){
       via=same.map(f=>f.pt.label);
     }
   }
-  return {sig,entry,aligned,plan,score,sma,mom,mid,hi,lo,forced,ready:true,pats,checks,caution,via,entry3,patPlan};
+  return {sig,entry,aligned,plan,score,sma,mom,mid,hi,lo,forced,ready:true,pats,checks,caution,via,entry3,patPlan,price:state.spot.price};
 }
 // ゴールドの1pips＝0.1ドル（XMなど国内向け業者の一般的な表記。1lot＝100ozで1pips＝10ドル）
 const PIP=INSTR.pip, MIN_TP_PIPS=INSTR.minTp;
@@ -2735,7 +2746,7 @@ function renderPatList(s){
 function renderWait(s){
   const el=$('waitFor');
   if(!s.ready||s.entry||!state.spot||mktClosed){el.hidden=true;return}  // 休場中は待つ条件も出さない
-  const price=state.spot.price,th=INSTR.momTh,item=(ok,txt)=>'<span class="'+(ok?'ok':'ng')+'">'+(ok?'✓':'○')+' '+esc(txt)+'</span>';
+  const price=s.price,th=INSTR.momTh,item=(ok,txt)=>'<span class="'+(ok?'ok':'ng')+'">'+(ok?'✓':'○')+' '+esc(txt)+'</span>';
   const smaD=price>=s.sma?1:-1,momD=s.mom>th?1:s.mom<-th?-1:0,rngD=price>=s.mid?1:-1;
   const d=s.score>0?1:s.score<0?-1:smaD,side=d>0?'買い':'売り',lines=[];
   const parts=[
@@ -2851,11 +2862,12 @@ function renderSnapshot(){
 
   const setReason=(id,txt,dirv)=>{$(id).textContent=txt;$(id).className=dirv>0?'up':dirv<0?'down':''};
   if(s.ready){
-    setReason('reasonSma',state.spot.price>=s.sma?'上（買い +1）':'下（売り −1）',state.spot.price>=s.sma?1:-1);
+    setReason('reasonSma',s.price>=s.sma?'上（買い +1）':'下（売り −1）',s.price>=s.sma?1:-1);
     const th=INSTR.momTh;
     setReason('reasonMom',s.mom>th?'上昇 +'+INSTR.dist(s.mom)+'（+1）':s.mom<-th?'下降 −'+INSTR.dist(-s.mom)+'（−1）':'横ばい（0）',s.mom>th?1:s.mom<-th?-1:0);
   }else{setReason('reasonSma','H1待ち',0);setReason('reasonMom','H1待ち',0)}
-  if(d.hi&&d.lo){const mid=(d.hi+d.lo)/2;setReason('reasonRange',state.spot.price>=mid?'上半分（+1）':'下半分（−1）',state.spot.price>=mid?1:-1)}
+  if(s.ready&&s.hi&&s.lo)setReason('reasonRange',s.price>=s.mid?'上半分（+1）':'下半分（−1）',s.price>=s.mid?1:-1);  // 大結論・待ち条件と同じ評価結果
+  else if(d.hi&&d.lo){const mid=(d.hi+d.lo)/2;setReason('reasonRange',state.spot.price>=mid?'上半分（+1）':'下半分（−1）',state.spot.price>=mid?1:-1)}
   else setReason('reasonRange','取得中',0);
   const all=state.tpBasis==='all',use60=all||state.tpBasis==='h1',use15=all||state.tpBasis==='m15',use5=state.tpBasis==='m5',useDay=state.tpBasis==='day';
   [['tp60Use','reasonTp',use60],['tp15Use','reasonTp15',use15],['tp5Use','reasonTp5',use5],['tpDayUse','reasonTpDay',useDay]].forEach(([u,r,on])=>{
@@ -3599,7 +3611,7 @@ function renderChecks(risk,reb){
   if(!reb)reb=rebound();
   const s=calcSignal(),caution=nextCautionEvent(),nx=upcomingEvent(),a=currentAtr();
   const live={
-    trend:s.ready?[s.sig==='WAIT'?'wn':'ok',s.entry?'エントリー':s.sig,`価格は120SMAの${state.spot.price>=s.sma?'上 → 買い目線':'下 → 売り目線'}（SMA ${fmt(s.sma)}）`]:['na','待機','H1データ接続待ち'],
+    trend:s.ready?[s.sig==='WAIT'?'wn':'ok',s.entry?'エントリー':s.sig,`価格は120SMAの${s.price>=s.sma?'上 → 買い目線':'下 → 売り目線'}（SMA ${fmt(s.sma)}）`]:['na','待機','H1データ接続待ち'],
     atr:a?['ok',INSTR.dist(a),`SL幅 ${INSTR.dist(risk.sl)}（ATR×${n($('slMult').value)||1.2}）`]:['na','待機','M15データ接続待ち'],
     news:caution?['ng','CAUTION',`${caution.currency} ${caution.title} の前後です`]:nx?['ok','OK',`次は ${hhmm(nx.ts)} ${nx.currency} ${nx.title}`]:['ok','OK','直近の重要指標なし'],
     lot:risk.lot?[risk.lotStep>=0.01?'ok':'wn',risk.lotStep>=0.01?risk.lotStep.toFixed(2)+' lot':'最小ロットでも上限超え',risk.lotStep>=0.01?`最大損失 ${$('riskYen').textContent}／0.01lot刻み`:`0.01lotでも ${$('lotRound').textContent.match(/損失(¥[\d,]+)/)?.[1]||''}（上限 ${$('riskYen').textContent}）`]:['na','待機','価格・為替の取得待ち'],
