@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="8fbaf19157">
+<meta name="build" content="f0995c9e29">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2237,10 +2237,16 @@ function rebound(){
   if(!after.length)return {touch,up:0,down:0,count:0};
   return {touch,up:Math.max(...after.map(b=>b.h))-touch.p,down:touch.p-Math.min(...after.map(b=>b.l)),count:after.length};
 }
+// ロット計算の想定方向：手動指定 → セットアップ判定（BUY/SELL）→ 総合判定（買い優勢／売り優勢）→ どれも方向がなければ買いの計算例
+let riskWhy='';
 function riskDirection(){
-  if(state.dir==='buy')return 1;
-  if(state.dir==='sell')return -1;
-  return calcSignal().sig==='SELL'?-1:1;
+  if(state.dir==='buy'){riskWhy='手動指定';return 1}
+  if(state.dir==='sell'){riskWhy='手動指定';return -1}
+  const sig=calcSignal().sig;
+  if(sig==='BUY'||sig==='SELL'){riskWhy='セットアップ判定（'+sig+'）に連動';return sig==='SELL'?-1:1}
+  const m=mtfScore();
+  if(m&&m.dir){riskWhy='セットアップ判定はWAIT。総合判定（'+m.label+'）に合わせた想定';return m.dir}
+  riskWhy='方向が未定のため、買い想定の計算例';return 1;
 }
 // ロット計算・損切りの目安・テクニカル詳細のATRは、すべてこの1つの値（M15のATR14。ワイルダーの平滑化＝チャートのATR欄と同じ計算）
 let atrMemo={k:'',v:0};
@@ -2283,6 +2289,7 @@ function calcRisk(){
   const limited=marginPerLot&&riskStep>maxLot;
   const lotStep=limited?maxLot:riskStep;
   const isBuy=stop&&entry?stop<entry:riskDirection()>0;
+  if(!$('autoRisk').checked&&state.dir==='auto')riskWhy='手入力の損切り位置から判断';
   // ロットを自分で入力したときは、そのロットで損失・利益・証拠金を計算する
   const manual=Math.round(n($('lotManual').value)*100)/100;  // 0.01lot刻みに丸める
   let useLot,profit;
@@ -2324,7 +2331,7 @@ function calcRisk(){
   $('sprSub').textContent=sprPips.toFixed(1)+'pips・'+BROKERS[state.broker].name+' '+BROKERS[state.broker].acct+'｜'+useLot.toFixed(2)+' lot';
 
   const dirTxt=isBuy?'<b class="up">買い（BUY）</b>':'<b class="down">売り（SELL）</b>';
-  const why=state.dir==='auto'?(state.signal==='WAIT'?'シグナルWAIT中のため買い想定':'シグナル連動'):'手動指定';
+  const why=riskWhy||'手動指定';
   $('dirLabel').innerHTML='想定方向：'+dirTxt+' <span class="sub">｜'+why+'</span>';
   $('settingsSum').textContent='口座設定（'+BROKERS[state.broker].name+' '+lev+'倍・'+yen(capital)+'・リスク'+rp+'%・'+contract.toLocaleString('ja-JP')+INSTR.unit+'/lot・スプレッド'+sprPips.toFixed(1)+'pips）';
   $('atrNote').textContent=(state.m15.length?'M15 ATR14 '+INSTR.dist(currentAtr())+'｜':'')+($('autoRisk').checked
