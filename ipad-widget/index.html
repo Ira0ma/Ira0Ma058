@@ -124,6 +124,8 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .mkt .klv { display: flex; gap: 7px; margin-top: 5px; font-size: 10.5px; letter-spacing: -.02em; font-weight: 600; white-space: nowrap; overflow: hidden; }
 .mkt .klv span i { font-style: normal; font-size: 9px; font-weight: 700; margin-right: 2px; opacity: .8; }
 .mkt .klv .r { color: #ff8a7e; } .mkt .klv .s { color: #5fd99a; }
+.mkt .msrc { font-size: 10px; color: var(--ink-3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mkt .msrc:empty { display: none; }
 .mkt [data-f="oiladj"] { color: var(--ink-3); } .mkt [data-f="oiladj"] button { font: inherit; color: var(--gold); background: none; border: 0; padding: 0; cursor: pointer; }
 .mkt.has-klv canvas.chart { height: 88px; }
 .mkt .mscore { position: absolute; right: 18px; top: 15px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; pointer-events: none; }
@@ -251,6 +253,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 
 /* 地震・台風・花粉：天気のカードのボタンと全画面のパネル */
 .wx-hz { position: absolute; top: 9px; right: 12px; display: flex; gap: 4px; z-index: 1; }
+.wx-hz .hz-at { position: absolute; right: 2px; top: 100%; margin-top: 2px; font-size: 9px; color: var(--ink-3); white-space: nowrap; }
 .wx-hz button { --hz: 255,255,255; font: inherit; font-size: 10.5px; font-weight: 700; color: rgb(var(--hz)); background: rgba(var(--hz),.12); border: 1px solid rgba(var(--hz),.5); border-radius: 999px; padding: 2px 8px 2px 7px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
 .wx-hz button::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--hz)); opacity: .75; }
 .wx-hz [data-hz-open="eq"] { --hz: 255,146,92; }
@@ -827,7 +830,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     </div>
     <div class="wx-hours num" data-wx="hours"></div>
     <div class="wx-at" data-wx="at"></div>
-    <div class="wx-hz" role="group" aria-label="防災・季節の情報"><button type="button" data-hz-open="eq">地震</button><button type="button" data-hz-open="ty">台風</button><button type="button" data-hz-open="pl">花粉</button></div>
+    <div class="wx-hz" role="group" aria-label="防災・季節の情報"><button type="button" data-hz-open="eq">地震 確認中</button><button type="button" data-hz-open="ty">台風 確認中</button><button type="button" data-hz-open="pl">花粉 確認中</button><span class="hz-at"></span></div>
     <div class="wx-eq" id="wx-eq" role="alert" hidden><button type="button" aria-label="地震情報を閉じる">✕</button><b></b><span></span><small></small></div>
     <div class="wx-panel" hidden>
       <div class="wx-ph"><span>天気の場所</span><button type="button" class="wx-close">閉じる</button></div>
@@ -1308,7 +1311,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   function paintSound() {
     var o = SOUND[soundIdx];
     soundBtn.setAttribute("data-level", o.k);
-    soundBtn.querySelector("span").textContent = o.label;
+    soundBtn.querySelector("span").textContent = "通知音：" + o.label;  // 「中」だけでは何のことか分からないので
     soundBtn.setAttribute("aria-label", "エントリー通知音：" + o.label);
   }
   soundBtn.addEventListener("click", function (e) {
@@ -1392,6 +1395,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     this.cv = el.querySelector("canvas.chart");
     this.priceEl = el.querySelector('[data-f="price"]');
     this.chgEl = el.querySelector('[data-f="chg"]');
+    this.srcEl = document.createElement("div"); this.srcEl.className = "msrc"; this.chgEl.after(this.srcEl);  // 出典（どこから・どんな種類の値か）を表に
     var self = this, tabs = el.querySelector(".tabs");
     TF.forEach(function (t, i) {
       var b = document.createElement("button");
@@ -1507,7 +1511,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       candle: TDCore.freshness("candle", bar, now, { tfMs: TFSEC[this.tf] * 1000, closed: closed }),
       market: ms, prov: this.prov || { src: "—", type: "—" }, held: this.held || null };
   };
-  var CHIP = { live: "ライブ", fresh: "最新", delayed: "遅延", stale: "停止", closed: "休場中", unknown: "時刻不明", missing: "時刻なし" };
+  var CHIP = TDCore.LEVEL_JA;  // 状態の言葉は core.js の1組（ライブ／最新／遅延／停止／休場中…）
   Market.prototype.statusChip = function () {
     var now = Date.now();
     if (this.chip && now - this.chipAt < 1000 && this.chipFor === this.asOf + "|" + this.tf + "|" + !!this.held) return this.chip;
@@ -1637,6 +1641,9 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     }
     var d = this.price - o.prev, pct = d / o.prev * 100, sign = d >= 0 ? "+" : "−";
     this.chgEl.textContent = sign + o.chgFmt(Math.abs(d)) + " (" + sign + Math.abs(pct).toFixed(2) + "%)";
+    var pv = this.prov || {}, ty = String(pv.type || ""), tag = /推定/.test(ty) ? "推定値" : /補正/.test(ty) ? "補正値" : /換算/.test(ty) ? "換算値" : /仲値/.test(ty) ? "仲値" : /売値/.test(ty) ? "売値" : /終値/.test(ty) ? "足の終値" : "";
+    var srcTxt = pv.src ? "出典：" + pv.src + (tag ? "・" + tag : "") : "";
+    if (this.srcEl.textContent !== srcTxt) { this.srcEl.textContent = srcTxt; this.srcEl.title = pv.src ? pv.src + "・" + ty : ""; }
     this.chgEl.appendChild(this.statusChip());
     this.chgEl.style.color = d >= 0 ? o.upColor : o.downColor;
     if (dir && !reduce) {
@@ -2285,11 +2292,15 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var PREF = [["北海道",43.06,141.35],["青森県",40.82,140.74],["岩手県",39.70,141.15],["宮城県",38.27,140.87],["秋田県",39.72,140.10],["山形県",38.24,140.36],["福島県",37.75,140.47],["茨城県",36.34,140.45],["栃木県",36.57,139.88],["群馬県",36.39,139.06],["埼玉県",35.86,139.65],["千葉県",35.61,140.12],["東京都",35.69,139.75],["神奈川県",35.44,139.64],["新潟県",37.90,139.02],["富山県",36.70,137.21],["石川県",36.59,136.63],["福井県",36.07,136.22],["山梨県",35.66,138.57],["長野県",36.65,138.18],["岐阜県",35.39,136.72],["静岡県",34.98,138.38],["愛知県",35.18,136.91],["三重県",34.73,136.51],["滋賀県",35.00,135.87],["京都府",35.02,135.76],["大阪府",34.69,135.50],["兵庫県",34.69,135.18],["奈良県",34.69,135.83],["和歌山県",34.23,135.17],["鳥取県",35.50,134.24],["島根県",35.47,133.05],["岡山県",34.66,133.93],["広島県",34.40,132.46],["山口県",34.19,131.47],["徳島県",34.07,134.56],["香川県",34.34,134.04],["愛媛県",33.84,132.77],["高知県",33.56,133.53],["福岡県",33.59,130.40],["佐賀県",33.25,130.30],["長崎県",32.74,129.87],["熊本県",32.79,130.74],["大分県",33.24,131.61],["宮崎県",31.91,131.42],["鹿児島県",31.56,130.56],["沖縄県",26.21,127.68]];
     var km = function (a, b, c, d) { var r = Math.PI / 180, x = Math.sin((c - a) * r / 2), y = Math.sin((d - b) * r / 2); return 12742 * Math.asin(Math.sqrt(x * x + Math.cos(a * r) * Math.cos(c * r) * y * y)); };
     var myPref = function (me) { return PREF.slice().sort(function (p, q) { return km(me.lat, me.lon, p[1], p[2]) - km(me.lat, me.lon, q[1], q[2]); })[0][0]; };
-    function flag(kind, on, why) {
+    // 札に状態を書く（「地震：なし」「台風：接近のおそれ」「花粉：多い」など）。強いもの（alert）は点滅、確かめた時刻を添える
+    var HZ_NAME = { eq: "地震", ty: "台風", pl: "花粉" }, hzAt = 0;
+    function flag(kind, on, why, state) {
       var b = document.querySelector('.wx-hz [data-hz-open="' + kind + '"]'); if (!b) return;
       b.classList.toggle("alert", !!on);
-      b.title = on ? why : "";
-      b.setAttribute("aria-label", b.textContent + (on ? "（" + why + "）" : ""));
+      b.textContent = HZ_NAME[kind] + " " + (state || (on ? "注意" : "なし"));
+      hzAt = Date.now(); var at = document.querySelector(".wx-hz .hz-at"); if (at) at.textContent = HHMM(new Date(hzAt)) + " 確認";
+      b.title = (on ? why + "。" : "") + HHMM(new Date(hzAt)) + " に確認";
+      b.setAttribute("aria-label", b.textContent + (on ? "（" + why + "）" : "") + "・" + HHMM(new Date(hzAt)) + " 確認");
     }
     function hzCheck() {
       var me = window.wxLoc && wxLoc(); if (!me || !isFinite(me.lat)) return;
@@ -2297,8 +2308,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       getJson("https://api.p2pquake.net/v2/history?codes=551&limit=20").then(function (list) {
         var hit = list.filter(function (m) { return m.earthquake && Date.now() - eqTime(m.earthquake.time) < 3600e3 && (m.points || []).some(function (p) { return p.pref === pref && p.scale >= 10; }); })[0];
         var sc = hit && Math.max.apply(null, hit.points.filter(function (p) { return p.pref === pref; }).map(function (p) { return p.scale; }));
-        flag("eq", hit, hit ? pref + "で震度" + ((SC[sc] || [])[0] || "") + "の地震（" + hm(eqTime(hit.earthquake.time)) + "）" : "");
-      }).catch(function () {});
+        flag("eq", hit, hit ? pref + "で震度" + ((SC[sc] || [])[0] || "") + "の地震（" + hm(eqTime(hit.earthquake.time)) + "）" : "", hit ? (sc >= 50 ? "強い揺れ" : "震度" + ((SC[sc] || [])[0] || "")) : "なし");
+      }).catch(function () { flag("eq", false, "", "取得失敗"); });
       getJson("typhoon.json").then(function (j) {
         var near = null;
         (j.items || []).forEach(function (ty) { (ty.track || []).forEach(function (p, k) {
@@ -2306,13 +2317,13 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
           var d = km(me.lat, me.lon, parseFloat(p.pos[0]), parseFloat(p.pos[1])), lim = Math.max(300, parseFloat(p.circle) || 0);
           if (d <= lim && (!near || d < near.d)) near = { d: d, n: ty.number ? +String(ty.number).slice(-2) : "" };
         }); });
-        flag("ty", near, near ? "台風第" + near.n + "号が" + (me.name || "天気の場所") + "に近づくおそれ（約" + Math.round(near.d / 10) * 10 + "km）" : "");
-      }).catch(function () {});
+        flag("ty", near, near ? "台風第" + near.n + "号が" + (me.name || "天気の場所") + "に近づくおそれ（約" + Math.round(near.d / 10) * 10 + "km）" : "", near ? "接近" : "なし");
+      }).catch(function () { flag("ty", false, "", "取得失敗"); });
       getJson("pollen.json").then(function (j) {
-        if (!j.season || !(j.cities || []).length) { flag("pl", false); return; }
+        if (!j.season || !(j.cities || []).length) { flag("pl", false, "", "季節外"); return; }
         var c = j.cities.slice().sort(function (a, b) { return km(me.lat, me.lon, a.lat, a.lon) - km(me.lat, me.lon, b.lat, b.lon); })[0];
-        flag("pl", c.max != null && c.max >= 30, c.name + "の花粉が" + LV(c.max)[0] + "（1時間" + c.max + "個）");
-      }).catch(function () {});
+        flag("pl", c.max != null && c.max >= 30, c.name + "の花粉が" + LV(c.max)[0] + "（1時間" + c.max + "個）", c.max == null ? "データなし" : LV(c.max)[0]);
+      }).catch(function () { flag("pl", false, "", "取得失敗"); });
     }
     setTimeout(hzCheck, 2500); setInterval(hzCheck, 5 * 60000);
     document.querySelectorAll("[data-hz-open]").forEach(function (b) { b.addEventListener("click", function (e) { e.stopPropagation(); open(b.getAttribute("data-hz-open"), b); }); });

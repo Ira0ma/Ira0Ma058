@@ -138,7 +138,8 @@
     weather: { fresh: 90 * MIN, delayed: 3 * HOUR },
     report: { fresh: 18 * HOUR, delayed: 36 * HOUR }
   };
-  var LEVEL_JA = { live: "リアルタイム", fresh: "最新", delayed: "遅延", stale: "更新停止", closed: "休場中（最終値）", unknown: "不明", missing: "未取得" };
+  // 状態の言葉は画面のどこでもこの1組（札・説明文・データ状態の画面・使い方の札の表で同じ）
+  var LEVEL_JA = { live: "ライブ", fresh: "最新", delayed: "遅延", stale: "停止", closed: "休場中", unknown: "時刻不明", missing: "未取得" };
   function freshness(kind, at, now, opts) {
     opts = opts || {};
     if (!fin(at) || at <= 0) return { level: "missing", label: LEVEL_JA.missing, age: NaN };
@@ -473,7 +474,7 @@
   return { MIN: MIN, HOUR: HOUR, DAY: DAY, partsIn: partsIn, zoneOffset: zoneOffset, zoneTime: zoneTime, isDst: isDst,
     KIND: KIND, marketState: marketState, hoursNote: hoursNote, nextOpen: nextOpen, sessions: sessions, RULES: RULES, freshness: freshness, ago: ago, jst: jst,
     checkMarket: checkMarket, realCandles: realCandles, sequencer: sequencer,
-    weeklyHours: weeklyHours, REOPEN_NOTE: REOPEN_NOTE,
+    weeklyHours: weeklyHours, REOPEN_NOTE: REOPEN_NOTE, LEVEL_JA: LEVEL_JA,
     positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey, journalDays: journalDays,
     newStore: newStore, updateSignal: updateSignal, expireSignals: expireSignals, loadStore: loadStore, COOLDOWN: COOLDOWN,
     toCSV: toCSV, parseCSV: parseCSV, importCSV: importCSV,

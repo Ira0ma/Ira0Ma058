@@ -544,12 +544,15 @@
     status: function () {
       var paint = function () {
         var now = Date.now(), cards = D.cards(), m = D.market(), chk = D.check(), src = D.sources(), lv = function (f, txt) { return '<span class="lv lv-' + f.level + '">' + esc(txt || f.label) + "</span>"; };
+        // 予備の取得先（ふだんは使わない）と、休場中に止めている配信は「待機中」。障害に見えないように
+        var SPARE = { swissquote: "待機中（通常は未使用・予備）" }, WAIT_CLOSED = { "ws-gold": "gold", "ws-usdjpy": "usdjpy", coinbase: "usdjpy" };
+        var idle = function (id) { return SPARE[id] || (WAIT_CLOSED[id] && C.marketState(WAIT_CLOSED[id], now).state !== "open" ? "待機中（休場中は止めています）" : "読み込み中"); };
         var srcRow = function (id, name, kind, at) {
           var s = src[id] || {}, f = kind ? C.freshness(kind, at || s.ok, now) : null;
           return "<tr><td>" + esc(name) + "</td><td>" + (s.ok ? esc(C.jst(s.ok)) + "（" + esc(C.ago(now - s.ok)) + "）" : "—") + "</td><td>" + (!s.tries ? "" : f ? lv(f) : s.ok ? "成功" : "") +
-            (s.fail && (!s.ok || s.fail > s.ok) ? ' <span class="lv lv-stale">失敗：' + esc(s.err) + "（" + esc(C.jst(s.fail, false)) + "）</span>" : "") + (!s.tries ? '<span class="lv lv-missing">未取得</span>' : "") + "</td></tr>";
+            (s.fail && (!s.ok || s.fail > s.ok) ? ' <span class="lv lv-stale">取得失敗：' + esc(s.err) + "（" + esc(C.jst(s.fail, false)) + "）</span>" : "") + (!s.tries ? '<span class="lv lv-closed">' + esc(idle(id)) + "</span>" : "") + "</td></tr>";
         };
-        body.innerHTML = '<h3>表示中の銘柄（' + esc(C.jst(now)) + '）</h3><p class="note">時刻はすべて日本時間（JST）。価格の種類は提供元の公開情報から分かる範囲で示しています。休場中の古い価格は「休場中（最終値）」で、通信の問題とは分けて表示します。</p>' +
+        body.innerHTML = '<h3>表示中の銘柄（' + esc(C.jst(now)) + '）</h3><p class="note">時刻はすべて日本時間（JST）。価格の種類は提供元の公開情報から分かる範囲で示しています。休場中の古い価格は「休場中」で、通信の問題（「停止」「取得失敗」）とは分けて表示します。</p>' +
           '<div class="tw"><table><tr><th>銘柄</th><th>価格の時刻・状態</th><th>提供元・価格の種類</th><th>ローソク足（' + esc(cards[0] ? "表示中の期間" : "") + '）</th><th>自動分析の計算</th><th>市場</th></tr>' + cards.map(function (c) {
             return "<tr><td>" + esc(c.name) + "</td><td>" + esc(C.jst(c.at)) + "<br>" + (c.held ? '<span class="lv lv-held">確認中：' + esc(c.held.join("・")) + "</span>" : lv(c.price)) + "<br>" + esc(isFinite(c.price.age) ? C.ago(c.price.age) : "") + "</td><td>" + esc(c.prov.src) + "<br><small>" + esc(c.prov.type) + "</small></td><td>" + esc(c.tf) + "：" +
               (c.noData ? '<span class="lv lv-missing">データ未取得</span>' : esc(C.jst(c.bar)) + "<br>" + lv(c.candle)) + "</td><td>" + esc(C.jst(c.an)) + "<br>" + lv(c.analysis) +
@@ -573,7 +576,7 @@
           "<tr><td>端末のタイムゾーン</td><td>" + esc(Intl.DateTimeFormat().resolvedOptions().timeZone || "不明") + "（画面の時刻は日本時間で表示）</td></tr>" +
           "<tr><td>リアルタイム配信</td><td>" + esc(Object.keys(D.live()).map(function (k) { var L = D.live()[k]; return D.instName(k) + "：" + (L.open ? "接続中" : "切断（再接続待ち・休場中・非表示）") + (L.at ? "・最終受信 " + C.jst(L.at, false) : ""); }).join("／") || "なし") + "</td></tr>" +
           "<tr><td>表示モード</td><td>" + (D.preview ? '<span class="lv lv-held">プレビュー（サンプルの値を含みます）</span>' : "本番（実データのみ。取得できない値は空欄・未取得と表示）") + "</td></tr></table></div>" +
-          '<h3>鮮度の基準</h3><p class="note">価格：20秒以内＝リアルタイム、2分以内＝最新、15分以内＝遅延、それより前＝更新停止（休場中は「休場中」）。ローソク足：期間＋20分（または1期間）以内＝最新。自動分析：15分以内＝最新、60分まで遅延、それより前＝更新停止（そのときカードの一致度は取り消し線で参考外）。経済指標：30分／3時間。天気：90分／3時間。祝日・年末年始・短縮取引は判定に含めていないため、平日の「取引時間内」は目安です。</p>';
+          '<h3>鮮度の基準</h3><p class="note">価格：20秒以内＝ライブ、2分以内＝最新、15分以内＝遅延、それより前＝停止（休場中は「休場中」）。ローソク足：期間＋20分（または1期間）以内＝最新。自動分析：15分以内＝最新、60分まで遅延、それより前＝停止（そのときカードの一致度は取り消し線で参考外）。経済指標：30分／3時間。天気：90分／3時間。祝日・年末年始・短縮取引は判定に含めていないため、平日の「取引時間内」は目安です。</p>';
         body.querySelectorAll("[data-rf]").forEach(function (b) { b.addEventListener("click", function () { D.refresh(b.getAttribute("data-rf")); D.toast("再読み込みしています…"); setTimeout(paint, 2500); }); });
       };
       paint(); timer = setInterval(paint, 15000);

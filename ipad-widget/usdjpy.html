@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="e8b440ce22">
+<meta name="build" content="f1bb03d48d">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -884,10 +884,18 @@ function toMs(v){
   const p=Date.parse(String(v));
   return Number.isFinite(p)?p:0;
 }
+// 状態の言葉はデスク・ツールと同じ1組（core.js：ライブ／最新／遅延／停止／休場中）。価格の時刻から同じ基準で決める
+function priceLevel(){
+  if(!state.spot)return {level:'missing',label:'読み込み中'};
+  if(CORE)return CORE.freshness('price',state.spot.asof,Date.now(),{closed:mktClosed});
+  return state.spot.freshness==='stale'?{level:'stale',label:'停止'}:{level:'fresh',label:'最新'};
+}
+const LV_MARK={live:'●',fresh:'●',delayed:'◔',stale:'⚠',closed:'☾',unknown:'⚠',missing:'…'};
 function setStatus(type,text){
-  // 上の状態は価格の札と同じ判断にする（価格が10分以上前なら「遅延データ」。LIVEと遅延が同時に出ないように）
-  if(text==='LIVE'&&state.spot&&state.spot.freshness==='stale'){type='';text='遅延データ'}
-  if(IS_OIL&&text==='LIVE'&&!oilLive){type='';text=oilSpot?'定期取得（現物）':'定期取得（CL=F）'}  // 原油は OKX の価格が届いている間だけ LIVE
+  if(text==='LIVE'){const f=priceLevel();type=f.level==='live'||f.level==='fresh'?'live':'';text=f.label+(IS_OIL&&!oilLive?'（CL=F・定期取得）':'')}
+  else if(text==='接続中')text='読み込み中';
+  else if(text==='キャッシュ表示中')text='取得失敗（前回の値を表示）';
+  else if(text==='接続再試行中')text='取得失敗（再試行中）';
   if(mktClosed&&type!=='error'){text=closedLabel()+(reopenText?'（再開 '+reopenText+'・取引所の時刻）':'');type=''}  // 休場中は「LIVE」ではなく休場中と出す
   $('mainStatus').textContent=text;
   $('mainDot').className='dot '+(type==='live'?'live':type==='error'?'error':'');
@@ -1323,7 +1331,7 @@ async function refreshSpot(){
       if(fx)state.goldJpy=px*fx;
       updateRolling(px);mergeSpotAll(px,asof);
       state.health.spot=true;state.lastOk=Date.now();state.nextSpot=Date.now()+INTERVALS.spot;
-      saveCache();setStatus(oilLive?'live':'',oilLive?'LIVE':state.spot.freshness==='stale'?'遅延データ':oilSpot?'定期取得（現物）':'定期取得（CL=F）');showError('');renderAll();if(state.prevPrice!==px)flashPrice();  // リアルタイムではないので LIVE とは出さない
+      saveCache();setStatus('live','LIVE');showError('');renderAll();if(state.prevPrice!==px)flashPrice();  // リアルタイムではないので LIVE とは出さない
     }catch(e){
       state.health.spot=false;
       setStatus(state.lastOk?'live':'error',state.lastOk?'キャッシュ表示中':'接続再試行中');
@@ -2397,7 +2405,8 @@ function calcRisk(){
   const why=riskWhy||'手動指定';
   {  // 見出しの「何の価格から算出したか」を、いまの価格の状態どおりに出す
     const sp=state.spot,at=sp?new Intl.DateTimeFormat('ja-JP',{hour:'2-digit',minute:'2-digit'}).format(new Date(sp.asof)):'',src=String(state.src.spot||'');
-    $('riskHeadSub').textContent=(!sp?'価格の取得待ち':mktClosed?'休場前の最終値（'+at+'）':sp.freshness==='stale'?'遅延データの価格（'+at+'時点）':src.startsWith('リアルタイム')?'ライブ価格':'最新の価格（'+at+'時点）')+'とM15 ATRからSL/TPを算出';
+    const lvp=priceLevel().level;  // 札と同じ言葉（ライブ／最新／遅延／停止／休場中）
+    $('riskHeadSub').textContent=(!sp?'価格の取得待ち':mktClosed?'休場前の最終値（'+at+'）':lvp==='live'?'ライブ価格':lvp==='stale'||lvp==='unknown'?'停止中の価格（'+at+'時点）':lvp==='delayed'?'遅延の価格（'+at+'時点）':'最新の価格（'+at+'時点）')+'とM15 ATRからSL/TPを算出';
   }
   $('dirLabel').innerHTML='想定方向：'+dirTxt+' <span class="sub">｜'+why+'</span>';
   $('settingsSum').textContent='口座設定（'+BROKERS[state.broker].name+' '+lev+'倍・'+yen(capital)+'・リスク'+rp+'%・'+contract.toLocaleString('ja-JP')+INSTR.unit+'/lot・スプレッド'+sprPips.toFixed(1)+'pips）';
@@ -2816,7 +2825,8 @@ function renderSnapshot(){
   $('goldPrice').textContent=fmt(state.spot.price);
   $('goldChange').textContent=chg;
   $('goldChange').className='change '+(pct>=0?'up':'down');
-  $('goldFresh').textContent=(mktClosed?(closedLabel()==='休止中'?'休止中（毎日の休止時間）':'市場休場中'):state.spot.freshness==='stale'?'⚠ 遅延データ':IS_OIL?'定期取得':'LIVE')+'｜'+localTime(state.spot.asof)+(state.src.spot?'｜'+state.src.spot:'');
+  const pf=priceLevel();
+  $('goldFresh').textContent=(mktClosed?(closedLabel()==='休止中'?'☾ 休止中（毎日の休止時間）':'☾ 休場中'):(LV_MARK[pf.level]||'')+' '+pf.label)+'｜'+localTime(state.spot.asof)+(state.src.spot?'｜'+state.src.spot:'');
   $('dayHigh').textContent=d.hi?fmt(d.hi):'--';$('dayLow').textContent=d.lo?fmt(d.lo):'--';$('dayRange').textContent=d.hi&&d.lo?INSTR.dist(d.hi-d.lo):'--';
   const hm=t=>t?'（'+new Intl.DateTimeFormat('ja-JP',{hour:'2-digit',minute:'2-digit'}).format(new Date(t))+'）':'';  // どの時点の値か
   if(!IS_FX){
