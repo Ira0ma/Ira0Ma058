@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="9946d5e527">
+<meta name="build" content="1eaf7db321">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2327,7 +2327,7 @@ function rebound(){
   if(!after.length)return {touch,up:0,down:0,count:0};
   return {touch,up:Math.max(...after.map(b=>b.h))-touch.p,down:touch.p-Math.min(...after.map(b=>b.l)),count:after.length};
 }
-// ロット計算の想定方向：手動指定 → セットアップ判定（BUY/SELL）→ 総合判定（買い優勢／売り優勢）→ どれも方向がなければ買いの計算例
+// ロット計算の想定方向：手動指定 → セットアップ判定（BUY/SELL）→ 総合判定（買い優勢／売り優勢）→ どれも方向がなければ120SMAの目線（チェック1と同じ）
 let riskWhy='';
 function riskDirection(){
   if(state.dir==='buy'){riskWhy='手動指定';return 1}
@@ -2339,7 +2339,9 @@ function riskDirection(){
     return sig==='SELL'?-1:1}
   const m=mtfScore();
   if(m&&m.dir){riskWhy='セットアップ判定はWAIT。総合判定（'+m.label+'）に合わせた想定';return m.dir}
-  riskWhy='方向が未定のため、買い想定の計算例';return 1;
+  // 方向が未定のとき：トレード前チェック1と同じ基準（価格が120SMAの上＝買い目線／下＝売り目線）で計算例の向きを決める
+  if(s.ready&&s.sma){const up=s.price>=s.sma;riskWhy='方向が未定のため、目線（'+(up?'買い':'売り')+'）に沿った計算例です（価格は120SMAの'+(up?'上':'下')+'）';return up?1:-1}
+  riskWhy='方向が未定のため、買い想定の計算例（120SMAの計算に必要な足がまだありません）';return 1;
 }
 // ロット計算・損切りの目安・テクニカル詳細のATRは、すべてこの1つの値（M15のATR14。ワイルダーの平滑化＝チャートのATR欄と同じ計算）
 let atrMemo={k:'',v:0};
