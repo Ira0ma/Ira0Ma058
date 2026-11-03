@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="a34d059382">
+<meta name="build" content="144350623e">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -495,7 +495,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 <div class="metaline">
   <span>最終更新 <b id="lastUpdate">--</b></span>
   <span id="nextInfo">--</span>
-  <span>価格30秒／チャート5分／指標60分</span>
+  <span>価格30秒（配信があれば随時）／チャート5分／指標5分（発表前後は1分）</span>
 </div>
 
 <nav class="quicknav">
@@ -657,10 +657,10 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 
   <!-- ===== 総合判定・マルチタイムフレーム ===== -->
   <section id="secMtf" class="panel s7">
-    <div class="cardhead"><div><div class="title">総合判定・マルチタイムフレーム<button type="button" class="gq" data-gloss="マルチタイムフレーム分析" aria-label="用語集：マルチタイムフレーム分析">?</button></div><div class="sub">ルールベース｜ダウ理論・スーパートレンド・GMMA・RSIを時間足ごとに集計</div></div><span class="tag">SCORE</span></div>
+    <div class="cardhead"><div><div class="title">総合判定・マルチタイムフレーム<button type="button" class="gq" data-gloss="マルチタイムフレーム分析" aria-label="用語集：マルチタイムフレーム分析">?</button></div><div class="sub">ルールベース｜4つの時間足（H4・H1・M15・M5）それぞれで、ダウ理論・スーパートレンド・GMMA・RSIの向きをまとめた判定</div></div><span class="tag">一致度</span></div>
     <div id="mtfScore" class="mtfscore"></div>
     <div id="mtfTable" class="mtftable"></div>
-    <div class="autonote">各時間足で4条件（ダウ理論・スーパートレンド・GMMA・RSI）が買い・売りのどちらにそろっているかを数え、H4・H1は3倍、M15は2倍、M5は1倍の重みで平均したものが一致度です。25未満は様子見。矢印やボタンをタップするとその時間足のチャートに切り替わります。売買の指示ではなく目安です。</div>
+    <div class="autonote">一致度は、4つの時間足の判定がどれだけ同じ向きにそろっているか（0〜100）です。買い点と売り点の差で表し、差が25以上なら買い優勢・売り優勢、25未満は様子見です（重みは H4・H1 が3、M15 が2、M5 が1）。アラートは一致度70以上で通知されます。ボタンをタップするとその時間足のチャートに切り替わります。売買の指示ではなく目安です。</div>
   </section>
 
   <!-- ===== テクニカル詳細・CHOCH/BOS ===== -->
@@ -784,13 +784,13 @@ const INSTRUMENTS={
     brokerNote:'XMのBTCUSDは1lot＝1BTCです。XSの契約量・スプレッドはご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,0),
     footer:'データ: 価格はリアルタイム配信（Coinbase。つながらないときはKraken、OKXの順）、配信がないときはCoinbase（30秒ごと）、どちらもないときはサイトの定期取得／チャートはGitHub Actionsで定期取得したYahoo Finance足（直近の1分足はOKXで補う）・Forex Factory（経済指標）。'},
-  // USオイル（WTI原油）：価格と足はサイトの定期取得（Yahoo CL=F 先物）。サイト側でSwissquoteのXTI/USD（現物）が取れた回は、
-  // ゴールドと同じく先物の足を現物に合わせて届く（spotAdjusted）。ブラウザからSwissquoteは読めない（CORSなし）ので取りに行かない
+  // USオイル（WTI原油）：価格と足は OKX の WTI 連動パーペチュアル（読めないときはサイトの定期取得＝Yahoo CL=F 先物）。
+  // サイト側の Swissquote XTI/USD の取得は止めてある（OIL_SPOT=None）。ブラウザから Swissquote は読めない（CORSなし）
   usoil:{key:'usoil',site:'usoil',title:'USOIL',label:'USOIL (WTI)',short:'USOIL',name:'USオイル',asset:'原油',sub:'USオイル（WTI原油）専用｜自動更新｜iPad・iPhone・Android対応',
     dp:2,pip:0.01,minTp:15,pipNote:'1pips＝$0.01',momTh:0.02,slMin:0.05,tolMin:0.015,unit:'バレル',contract:'100',patterns:true,spread:{xm:'5',xs:'5'},
     brokerNote:'原油の1lotの量（バレル数）は業者・口座で違います。XMのOILCashなど、ご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,2),
-    footer:'データ: GitHub Actionsで定期取得したYahoo Finance足（WTI原油先物 CL=F・価格とチャート。SwissquoteのXTI/USDが取れた回は現物に換算）・Forex Factory（経済指標）。更新は1時間に1回ほどです。'}
+    footer:'データ: 価格とチャートは OKX の WTI 連動パーペチュアル（CL-USDT-SWAP。リアルタイム配信、届かないときは30秒ごとの取得）。OKX が読めないときはサイトの定期取得（Yahoo Finance の WTI原油先物 CL=F・約15分ごと）。日足以上は CL=F の足をパーペチュアルとの差だけずらした足・Forex Factory（経済指標）。XM の OILCash の値そのものではありません。'}
 };
 const INSTR=INSTRUMENTS[window.INSTR_KEY||(/usdjpy/i.test(location.pathname)?'usdjpy':/btc/i.test(location.pathname)?'btc':/oil/i.test(location.pathname)?'usoil':'gold')];
 const IS_GOLD=INSTR.key==='gold',IS_FX=INSTR.key==='usdjpy',IS_BTC=INSTR.key==='btc',IS_OIL=INSTR.key==='usoil';
@@ -887,6 +887,8 @@ function localTime(ms){
 }
 const LT_FMT=new Intl.DateTimeFormat('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}),HM_FMT=new Intl.DateTimeFormat('ja-JP',{hour:'2-digit',minute:'2-digit'});
 function hhmm(ms){return HM_FMT.format(new Date(ms))}
+const MDW_FMT=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',weekday:'short'});
+function mdwJst(ms){const p=Object.fromEntries(MDW_FMT.formatToParts(new Date(ms)).map(x=>[x.type,x.value]));return p.month+'/'+p.day+'（'+p.weekday+'）'}  // 11/5（木）
 function dur(ms){
   const s=Math.max(0,Math.round(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),sec=s%60;
   if(h>=24)return Math.floor(h/24)+'日'+(h%24)+'時間'+m+'分';
@@ -1814,13 +1816,13 @@ function bestFib(){
       return {lv:l,d:Math.abs(price-l.p),score:sc,why:FIB_NAME(l.r)+'（'+fmt(l.p)+'）'+(hit?(f.held?'で反発':'に到達'):'のすぐ近く')};
     }).sort((x,y)=>y.score-x.score);
     const c=cands[0];
-    if(c&&c.score>=1.4&&(!best||c.score>best.score))best={tf,f,lv:c.lv,near:{d:c.d},score:c.score,why:c.why};
+    if(c&&c.score>=1.4&&(!best||c.score>best.score))best={tf,f,lv:c.lv,near:{d:c.d,p:c.lv.p},score:c.score,why:c.why};
   }
   fibEffCache={k,v:best};return best;
 }
 function renderFibNow(){
   const b=bestFib(),el=$('fibNow');el.hidden=!b;if(!b)return;
-  el.innerHTML=`<b>★ 今は${TF_NAME[b.tf]}のフィボナッチが効いています<button type="button" class="gq" data-gloss="フィボナッチ・リトレースメント" aria-label="用語集：フィボナッチ・リトレースメント">?</button></b><span>${esc(b.why)}｜現在値との差 ${INSTR.dist(b.near.d)}</span>`+
+  el.innerHTML=`<b>★ 今は${TF_NAME[b.tf]}のフィボナッチが効いています<button type="button" class="gq" data-gloss="フィボナッチ・リトレースメント" aria-label="用語集：フィボナッチ・リトレースメント">?</button></b><span>${esc(b.why)}｜現在値との差 ${INSTR.dist(state.spot&&b.near.p!=null?Math.abs(state.spot.price-b.near.p):b.near.d)}</span>`+
     (b.tf!==state.tf?`<button type="button" class="seg" data-tf="${b.tf}">${TF_NAME[b.tf]}を表示</button>`:'');
 }
 // 時間足の切り替えボタン（各ボタンの下段に、その時間足のダウ理論トレンドとスーパートレンドの向き）
@@ -2681,9 +2683,10 @@ function renderAlerts(){
     return `<div class="al-row"><div><b>${d.name}</b><small>${d.desc}</small>${extra}</div><button type="button" class="al-sw" data-alk="${d.k}" aria-pressed="${!!alertCfg[d.k]}" aria-label="${d.name}"><i></i></button></div>`;
   }).join('');
 }
-const alertHist=[];
+const alertHist=[],ALERT_KEEP=6*3600000;setInterval(()=>{if(alertHist.length)renderAlertHist()},60000);
 function renderAlertHist(){
-  $('alertHist').innerHTML=alertHist.length?alertHist.map(a=>`<div><i class="time">${hhmm(a.t)}</i> ${esc(a.text)}</div>`).join(''):'まだありません';
+  const live=alertHist.filter(a=>Date.now()-a.t<ALERT_KEEP);  // 6時間を過ぎた通知は消す（古い数字を今のものに見せない）
+  $('alertHist').innerHTML=live.length?live.map(a=>`<div><i class="time">${hhmm(a.t)}</i> ${esc(a.text)}</div>`).join('')+'<div class="sub">6時間より前の通知は消えます</div>':'まだありません';
 }
 let alCtx=null;
 document.addEventListener('pointerdown',()=>{try{alCtx=alCtx||new (window.AudioContext||window.webkitAudioContext)();alCtx.resume&&alCtx.resume()}catch{}},{passive:true});
@@ -2703,6 +2706,7 @@ function sysNotify(text){
 }
 if('serviceWorker' in navigator&&window.parent===window)navigator.serviceWorker.register('sw.js').catch(()=>{});
 function pushAlert(kind,text,tf){
+  text=text+'（'+hhmm(Date.now())+' 時点）';  // 第2部 E7：通知には時刻を付ける（差などの数字はその時点の値）
   alertHist.unshift({kind,text,t:Date.now()});if(alertHist.length>10)alertHist.length=10;
   renderAlertHist();
   if(window.parent!==window){  // デスクの中：通知はデスクに出す（GMMAはデスクの通知欄があるので送らない）
@@ -3582,7 +3586,7 @@ function renderTalk(){
   $('talkStatus').textContent=(state.liveTalkAt?'速報 '+new Date(state.liveTalkAt).toLocaleTimeString('ja-JP')+' 確認（45秒ごと）':'速報 接続中')+(state.talkAt?'｜ニュース '+new Date(state.talkAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})+' 取得':'');
   $('talkList').innerHTML=list.length?list.map(i=>{
     const tn=TONE_JA[i.tone],eff=talkEffect(i),ago=now-i.t*1000;
-    return `<a class="talkitem${i.live&&ago<600000?' fresh':''}" href="${esc(i.link)}" target="_blank" rel="noopener"><span class="tt">${i.live?'⚡':''}${esc(ago<86400000?dur(ago)+'前':new Date(i.t*1000).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'}))}</span><span>${esc(i.title)}</span>`+
+    return `<a class="talkitem${i.live&&ago<600000?' fresh':''}" href="${esc(i.link)}" target="_blank" rel="noopener"><span class="tt">${i.live?'⚡':''}${esc((ago<86400000?dur(ago)+'前・':'')+mdwJst(i.t*1000)+hhmm(i.t*1000))}</span><span>${esc(i.title)}</span>`+
       `<span class="tags"><span class="who">${esc(i.who)}</span>${tn?`<span class="${tn[1]}">${tn[0]}</span>`:''}${eff?`<span>→ ${esc(eff)}</span>`:''}<span>${esc(i.source||'')}</span></span></a>`;
   }).join(''):'<div class="sub">直近48時間の関連する発言の見出しはありません。</div>';
   // 1時間以内のトーン付きの発言は、セットアップ判定の下にも出す（判定は止めない）
@@ -3726,7 +3730,7 @@ function renderChecks(risk,reb){
   const live={
     trend:s.ready?[s.sig==='WAIT'?'wn':'ok',s.entry?'エントリー':s.sig==='BUY'?'買い向き':s.sig==='SELL'?'売り向き':'待つ',`価格は120SMAの${s.price>=s.sma?'上 → 買い目線':'下 → 売り目線'}（SMA ${fmt(s.sma)}）`]:['na','待機','H1データ接続待ち'],
     atr:a?['ok',INSTR.dist(a),`SL幅 ${INSTR.dist(risk.sl)}（ATR×${n($('slMult').value)||1.2}）`]:['na','待機','M15データ接続待ち'],
-    news:caution?['ng','指標注意',`${caution.currency} ${caution.title} の前後です`]:nx?['ok','OK',`次は ${hhmm(nx.ts)} ${nx.currency} ${nx.title}`]:['ok','OK','直近の重要指標なし'],
+    news:caution?['ng','指標注意',`${caution.currency} ${caution.title} の前後です`]:nx?['ok','OK',`次は ${mdwJst(nx.ts)}${hhmm(nx.ts)} ${nx.currency} ${nx.title}`]:['ok','OK','直近の重要指標なし'],
     lot:risk.lot?[risk.lotStep>=0.01?'ok':'wn',risk.lotStep>=0.01?risk.lotStep.toFixed(2)+' lot':'最小ロットでも上限超え',risk.lotStep>=0.01?`最大損失 ${$('riskYen').textContent}／0.01lot刻み`:`0.01lotでも ${$('lotRound').textContent.match(/損失(¥[\d,]+)/)?.[1]||''}（上限 ${$('riskYen').textContent}）`]:['na','待機','価格・為替の取得待ち'],
     rebound:reb.touch?['ok','反発',`上 ${INSTR.dist(Math.max(0,reb.up))} / 下 ${INSTR.dist(Math.max(0,reb.down))}（${hhmm(reb.touch.t)}タッチ）`]:['na','なし','直近の120SMAタッチなし']
   };
