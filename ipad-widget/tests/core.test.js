@@ -332,3 +332,17 @@ test("dailyBook: a day's daily input wins over its trades, deposits only from da
   assert.deepEqual(C.weekOf("2026-11-02"), { from: "2026-11-02", to: "2026-11-08" });
   assert.deepEqual(C.weekOf("2026-11-01"), { from: "2026-10-26", to: "2026-11-01" }, "a Sunday ends its week");
 });
+
+test("gotobi: 5/10/15/20/25/30 and month end; a weekend or holiday one moves to the business day before", () => {
+  const hol = new Set(["2026-11-03", "2026-11-23", "2026-05-03", "2026-05-04", "2026-05-05", "2026-05-06"]), H = (k) => hol.has(k);
+  assert.deepEqual(C.gotobi("2026-11-05", H), { kind: "real", moved: [] });
+  assert.deepEqual(C.gotobi("2026-11-13", H), { kind: "moved", moved: ["2026-11-15"] }, "15th is a Sunday");
+  assert.equal(C.gotobi("2026-11-15", H), null); assert.equal(C.gotobi("2026-11-12", H), null); assert.equal(C.gotobi("2026-11-04", H), null);
+  assert.deepEqual(C.gotobi("2026-11-30", H), { kind: "real", moved: [] }, "the 30th is also the month end");
+  assert.deepEqual(C.gotobi("2026-11-20", H), { kind: "real", moved: [] });
+  assert.deepEqual(C.gotobi("2026-05-01", H), { kind: "moved", moved: ["2026-05-05"] }, "Golden Week: 5th back past the holidays and the weekend");
+  assert.deepEqual(C.gotobi("2026-05-08", H), { kind: "moved", moved: ["2026-05-10"] });
+  assert.deepEqual(C.gotobi("2026-10-30", H), { kind: "real", moved: ["2026-10-31"] }, "30th (Fri) is real; the 31st (Sat, month end) moves onto it");
+  assert.deepEqual(C.gotobi("2026-02-27", H), { kind: "moved", moved: ["2026-02-28"] }, "February ends on the 28th (Sat)");
+  assert.deepEqual(C.gotobi("2026-01-30", H), { kind: "real", moved: ["2026-01-31"] }, "30th Fri real + 31st Sat moved onto it");
+});

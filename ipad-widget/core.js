@@ -337,6 +337,25 @@
     var f = function (x) { var d = new Date(x); return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0"); };
     return { from: f(t - dow * DAY), to: f(t + (6 - dow) * DAY) };
   }
+  /* ゴトー日（B）：5・10・15・20・25・30日と月末。その日が土日か日本の祝日なら、直前の営業日が「実質ゴトー日（振替）」。
+     isHol(key) は日本の祝日か（デスクは holidays.json＝サイトが holidays-jp から取得、読めないときは組み込みの一覧）。
+     返すのは null か { kind: "real"|"moved", moved: [本来の日付, ...] }（本来のゴトー日でもあり振替も重なる日は "real"） */
+  function gotobi(key, isHol) {
+    var p = String(key).split("-").map(Number); if (p.length !== 3 || !fin(p[0])) return null;
+    var f = function (t) { var d = new Date(t); return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0"); };
+    var biz = function (t) { var w = new Date(t).getUTCDay(); return w !== 0 && w !== 6 && !(isHol && isHol(f(t))); };
+    var real = false, moved = [];
+    [0, 1].forEach(function (dm) {  // その月と、翌月の初め（翌月5日が前の月へずれることがある）
+      var y = p[0], m = p[1] - 1 + dm; if (m > 11) { m -= 12; y++; }
+      var last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate(), days = [5, 10, 15, 20, 25, 30, last].filter(function (d, i, a) { return d <= last && a.indexOf(d) === i; });
+      days.forEach(function (d) {
+        var t = Date.UTC(y, m, d), r = t, n = 0; while (!biz(r) && n++ < 15) r -= DAY;
+        if (f(r) !== key) return;
+        if (r === t) real = true; else moved.push(f(t));
+      });
+    });
+    return real || moved.length ? { kind: real ? "real" : "moved", moved: moved } : null;
+  }
   // the trading day key (Japan date) a time belongs to
   function dayKey(t) { var p = partsIn("Asia/Tokyo", t); return p.y + "-" + String(p.mo).padStart(2, "0") + "-" + String(p.d).padStart(2, "0"); }
 
@@ -600,7 +619,7 @@
     KIND: KIND, marketState: marketState, hoursNote: hoursNote, nextOpen: nextOpen, sessions: sessions, RULES: RULES, freshness: freshness, ago: ago, jst: jst,
     checkMarket: checkMarket, realCandles: realCandles, sequencer: sequencer,
     weeklyHours: weeklyHours, REOPEN_NOTE: REOPEN_NOTE, LEVEL_JA: LEVEL_JA,
-    positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey, journalDays: journalDays, dailyBook: dailyBook, periodSummary: periodSummary, weekOf: weekOf,
+    positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey, journalDays: journalDays, dailyBook: dailyBook, periodSummary: periodSummary, weekOf: weekOf, gotobi: gotobi,
     SURGE: SURGE, SURGE_GAP: SURGE_GAP, SURGE_COOL: SURGE_COOL, SURGE_SHOW: SURGE_SHOW, surgeAdd: surgeAdd, surgeCheck: surgeCheck, surgeGate: surgeGate, surgeText: surgeText, interventionPick: interventionPick,
     newStore: newStore, updateSignal: updateSignal, expireSignals: expireSignals, loadStore: loadStore, COOLDOWN: COOLDOWN,
     toCSV: toCSV, parseCSV: parseCSV, importCSV: importCSV,
