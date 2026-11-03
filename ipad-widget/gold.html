@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="3da47411fd">
+<meta name="build" content="8a88d4fc8c">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2306,11 +2306,13 @@ function calcRisk(){
     // XM・XSとも注文は0.01lot刻み：目安ロットは許容リスク以内に収まる0.01刻みの値（最小0.01lot）
     useLot=Math.max(lotStep,0.01);profit=fx?tpEff*contract*useLot*fx:0;
     const minLoss=fx?slEff*contract*0.01*fx:0;
+    // 最小ロット（0.01）でも上限を超えるときは、上限の表示をそのまま残し、超えることをはっきり出す（1%以内に見せない）
+    const over=lot&&lotStep<0.01;
     $('riskYen').textContent=yen(maxLoss);
-    $('riskSub').textContent='資金の'+rp+'%'+(spr?'（スプレッド込み）':'');$('riskSub').className='';
+    $('riskSub').textContent=over?'上限：資金の'+rp+'%（最小ロットでも超えます）':'資金の'+rp+'%'+(spr?'（スプレッド込み）':'');$('riskSub').className=over?'warn':'';
     $('lotSize').textContent=lot?useLot.toFixed(2):'--';
     $('lotRound').textContent=!lot?'--':limited?'証拠金の上限に合わせた値':lotStep>=0.01?'0.01刻み・リスク'+yen(maxLoss)+'以内':
-      '最小ロット。損失'+yen(minLoss)+'（資金の'+(capital?(minLoss/capital*100).toFixed(2):'--')+'%）';
+      '最小ロット（0.01）でも上限の'+rp+'%を超えます：損失'+yen(minLoss)+'（資金の'+(capital?(minLoss/capital*100).toFixed(2):'--')+'%）';
     $('lotRound').className=lot&&(lotStep<0.01||limited)?'warn':'';
     $('lotLabel').textContent='目安ロット';$('lossLabel').textContent='最大損失';
   }
@@ -3507,7 +3509,7 @@ function renderChecks(risk,reb){
     trend:s.ready?[s.sig==='WAIT'?'wn':'ok',s.entry?'エントリー':s.sig,`価格は120SMAの${state.spot.price>=s.sma?'上 → 買い目線':'下 → 売り目線'}（SMA ${fmt(s.sma)}）`]:['na','待機','H1データ接続待ち'],
     atr:a?['ok',INSTR.dist(a),`SL幅 ${INSTR.dist(risk.sl)}（ATR×${n($('slMult').value)||1.2}）`]:['na','待機','M15データ接続待ち'],
     news:caution?['ng','CAUTION',`${caution.currency} ${caution.title} の前後です`]:nx?['ok','OK',`次は ${hhmm(nx.ts)} ${nx.currency} ${nx.title}`]:['ok','OK','直近の重要指標なし'],
-    lot:risk.lot?[risk.lotStep>=0.01?'ok':'wn',risk.lotStep>=0.01?risk.lotStep.toFixed(2)+' lot':'最小未満',`最大損失 ${$('riskYen').textContent}／0.01lot刻み`]:['na','待機','価格・為替の取得待ち'],
+    lot:risk.lot?[risk.lotStep>=0.01?'ok':'wn',risk.lotStep>=0.01?risk.lotStep.toFixed(2)+' lot':'最小ロットでも上限超え',risk.lotStep>=0.01?`最大損失 ${$('riskYen').textContent}／0.01lot刻み`:`0.01lotでも ${$('lotRound').textContent.match(/損失(¥[\d,]+)/)?.[1]||''}（上限 ${$('riskYen').textContent}）`]:['na','待機','価格・為替の取得待ち'],
     rebound:reb.touch?['ok','反発',`上 ${INSTR.dist(Math.max(0,reb.up))} / 下 ${INSTR.dist(Math.max(0,reb.down))}（${hhmm(reb.touch.t)}タッチ）`]:['na','なし','直近の120SMAタッチなし']
   };
   $('checks').innerHTML=CHECKS.map((c,i)=>{
