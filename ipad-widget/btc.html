@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="817b7c3a23">
+<meta name="build" content="42eab40397">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -205,6 +205,8 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#b9892d,#f5d77e);transition:width .4s}
 .reasons{display:grid;gap:5px;margin-top:8px}
 .reason{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#0d1217;border:1px solid #222b35;border-radius:10px;padding:7px 9px}
+.reason{flex-wrap:wrap}.reason .rdet{flex-basis:100%;font-size:10.5px;color:var(--muted);line-height:1.45}.reason .rdet:empty{display:none}
+.gtip{display:block;margin:4px 0 2px;padding:6px 8px;border-radius:8px;background:#0d1217;border:1px solid #2a3440;font-size:11px;font-weight:500;color:var(--text);line-height:1.55;letter-spacing:0;text-align:left}
 .reason span{font-size:11px;color:var(--muted)}.reason b{font-size:12px;text-align:right}
 .patlist{display:grid;gap:4px;margin-top:6px}
 .patlist .ph{font-size:11px;color:var(--muted);margin:4px 2px 0}
@@ -530,18 +532,18 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div id="talkAlert" class="talkalert" hidden></div>
       <div id="waitFor" class="waitfor" hidden></div>
       <div class="meter"><i id="meter"></i></div>
-      <div class="sub">条件のそろい具合 <b id="confidence">--</b></div>
+      <div class="sub">条件のそろい具合<button type="button" class="gq" data-tip="そろい具合：3つの条件（120SMA・モメンタム・レンジ位置）がどれだけ同じ向きを向いているか。100%でも、利確余地が足りないなど他の理由で見送ることがあります。エントリーしてよいかどうかの数字ではありません。" aria-label="説明">?</button> <b id="confidence">--</b></div>
       <div class="tpbasis"><span>利確判定の基準<button type="button" class="gq" data-gloss="ch:トレードスタイル" aria-label="用語集：トレードスタイル">?</button></span><div class="segmented" id="tpBasisSeg">
         <button class="seg" data-tpb="h1">1時間足</button><button class="seg" data-tpb="m15">15分足</button><button class="seg" data-tpb="m5" title="5分足の水平線で利確を判定">スキャルピング</button><button class="seg" data-tpb="day" title="4時間足・日足の水平線で利確を判定">デイトレード</button><button class="seg" data-tpb="all">すべて</button></div></div>
       <div class="reasons">
-        <div class="reason"><span>① H1 120SMA</span><b id="reasonSma">--</b></div>
-        <div class="reason"><span>② H1モメンタム(3本)</span><b id="reasonMom">--</b></div>
-        <div class="reason"><span>③ 当日レンジ位置</span><b id="reasonRange">--</b></div>
-        <div class="reason"><span>④ 利確余地・<b class="tf60">1時間足</b>（<span id="minTpLabel">50</span>pips以上｜<span id="tp60Use">判定</span>）</span><b id="reasonTp">--</b></div>
+        <div class="reason"><span>① H1 120SMA<button type="button" class="gq" data-gloss="SMA" aria-label="用語集：SMA">?</button></span><b id="reasonSma">--</b><small class="rdet" id="detSma"></small></div>
+        <div class="reason"><span>② H1モメンタム(3本)<button type="button" class="gq" data-tip="モメンタム：値動きの勢い。ここでは1時間足の終値が3本前からどれだけ動いたか。上がっていれば上昇、下がっていれば下降。" aria-label="説明">?</button></span><b id="reasonMom">--</b><small class="rdet" id="detMom"></small></div>
+        <div class="reason"><span>③ 当日レンジ位置<button type="button" class="gq" data-gloss="レンジ" aria-label="用語集：レンジ">?</button></span><b id="reasonRange">--</b><small class="rdet" id="detRange"></small></div>
+        <div class="reason"><span>④ 利確余地<button type="button" class="gq" data-tip="利確余地：エントリーした価格から、利益を確定する目標（近くの水平線など）までの距離。短すぎると、手数料やスプレッドに対して得られる利益が小さいので見送ります。" aria-label="説明">?</button>・<b class="tf60">1時間足</b>（<span id="minTpLabel">50</span>pips以上｜<span id="tp60Use">判定</span>）</span><b id="reasonTp">--</b><small class="rdet" id="detTp"></small></div>
         <div class="reason tp15row"><span>└ 利確余地・<b class="tf15">15分足</b>（<span id="minTpLabel15">50</span>pips以上｜<span id="tp15Use">参考</span>）</span><b id="reasonTp15">--</b></div>
         <div class="reason tp15row"><span>└ 利確余地・<b class="tf5">5分足</b>（<span id="minTpLabel5">50</span>pips以上｜<span id="tp5Use">参考</span>）</span><b id="reasonTp5">--</b></div>
         <div class="reason tp15row"><span>└ 利確余地・<b class="tfday">4時間足・日足</b>（<span id="minTpLabelDay">50</span>pips以上｜<span id="tpDayUse">参考</span>）</span><b id="reasonTpDay">--</b></div>
-        <div class="reason" id="cupRow" hidden><span>⑤ チャートパターン</span><b id="reasonCup">--</b></div>
+        <div class="reason" id="cupRow" hidden><span>⑤ チャートパターン<button type="button" class="gq" data-gloss="ネックライン" aria-label="用語集：ネックライン">?</button></span><b id="reasonCup">--</b><small class="rdet" id="detCup"></small></div>
       </div>
       <div id="patList" class="patlist" hidden></div>
       <div id="planBox" class="planbox" hidden></div>
@@ -2283,6 +2285,9 @@ function tpPipsBy(pl){
   return state.tpBasis==='m15'?b:state.tpBasis==='m5'?c:state.tpBasis==='day'?d:state.tpBasis==='all'?Math.min(a,b):a;
 }
 const tpOkBy=pl=>!!pl&&tpPipsBy(pl)>=MIN_TP_PIPS;
+// 判定欄の pips には値段の換算を添える（銘柄ごとに1pipsの大きさが違う：ゴールド$0.10・ドル円0.01円・BTC$1・オイル$0.01）
+const pipConv=p=>IS_FX?fmt(p*PIP,3)+'円':'$'+fmt(p*PIP,PIP>=1?0:2);
+const pipsTxt=p=>{const v=Math.round(p);return v+'pips（'+pipConv(v)+'）'};
 // 売買プラン：エントリー＝現在値。損切り＝M15 ATR×倍率（最低2ドル）。
 // 利確＝進む方向でいちばん近いH1水平線（5pips以上先）。線がなければ損切り幅×目標RR。
 // 一番近い水平線の利確（エントリーから5pips以上先）。5分足はいちばん早い利確（スキャルピング）、15分足は早めの利確、1時間足は本命の利確
@@ -2559,7 +2564,7 @@ function renderMtf(){
   const m=mtfScore(),el=$('mtfScore');
   if(!m){el.className='mtfscore';el.innerHTML='<div class="sub">データ取得中...</div>';$('mtfTable').innerHTML='';return null}
   el.className='mtfscore '+(m.dir>0?'up':m.dir<0?'down':'flat');
-  el.innerHTML=`<div class="ms-main"><div><small>総合判定 <i>ルールベース</i></small><b>${m.dir>0?'↗':m.dir<0?'↘':'→'} ${m.label}</b></div><div class="ms-num">${m.score}<small>一致度 /100</small></div></div>`+
+  el.innerHTML=`<div class="ms-main"><div><small>総合判定 <i>ルールベース</i></small><b>${m.dir>0?'↗':m.dir<0?'↘':'→'} ${m.label}</b></div><div class="ms-num">${m.score}<small>一致度 /100<button type="button" class="gq" data-tip="一致度：4つの時間足（4時間・1時間・15分・5分）の判定が、どれだけ同じ向きにそろっているか（0〜100）。買い点と売り点の差で、25以上で買い優勢・売り優勢、25未満は様子見。" aria-label="説明">?</button></small></div></div>`+
     mtfExplain(m)+
     (m.held?`<div class="sub ms-hold">判定が境目付近で揺れています（いまの計算は「${esc(m.raw.label)}・一致度${m.raw.score}」。2回続けば切り替えます）</div>`:'')+
     `<div class="ms-tfs">${m.rows.map((r,i)=>`<button type="button" data-tf="${MTF_TFS[i]}" class="${r?r.cls:''}"><span>${MTF_TFS[i].toUpperCase()}</span><b>${r?r.arrow:'—'}</b><small>${r?r.judge:'—'}</small></button>`).join('')}</div>`+
@@ -2767,7 +2772,7 @@ function renderPatList(s){
     const pt=(s.pats||[]).find(p=>p.id===r.id&&p.tf===r.tf&&(r.dir===0||p.dir===r.dir));
     const dir=pt?pt.dir:r.dir,name=(r.tf==='h1'?'1時間足':'15分足')+(pt&&r.id==='cup'?pt.label.replace(/^15分足/,''):r.name)+'（'+side(dir)+'）';
     const c=pt&&s.checks?.get(pt),item=(ok,txt)=>'<span class="'+(ok?'ok':'ng')+'">'+(ok?'✓':'✗')+' '+esc(txt)+'</span>';
-    let st='未検出',cls='idle',det='';
+    let st='未検出',cls='idle',det='<span>形ができ、ネックラインを'+(dir>0?'上抜け':dir<0?'下抜け':'抜け')+'ると成立</span>';
     if(pt&&pt.state==='forming'){
       st='形成中';cls='';
       det='<span>ネックライン '+fmt(pt.neck)+(dir>0?' を上抜けで成立':' を下抜けで成立')+'</span>';
@@ -2775,7 +2780,7 @@ function renderPatList(s){
       const smaTxt='120SMA'+(dir>0?'より上':'より下');
       det=[item(true,'ネックライン '+fmt(pt.neck)+' ブレイク'),
         r.useSma?item(c.smaOk,smaTxt):'',
-        item(c.tpOk,TP_BASIS_NAME[state.tpBasis]+'の目標まで '+(c.plan?Math.round(tpPipsBy(c.plan)):0)+'pips（'+MIN_TP_PIPS+'以上）'),
+        item(c.tpOk,TP_BASIS_NAME[state.tpBasis]+'の目標まで '+pipsTxt(c.plan?tpPipsBy(c.plan):0)+'（'+pipsTxt(MIN_TP_PIPS)+'以上）'),
         item(!s.caution,s.caution?'重要指標CAUTION中':'指標CAUTIONなし')].join('');
       if(r.entry===false){st='参考表示（10年で優位性なし）';cls=''}
       else if(c.ok){st='条件そろい → '+side(dir)+'エントリー';cls='go'+(dir<0?' sell':'')}
@@ -2799,14 +2804,14 @@ function renderWait(s){
     rngD===d?item(true,'③レンジ'+(d>0?'上半分':'下半分')):item(false,'③当日レンジ中値 '+fmt(s.mid)+(d>0?' の上抜け待ち':' の下抜け待ち'))];
   const n=[smaD,momD,rngD].filter(x=>x===d).length;
   let head='3条件（'+side+'）'+n+'/3';
-  if(n===3)head+=s.forced?'｜重要指標のCAUTION明け待ち':s.plan&&!tpOkBy(s.plan)?'｜利確余地（'+TP_BASIS_NAME[state.tpBasis]+'） '+Math.round(tpPipsBy(s.plan))+'pips→'+MIN_TP_PIPS+'pips以上待ち':'';
+  if(n===3)head+=s.forced?'｜重要指標のCAUTION明け待ち':s.plan&&!tpOkBy(s.plan)?'｜利確余地（'+TP_BASIS_NAME[state.tpBasis]+'） '+pipsTxt(tpPipsBy(s.plan))+'→'+pipsTxt(MIN_TP_PIPS)+'以上待ち':'';
   lines.push('<div class="wl"><b>'+esc(head)+'</b>'+parts.join('')+'</div>');
   // チャートパターン：形成中のブレイク待ち、ブレイク済みで条件が足りないもの
   for(const pt of s.pats||[]){
     const sd=pt.dir>0?'買い':'売り';
     if(pt.state==='forming'){lines.push('<div class="wl"><b>'+esc(pt.label+'（'+sd+'）')+'</b>'+item(false,'形成中｜ネックライン '+fmt(pt.neck)+(pt.dir>0?' の上抜け待ち':' の下抜け待ち'))+'</div>');continue}
     const c=s.checks?.get(pt);if(!c||pt.entry===false)continue;
-    const miss=[!c.smaOk&&'120SMA'+(pt.dir>0?'の上抜け待ち':'の下抜け待ち'),!c.tpOk&&TP_BASIS_NAME[state.tpBasis]+'の目標まで'+(c.plan?Math.round(tpPipsBy(c.plan)):0)+'pips（'+MIN_TP_PIPS+'以上必要）',s.caution&&'CAUTION明け待ち'].filter(Boolean);
+    const miss=[!c.smaOk&&'120SMA'+(pt.dir>0?'の上抜け待ち':'の下抜け待ち'),!c.tpOk&&TP_BASIS_NAME[state.tpBasis]+'の目標まで'+pipsTxt(c.plan?tpPipsBy(c.plan):0)+'（'+pipsTxt(MIN_TP_PIPS)+'以上必要）',s.caution&&'CAUTION明け待ち'].filter(Boolean);
     if(miss.length)lines.push('<div class="wl"><b>'+esc(pt.label+'（'+sd+'）')+'</b>'+item(true,'ブレイク済み')+miss.map(m=>item(false,m)).join('')+'</div>');
   }
   el.innerHTML='<div class="wh">エントリー待ちの条件</div>'+lines.join('');el.hidden=false;
@@ -2879,8 +2884,8 @@ function renderSnapshot(){
   const sub=!s.ready?'データ取得中':mktClosed?(closedLabel()==='休止中'?'毎日の休止時間のためエントリー判定は停止':'市場休場中のためエントリー判定は停止'):s.forced?'重要指標前後のため待機':
     s.via.length?(s.entry3?'3条件一致＋':'')+s.via.join('・')+'（'+(s.sig==='BUY'?'買い':'売り')+'）・利確目安（'+TP_BASIS_NAME[state.tpBasis]+'）まで'+Math.round(tpPipsBy(s.plan))+'pips':
     s.sig==='WAIT'?'3条件のうち 買い向き'+cnt.buy+'個・売り向き'+cnt.sell+'個'+(cnt.none?'・どちらでもない'+cnt.none+'個':'')+'。買い向きと売り向きの差が2個以上になるまで待ちます':
-    s.entry?'3条件一致・利確目安（'+TP_BASIS_NAME[state.tpBasis]+'）まで'+Math.round(tpPipsBy(s.plan))+'pips':
-    s.aligned?'条件はそろっていますが、利確余地が足りないため見送りです（'+TP_BASIS_NAME[state.tpBasis]+'の目標まで'+Math.round(tpPipsBy(s.plan))+'pips・'+MIN_TP_PIPS+'pips以上必要）':
+    s.entry?'3条件一致・利確目安（'+TP_BASIS_NAME[state.tpBasis]+'）まで'+pipsTxt(tpPipsBy(s.plan)):
+    s.aligned?'条件はそろっていますが、利確余地が足りないため見送りです（'+TP_BASIS_NAME[state.tpBasis]+'の目標まで'+pipsTxt(tpPipsBy(s.plan))+'・'+pipsTxt(MIN_TP_PIPS)+'以上必要）':
     '3条件のうち2つが'+(s.sig==='BUY'?'買い':'売り')+'向き。3つそろうまで見送りです';
   const label=sigLabel(s);
   el.innerHTML=esc(label)+'<small>'+esc(mktClosed&&reopenText?sub+'｜再開 '+reopenText+'（日本時間・'+(CORE?CORE.REOPEN_NOTE:'取引所の時刻')+'）':sub)+'</small>';
@@ -2922,21 +2927,33 @@ function renderSnapshot(){
   if(s.ready&&s.hi&&s.lo)setReason('reasonRange',s.price>=s.mid?'上半分（+1）':'下半分（−1）',s.price>=s.mid?1:-1);  // 大結論・待ち条件と同じ評価結果
   else if(d.hi&&d.lo){const mid=(d.hi+d.lo)/2;setReason('reasonRange',state.spot.price>=mid?'上半分（+1）':'下半分（−1）',state.spot.price>=mid?1:-1)}
   else setReason('reasonRange','取得中',0);
+  // 各条件の「現在値・基準・あとどれだけ」（B4）。大結論と同じ評価結果 s から
+  const det=(id,t)=>{const e=$(id);if(e&&e.textContent!==t)e.textContent=t};
+  const dx=v=>IS_FX?INSTR.dist(v)+'（'+fmt(v,3)+'円）':INSTR.dist(v);
+  if(s.ready){
+    const up=s.price>=s.sma,th=INSTR.momTh,m=s.mom;
+    det('detSma','SMA '+fmt(s.sma)+'・現在 '+fmt(s.price)+'｜あと '+dx(Math.abs(s.price-s.sma))+' で'+(up?'下抜け（売り向きに変わる）':'上抜け（買い向きに変わる）'));
+    det('detMom','基準：1時間足3本で +'+dx(th)+' より上がれば上昇、−'+dx(th)+' より下がれば下降、その間は横ばい｜今 '+(m>=0?'+':'−')+dx(Math.abs(m))+
+      (m>th?'（横ばいまで あと '+dx(m-th)+'）':m<-th?'（横ばいまで あと '+dx(-th-m)+'）':'（上昇まで あと '+dx(th-m)+'・下降まで あと '+dx(m+th)+'）'));
+    det('detRange',s.hi&&s.lo?'今日 高 '+fmt(s.hi)+'・安 '+fmt(s.lo)+'・中値 '+fmt(s.mid)+'・現在 '+fmt(s.price)+'｜中値まで '+dx(Math.abs(s.price-s.mid))+'（'+(s.price>=s.mid?'下回ると下半分':'上回ると上半分')+'）':'');
+    det('detTp',s.plan?'基準：'+pipsTxt(MIN_TP_PIPS)+'以上｜'+INSTR.pipNote+(tpPipsBy(s.plan)>=MIN_TP_PIPS?'':'｜あと '+pipsTxt(MIN_TP_PIPS-tpPipsBy(s.plan))+' 足りない'):
+      '買いか売りの向きが決まると、その向きの目標（水平線）までの距離で計算します。いまは向きが決まっていません｜基準：'+pipsTxt(MIN_TP_PIPS)+'以上');
+  }else['detSma','detMom','detRange','detTp'].forEach(id=>det(id,''));
   const all=state.tpBasis==='all',use60=all||state.tpBasis==='h1',use15=all||state.tpBasis==='m15',use5=state.tpBasis==='m5',useDay=state.tpBasis==='day';
   [['tp60Use','reasonTp',use60],['tp15Use','reasonTp15',use15],['tp5Use','reasonTp5',use5],['tpDayUse','reasonTpDay',useDay]].forEach(([u,r,on])=>{
     $(u).textContent=on?'判定':'参考';$(u).className=on?'tpuse':'';$(r).closest('.reason').classList.toggle('unused',!on)});
   setSegActive('#tpBasisSeg .seg','tpb',state.tpBasis);
-  if(s.plan)setReason('reasonTp',Math.round(s.plan.tpPips)+'pips'+(s.plan.tpSrc==='H1水平線'?'（'+fmt(s.plan.tp)+'）':'')+(s.plan.tpPips>=MIN_TP_PIPS?' OK':' 不足'),use60&&s.plan.tpPips>=MIN_TP_PIPS?(s.sig==='BUY'?1:-1):0);
-  else setReason('reasonTp',s.ready?'方向が決まると計算':'取得中',0);
+  if(s.plan)setReason('reasonTp',pipsTxt(s.plan.tpPips)+(s.plan.tpSrc==='H1水平線'?'（'+fmt(s.plan.tp)+'）':'')+(s.plan.tpPips>=MIN_TP_PIPS?' OK':' 不足'),use60&&s.plan.tpPips>=MIN_TP_PIPS?(s.sig==='BUY'?1:-1):0);
+  else setReason('reasonTp',s.ready?'方向が決まれば計算します':'取得中',0);
   // 15分足の利確は参考表示（エントリー判定は1時間足のまま）
   const t15=s.plan&&s.plan.tp15;
-  setReason('reasonTp15',!s.plan?(s.ready?'方向が決まると計算':'取得中'):t15?Math.round(t15.pips)+'pips（'+fmt(t15.price)+'）'+(t15.pips>=MIN_TP_PIPS?' OK':' 不足'):'15分足の線なし',0);
+  setReason('reasonTp15',!s.plan?(s.ready?'方向が決まれば計算します':'取得中'):t15?Math.round(t15.pips)+'pips（'+fmt(t15.price)+'）'+(t15.pips>=MIN_TP_PIPS?' OK':' 不足'):'15分足の線なし',0);
   $('reasonTp15').classList.add('tf15');
   const t5=s.plan&&s.plan.tp5;
-  setReason('reasonTp5',!s.plan?(s.ready?'方向が決まると計算':'取得中'):t5?Math.round(t5.pips)+'pips（'+fmt(t5.price)+'）'+(t5.pips>=MIN_TP_PIPS?' OK':' 不足'):'5分足の線なし',0);
+  setReason('reasonTp5',!s.plan?(s.ready?'方向が決まれば計算します':'取得中'):t5?Math.round(t5.pips)+'pips（'+fmt(t5.price)+'）'+(t5.pips>=MIN_TP_PIPS?' OK':' 不足'):'5分足の線なし',0);
   $('reasonTp5').classList.add('tf5');
   const td=s.plan&&s.plan.tpDay;
-  setReason('reasonTpDay',!s.plan?(s.ready?'方向が決まると計算':'取得中'):td?Math.round(td.pips)+'pips（'+TF_JA[td.tf]+' '+fmt(td.price)+'）'+(td.pips>=MIN_TP_PIPS?' OK':' 不足'):'4時間足・日足の線なし',0);
+  setReason('reasonTpDay',!s.plan?(s.ready?'方向が決まれば計算します':'取得中'):td?Math.round(td.pips)+'pips（'+TF_JA[td.tf]+' '+fmt(td.price)+'）'+(td.pips>=MIN_TP_PIPS?' OK':' 不足'):'4時間足・日足の線なし',0);
   $('reasonTpDay').classList.add('tfday');
   if(INSTR.patterns){
     $('cupRow').hidden=false;
@@ -2947,6 +2964,8 @@ function renderSnapshot(){
       s.via.length?(s.sig==='BUY'?1:-1):0);
     else if(fm.length)setReason('reasonCup',fm.slice(0,2).map(p=>p.label+'（'+side(p)+'）形成中｜'+fmt(p.neck)+(p.dir>0?' 上抜けで':' 下抜けで')+'成立').join('／'),0);
     else setReason('reasonCup',INSTR.cupHandle&&state.m15.length<200?'M15待ち':'なし',0);
+    {const e=$('detCup'),t=br.length?'':fm.length?fm.slice(0,2).map(p=>p.label+'：ネックライン '+fmt(p.neck)+' まで あと '+INSTR.dist(Math.abs(s.price-p.neck))).join('／'):
+      '形（ダブルボトム・三尊など）が見つかり、その区切りの線（ネックライン）を抜けると成立。いまは形が見つかっていません（各パターンの条件は下の一覧）';if(e&&e.textContent!==t)e.textContent=t}
     renderPatList(s);
   }
   renderPlan(s);
@@ -3762,6 +3781,9 @@ $('tlBtn').onclick=()=>{state.showTrend=!state.showTrend;$('tlBtn').classList.to
 $('chNow').onclick=e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)};
 $('mtfScore').onclick=e=>{const b=e.target.closest('[data-tf]');if(!b)return;setTf(b.dataset.tf);$('secChart').scrollIntoView({behavior:'smooth',block:'start'})};
 // 「?」：用語集のその用語を開く（トレードデスクの中ならデスクの用語集、単体ならデスクを開いて表示）
+document.addEventListener('click',e=>{const b=e.target.closest('[data-tip]');if(!b)return;e.preventDefault();e.stopPropagation();
+  const host=b.closest('.reason,.sub,.ms-main')||b.parentElement,old=host.querySelector('.gtip');if(old){old.remove();return}
+  const t=document.createElement('span');t.className='gtip';t.textContent=b.dataset.tip;host.appendChild(t)},true);
 document.addEventListener('click',e=>{const g=e.target.closest('[data-gloss]');if(!g)return;e.preventDefault();e.stopPropagation();const term=g.dataset.gloss;
   if(window.parent!==window){try{window.parent.postMessage({type:'dash-gloss',key:INSTR.key,term},'*')}catch{}}else location.href='./#gloss='+encodeURIComponent(term)},true);
 $('alertList').onclick=e=>{const all=e.target.closest('[data-alall]');if(all){const v=all.dataset.alall==='1';ALERT_DEF.forEach(d=>alertCfg[d.k]=v);saveAlerts();renderAlerts();return}
