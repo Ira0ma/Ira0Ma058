@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="b60b248dc8">
+<meta name="build" content="478ecae81b">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1903,12 +1903,16 @@ function renderKeyLv(){
   keyPost(k);
 }
 // トレードデスクの中で動いているときは、R1・R2・S1・S2をデスクへ知らせる（価格パネルに並べる）
-let keyPosted='';
+// 第5部：ホームの「今日の注目ポイント」も同じ値を使う。水平線の時間足（根拠）・この画面の現在価格（距離の計算用）・
+// 目線（トレード前チェック1と同じ：価格が1時間足の120SMAの上＝買い目線／下＝売り目線）も添える。水準か目線が変わったら
+// すぐ、価格だけの変化は5秒に1回まで
+let keyPosted='',keyPostAt=0;
 function keyPost(k){
   if(window.parent===window)return;
-  const msg={type:'dash-levels',key:INSTR.key,r:k.r.map(l=>l.price),s:k.s.map(l=>l.price)};
-  const j=JSON.stringify(msg);if(j===keyPosted)return;keyPosted=j;
-  try{window.parent.postMessage(msg,'*')}catch{}
+  const s=calcSignal(),view=s.ready&&s.sma?(k.px>=s.sma?1:-1):0;
+  const msg={type:'dash-levels',key:INSTR.key,r:k.r.map(l=>l.price),s:k.s.map(l=>l.price),rt:k.r.map(l=>l.tf||'h1'),st:k.s.map(l=>l.tf||'h1'),view,sma:s.sma||null};
+  const j=JSON.stringify(msg),now=Date.now();if(j===keyPosted&&now-keyPostAt<5000)return;keyPosted=j;keyPostAt=now;
+  try{window.parent.postMessage({...msg,px:k.px,at:now},'*')}catch{}
 }
 /* 第2部 A2：水平線は「確定した足」が変わったときだけ計算し直す。形成中の最新足は価格が動くたびに高値・安値が変わり、
    サイトの読み直し（約9分遅れの足）とライブ価格の足とで交互に線が出たり消えたりしていた（ドル円の R2 が 158.993 と

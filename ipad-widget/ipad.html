@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="db25f07cbb">
+<meta name="build" content="112bc611da">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -231,19 +231,24 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .pt-list li.off h3, .pt-list li.off p { opacity: .55; }
 .pt-foot { position: absolute; left: 20px; bottom: 12px; font-size: 10.5px; color: var(--ink-3); }
 [data-pt] { white-space: pre-line; }
-.pt-list { list-style: none; margin: 18px 0 0; padding: 0; display: flex; flex-direction: column; gap: 22px; }
-.pt-list li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--glass-line); }
+.pt-list { list-style: none; margin: 12px 0 0; padding: 0 4px 0 0; display: flex; flex-direction: column; gap: 10px; }
+.pt-list li { display: block; padding-bottom: 9px; border-bottom: 1px solid var(--glass-line); }
 .pt-list li:last-child { border-bottom: 0; padding-bottom: 0; }
 .pt-list .ck { width: 24px; height: 24px; border-radius: 50%; background: var(--gold); display: grid; place-items: center; box-shadow: 0 0 12px rgba(227,184,103,.35); }
-.pt-list h3 { margin: 1px 0 6px; font-size: 14.5px; font-weight: 600; }
+.pt-list h3 { margin: 0 0 3px; font-size: 13.5px; font-weight: 600; }
 .pt-pick { font: inherit; color: inherit; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border-radius: 6px; }
 .pt-pick .chev { color: var(--ink-3); flex: none; }
 .pt-pick:hover .chev, .pt-pick:focus-visible .chev { color: var(--gold); }
 .pt-picker { inset: 10px; }
 .picker-list .follow { grid-column: 1 / -1; }
-.pt-list p { margin: 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pt-list p { margin: 0; font-size: 12px; line-height: 1.55; color: var(--ink-2); }  /* 第5部：省略しない（全文を出し、入りきらない分は欄の中でスクロール） */
 /* daily report (strategy.json): row 3 opens the full recap and outlook */
-.pt-list li.has-report p { -webkit-line-clamp: 3; cursor: pointer; }
+.pt-list li.has-report p { cursor: pointer; }
+.ptl { display: grid; grid-template-columns: 22px 1fr auto 44px; gap: 6px; align-items: baseline; line-height: 1.5; white-space: nowrap; }
+.ptl i { font-style: normal; font-weight: 700; font-size: 11px; }.ptl.r i { color: var(--up-red); }.ptl.s i { color: var(--up-green); }
+.ptl b { font-weight: 600; color: var(--ink-1, #fff); font-variant-numeric: tabular-nums; }.ptl em { font-style: normal; font-variant-numeric: tabular-nums; }.ptl small { font-size: 10px; color: var(--ink-3); text-align: right; }
+.ptl.none { display: block; color: var(--ink-3); }
+.pt-list li p:has(.ptl) { white-space: normal; }
 .pt-more { display: none; margin-top: 4px; font: inherit; font-size: 11.5px; font-weight: 600; color: var(--gold); background: none; border: 0; padding: 0; cursor: pointer; }
 .pt-list li.has-report .pt-more { display: inline-flex; align-items: center; gap: 4px; }
 .rep { position: absolute; inset: 6px; z-index: 3; background: #0e1016; border: 1px solid var(--glass-line); border-radius: 16px; display: flex; flex-direction: column; }
@@ -400,7 +405,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 /* みんなのFX は注目ポイントのカードの下に（X の埋め込みが読めないときは1行の案内） */
 #points { display: flex; flex-direction: column; padding-bottom: 12px; }
 #points .pt-foot { position: static; margin-top: 6px; flex: none; }
-#points .pt-list { flex: 0 1 auto; min-height: 0; overflow: hidden; }
+#points .pt-list { flex: 0 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .pt-next { margin-top: auto; flex: none; border: 0; border-top: 1px solid var(--glass-line); background: none; color: inherit; font: inherit; text-align: left; padding: 9px 0 2px; display: flex; flex-direction: column; gap: 2px; cursor: pointer; }
 .pt-next .pn-h { font-size: 11px; color: var(--ink-3); font-weight: 600; }
 .pt-next .pn-l1 { font-size: 14px; font-weight: 600; }
@@ -852,12 +857,11 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       今日の注目ポイント
     </div>
     <ul class="pt-list">
-      <li data-check="p1"><button class="ck" type="button" aria-label="チェックを切り替え"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <div><h3><button class="pt-pick" type="button" data-slot="0" aria-label="この注目ポイントの銘柄を変える"><span data-pt="1h">分析データを読み込んでいます…</span><svg class="chev" width="9" height="6" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></h3><p data-pt="1p"></p></div></li>
-      <li data-check="p2" hidden><button class="ck" type="button" aria-label="チェックを切り替え"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <div><h3><button class="pt-pick" type="button" data-slot="1" aria-label="この注目ポイントの銘柄を変える"><span data-pt="2h"></span><svg class="chev" width="9" height="6" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></h3><p data-pt="2p"></p></div></li>
-      <li data-check="p3" hidden><button class="ck" type="button" aria-label="チェックを切り替え"><svg width="13" height="10" viewBox="0 0 13 10"><path d="M1.5 5l3.5 3.5L11.5 1.5" fill="none" stroke="#14100a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <div><h3 data-pt="3h">本日のトレード戦略</h3><p data-pt="3p"></p><button class="pt-more" type="button">前日の振り返りと今日の予想<svg width="6" height="9" viewBox="0 0 7 10"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></div></li>
+      <li><div><h3><button class="pt-pick" type="button" data-slot="0" aria-label="この注目ポイントの銘柄を変える"><span data-pt="1h">分析データを読み込んでいます…</span><svg class="chev" width="9" height="6" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></h3><p data-pt="1p"></p></div></li>
+      <li hidden><div><h3><button class="pt-pick" type="button" data-slot="1" aria-label="この注目ポイントの銘柄を変える"><span data-pt="2h"></span><svg class="chev" width="9" height="6" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></h3><p data-pt="2p"></p></div></li>
+      <li hidden><div><h3><button class="pt-pick" type="button" data-slot="2" aria-label="この注目ポイントの銘柄を変える"><span data-pt="3h"></span><svg class="chev" width="9" height="6" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></h3><p data-pt="3p"></p></div></li>
+      <li hidden><div><h3><button class="pt-pick" type="button" data-slot="3" aria-label="この注目ポイントの銘柄を変える"><span data-pt="4h"></span><svg class="chev" width="9" height="6" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></h3><p data-pt="4p"></p></div></li>
+      <li id="pt-strat" hidden><div><h3 data-pt="5h">本日のトレード戦略</h3><p data-pt="5p"></p><button class="pt-more" type="button">前日の振り返りと今日の予想<svg width="6" height="9" viewBox="0 0 7 10"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></div></li>
     </ul>
     <div class="picker pt-picker" hidden><div class="picker-h"><span>注目ポイントの銘柄</span><button type="button" class="picker-close">閉じる</button></div><div class="picker-list"></div></div>
     <div class="rep" id="rep" hidden role="dialog" aria-label="前日の振り返りと今日の予想"><div class="rep-h"><b>本日のトレード戦略</b><small id="rep-when"></small><button type="button" class="rep-close">閉じる</button></div><div class="rep-body" id="rep-body"></div></div>
@@ -1134,10 +1138,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=88fe64bf88", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=0079fb17b6", title: "ドル円分析" },
-    btc: { src: "btc.html?v=3041812b37", title: "BTC分析" },
-    oil: { src: "oil.html?v=b60b248dc8", title: "オイル分析" }
+    gold: { src: "gold.html?v=0c0f26d609", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=bea67ce291", title: "ドル円分析" },
+    btc: { src: "btc.html?v=85ebc85e71", title: "BTC分析" },
+    oil: { src: "oil.html?v=478ecae81b", title: "オイル分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -1176,12 +1180,15 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   var entryState = {};
   window.addEventListener("message", function (e) {
     var d = e.data;
-    if (!d || (d.type !== "dash-signal" && d.type !== "dash-results" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert" && d.type !== "dash-open" && d.type !== "dash-gloss") || !SHEETS[d.key] || !SHEETS[d.key].el) return;
-    if (e.source !== SHEETS[d.key].el.querySelector("iframe").contentWindow) return;  // only our own dashboards
+    // 第5部：オイルのダッシュボードは銘柄名 usoil で知らせる（シートの名前は oil）。注目ポイントに要る水準（dash-levels）だけ受ける。
+    // ほかの知らせ（判定・アラートなど）はこれまでどおり受けていない（オーナー確認待ち）
+    var sk = d && d.type === "dash-levels" && d.key === "usoil" ? "oil" : d && d.key;
+    if (!d || (d.type !== "dash-signal" && d.type !== "dash-results" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert" && d.type !== "dash-open" && d.type !== "dash-gloss") || !SHEETS[sk] || !SHEETS[sk].el) return;
+    if (e.source !== SHEETS[sk].el.querySelector("iframe").contentWindow) return;  // only our own dashboards
     // While a dashboard shows its chart full screen, its own "back" button sits where ours does: hide ours
     if (d.type === "dash-chartfull") { SHEETS[d.key].el.querySelector(".dash-close").hidden = !!d.on; return; }
     if (d.type === "dash-gmma") return;  // GMMA crosses are no longer listed on the desk
-    if (d.type === "dash-levels") { keyLv[d.key] = d; paintKeyLv(); return; }
+    if (d.type === "dash-levels") { keyLv[d.key] = d; paintKeyLv(); ptRows(); return; }
     if (d.type === "dash-results" && Array.isArray(d.ev) && calEvents) {  // 第2部 B1：ダッシュボードが受けた発表結果（同じ指標カレンダーの同じ名前・時刻）を一覧にも
       var put = false;
       d.ev.forEach(function (x) {
@@ -1299,6 +1306,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   function paintKeyLv() {
     if (!markets) return;
     markets.forEach(function (mk) {
+      if (mk.oil) return;  // OILCash は補正後の価格なので、ダッシュボードの水準（補正前）は並べない（これまでどおり）
       var k = keyLv[mk.key], el = mk.el.querySelector('[data-f="klv"]'), on = !!(k && (k.r.length || k.s.length));
       var tag = function (cls, name, v) { return v == null ? "" : '<span class="' + cls + '"><i>' + name + "</i>" + (mk.key === "btc" ? Math.round(v).toLocaleString("en-US") : mk.o.fmt(v)) + "</span>"; };  // BTC without cents so all four fit
       el.hidden = !on;
@@ -3037,14 +3045,16 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   document.addEventListener("click", function (e) { if (e.target.closest("[data-ind-all]")) { indDay = ""; renderIndicators(); } });
 
   /* ---------- automatic analysis (market.json, refreshed hourly by the Pages workflow) ---------- */
-  function setPoint(i, title, body) {
+  function setPoint(i, title, body, html) {
     document.querySelector('[data-pt="' + i + 'h"]').textContent = title;
-    document.querySelector('[data-pt="' + i + 'p"]').textContent = body;
-    document.querySelector('[data-pt="' + i + 'h"]').closest("li").hidden = !title;  // empty slot: hide the row and its check
+    var pe = document.querySelector('[data-pt="' + i + 'p"]');
+    if (html) { if (pe.__h !== html) { pe.innerHTML = html; pe.__h = html; } } else { pe.textContent = body; pe.__h = null; }
+    document.querySelector('[data-pt="' + i + 'h"]').closest("li").hidden = !title;  // empty slot: hide the row
   }
-  /* Points 1 and 2 follow the chart panels unless an instrument was picked for them (saved per device). */
-  var PT_KEY = "pt-v1", ptPicks = [null, null];
-  try { var pp = JSON.parse(localStorage.getItem(PT_KEY)); if (Array.isArray(pp)) ptPicks = pp.map(function (k) { return INST[k] ? k : null; }); } catch (e) {}
+  /* 第5部：4銘柄（価格カードと同じ：上の3枚の相場の枠＋OILCashのUSオイル）。銘柄を選んだ枠はその銘柄（端末に保存。
+     以前の2枠の保存はそのまま1・2枠目に） */
+  var PT_KEY = "pt-v1", ptPicks = [null, null, null, null];
+  try { var pp = JSON.parse(localStorage.getItem(PT_KEY)); if (Array.isArray(pp)) ptPicks = [0, 1, 2, 3].map(function (i) { return INST[pp[i]] ? pp[i] : null; }); } catch (e) {}
   function pointKey(i) { return ptPicks[i] || markets[i].key; }
   (function () {
     var card = document.getElementById("points"), picker = card.querySelector(".pt-picker"), list = picker.querySelector(".picker-list"), slot = 0;
@@ -3067,26 +3077,49 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     });
     picker.querySelector(".picker-close").addEventListener("click", function () { picker.hidden = true; });
   })();
-  var ptSig = "", ptShownAt = 0;
-  function refreshPoints() {
-    var all = market && (market.instruments || market);
-    [0, 1].forEach(function (i) {
-      var key = pointKey(i), a = all && all[key] && all[key].analysis;
-      if (a) setPoint(i + 1, a.title, a.body);
-      else if (all) setPoint(i + 1, INST[key].name, "この銘柄の分析データはまだありません。\n次の更新（5分ごと）をお待ちください。");
-      else if (ptPicks[i]) setPoint(i + 1, INST[key].name, "分析データを読み込んでいます。");
-    });
-    if (!market) return;
-    var u = new Date(market.updated), foot = document.getElementById("pt-foot");
-    var stale = Date.now() - u > 3 * 3600000;
-    // 表示の中身が変わったのに分析の時刻が同じとき（銘柄の切り替えなど）は、表示を更新した時刻も添える（第2部 B4）
-    var sig = [1, 2].map(function (i) { return document.querySelector('[data-pt="' + i + 'p"]').textContent; }).join("|");
-    if (sig !== ptSig) { if (ptSig) ptShownAt = Date.now(); ptSig = sig; }
-    var shown = ptShownAt > +u + 60000 ? "・表示 " + updAt(new Date(ptShownAt)) : "";
-    foot.textContent = "チャートから自動分析・" + (stale ? MDHM(u) + " 更新" : (shown ? "分析 " + stampAt(u) : updAt(u))) + shown + (stale ? "（更新が止まっています）" : "（参考情報）");
-    foot.style.color = stale ? "var(--up-red)" : "";
-    renderStrategy();
+  /* 第5部：水準はダッシュボードの重要価格帯（R1・R2・S1・S2＝水平線）と同じ値。ダッシュボードがデスクの裏で計算して
+     知らせる値（dash-levels）をそのまま使い、根拠（どの時間足の水平線か）と、ダッシュボードの現在価格までの距離を添える。
+     目線はトレード前チェック1と同じ（1時間足の120SMAの上＝買い目線／下＝売り目線）。ダッシュボードのない銘柄を選んだ枠だけ、
+     自動分析（前日の日足のピボット）の文を出す */
+  var DASH_KEYS = { gold: 1, usdjpy: 1, btc: 1, usoil: 1 }, LV_TF = { h1: "1時間足", h4: "4時間足", d1: "日足" };
+  function ptDist(key, d) {  // ダッシュボードと同じ単位
+    d = Math.abs(d);
+    if (key === "usdjpy") return (d / 0.01).toFixed(1) + "pips";
+    if (key === "btc") return "$" + Math.round(d).toLocaleString("en-US");
+    return "$" + d.toFixed(2);
   }
+  function ptVal(key, v) { return key === "btc" ? Math.round(v).toLocaleString("en-US") : nf(INST[key].dp)(v); }
+  function ptLevels(key, k) {
+    var name = INST[key].name, view = k.view > 0 ? "押し目買い目線（H1は120SMAの上）" : k.view < 0 ? "戻り売り目線（H1は120SMAの下）" : "目線はデータ待ち";
+    var row = function (nm, v, tf, cls) { return '<span class="ptl ' + cls + '"><i>' + nm + "</i><b>" + ptVal(key, v) + "</b><em>あと " + ptDist(key, v - k.px) + "</em><small>" + (LV_TF[tf] || "1時間足") + "</small></span>"; };
+    var none = function (t) { return '<span class="ptl none">' + t + "</span>"; };
+    var h = (k.r[1] != null ? row("R2", k.r[1], k.rt && k.rt[1], "r") : "") + (k.r[0] != null ? row("R1", k.r[0], k.rt && k.rt[0], "r") : none("上に水平線なし")) +
+      (k.s[0] != null ? row("S1", k.s[0], k.st && k.st[0], "s") : none("下に水平線なし")) + (k.s[1] != null ? row("S2", k.s[1], k.st && k.st[1], "s") : "");
+    return { title: name + "：" + view, html: h, sig: [view, k.r.join(), k.s.join(), (k.rt || []).join(), (k.st || []).join()].join("/") };
+  }
+  var ptSig = "", ptShownAt = 0;
+  function ptRows() {
+    var all = market && (market.instruments || market), sig = [];
+    [0, 1, 2, 3].forEach(function (i) {
+      var key = pointKey(i), k = keyLv[key], a = all && all[key] && all[key].analysis;
+      if (DASH_KEYS[key]) {
+        if (k && k.px) { var t = ptLevels(key, k); setPoint(i + 1, t.title, "", t.html); sig.push(t.sig); }
+        else { setPoint(i + 1, INST[key].name, "ダッシュボードの重要価格帯を計算しています…"); sig.push(key + ":wait"); }
+      } else if (a) { setPoint(i + 1, a.title, a.body + "\n（自動分析：前日の日足のピボットから）"); sig.push(a.title + a.body); }
+      else if (all) { setPoint(i + 1, INST[key].name, "この銘柄の分析データはまだありません。\n次の更新（約15分ごと）をお待ちください。"); sig.push(key); }
+      else setPoint(i + 1, INST[key].name, "分析データを読み込んでいます。");
+    });
+    sig = sig.join("|");
+    if (sig !== ptSig) { ptShownAt = Date.now(); ptSig = sig; }
+    var foot = document.getElementById("pt-foot"); if (!foot || foot.querySelector(".retry")) return;
+    var u = market ? new Date(market.updated) : null, stale = u && Date.now() - u > 3 * 3600000;
+    // 更新スタンプは中身（水準・目線・文）が変わった時刻。距離は価格に合わせて動くので数えない
+    foot.textContent = "水準＝ダッシュボードの水平線（右端は時間足）・目線＝H1の120SMAの上下・" + updAt(new Date(ptShownAt)) +
+      (u ? "／戦略文：自動分析 " + (stale ? MDHM(u) + "（更新が止まっています）" : stampAt(u) + "（約15分ごと）") : "");
+    foot.style.color = stale ? "var(--up-red)" : "";
+  }
+  function refreshPoints() { ptRows(); if (market) renderStrategy(); }
+  setInterval(ptRows, 2000);  // 距離はダッシュボードの価格に合わせて
   /* Daily report (strategy.json): written each weekday morning by the scheduled report task.
      It fills row 3 for its own trading day (Fri's also covers the weekend); otherwise row 3 falls back to the automatic text. */
   var report = null;
@@ -3112,7 +3145,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     body.innerHTML = html;
   }
   (function () {
-    var rep = document.getElementById("rep"), li = document.querySelector('[data-check="p3"]');
+    var rep = document.getElementById("rep"), li = document.getElementById("pt-strat");
     var open = function () { if (!li.classList.contains("has-report")) return; fillReport(); rep.hidden = false; document.getElementById("rep-body").scrollTop = 0; };
     li.querySelector(".pt-more").addEventListener("click", open);
     li.querySelector("p").addEventListener("click", open);
@@ -3126,9 +3159,9 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       .catch(function () { srcMark("report", false); });
   }
   function renderStrategy() {
-    var li3 = document.querySelector('[data-check="p3"]'), useReport = reportIsCurrent(new Date());
+    var li3 = document.getElementById("pt-strat"), useReport = reportIsCurrent(new Date());
     li3.classList.toggle("has-report", useReport);
-    if (useReport) { setPoint(3, report.title || "本日のトレード戦略", report.headline); return; }
+    if (useReport) { setPoint(5, report.title || "本日のトレード戦略", report.headline); return; }
     document.getElementById("rep").hidden = true;
     if (!market) return;
     var now = new Date(), line1 = "このあと本日は米国・日本の重要な発表なし。\nテクニカル主導の値動きを想定。";
@@ -3155,7 +3188,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var body = line1;
     if (notes2.length) body = line1.split("\n")[0] + "\n" + notes2[0];
     else if (sel[0][0] && sel[0][0].atr) body = line1.split("\n")[0] + "\n値幅目安：" + sel[0][1] + " " + atrText(sel[0][2], sel[0][0].atr) + "/日";
-    setPoint(3, "本日のトレード戦略", body);
+    setPoint(5, "本日のトレード戦略", body);
   }
   var marketSeq = TDCore.sequencer(), marketCheck = null;
   function loadMarket() {
@@ -3211,7 +3244,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
         srcMark("market", false, e && e.message || "取得できませんでした");
         if (market || PREVIEW) return;
         setPoint(1, "分析データを取得できませんでした", "通信状態を確認してください。\n次の更新で自動的に再取得します。");
-        setPoint(2, "", ""); if (!reportIsCurrent(new Date())) setPoint(3, "", "");
+        setPoint(2, "", ""); setPoint(3, "", ""); setPoint(4, "", ""); if (!reportIsCurrent(new Date())) setPoint(5, "", "");
         document.getElementById("pt-foot").innerHTML = '<button type="button" class="retry" data-retry="market">再読み込み</button>';
         markets.forEach(function (mk) { if (!mk.live) { mk.failed = true; mk.render(); } });
       });
