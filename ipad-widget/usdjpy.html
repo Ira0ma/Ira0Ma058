@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="983d1b0ef4">
+<meta name="build" content="3371c122d4">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1074,12 +1074,16 @@ function updateRolling(price){
 }
 
 /* ---------- refreshers ---------- */
+// ドル円（換算・横断表示）：ドル円のダッシュボードがこの端末に保存した現在値（3分以内）→ サイトの定期取得 → Frankfurter。
+// ドル円のダッシュボードと同じ値に追従し、どの時点の値かを state.fxAt に持つ
 async function refreshFx(){
   try{
     const rate=await firstSuccess([
-      async()=>{const v=n((await getSite()).instruments?.usdjpy?.price);if(!v)throw 0;state.src.fx='サイト';return v},
-      async()=>{const d=await getJSON(URLS.fx);const v=n(d.rate);if(!v)throw 0;state.src.fx='Frankfurter';return v},
-      async()=>{const d=await getJSON(URLS.fx1);const v=n(d?.rates?.JPY);if(!v)throw 0;state.src.fx='Frankfurter';return v}
+      async()=>{if(IS_FX)throw 0;const c=JSON.parse(lsGet('usdjpy_auto_cache_final','null')),sp=c&&c.spot,v=n(sp?.price),at=n(sp?.asof);
+        if(!v||!at||Date.now()-at>3*60000)throw 0;state.src.fx='ドル円のダッシュボード';state.fxAt=at;return v},
+      async()=>{const g=(await getSite()).instruments?.usdjpy,v=n(g?.price);if(!v)throw 0;state.src.fx='サイト';state.fxAt=toMs(g.asOf)||0;return v},
+      async()=>{const d=await getJSON(URLS.fx);const v=n(d.rate);if(!v)throw 0;state.src.fx='Frankfurter';state.fxAt=0;return v},
+      async()=>{const d=await getJSON(URLS.fx1);const v=n(d?.rates?.JPY);if(!v)throw 0;state.src.fx='Frankfurter';state.fxAt=0;return v}
     ]);
     state.fx=rate;state.health.fx=true;return rate;
   }catch(e){
@@ -1302,14 +1306,14 @@ async function refreshSpot(){
     try{
       const {px,asof,src}=await refreshSpotFx();
       if(liveFresh()){  // リアルタイム配信が生きている間は、その値を使い続ける（30秒ごとの取得は控え）
-        try{const all=(await getSite()).instruments;state.extra={dxy:all.dxy?.price,jxy:all.jxy?.price,gold:all.gold?.price}}catch{}
+        try{const all=(await getSite()).instruments;state.extra={dxy:all.dxy?.price,jxy:all.jxy?.price,gold:all.gold?.price,dxyAt:toMs(all.dxy?.asOf),jxyAt:toMs(all.jxy?.asOf)}}catch{}
         state.health.spot=true;state.lastOk=Date.now();state.nextSpot=Date.now()+INTERVALS.spot;setStatus('live','LIVE');showError('');return;
       }
       state.src.spot=src;state.src.fx='価格と同じ';
       state.prevPrice=state.spot?.price??null;
       state.spot={price:px,asof,freshness:Date.now()-asof>10*60000?'stale':'fresh',age:0};
       state.fx=px;state.health.fx=true;
-      try{const all=(await getSite()).instruments;state.extra={dxy:all.dxy?.price,jxy:all.jxy?.price,gold:all.gold?.price}}catch{}
+      try{const all=(await getSite()).instruments;state.extra={dxy:all.dxy?.price,jxy:all.jxy?.price,gold:all.gold?.price,dxyAt:toMs(all.dxy?.asOf),jxyAt:toMs(all.jxy?.asOf)}}catch{}
       updateRolling(px);
       mergeSpotAll(px,asof);
       state.health.spot=true;
@@ -1352,7 +1356,7 @@ async function refreshSpot(){
     if(Date.now()-asof>10*60000)freshness='stale';
     if(!src.startsWith('サイト'))liveCalibrate(usd);
     if(liveFresh()&&state.spot){  // リアルタイム配信が生きている間は、補正だけして配信の値を使い続ける
-      if(fx){state.fx=fx;state.health.fx=true}
+      if(fx){state.fx=fx;state.health.fx=true}else{await refreshFx();if(state.fx)state.goldJpy=state.spot.price*state.fx}  // 横断表示のドル円も30秒ごとに追従
       state.health.spot=true;state.lastOk=Date.now();state.nextSpot=Date.now()+INTERVALS.spot;setStatus('live','LIVE');showError('');return;
     }
     state.src.spot=src;
@@ -2723,7 +2727,7 @@ function renderDxy(){
   else if(r1!=null&&r1>=0.3)note=`いまはドルと<b>同じ向き</b>に動いています。${IS_BTC?'リスク回避（株安）や暗号資産そのものの材料':IS_OIL?'景気の見通しや産油国の動きなど、ドル以外の材料':'リスク回避（有事の買い）など、ドル以外の材料'}で${ASSET}が動いている可能性があります。`;
   else note=`いまはドルとの連動が<b>弱い</b>状態です。${ASSET}はドル以外の材料（${IS_BTC?'株・リスク・需給':IS_OIL?'景気・在庫・産油国の動き':'金利・リスク・需給'}）で動いています。`;
   if(rw!=null&&r1!=null&&Math.abs(r1-rw)>0.5)note+=` 1週間の関係（${rw.toFixed(2)}）から大きく変わっているので注意。`;
-  el.innerHTML=`<div class="dh"><b>DXY（ドル指数）との相関</b><span>DXY ${fmt(dx.price,2)}（${chg>=0?'+':''}${chg.toFixed(2)}%・${dir}）</span></div>`+
+  el.innerHTML=`<div class="dh"><b>DXY（ドル指数）との相関</b><span>DXY ${fmt(dx.price,2)}（${chg>=0?'+':''}${chg.toFixed(2)}%・${dir}）｜${dx.asOf?new Intl.DateTimeFormat('ja-JP',{hour:'2-digit',minute:'2-digit'}).format(new Date(toMs(dx.asOf)))+'時点（サイトの定期取得）':'時刻不明'}</span></div>`+
     rows.map(([lb,r])=>{const [tx,cl]=corrLabel(r);return `<div class="dxyrow"><span class="lb">${lb}</span><span class="dxybar">${r==null?'':`<i style="left:${(1+r)*50}%"></i>`}</span><span class="v ${cl}">${r==null?'--':(r>0?'+':'')+r.toFixed(2)} ${tx}</span></div>`}).join('')+
     `<div class="dxynote">${note}<br>（−1に近いほど「ドル高＝${ASSET}安」がはっきり。${ASSET}とドルはふだん逆相関です）</div>`+DXY_GUIDE;
   el.hidden=false;
@@ -2759,13 +2763,14 @@ function renderSnapshot(){
   $('goldChange').className='change '+(pct>=0?'up':'down');
   $('goldFresh').textContent=(mktClosed?(closedLabel()==='休止中'?'休止中（毎日の休止時間）':'市場休場中'):state.spot.freshness==='stale'?'⚠ 遅延データ':IS_OIL?'定期取得':'LIVE')+'｜'+localTime(state.spot.asof)+(state.src.spot?'｜'+state.src.spot:'');
   $('dayHigh').textContent=d.hi?fmt(d.hi):'--';$('dayLow').textContent=d.lo?fmt(d.lo):'--';$('dayRange').textContent=d.hi&&d.lo?INSTR.dist(d.hi-d.lo):'--';
+  const hm=t=>t?'（'+new Intl.DateTimeFormat('ja-JP',{hour:'2-digit',minute:'2-digit'}).format(new Date(t))+'）':'';  // どの時点の値か
   if(!IS_FX){
-    $('usdjpy').textContent=state.fx?fmt(state.fx,3):'--';
+    $('usdjpy').textContent=state.fx?fmt(state.fx,3):'--';$('stat4Label').textContent='USD/JPY'+hm(state.fxAt);
     $('goldJpy').textContent=state.goldJpy?yen(state.goldJpy):(state.fx?yen(state.spot.price*state.fx):'--');
   }else{  // ドル円版：ドル指数と円指数を表示（BTC版は上と同じくドル円と円換算）
     const x=state.extra||{};
-    $('usdjpy').textContent=x.dxy?fmt(x.dxy,2):'--';
-    $('goldJpy').textContent=x.jxy?fmt(x.jxy,2):'--';
+    $('usdjpy').textContent=x.dxy?fmt(x.dxy,2):'--';$('stat4Label').textContent='ドル指数 DXY'+hm(x.dxyAt);
+    $('goldJpy').textContent=x.jxy?fmt(x.jxy,2):'--';$('stat5Label').textContent='円指数 JXY'+hm(x.jxyAt);
   }
   $('sma120').textContent=s.sma?fmt(s.sma)+(state.spot.price>=s.sma?' ▲':' ▼'):'接続待ち';
   $('sma120').className=s.sma?(state.spot.price>=s.sma?'up':'down'):'';
