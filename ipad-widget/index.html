@@ -245,6 +245,29 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .pt-list p { margin: 0; font-size: 12px; line-height: 1.55; color: var(--ink-2); }  /* 第5部：省略しない（全文を出し、入りきらない分は欄の中でスクロール） */
 /* daily report (strategy.json): row 3 opens the full recap and outlook */
 .pt-list li.has-report p { cursor: pointer; }
+/* 追加C：水準マップ。縦の線の上に水準と現在価格の点。現在価格は金色、接近した水準とタブに金の印（点滅しない） */
+.pm-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; padding: 2px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--glass-line); }
+.pm-tabs button { position: relative; min-width: 0; font: inherit; font-size: 11.5px; font-weight: 700; color: var(--ink-3); background: none; border: 0; border-radius: 999px; padding: 4px 0; cursor: pointer; }
+.pm-tabs button.on { color: #14100a; background: var(--gold); }
+.pm-tabs button.near::after { content: ""; position: absolute; right: 6px; top: 3px; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 1.5px #14100a; }
+.pm-view { margin: 8px 0 4px; font-size: 12.5px; color: var(--ink-2); } .pm-view b { color: var(--ink); }
+.pm-map { list-style: none; margin: 0; padding: 0 0 0 14px; position: relative; }
+.pm-map::before { content: ""; position: absolute; left: 4px; top: 8px; bottom: 8px; width: 1px; background: rgba(227,184,103,.35); }
+.pt-list .pm-map li { border-bottom: 0; }
+.pm-map li { position: relative; display: grid; grid-template-columns: 52px auto 1fr; grid-template-areas: "nm v d" ". sm sm"; column-gap: 6px; align-items: baseline; padding: 3px 0 4px; font-variant-numeric: tabular-nums; }
+.pm-map li i { position: absolute; left: -13px; top: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
+.pm-map li.r i { background: var(--up-red); } .pm-map li.s i { background: var(--up-green); }
+.pm-map .nm { grid-area: nm; font-size: 11px; font-weight: 700; color: var(--ink-3); } .pm-map li.r .nm { color: var(--up-red); } .pm-map li.s .nm { color: var(--up-green); }
+.pm-map b { grid-area: v; font-size: 14px; font-weight: 500; color: var(--ink); } .pm-map em { grid-area: d; font-style: normal; font-size: 11.5px; color: var(--ink-2); text-align: right; }
+.pm-map small { grid-area: sm; font-size: 10px; color: var(--ink-3); line-height: 1.2; }
+.pm-map li.now { background: rgba(227,184,103,.1); border-radius: 8px; margin: 2px 0 2px -14px; padding-left: 14px; }
+.pm-map li.now i { background: var(--gold); width: 9px; height: 9px; left: 3px; top: 7px; box-shadow: 0 0 8px rgba(227,184,103,.7); } .pm-map li.now .nm, .pm-map li.now b { color: var(--gold); }
+.pm-map li.near { box-shadow: inset 2px 0 0 var(--gold); } .pm-map li.near b, .pm-map li.near em { color: var(--gold); }
+.pm-map li.none { display: block; } .pm-map li.none .nm { font-weight: 400; }
+.pm-next { margin: 4px 0 0; font-size: 12px; color: var(--gold); }
+.pm-ans { margin: 6px 0 0; font-size: 11px; line-height: 1.5; color: var(--ink-3); } .pm-ans b { display: block; font-weight: 600; color: var(--ink-2); } .pm-ans span { display: block; } .pm-ans span.hit { color: var(--ink-2); }
+.pm-wait { margin: 8px 0; font-size: 12px; color: var(--ink-3); }
+#pt-map { border-bottom: 1px solid var(--glass-line); }
 .ptl { display: grid; grid-template-columns: 22px 1fr auto 44px; gap: 6px; align-items: baseline; line-height: 1.5; white-space: nowrap; }
 .ptl i { font-style: normal; font-weight: 700; font-size: 11px; }.ptl.r i { color: var(--up-red); }.ptl.s i { color: var(--up-green); }
 .ptl b { font-weight: 600; color: var(--ink-1, #fff); font-variant-numeric: tabular-nums; }.ptl em { font-style: normal; font-variant-numeric: tabular-nums; }.ptl small { font-size: 10px; color: var(--ink-3); text-align: right; }
@@ -859,13 +882,9 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       今日の注目ポイント
     </div>
     <ul class="pt-list">
-      <li><div><h3><button class="pt-pick" type="button" data-slot="0" aria-label="この注目ポイントの銘柄を変える"><span data-pt="1h">分析データを読み込んでいます…</span><svg class="chev" width="9" height="6" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></h3><p data-pt="1p"></p></div></li>
-      <li hidden><div><h3><button class="pt-pick" type="button" data-slot="1" aria-label="この注目ポイントの銘柄を変える"><span data-pt="2h"></span><svg class="chev" width="9" height="6" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></h3><p data-pt="2p"></p></div></li>
-      <li hidden><div><h3><button class="pt-pick" type="button" data-slot="2" aria-label="この注目ポイントの銘柄を変える"><span data-pt="3h"></span><svg class="chev" width="9" height="6" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></h3><p data-pt="3p"></p></div></li>
-      <li hidden><div><h3><button class="pt-pick" type="button" data-slot="3" aria-label="この注目ポイントの銘柄を変える"><span data-pt="4h"></span><svg class="chev" width="9" height="6" viewBox="0 0 10 7"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></h3><p data-pt="4p"></p></div></li>
+      <li id="pt-map"><div class="pm-tabs" role="tablist" aria-label="銘柄"></div><div class="pm-body" aria-live="polite"><p class="pm-wait">分析データを読み込んでいます…</p></div></li>
       <li id="pt-strat" hidden><div><h3 data-pt="5h">本日のトレード戦略</h3><p data-pt="5p"></p><button class="pt-more" type="button">前日の振り返りと今日の予想<svg width="6" height="9" viewBox="0 0 7 10"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></div></li>
     </ul>
-    <div class="picker pt-picker" hidden><div class="picker-h"><span>注目ポイントの銘柄</span><button type="button" class="picker-close">閉じる</button></div><div class="picker-list"></div></div>
     <div class="rep" id="rep" hidden role="dialog" aria-label="前日の振り返りと今日の予想"><div class="rep-h"><b>本日のトレード戦略</b><small id="rep-when"></small><button type="button" class="rep-close">閉じる</button></div><div class="rep-body" id="rep-body"></div></div>
     <!-- 次の重要指標までのカウントダウン（注目ポイントの下に）：タップで今日の重要指標へ -->
     <button type="button" class="pt-next" id="pt-next" aria-label="次の★3指標（タップで今日の重要指標の一覧へ）"><span class="pn-h">次の★3指標（最も重要）</span><span class="pn-l1">指標データを読み込んでいます…</span><span class="pn-l2"></span></button>
@@ -1187,13 +1206,14 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var d = e.data;
     // 第5部：オイルのダッシュボードは銘柄名 usoil で知らせる（シートの名前は oil）。注目ポイントに要る水準（dash-levels）だけ受ける。
     // ほかの知らせ（判定・アラートなど）はこれまでどおり受けていない（オーナー確認待ち）
-    var sk = d && d.type === "dash-levels" && d.key === "usoil" ? "oil" : d && d.key;
-    if (!d || (d.type !== "dash-signal" && d.type !== "dash-results" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert" && d.type !== "dash-open" && d.type !== "dash-gloss") || !SHEETS[sk] || !SHEETS[sk].el) return;
+    var sk = d && (d.type === "dash-levels" || d.type === "dash-hbars") && d.key === "usoil" ? "oil" : d && d.key;
+    if (!d || (d.type !== "dash-signal" && d.type !== "dash-hbars" && d.type !== "dash-results" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert" && d.type !== "dash-open" && d.type !== "dash-gloss") || !SHEETS[sk] || !SHEETS[sk].el) return;
     if (e.source !== SHEETS[sk].el.querySelector("iframe").contentWindow) return;  // only our own dashboards
     // While a dashboard shows its chart full screen, its own "back" button sits where ours does: hide ours
     if (d.type === "dash-chartfull") { SHEETS[d.key].el.querySelector(".dash-close").hidden = !!d.on; return; }
     if (d.type === "dash-gmma") return;  // GMMA crosses are no longer listed on the desk
-    if (d.type === "dash-levels") { keyLv[d.key] = d; paintKeyLv(); ptRows(); return; }
+    if (d.type === "dash-levels") { keyLv[d.key] = d; ptSnap(d); paintKeyLv(); ptRows(); return; }
+    if (d.type === "dash-hbars") { if (Array.isArray(d.bars)) ptBars[d.key] = d.bars; ptRows(); return; }
     if (d.type === "dash-results" && Array.isArray(d.ev) && calEvents) {  // 第2部 B1：ダッシュボードが受けた発表結果（同じ指標カレンダーの同じ名前・時刻）を一覧にも
       var put = false;
       d.ev.forEach(function (x) {
@@ -3085,32 +3105,9 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     if (html) { if (pe.__h !== html) { pe.innerHTML = html; pe.__h = html; } } else { pe.textContent = body; pe.__h = null; }
     document.querySelector('[data-pt="' + i + 'h"]').closest("li").hidden = !title;  // empty slot: hide the row
   }
-  /* 第5部：4銘柄（価格カードと同じ：上の3枚の相場の枠＋OILCashのUSオイル）。銘柄を選んだ枠はその銘柄（端末に保存。
-     以前の2枠の保存はそのまま1・2枠目に） */
-  var PT_KEY = "pt-v1", ptPicks = [null, null, null, null];
-  try { var pp = JSON.parse(localStorage.getItem(PT_KEY)); if (Array.isArray(pp)) ptPicks = [0, 1, 2, 3].map(function (i) { return INST[pp[i]] ? pp[i] : null; }); } catch (e) {}
-  function pointKey(i) { return ptPicks[i] || markets[i].key; }
-  (function () {
-    var card = document.getElementById("points"), picker = card.querySelector(".pt-picker"), list = picker.querySelector(".picker-list"), slot = 0;
-    var mark = function () {
-      list.querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-pressed", (b.dataset.key || null) === ptPicks[slot] || (!b.dataset.key && !ptPicks[slot])); });
-    };
-    var add = function (key, html, cls) {
-      var b = document.createElement("button");
-      b.type = "button"; b.innerHTML = html; if (key) b.dataset.key = key; if (cls) b.className = cls;
-      b.addEventListener("click", function () {
-        ptPicks[slot] = key; try { localStorage.setItem(PT_KEY, JSON.stringify(ptPicks)); } catch (e) {}
-        picker.hidden = true; refreshPoints();
-      });
-      list.appendChild(b);
-    };
-    add(null, "チャートと連動<small>上の相場の枠と同じ銘柄</small>", "follow");
-    Object.keys(INST).forEach(function (k) { add(k, INST[k].label + "<small>" + (INST[k].pickName || INST[k].name) + "</small>"); });
-    card.querySelectorAll(".pt-pick").forEach(function (b) {
-      b.addEventListener("click", function () { slot = +b.dataset.slot; mark(); picker.hidden = false; });
-    });
-    picker.querySelector(".picker-close").addEventListener("click", function () { picker.hidden = true; });
-  })();
+  /* 追加C：銘柄はタブで切り替える（ゴールド・ドル円・BTC・オイル＝価格カードと同じ4銘柄。以前の「銘柄を変える」メニューはタブに置き換え） */
+  var PT_TABS = ["gold", "usdjpy", "btc", "usoil"];
+  function pointKey(i) { return PT_TABS[i]; }
   /* 第5部：水準はダッシュボードの重要価格帯（R1・R2・S1・S2＝水平線）と同じ値。ダッシュボードがデスクの裏で計算して
      知らせる値（dash-levels）をそのまま使い、根拠（どの時間足の水平線か）と、ダッシュボードの現在価格までの距離を添える。
      目線はトレード前チェック1と同じ（1時間足の120SMAの上＝買い目線／下＝売り目線）。ダッシュボードのない銘柄を選んだ枠だけ、
@@ -3123,35 +3120,86 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     return "$" + d.toFixed(2);
   }
   function ptVal(key, v) { return key === "btc" ? Math.round(v).toLocaleString("en-US") : nf(INST[key].dp)(v); }
-  function ptLevels(key, k) {
-    var name = INST[key].name, view = k.view > 0 ? "押し目買い目線（H1は120SMAの上）" : k.view < 0 ? "戻り売り目線（H1は120SMAの下）" : "目線はデータ待ち";
-    var row = function (nm, v, tf, cls) { return '<span class="ptl ' + cls + '"><i>' + nm + "</i><b>" + ptVal(key, v) + "</b><em>あと " + ptDist(key, v - k.px) + "</em><small>" + (LV_TF[tf] || "1時間足") + "</small></span>"; };
-    var none = function (t) { return '<span class="ptl none">' + t + "</span>"; };
-    var h = (k.r[1] != null ? row("R2", k.r[1], k.rt && k.rt[1], "r") : "") + (k.r[0] != null ? row("R1", k.r[0], k.rt && k.rt[0], "r") : none("上に水平線なし")) +
-      (k.s[0] != null ? row("S1", k.s[0], k.st && k.st[0], "s") : none("下に水平線なし")) + (k.s[1] != null ? row("S2", k.s[1], k.st && k.st[1], "s") : "");
-    return { title: name + "：" + view, html: h, sig: [view, k.r.join(), k.s.join(), (k.rt || []).join(), (k.st || []).join()].join("/") };
+  /* 追加C：接近の基準（ダッシュボードの価格の単位で）。この距離以内の水準と、その銘柄のタブに金の印。音・通知は出さない */
+  var PT_NEAR = { usdjpy: 0.10, gold: 10, btc: 300, usoil: 0.50 }, PT_NEAR_TXT = { usdjpy: "10pips", gold: "$10", btc: "$300", usoil: "$0.50" };
+  var ptTab = "", ptTabByUser = false, ptBars = {};
+  // 昨日の答え合わせ：その日に最初に表示した各銘柄の水準を、端末に残す（td-ptlv-v1：{ 銘柄: { "YYYY-MM-DD": { at, px, r, s, rt, st } } }、7日分）
+  var PTLV = "td-ptlv-v1";
+  function ptHist() { try { var v = JSON.parse(localStorage.getItem(PTLV)); return v && typeof v === "object" ? v : {}; } catch (e) { return {}; } }
+  function ptSnap(d) {
+    if (!d || !d.px || !PT_NEAR[d.key] || !((d.r && d.r.length) || (d.s && d.s.length))) return;
+    var h = ptHist(), day = TDCore.dayKey(Date.now()), m = h[d.key] || (h[d.key] = {});
+    if (m[day]) return;
+    m[day] = { at: Date.now(), px: d.px, r: d.r.slice(0, 2), s: d.s.slice(0, 2), rt: (d.rt || []).slice(0, 2), st: (d.st || []).slice(0, 2) };
+    Object.keys(m).sort().slice(0, -7).forEach(function (k) { delete m[k]; });
+    try { localStorage.setItem(PTLV, JSON.stringify(h)); } catch (e) {}
+  }
+  // 判定：表示した時刻の1時間足からその日の終わり（日本時間）までの高値・安値が水準に届いたか。届いた足の終値が水準の手前に戻っていれば「押し戻し」、越えていれば「抜けた」
+  function ptAnswer(key) {
+    var h = ptHist()[key], bars = ptBars[key]; if (!h || !bars || !bars.length) return null;
+    var today = TDCore.dayKey(Date.now()), days = Object.keys(h).filter(function (k) { return k < today; }).sort(), day = days[days.length - 1];
+    if (!day) return null;
+    var sn = h[day], p = day.split("-").map(Number), end = Date.UTC(p[0], p[1] - 1, p[2] + 1) - 9 * 3600000, from = sn.at - sn.at % 3600000;
+    var bs = bars.filter(function (b) { return b[0] >= from && b[0] < end; }); if (!bs.length) return null;
+    var hi = Math.max.apply(null, bs.map(function (b) { return b[1]; })), lo = Math.min.apply(null, bs.map(function (b) { return b[2]; }));
+    var one = function (nm, L, up) {
+      if (L == null) return null;
+      var t = bs.filter(function (b) { return up ? b[1] >= L : b[2] <= L; })[0];
+      if (!t) return { nm: nm, L: L, hit: false, txt: nm + " " + ptVal(key, L) + " 未到達（" + (up ? "高値 " + ptVal(key, hi) : "安値 " + ptVal(key, lo)) + " どまり）" };
+      var hh = TDCore.partsIn("Asia/Tokyo", t[0]).h, back = up ? t[3] < L : t[3] > L;
+      return { nm: nm, L: L, hit: true, txt: nm + " " + ptVal(key, L) + " 到達（" + hh + "時台にタッチ→" + (back ? "押し戻し" : (up ? "上抜け" : "下抜け")) + "）" };
+    };
+    var md = p[1] + "/" + p[2] + "（" + WD[new Date(p[0], p[1] - 1, p[2]).getDay()] + "）";
+    return { day: day, label: md, items: [one("R1", sn.r[0], true), one("S1", sn.s[0], false)].filter(Boolean) };
+  }
+  function ptNear(key, k) {  // いちばん近い水準と、基準以内か
+    var best = null;
+    [["R2", k.r[1], 1], ["R1", k.r[0], 1], ["S1", k.s[0], -1], ["S2", k.s[1], -1]].forEach(function (x) { if (x[1] == null) return; var d = Math.abs(x[1] - k.px); if (!best || d < best.d) best = { nm: x[0], v: x[1], d: d, side: x[2] }; });
+    if (best) best.near = best.d <= PT_NEAR[key];
+    return best;
+  }
+  function ptMap(key, k) {
+    var view = k.view > 0 ? "押し目買い目線（H1は120SMAの上）" : k.view < 0 ? "戻り売り目線（H1は120SMAの下）" : "目線はデータ待ち";
+    var near = ptNear(key, k), rows = [];
+    [["R2", k.r[1], k.rt && k.rt[1], "r"], ["R1", k.r[0], k.rt && k.rt[0], "r"]].forEach(function (x) { if (x[1] != null) rows.push(x); });
+    rows.push(["現在価格", k.px, null, "now"]);
+    [["S1", k.s[0], k.st && k.st[0], "s"], ["S2", k.s[1], k.st && k.st[1], "s"]].forEach(function (x) { if (x[1] != null) rows.push(x); });
+    var h = '<p class="pm-view"><b>' + esc(INST[key].name) + "</b>：" + esc(view) + "</p><ol class=\"pm-map\">" + rows.map(function (x) {
+      if (x[3] === "now") return '<li class="now"><i></i><span class="nm">現在価格</span><b>' + ptVal(key, x[1]) + "</b></li>";
+      var nr = near && near.near && near.nm === x[0];
+      return '<li class="' + x[3] + (nr ? " near" : "") + '"><i></i><span class="nm">' + x[0] + "</span><b>" + ptVal(key, x[1]) + '</b><small>' + (LV_TF[x[2]] || "1時間足") + "の水平線</small><em>あと " + ptDist(key, x[1] - k.px) + "</em></li>";
+    }).join("") + "</ol>";
+    if (!k.r.length) h = h.replace('<ol class="pm-map">', '<ol class="pm-map"><li class="r none"><i></i><span class="nm">上に水平線なし</span></li>');
+    if (!k.s.length) h = h.replace(/<\/ol>$/, '<li class="s none"><i></i><span class="nm">下に水平線なし</span></li></ol>');
+    if (near && near.near) {
+      var nx = near.side > 0 ? (near.nm === "R1" && k.r[1] != null ? ptVal(key, k.r[1]) : null) : (near.nm === "S1" && k.s[1] != null ? ptVal(key, k.s[1]) : null);
+      h += '<p class="pm-next">◆ ' + near.nm + " まで " + ptDist(key, near.v - k.px) + "。" + (near.side > 0 ? "上抜けると " : "割り込むと ") + (nx ? nx + " が視野" : "次の水平線は表示の範囲の外") + "</p>";
+    }
+    var a = ptAnswer(key);
+    if (a && a.items.length) h += '<p class="pm-ans"><b>' + a.label + "の答え合わせ</b>" + a.items.map(function (x) { return '<span class="' + (x.hit ? "hit" : "") + '">' + esc(x.txt) + "</span>"; }).join("") + "</p>";
+    return { html: h, sig: [view, k.r.join(), k.s.join(), (k.rt || []).join(), (k.st || []).join(), near && near.near ? near.nm : "", a ? a.day + a.items.map(function (x) { return x.txt; }).join() : ""].join("/") };
   }
   var ptSig = "", ptShownAt = 0;
   function ptRows() {
-    var all = market && (market.instruments || market), sig = [];
-    [0, 1, 2, 3].forEach(function (i) {
-      var key = pointKey(i), k = keyLv[key], a = all && all[key] && all[key].analysis;
-      if (DASH_KEYS[key]) {
-        if (k && k.px) { var t = ptLevels(key, k); setPoint(i + 1, t.title, "", t.html); sig.push(t.sig); }
-        else { setPoint(i + 1, INST[key].name, "ダッシュボードの重要価格帯を計算しています…"); sig.push(key + ":wait"); }
-      } else if (a) { setPoint(i + 1, a.title, a.body + "\n（自動分析：前日の日足のピボットから）"); sig.push(a.title + a.body); }
-      else if (all) { setPoint(i + 1, INST[key].name, "この銘柄の分析データはまだありません。\n次の更新（約15分ごと）をお待ちください。"); sig.push(key); }
-      else setPoint(i + 1, INST[key].name, "分析データを読み込んでいます。");
-    });
-    sig = sig.join("|");
+    var tabs = document.querySelector("#pt-map .pm-tabs"), bodyEl = document.querySelector("#pt-map .pm-body"); if (!tabs) return;
+    var nears = {};
+    PT_TABS.forEach(function (key) { var k = keyLv[key]; if (k && k.px) { var n = ptNear(key, k); if (n) nears[key] = n; } });
+    // 既定のタブ：基準以内の水準があるうち、基準に対していちばん近い銘柄。どれも近くなければゴールド（タブを押したあとはその銘柄のまま）
+    if (!ptTabByUser) { var best = "gold", bd = Infinity; PT_TABS.forEach(function (key) { var n = nears[key]; if (n && n.near && n.d / PT_NEAR[key] < bd) { bd = n.d / PT_NEAR[key]; best = key; } }); ptTab = best; }
+    var th = PT_TABS.map(function (key) { var on = key === ptTab, nr = nears[key] && nears[key].near; return '<button type="button" role="tab" data-pmt="' + key + '" aria-selected="' + on + '" class="' + (on ? "on" : "") + (nr ? " near" : "") + '"' + (nr ? ' title="水準に接近（' + PT_NEAR_TXT[key] + '以内）"' : "") + ">" + esc({ gold: "ゴールド", usdjpy: "ドル円", btc: "BTC", usoil: "オイル" }[key]) + "</button>"; }).join("");
+    if (tabs.__h !== th) { tabs.innerHTML = th; tabs.__h = th; }
+    var k = keyLv[ptTab], r = k && k.px ? ptMap(ptTab, k) : { html: '<p class="pm-wait">' + esc(INST[ptTab].name) + "：ダッシュボードの重要価格帯を計算しています…</p>", sig: ptTab + ":wait" };
+    if (bodyEl.__h !== r.html) { bodyEl.innerHTML = r.html; bodyEl.__h = r.html; }
+    var sig = ptTab + "|" + r.sig;
     if (sig !== ptSig) { ptShownAt = Date.now(); ptSig = sig; }
     var foot = document.getElementById("pt-foot"); if (!foot || foot.querySelector(".retry")) return;
     var u = market ? new Date(market.updated) : null, stale = u && Date.now() - u > 3 * 3600000;
-    // 更新スタンプは中身（水準・目線・文）が変わった時刻。距離は価格に合わせて動くので数えない
-    foot.textContent = "水準＝ダッシュボードの水平線（右端は時間足）・目線＝H1の120SMAの上下・" + updAt(new Date(ptShownAt)) +
+    // 更新スタンプは中身（水準・目線・接近・答え合わせ）が変わった時刻。距離は価格に合わせて動くので数えない
+    foot.textContent = "水準＝ダッシュボードの水平線・目線＝H1の120SMAの上下・接近＝" + PT_NEAR_TXT[ptTab] + "以内・" + updAt(new Date(ptShownAt)) +
       (u ? "／戦略文：自動分析 " + (stale ? MDHM(u) + "（更新が止まっています）" : stampAt(u) + "（約15分ごと）") : "");
     foot.style.color = stale ? "var(--up-red)" : "";
   }
+  document.querySelector("#pt-map .pm-tabs").addEventListener("click", function (e) { var b = e.target.closest("[data-pmt]"); if (!b) return; ptTab = b.getAttribute("data-pmt"); ptTabByUser = true; ptRows(); });
   function refreshPoints() { ptRows(); if (market) renderStrategy(); }
   setInterval(ptRows, 2000);  // 距離はダッシュボードの価格に合わせて
   /* Daily report (strategy.json): written each weekday morning by the scheduled report task.
@@ -3277,8 +3325,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
         if (!marketSeq.latest(id)) return;
         srcMark("market", false, e && e.message || "取得できませんでした");
         if (market || PREVIEW) return;
-        setPoint(1, "分析データを取得できませんでした", "通信状態を確認してください。\n次の更新で自動的に再取得します。");
-        setPoint(2, "", ""); setPoint(3, "", ""); setPoint(4, "", ""); if (!reportIsCurrent(new Date())) setPoint(5, "", "");
+        if (!reportIsCurrent(new Date())) setPoint(5, "", "");
         document.getElementById("pt-foot").innerHTML = '<button type="button" class="retry" data-retry="market">再読み込み</button>';
         markets.forEach(function (mk) { if (!mk.live) { mk.failed = true; mk.render(); } });
       });
@@ -4528,7 +4575,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   /* ---------- boot ---------- */
   if (!PREVIEW) {
     document.getElementById("ind-list").innerHTML = '<li class="empty">今日の経済指標を読み込んでいます…</li>';
-    [1, 2, 3].forEach(function (i) { setPoint(i, i === 1 ? "分析データを読み込んでいます…" : "", ""); });
+    setPoint(5, "", "");  // 戦略の行は分析が届いてから（水準マップは自分で「読み込んでいます」を出す）
     document.getElementById("pt-foot").textContent = "";
     document.querySelector('[data-wx="temp"]').textContent = "--";
     document.querySelector('[data-wx="hi"]').textContent = "--";
