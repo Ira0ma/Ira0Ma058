@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="3952286c06">
+<meta name="build" content="d9654b0995">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2435,7 +2435,8 @@ function renderMtf(){
   if(!m){el.className='mtfscore';el.innerHTML='<div class="sub">データ取得中...</div>';$('mtfTable').innerHTML='';return null}
   el.className='mtfscore '+(m.dir>0?'up':m.dir<0?'down':'flat');
   el.innerHTML=`<div class="ms-main"><div><small>総合判定 <i>ルールベース</i></small><b>${m.dir>0?'↗':m.dir<0?'↘':'→'} ${m.label}</b></div><div class="ms-num">${m.score}<small>一致度 /100</small></div></div>`+
-    `<div class="ms-tfs">${m.rows.map((r,i)=>`<button type="button" data-tf="${MTF_TFS[i]}" class="${r?r.cls:''}"><span>${MTF_TFS[i].toUpperCase()}</span><b>${r?r.arrow:'—'}</b><small>${r?r.judge:'—'}</small></button>`).join('')}</div>`;
+    `<div class="ms-tfs">${m.rows.map((r,i)=>`<button type="button" data-tf="${MTF_TFS[i]}" class="${r?r.cls:''}"><span>${MTF_TFS[i].toUpperCase()}</span><b>${r?r.arrow:'—'}</b><small>${r?r.judge:'—'}</small></button>`).join('')}</div>`+
+    `<div class="sub ms-at">計算 ${LT_FMT.format(new Date())}（価格 ${state.spot?LT_FMT.format(new Date(state.spot.asof)):'--'}時点・15分足は ${state.m15.length?HM_FMT.format(new Date(state.m15.at(-1).t)):'--'} の足まで）</div>`;
   const gdir=g=>!g?'—':g.sd>0?'<span class="up">上向き</span>':g.sd<0?'<span class="down">下向き</span>':'横ばい';
   $('mtfTable').innerHTML='<div class="mt-h"><span>時間足</span><span>トレンド</span><span>GMMA</span><span>RSI</span><span>判定</span></div>'+
     m.rows.map((r,i)=>r?`<div class="mt-r"><span>${MTF_TFS[i].toUpperCase()}</span><span class="${dowCls(r.dk)}">${DOW_SHORT[r.dk]}</span><span>${gdir(r.g)}</span><span>${r.rsi==null?'—':r.rsi.toFixed(1)}</span><span class="${r.cls}">${r.arrow} ${r.judge}</span></div>`:
