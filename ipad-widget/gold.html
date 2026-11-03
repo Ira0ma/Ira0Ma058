@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="364eca54ac">
+<meta name="build" content="688d701b0f">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -754,17 +754,17 @@ const INSTRUMENTS={
     dp:2,pip:0.1,minTp:50,pipNote:'1pips＝$0.10',momTh:0.8,slMin:2,tolMin:.5,unit:'oz',contract:'100',cupHandle:true,patterns:true,spread:{xm:'2.6',xs:'1.4'},
     brokerNote:'XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,2),
-    footer:'データ: Gold API・XAUS（GOLD価格）／GitHub Actionsで定期取得したYahoo Finance足（チャート）・Forex Factory（経済指標）／Frankfurter（USD/JPY補助）。'},
+    footer:'データ: 価格はリアルタイム配信（OKX・BitfinexのXAUT、KrakenのPAXGを現物に補正）、配信がないときはGold API（30秒ごと。取れないときはXAUS、サイトの定期取得）／チャートはGitHub Actionsで定期取得したYahoo Finance足（先物を現物に換算。直近の1分足はOKXのXAUTで補う）・Forex Factory（経済指標）／Frankfurter（USD/JPY補助）。'},
   usdjpy:{key:'usdjpy',site:'usdjpy',title:'USDJPY',label:'USD / JPY',short:'USDJPY',name:'ドル円',sub:'USD/JPY専用｜自動更新｜iPad・iPhone・Android対応',
     dp:3,pip:0.01,minTp:30,pipNote:'1pips＝0.01円',momTh:0.03,slMin:0.05,tolMin:.02,unit:'通貨',contract:'100000',patterns:true,spread:{xm:'1.4',xs:'0.9'},
     brokerNote:'ドル円の1lotは多くの業者で10万通貨です。ご自身の口座の取引条件で確認してください。',
     dist:v=>(v/0.01).toFixed(1)+'pips',
-    footer:'データ: Coinbase（ドル円の最新レート）／GitHub Actionsで定期取得したYahoo Finance足（チャート・価格）・Forex Factory（経済指標）。'},
+    footer:'データ: 価格はGMOコイン外国為替FXのリアルタイム配信（売値に補正）、配信がないときはCoinbase（30秒ごと・売値に補正）、どちらもないときはサイトの定期取得／チャートはGitHub Actionsで定期取得したYahoo Finance足・Forex Factory（経済指標）。'},
   btc:{key:'btc',site:'btc',title:'BTCUSD',label:'BTC / USD',short:'BTC',name:'ビットコイン',asset:'BTC',sub:'BTC/USD専用｜24時間自動更新｜iPad・iPhone・Android対応',
     dp:2,pip:1,minTp:300,pipNote:'1pips＝$1',momTh:20,slMin:40,tolMin:10,unit:'BTC',contract:'1',patterns:true,spread:{xm:'15',xs:'23.6'},
     brokerNote:'XMのBTCUSDは1lot＝1BTCです。XSの契約量・スプレッドはご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,0),
-    footer:'データ: Coinbase・Kraken・OKX（BTCのリアルタイム価格）／GitHub Actionsで定期取得したYahoo Finance足（チャート）・Forex Factory（経済指標）。'},
+    footer:'データ: 価格はリアルタイム配信（Coinbase。つながらないときはKraken、OKXの順）、配信がないときはCoinbase（30秒ごと）、どちらもないときはサイトの定期取得／チャートはGitHub Actionsで定期取得したYahoo Finance足（直近の1分足はOKXで補う）・Forex Factory（経済指標）。'},
   // USオイル（WTI原油）：価格と足はサイトの定期取得（Yahoo CL=F 先物）。サイト側でSwissquoteのXTI/USD（現物）が取れた回は、
   // ゴールドと同じく先物の足を現物に合わせて届く（spotAdjusted）。ブラウザからSwissquoteは読めない（CORSなし）ので取りに行かない
   usoil:{key:'usoil',site:'usoil',title:'USOIL',label:'USOIL (WTI)',short:'USOIL',name:'USオイル',asset:'原油',sub:'USオイル（WTI原油）専用｜自動更新｜iPad・iPhone・Android対応',
@@ -3549,7 +3549,7 @@ function renderAll(){
   renderChecks(risk,reb);updateCaution();
   $('lastUpdate').textContent=state.lastOk?localTime(state.lastOk):'--';
   const S=state.src,ok=(k,v)=>v?`${k} ✓ ${v}`:`${k} ✕ 未接続`;
-  $('srcLine').textContent='データ接続状況：'+[ok('価格',S.spot),ok('チャート',S.chart)].concat(!IS_FX?[ok('ドル円',S.fx)]:[],[ok('経済指標',S.calendar)]).join('　');
+  $('srcLine').textContent='データ接続状況：'+[ok('価格',S.spot),ok('チャート',S.chart)].concat(!IS_FX?[ok('ドル円',S.fx)]:[],[ok('経済指標',S.calendar)]).join('　')+(state.src.spot?'｜いまの価格の取得先：'+state.src.spot:'');  // 札と同じ取得先
   updateNotice();
 }
 
