@@ -561,7 +561,8 @@
           '<h3>データの取得元</h3><div class="tw"><table><tr><th>データ</th><th>最終成功</th><th>状態</th></tr>' +
           srcRow("market", "相場データ・自動分析（サイトの market.json）", "analysis", m && Date.parse(m.updated)) + srcRow("goldapi", "金・銀の現在値（Gold API）", "price") + srcRow("swissquote", "金・銀の代替（Swissquote）", "price") +
           srcRow("coinbase", "ドル円の現在値（Coinbase）", "price") + srcRow("ws-gold", "金のリアルタイム配信（XAUT）", "price") + srcRow("ws-usdjpy", "ドル円のリアルタイム配信（GMO）", "price") +
-          srcRow("calendar", "経済指標（Forex Factory 経由）", "calendar") + srcRow("report", "本日のトレード戦略（strategy.json）", "report") + srcRow("weather", "天気（Open-Meteo）", "weather", D.weatherAt()) + srcRow("holidays", "祝日（holidays.json）") +
+          srcRow("calendar", "経済指標（Forex Factory 経由）", "calendar") + srcRow("report", "本日のトレード戦略（strategy.json）", "report") + srcRow("weather", "天気（Open-Meteo）", "weather", D.weatherAt()) + srcRow("holidays", "祝日（holidays.json）") + srcRow("news", "要人発言ニュース（news.json）") +
+          (D.surge && D.surge() ? "<tr><td>急変検知</td><td>—</td><td>" + esc(Object.keys(D.surge()).map(function (k) { return D.instName(k) + " " + D.surge()[k]; }).join("・")) + "</td></tr>" : "") +
           "</table></div>" +
           (chk && Object.keys(chk.problems).some(function (k) { return chk.problems[k].length; }) ? '<div class="warn">確認中の銘柄（データの検査で問題があり、前回の値を表示中または非表示）：' +
             esc(Object.keys(chk.problems).filter(function (k) { return chk.problems[k].length; }).map(function (k) { return D.instName(k) + "（" + chk.problems[k].join("・") + "）"; }).join("、")) + "</div>" : "") +

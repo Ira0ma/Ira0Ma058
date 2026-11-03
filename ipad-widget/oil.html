@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="fd37155c23">
+<meta name="build" content="8514c03f98">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -262,6 +262,14 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .seg{background:#121820;color:#d5dde5;border:1px solid #34404c;border-radius:999px;padding:7px 12px;font-size:12px}
 .seg.active{background:linear-gradient(180deg,#e6c973,#b5872d);border-color:#b5872d;color:#101114}
 .chartwrap{position:relative}
+/* タスク6：急変の帯（チャートの上）。点滅は緊急で未確認のときだけ・省電力では点滅しない。タップで確認すると止まる */
+.surgeflag{display:block;width:100%;margin:6px 0 4px;text-align:left;font:inherit;font-size:12px;font-weight:700;color:#f5c04a;background:rgba(245,192,74,.10);border:1px solid rgba(245,192,74,.55);border-radius:8px;padding:5px 10px;cursor:pointer}
+.surgeflag.emg{color:#ff8a7e;background:rgba(255,105,105,.10);border-color:rgba(255,105,105,.7)}
+.surgeflag small{font-weight:500;color:var(--muted);margin-left:6px}
+.surgeflag.blink{animation:sgBlink 1s steps(2,start) infinite}
+@keyframes sgBlink{50%{opacity:.3}}
+@media (prefers-reduced-motion:reduce){.surgeflag.blink{animation:none}}
+html.lowpower .surgeflag.blink{animation:none}
 .tvbox{margin-top:6px}.tvhost{height:min(560px,70vh);min-height:360px;border-radius:12px;overflow:hidden;border:1px solid #232d36;background:#0f1419}
 .tvhost .tradingview-widget-container{height:100%;width:100%}
 .tvopen{font-size:12px;font-weight:800;border-radius:999px;padding:6px 12px;border:1px solid #2c3742;background:#121820;color:#d5dde5;text-decoration:none;white-space:nowrap}
@@ -558,7 +566,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <div id="gmmaNow" class="gmmanow" role="status" hidden></div>
     <div id="gxToasts" class="gxtoasts" aria-live="polite"></div>
     <div id="tvBox" class="tvbox" hidden><div id="tvNote" class="tvnote"></div><div id="tvHost" class="tvhost"></div></div>
-    <div class="sub" id="oilChartNote" hidden style="margin:6px 2px"></div><div class="chartwrap"><canvas id="chart"></canvas><canvas id="chartBlink" aria-hidden="true"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
+    <button type="button" id="surgeFlag" class="surgeflag" hidden></button><div class="sub" id="oilChartNote" hidden style="margin:6px 2px"></div><div class="chartwrap"><canvas id="chart"></canvas><canvas id="chartBlink" aria-hidden="true"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
     <canvas id="rsi" aria-label="RSI(14)"></canvas>
     <canvas id="atrPane" aria-label="ATR(14)"></canvas>
     <div id="chartInfo" class="chartinfo">--</div>
@@ -3281,6 +3289,7 @@ function drawChart(){
     ctx.fillStyle='#101114';ctx.textAlign='left';ctx.font='bold 11px -apple-system,sans-serif';ctx.fillText(fmt(state.spot.price),W-P.r+6,yy);
   }
 
+  const sgHit=sgMarks(ctx,bars,blank,x,P,W,H,step);  // 急変の⚡印と帯・発言予定の縦線
   const hi=state.hover!=null&&bars[state.hover]?state.hover:null;
   if(hi!=null){
     ctx.strokeStyle='rgba(245,215,126,.45)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x(hi),P.t);ctx.lineTo(x(hi),H-P.b);ctx.stroke();
@@ -3323,6 +3332,7 @@ function drawChart(){
   drawAtr(source,startIdx,endIdx,bars.length,P,step,hi);
   const lastBig=bigs.at(-1);
   if(lastBig){const b=source[lastBig.i];$('chartInfo').insertAdjacentHTML('beforeend',`<span class="legend"><i style="background:#ffb547"></i>${lastBig.dir<0?'大口決済':'買い戻し'}の兆候 <b>${esc(barLabel(b.t,isH1))}${lastBig.fri?'（金曜）':''} ${lastBig.size>=0?'+':'−'}${INSTR.dist(Math.abs(lastBig.size))}</b>${lastBig.vr?'（出来高'+lastBig.vr.toFixed(1)+'倍）':''}</span>`)}
+  if(hi!=null)sgHit.filter(h=>h.i===hi).forEach(h=>$('chartInfo').insertAdjacentHTML('beforeend',`<span class="legend"><i style="background:${h.col}"></i>${esc(h.text)}</span>`));  // タップ／ホバーした足の⚡・発言予定
 }
 // RSI(14) をチャートの下に、同じ足の並び・同じ横位置で描く（70／30に線、選択足に縦線）
 function drawRsi(source,startIdx,endIdx,nb,P,step,hi){
@@ -3716,6 +3726,57 @@ $('checks').addEventListener('change',e=>{
 });
 $('resetChecks').onclick=()=>{ticks={};saveTicks();renderChecks()};
 
+/* ---------- タスク6：チャート上のシグナル ----------
+   急変：ホームが検知して td_surge_v1 に保存した当日分（この銘柄）を、発生した足に⚡、変化した時間帯を帯で出す。
+   過去の日の分は残さない。発言：指標カレンダーにある要人発言の予定時刻に縦線と名前（カレンダーにない発言は出さない）。
+   点滅は緊急で未確認のときのチャート上の帯（#surgeFlag）だけ。タップで確認すると止まり、印は残る。省電力では点滅しない */
+const SG_KEY='td_surge_v1',SG_TF_MS={m5:3e5,m15:9e5,m30:18e5,h1:36e5,h4:144e5,d1:864e5,w1:6048e5,mn:2592e6};
+function sgStore(){try{const s=JSON.parse(localStorage.getItem(SG_KEY)||'null');return s&&CORE&&CORE.dayKey&&s.day===CORE.dayKey(Date.now())&&Array.isArray(s.ev)?s:null}catch{return null}}
+function sgEvents(){const s=sgStore();return s?s.ev.filter(e=>e.key===INSTR.key):[]}
+function sgLow(){return lsGet('td-power','')==='low'}
+function sgMarks(ctx,bars,blank,x,P,W,H,step){
+  const hit=[],ms=SG_TF_MS[state.tf]||36e5,n=bars.length;if(!n||!CORE||!CORE.surgeText)return hit;
+  const idx=t=>{if(t<bars[0].t)return -1;for(let i=n-1;i>=0;i--)if(t>=bars[i].t)return t<bars[i].t+ms||i===n-1?i:-1;return -1};
+  ctx.save();ctx.beginPath();ctx.rect(P.l,P.t,W-P.l-P.r,H-P.t-P.b);ctx.clip();
+  sgEvents().forEach(e=>{
+    const i1=idx(e.t);if(i1<0)return;const i0=Math.max(0,idx(e.t0)<0?0:idx(e.t0)),emg=e.level==='emergency',col=emg?'255,105,105':'245,192,74';
+    ctx.fillStyle=`rgba(${col},.13)`;ctx.fillRect(x(i0)-step/2,P.t,x(i1)-x(i0)+step,H-P.t-P.b);
+    ctx.font='bold 13px -apple-system,sans-serif';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillStyle=`rgb(${col})`;ctx.fillText('⚡',x(i1),P.t+2);
+    const tx=CORE.surgeText(e);
+    hit.push({i:i1,col:`rgb(${col})`,text:`⚡ ${tx.level}：${tx.head} ${tx.size}（${hhmm(e.t)} JST 検知）`});
+  });
+  let prevR=-1e9,row=0;  // 名前が重なるときは1段下げる
+  if(ms<=144e5)(state.events||[]).filter(e=>e.speech&&goldRelevant(e)).sort((a,b)=>a.ts-b.ts).forEach(e=>{  // 時間単位までの足だけ（日足以上では細かすぎる）
+    const xi=(e.ts-bars[n-1].t)/ms+(n-1);if(xi<-.5||xi>n-1+blank+.5)return;
+    const xx=Math.round(P.l+step*(xi+.5))+.5,name=e.speech.ja+(/testifies/i.test(e.title)?' 議会証言':' 発言');
+    ctx.strokeStyle='rgba(185,166,255,.75)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(xx,P.t+18);ctx.lineTo(xx,H-P.b);ctx.stroke();ctx.setLineDash([]);
+    ctx.font='bold 10px -apple-system,sans-serif';ctx.textBaseline='top';const tw=ctx.measureText('🎤 '+name).width+6,lx=Math.min(Math.max(P.l+2,xx-tw/2),W-P.r-tw-2);
+    row=lx<prevR+2?(row+1)%3:0;prevR=lx+tw;const ly=P.t+18+row*16;
+    ctx.fillStyle='rgba(12,17,22,.85)';ctx.fillRect(lx,ly,tw,14);ctx.fillStyle='#d9d0ff';ctx.textAlign='left';ctx.fillText('🎤 '+name,lx+3,ly+2);
+    const i=Math.round(xi);if(i>=0&&i<n)hit.push({i,col:'#b9a6ff',text:`🎤 予定 ${hhmm(e.ts)} JST ${name}（カレンダー）`});
+  });
+  ctx.restore();ctx.textBaseline='middle';
+  return hit;
+}
+function paintSurgeFlag(){
+  const el=$('surgeFlag');if(!el)return;
+  const e=sgEvents().filter(e=>CORE&&Date.now()-e.at<CORE.SURGE_SHOW).at(-1);
+  el.hidden=!e;if(!e)return;
+  const tx=CORE.surgeText(e),emg=e.level==='emergency',wait=emg&&!e.ack;
+  el.className='surgeflag'+(emg?' emg':'')+(wait&&!sgLow()?' blink':'');el.dataset.id=e.id;
+  el.innerHTML=`⚡ ${esc(tx.level)}：${esc(tx.head)} ${esc(tx.size)}（${esc(hhmm(e.t))} JST 検知）<small>${wait?'タップで確認':'確認済み・チャートの⚡が発生した足'}</small>`;
+}
+$('surgeFlag').addEventListener('click',()=>{
+  const s=sgStore(),id=$('surgeFlag').dataset.id;if(!s)return;
+  s.ev.forEach(e=>{if(e.id===id)e.ack=true});try{localStorage.setItem(SG_KEY,JSON.stringify(s))}catch{}
+  paintSurgeFlag();
+});
+window.addEventListener('storage',e=>{
+  if(e.key==='td-power')document.documentElement.classList.toggle('lowpower',e.newValue==='low');
+  if(e.key===SG_KEY){paintSurgeFlag();if(!sheetHidden())drawChart()}
+});
+if(sgLow())document.documentElement.classList.add('lowpower');
+paintSurgeFlag();setInterval(paintSurgeFlag,30000);
 const chart=$('chart');
 function resetView(){state.view={off:0,count:0,yOff:0,yZoom:1}}
 function barIndexAt(clientX){

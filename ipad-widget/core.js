@@ -471,11 +471,97 @@
     try { storage.setItem(k, v); return storage.getItem(k) === v; } catch (e) { return false; }
   }
 
+  /* ---------- 急変検知（タスク6）：しきい値はここだけ。変えるときはこの表を直す ----------
+     each rule is [minutes, size]: yen for USD/JPY, percent for the others. A rule is met when the newest sample
+     differs from any sample within its minutes by at least the size. */
+  var SURGE = {
+    usdjpy: { unit: "yen", caution: [[5, 0.50]], emergency: [[5, 1.00], [15, 1.50]] },
+    gold: { unit: "pct", caution: [[15, 0.7]], emergency: [[15, 1.2]] },
+    btc: { unit: "pct", caution: [[15, 1.0]], emergency: [[15, 2.0]] },
+    usoil: { unit: "pct", caution: [[15, 1.0]], emergency: [[15, 2.0]] }
+  };
+  var SURGE_GAP = 90 * 1000, SURGE_KEEP = 15 * MIN, SURGE_COOL = 30 * MIN, SURGE_SHOW = 30 * MIN;
+  var SURGE_RANK = { caution: 1, emergency: 2 };
+  // keep the samples of the last 15 minutes (sorted by time); a sample older than the newest is dropped
+  function surgeAdd(list, t, p, src) {
+    list = list || [];
+    if (!(p > 0) || !isFinite(t)) return list;
+    var last = list[list.length - 1];
+    if (last && t <= last.t) return list;
+    list.push({ t: t, p: p, src: src || "" });
+    while (list.length && t - list[0].t > SURGE_KEEP) list.shift();
+    return list;
+  }
+  /* The biggest move that meets a rule, or null. Only the unbroken run that ends at the newest sample counts:
+     a gap of more than 90 seconds between samples, or a change of source, cuts the run (no change across it).
+     The newest sample must itself be at most 90 seconds old at now. */
+  function surgeCheck(key, list, now) {
+    var cfg = SURGE[key];
+    if (!cfg || !list || list.length < 2) return null;
+    var last = list[list.length - 1];
+    if (now - last.t > SURGE_GAP) return null;
+    var run = [last];
+    for (var i = list.length - 2; i >= 0; i--) {
+      var s = list[i];
+      if (run[0].t - s.t > SURGE_GAP || s.src !== run[0].src || last.t - s.t > SURGE_KEEP) break;
+      run.unshift(s);
+    }
+    var size = function (from) { var d = last.p - from.p; return cfg.unit === "yen" ? Math.abs(d) : Math.abs(d) / from.p * 100; };
+    var best = null;
+    ["emergency", "caution"].forEach(function (level) {
+      if (best) return;
+      cfg[level].forEach(function (rule) {
+        run.forEach(function (s) {
+          if (s === last || last.t - s.t > rule[0] * MIN) return;
+          var z = size(s);
+          if (z >= rule[1] && (!best || z / rule[1] > best.ratio)) {
+            var d = last.p - s.p;
+            best = { key: key, level: level, dir: d > 0 ? "up" : "down", win: rule[0], delta: d, pct: d / s.p * 100, from: s.p, to: last.p, t0: s.t, t: last.t, ratio: z / rule[1], unit: cfg.unit };
+          }
+        });
+      });
+    });
+    return best;
+  }
+  /* Whether a detection is a new alert (banner, sound, notification): not when the same direction already alerted
+     at the same or a higher level within 30 minutes; a rise from 注意 to 緊急 alerts at once. state is
+     { up: { rank, at }, down: { rank, at } } and is returned updated. */
+  function surgeGate(state, res, now) {
+    state = state || {};
+    if (!res) return { alert: false, state: state };
+    var prev = state[res.dir], rank = SURGE_RANK[res.level];
+    if (prev && now - prev.at < SURGE_COOL && rank <= prev.rank) return { alert: false, state: state };
+    state[res.dir] = { rank: rank, at: now };
+    return { alert: true, state: state };
+  }
+  // the words for a detection: never says the move is an intervention, never names a price level
+  var SURGE_NAME = { usdjpy: "ドル円", gold: "ゴールド", btc: "BTC", usoil: "USオイル" };
+  function surgeText(res) {
+    var name = SURGE_NAME[res.key] || res.key, sign = res.delta >= 0 ? "+" : "−", mag = Math.abs(res.delta);
+    var size = res.unit === "yen" ? sign + mag.toFixed(2) + "円" : sign + Math.abs(res.pct).toFixed(2) + "%";
+    var way = res.key === "usdjpy" ? (res.dir === "down" ? "（円高方向）" : "（円安方向）") : res.dir === "down" ? "（下落）" : "（上昇）";
+    return { head: name + "が急変" + way, size: res.win + "分で " + size, level: res.level === "emergency" ? "緊急" : "注意" };
+  }
+  /* 為替介入への警戒：news.json の中で、ドル円に関わる介入警戒（tone intervention）の見出しのうち、
+     発言から24時間以内の最新1件。なければ null */
+  function interventionPick(news, now) {
+    var items = news && Array.isArray(news.items) ? news.items : [];
+    var best = null;
+    items.forEach(function (i) {
+      if (!i || i.tone !== "intervention" || !(i.pages || []).some(function (p) { return p === "usdjpy"; })) return;
+      var t = +i.t * 1000;
+      if (!(t <= now + 5 * MIN) || now - t > DAY) return;
+      if (!best || t > best.t * 1000) best = i;
+    });
+    return best;
+  }
+
   return { MIN: MIN, HOUR: HOUR, DAY: DAY, partsIn: partsIn, zoneOffset: zoneOffset, zoneTime: zoneTime, isDst: isDst,
     KIND: KIND, marketState: marketState, hoursNote: hoursNote, nextOpen: nextOpen, sessions: sessions, RULES: RULES, freshness: freshness, ago: ago, jst: jst,
     checkMarket: checkMarket, realCandles: realCandles, sequencer: sequencer,
     weeklyHours: weeklyHours, REOPEN_NOTE: REOPEN_NOTE, LEVEL_JA: LEVEL_JA,
     positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey, journalDays: journalDays,
+    SURGE: SURGE, SURGE_GAP: SURGE_GAP, SURGE_COOL: SURGE_COOL, SURGE_SHOW: SURGE_SHOW, surgeAdd: surgeAdd, surgeCheck: surgeCheck, surgeGate: surgeGate, surgeText: surgeText, interventionPick: interventionPick,
     newStore: newStore, updateSignal: updateSignal, expireSignals: expireSignals, loadStore: loadStore, COOLDOWN: COOLDOWN,
     toCSV: toCSV, parseCSV: parseCSV, importCSV: importCSV,
     GROUPS: GROUPS, groupOf: groupOf, exportSettings: exportSettings, importSettings: importSettings, resetGroup: resetGroup, safeSet: safeSet };

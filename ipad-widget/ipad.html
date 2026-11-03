@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="30af457725">
+<meta name="build" content="6b742c9c5c">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -151,6 +151,28 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .mkt .mscore .up { color: #5fd99a; border-color: rgba(95,217,154,.55); } .mkt .mscore .down { color: #ff8a7e; border-color: rgba(255,138,126,.55); }
 .mkt .mscore .mt i.up em { color: #5fd99a; } .mkt .mscore .mt i.down em { color: #ff8a7e; }
 .mkt.has-score .sym small, .mkt.has-score .head .chev { display: none; } .mkt.has-score .jp { max-width: 110px; }
+/* タスク6：為替介入への警戒（黄・音なし）と急変（黄＝注意／赤＝緊急）。画面の上に重ね、地震のバナーとは別に閉じる */
+.dk-alerts { position: fixed; left: 0; right: 0; top: calc(8px + env(safe-area-inset-top, 0px)); z-index: 190; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0 16px; pointer-events: none; }
+.dk-al { position: relative; pointer-events: auto; width: min(560px, 100%); box-sizing: border-box; border-radius: 12px; padding: 8px 34px 8px 12px; background: rgba(42,28,8,.97); border: 1px solid rgba(245,192,74,.75); box-shadow: 0 4px 18px rgba(0,0,0,.55); display: flex; flex-direction: column; gap: 2px; cursor: pointer; text-align: left; }
+.dk-al.emg { background: rgba(70,10,10,.97); border-color: var(--up-red); }
+.dk-al b { font-size: 13px; color: #f5c04a; }
+.dk-al.emg b { color: #ff8a7e; }
+.dk-al span { font-size: 12.5px; color: var(--ink); line-height: 1.45; }
+.dk-al small { font-size: 11px; color: var(--ink-2); line-height: 1.45; }
+.dk-al small a { color: var(--gold); }
+.dk-al .x { position: absolute; top: 4px; right: 4px; font: inherit; font-size: 13px; line-height: 1; color: var(--ink-2); background: none; border: 0; padding: 6px 8px; cursor: pointer; }
+.dk-check { pointer-events: auto; width: min(560px, 100%); box-sizing: border-box; border-radius: 12px; padding: 10px 14px; background: rgba(16,19,24,.98); border: 1px solid var(--glass-line); box-shadow: 0 4px 18px rgba(0,0,0,.55); font-size: 12.5px; color: var(--ink); line-height: 1.6; }
+.dk-check ol { margin: 6px 0 4px; padding-left: 20px; }
+.dk-check p { margin: 0; font-size: 11px; color: var(--ink-3); }
+.dk-check button { font: inherit; font-size: 12px; color: var(--ink-2); background: none; border: 1px solid var(--glass-line); border-radius: 999px; padding: 3px 12px; margin-top: 6px; cursor: pointer; }
+/* 急変中の銘柄：カードの名前の下に印（緊急で未確認のときだけ点滅。タップで止まり、印は残る） */
+.mkt .sg { display: none; font-size: 11px; font-weight: 700; margin-top: 1px; white-space: nowrap; color: #f5c04a; }
+.mkt .sg.emg { color: #ff8a7e; }
+.mkt.surging .sg { display: block; }
+.mkt.surging .jp { display: none; }
+.mkt .sg.blink { animation: sgBlink 1s steps(2, start) infinite; }
+@keyframes sgBlink { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .mkt .sg.blink { animation: none; } }
 .dk-toasts { position: fixed; left: 0; right: 0; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 200; display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; padding: 0 16px; }
 .dk-toast { pointer-events: auto; font: inherit; font-size: 13.5px; font-weight: 700; color: #ffd57a; background: rgba(14,15,20,.96); border: 1px solid rgba(255,213,122,.7); border-radius: 12px; padding: 10px 16px; box-shadow: 0 8px 24px rgba(0,0,0,.55); cursor: pointer; max-width: 640px; text-align: left; }
 .dk-toast small { color: var(--ink-3); font-weight: 600; margin-right: 6px; }
@@ -1101,10 +1123,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=2649b289a7", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=f1bb03d48d", title: "ドル円分析" },
-    btc: { src: "btc.html?v=f79e444f07", title: "BTC分析" },
-    oil: { src: "oil.html?v=fd37155c23", title: "オイル分析" }
+    gold: { src: "gold.html?v=a052efba15", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=3f0143eda4", title: "ドル円分析" },
+    btc: { src: "btc.html?v=a87dcf468a", title: "BTC分析" },
+    oil: { src: "oil.html?v=8514c03f98", title: "オイル分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -1761,6 +1783,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
       var px = src.parse(m); if (!px) return;
       got = true; L.tries = 0; L.raw = px; L.at = Date.now(); L.name = src.name; srcMark("ws-" + key, true);
+      surgeSample(key, px - liveOffset(key), L.at, "ws-" + src.name);  // 急変検知：表示の異常値よけを通さない生のティック
       if (key === "gold" && !L.offs.length && L.spot && Date.now() - L.spotAt < 60000) liveCalibrate(key, L.spot);
       liveTick(key);
     };
@@ -1793,6 +1816,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
             if (off && Math.abs(off) < 0.1) px = Math.round((px - off) * 1000) / 1000;
             if (m && m.price && Math.abs(px - m.price) > 1) return;  // far from the site's price: a broken quote
             if (liveFresh(key)) return;  // the real-time feed is newer
+            surgeSample(key, px, Date.now(), "coinbase");  // 配信がないときの急変検知は定期取得の値で
             mk.asOf = Date.now() / 1000; srcMark("coinbase", true);
             mk.prov = { src: "Coinbase（為替レート）", type: off && Math.abs(off) < 0.1 ? "Coinbaseのレートから、サイトで測った売値との差を引いた値（補正値）" : "Coinbaseのレート（Bid/Askの区別は非公開）" };
             mk.applyLive(px);
@@ -1808,6 +1832,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
           L.spot = price; L.spotAt = Date.now(); liveCalibrate("gold", price);
           if (liveFresh("gold") && mk.price) return;  // the real-time feed is newer; this price only calibrates it
         }
+        surgeSample(key, price, asOf ? asOf * 1000 : Date.now(), "spot");  // 配信がないときの急変検知は定期取得の値で
         mk.asOf = asOf; mk.prov = prov;
         mk.alignSpot(price);
         mk.applyLive(price);
@@ -2201,6 +2226,158 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     eqClosed = eqShown.id; try { localStorage.setItem("desk_eq_closed", eqClosed); } catch (e) {}
     eqPaint();
   });
+
+  /* ---------- タスク6：為替介入への警戒（事前）と急変検知（発生時） ----------
+     警戒：サイトの news.json（要人発言ニュース。5分ごと）から、ドル円に関わる介入警戒の見出しで24時間以内の最新1件を
+     黄色のバナーで出す。音・端末通知は出さない。
+     急変：表示価格ではなく、取得した生の値（リアルタイム配信のティック、配信がないときは定期取得の価格）を時刻つきで
+     15分ぶん持ち、core.js の surgeCheck で判定する。休場中・プレビュー・90秒を超える途切れでは判定しない。発報は
+     バナー（黄＝注意／赤＝緊急）と、設定に従った音・端末通知。同じ向き・同じ段階は30分出さない（surgeGate）。
+     当日の急変は td_surge_v1 にためて、ダッシュボードのチャートの⚡印と、確認（点滅を止める）に使う。 */
+  var SURGE_KEY = "td_surge_v1", IV_CLOSED = "desk_iv_closed", MV_CLOSED = "desk_mv_closed";
+  var surgeBuf = {}, surgeGateSt = {}, surgeLast = {}, newsData = null, newsAt = 0, ivShown = null, mvShown = null, alertsBox = null;
+  function lsRead(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
+  function lsWrite(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function surgeStore() {
+    var st = null; try { st = JSON.parse(lsRead(SURGE_KEY) || "null"); } catch (e) {}
+    var day = TDCore.dayKey(Date.now());
+    return st && st.day === day && Array.isArray(st.ev) ? st : { day: day, ev: [] };  // 当日分だけ（過去分は残さない）
+  }
+  function surgeSample(key, p, t, src) {
+    if (PREVIEW || !market || !TDCore.SURGE[key] || !(p > 0)) return;
+    if (marketClosed(key, t)) { surgeBuf[key] = []; return; }  // 休場中は判定しない（再開後は新しく集め直す）
+    var b = surgeBuf[key] || (surgeBuf[key] = []), last = b[b.length - 1];
+    if (last && t - last.t < 2000 && last.src === src) return;  // 2秒に1つで十分（15分で450件まで）
+    surgeBuf[key] = TDCore.surgeAdd(b, t, p, src);
+    var now = Date.now(), res = TDCore.surgeCheck(key, surgeBuf[key], now);
+    surgeLast[key] = now;
+    if (!res) return;
+    var g = TDCore.surgeGate(surgeGateSt[key], res, now); surgeGateSt[key] = g.state;
+    if (g.alert) surgeFire(res, now);
+  }
+  function surgeFire(res, now) {
+    var st = surgeStore(), ev = { id: res.key + "-" + res.t, key: res.key, level: res.level, dir: res.dir, win: res.win, delta: res.delta, pct: res.pct,
+      unit: res.unit, t0: res.t0, t: res.t, at: now, ack: false };
+    st.ev.push(ev); if (st.ev.length > 30) st.ev = st.ev.slice(-30);
+    lsWrite(SURGE_KEY, JSON.stringify(st));
+    mvShown = ev; paintAlerts(); paintSurgeCards();
+    var tx = TDCore.surgeText(res);
+    eqAlarm(res.level === "emergency");  // 通知音の設定に従う（オフなら鳴らない）
+    sysNotify("⚡ " + tx.level + "：" + tx.head, tx.size + "（" + HHMM(new Date(res.t)) + " JST 検知）", "surge-" + res.key);
+  }
+  function surgeActive(key) {  // 最後の発報から30分のあいだの、その銘柄の最新の急変
+    var ev = surgeStore().ev.filter(function (e) { return e.key === key && Date.now() - e.at < TDCore.SURGE_SHOW; });
+    return ev[ev.length - 1] || null;
+  }
+  function surgeAck(id) {
+    var st = surgeStore(), hit = false;
+    st.ev.forEach(function (e) { if (e.id === id && !e.ack) { e.ack = true; hit = true; } });
+    if (hit) lsWrite(SURGE_KEY, JSON.stringify(st));
+    paintSurgeCards();
+  }
+  function paintSurgeCards() {
+    if (!markets) return;
+    var low = document.documentElement.classList.contains("lowpower");
+    markets.forEach(function (mk) {
+      var names = mk.el.querySelector(".head .names"); if (!names) return;
+      var sg = names.querySelector(".sg");
+      if (!sg) { sg = document.createElement("span"); sg.className = "sg"; names.appendChild(sg); }
+      var e = surgeActive(mk.key);
+      mk.el.classList.toggle("surging", !!e);
+      if (!e) { sg.textContent = ""; sg.className = "sg"; mk.surgeId = ""; return; }
+      var tx = TDCore.surgeText(e);
+      sg.textContent = "⚡ " + tx.level + "・" + tx.size + "（" + HHMM(new Date(e.t)) + "）";
+      sg.className = "sg" + (e.level === "emergency" ? " emg" : "") + (e.level === "emergency" && !e.ack && !low ? " blink" : "");
+      mk.surgeId = e.level === "emergency" && !e.ack ? e.id : "";
+    });
+  }
+  function alertEls() {
+    if (alertsBox) return alertsBox;
+    alertsBox = document.createElement("div"); alertsBox.className = "dk-alerts"; alertsBox.id = "dk-alerts";
+    alertsBox.innerHTML = '<div class="dk-al" id="al-iv" role="status" hidden><button type="button" class="x" aria-label="介入警戒の表示を閉じる">✕</button><b>⚠ 為替介入への警戒</b><span></span><small></small></div>' +
+      '<div class="dk-al" id="al-mv" role="alert" hidden><button type="button" class="x" aria-label="急変の表示を閉じる">✕</button><b></b><span></span><small></small></div>' +
+      '<div class="dk-check" id="al-check" hidden><b>急変したときの確認</b><ol>' +
+      "<li>最初の1〜2本は見送る。急変直後は往って来いになりやすい</li>" +
+      "<li>新規エントリーは止め、保有ポジションの損切り位置を確認する</li>" +
+      "<li>スプレッドが広がっている間は触らない。ロットは落として考える</li>" +
+      "<li>介入かどうかは財務省・日銀の公式発表で確認する。この表示は価格と発言からの警戒情報で、確定情報ではない</li>" +
+      '</ol><button type="button" data-check-close>閉じる</button></div>';
+    document.body.appendChild(alertsBox);
+    var chk = alertsBox.querySelector("#al-check");
+    alertsBox.addEventListener("click", function (e) {
+      if (e.target.closest("a")) return;  // 出典のリンクはそのまま開く
+      if (e.target.closest("[data-check-close]")) { chk.hidden = true; return; }
+      var al = e.target.closest(".dk-al"); if (!al) return;
+      if (e.target.closest(".x")) {
+        if (al.id === "al-iv" && ivShown) lsWrite(IV_CLOSED, ivShown.title);
+        if (al.id === "al-mv" && mvShown) { lsWrite(MV_CLOSED, mvShown.id); surgeAck(mvShown.id); }
+        chk.hidden = true; paintAlerts(); return;
+      }
+      chk.hidden = !chk.hidden;  // 本体のタップ：対応のチェックリストを開く・閉じる
+      if (al.id === "al-mv" && mvShown) surgeAck(mvShown.id);
+    });
+    return alertsBox;
+  }
+  function ivLine(i) {
+    return (i.who ? i.who + "・" : "") + "報道 " + MDHM(new Date(i.t * 1000));
+  }
+  function paintAlerts() {
+    var box = alertEls(), iv = box.querySelector("#al-iv"), mv = box.querySelector("#al-mv"), now = Date.now();
+    var pick = newsData ? TDCore.interventionPick(newsData, now) : null;
+    ivShown = pick && pick.title !== lsRead(IV_CLOSED) ? pick : null;
+    iv.hidden = !ivShown;
+    if (ivShown) {
+      iv.querySelector("span").textContent = ivShown.title;
+      var upd = newsData && newsData.updated ? new Date(newsData.updated * 1000) : null;
+      iv.querySelector("small").innerHTML = esc(ivLine(ivShown)) + (ivShown.link ? '・<a href="' + esc(ivShown.link) + '" target="_blank" rel="noopener">出典：' + esc(ivShown.source || "ニュース") + " ↗</a>" : ivShown.source ? "・出典：" + esc(ivShown.source) : "") +
+        (upd ? "・ニュース取得 " + esc(stampAt(upd)) : "");
+    }
+    var e = mvShown && now - mvShown.at < TDCore.SURGE_SHOW && mvShown.id !== lsRead(MV_CLOSED) ? mvShown : null;
+    mv.hidden = !e;
+    if (e) {
+      var tx = TDCore.surgeText(e);
+      mv.classList.toggle("emg", e.level === "emergency");
+      mv.querySelector("b").textContent = "⚡ " + tx.level + "：" + tx.head;
+      mv.querySelector("span").textContent = tx.size + "・" + HHMM(new Date(e.t)) + " JST 検知";
+      // 円高方向のときだけ、24時間以内の警戒発言を事実として添える（介入とは結びつけない）
+      var why = e.key === "usdjpy" && e.dir === "down" && pick ? "24時間以内に介入への警戒発言の報道あり（" + ivLine(pick) + "）。" : "";
+      mv.querySelector("small").textContent = why + "価格の動きからの警戒情報です。タップで対応を確認";
+    }
+    if (iv.hidden && mv.hidden) box.querySelector("#al-check").hidden = true;
+  }
+  function loadNews() {
+    if (!window.fetch || PREVIEW) return;
+    fetch("news.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)); })
+      .then(function (j) { if (!j || !Array.isArray(j.items)) throw new Error("形式が違います"); newsData = j; newsAt = Date.now(); srcMark("news", true); paintAlerts(); })
+      .catch(function (e) { srcMark("news", false, e && e.message); });  // 失敗：バナーは出さず、他のカードはそのまま
+  }
+  function surgePoll() {  // BTC・オイルは裏で動くダッシュボードがこの端末に保存した生の値（補正前）を読む
+    var now = Date.now(), read = function (k) { try { var c = JSON.parse(localStorage.getItem(k) || "null"); return c && c.spot; } catch (e) { return null; } };
+    var b = read("btc_auto_cache_final");
+    if (b && +b.price && now - +b.asof < 90000) surgeSample("btc", +b.price, +b.asof, "btc-dash");
+    var o = read("usoil_auto_cache_final"), m = market && (market.instruments || market).usoil;
+    if (o && o.live && +o.price && now - +o.asof < 90000) surgeSample("usoil", +o.price, +o.asof, "oil-okx");  // OKXのWTI連動（補正前の値）
+    else if (m && m.price && m.asOf) surgeSample("usoil", +m.price, m.asOf * 1000, "oil-site");  // サイトの CL=F（補正前）
+    paintAlerts(); paintSurgeCards();
+  }
+  function surgeState() {  // データ状態の画面に出す：有効／配信停止中／休場
+    var now = Date.now(), out = {};
+    Object.keys(TDCore.SURGE).forEach(function (k) {
+      var b = surgeBuf[k], last = b && b[b.length - 1];
+      out[k] = marketClosed(k) ? "休場" : last && now - last.t <= TDCore.SURGE_GAP ? "有効" : "配信停止中";
+    });
+    return out;
+  }
+  document.addEventListener("click", function (e) {  // 急変中のカード：点滅中は最初のタップで確認（点滅が止まる）
+    var h = e.target.closest(".mkt .head"); if (!h) return;
+    var mk = markets && markets.filter(function (m) { return m.el.contains(h); })[0];
+    if (mk && mk.surgeId) { e.stopPropagation(); e.preventDefault(); surgeAck(mk.surgeId); }
+  }, true);
+  window.addEventListener("storage", function (e) { if (e.key === SURGE_KEY) { paintSurgeCards(); paintAlerts(); } });  // ダッシュボードで確認したとき
+  (function () { var st = surgeStore(), e = st.ev[st.ev.length - 1]; if (e && Date.now() - e.at < TDCore.SURGE_SHOW) mvShown = e; })();
+  setTimeout(function () { loadNews(); setInterval(loadNews, 5 * 60000); }, 1200);
+  setInterval(surgePoll, 10000);
+  window.TDSurge = { sample: surgeSample, state: surgeState, newsAt: function () { return newsAt; } };
 
   /* ---------- 地震・台風・花粉：天気のカードのボタンから全画面のパネルで見る ----------
      地震は P2P地震情報（気象庁の発表）の履歴、台風は気象庁の台風情報、花粉はウェザーニューズのポールンロボの観測
@@ -4150,7 +4327,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   var TDDesk = window.TDDesk = {
     build: buildMeta ? buildMeta.content : "", preview: PREVIEW, newBuild: "",
     cards: function () { return markets.map(function (mk) { return mk.status(); }); },
-    market: function () { return market; }, check: function () { return marketCheck; }, sources: function () { return SRC; },
+    market: function () { return market; }, check: function () { return marketCheck; }, sources: function () { return SRC; }, surge: function () { return window.TDSurge ? TDSurge.state() : null; },
     instName: function (k) { return INST[k] ? INST[k].name : k; },
     signals: function () { return sigStore; }, saveSignals: saveSignals, saveFailed: saveFailed,
     live: function () { var o = {}; Object.keys(live).forEach(function (k) { o[k] = { open: !!live[k].ws, at: live[k].at, name: live[k].name || "" }; }); return o; },
