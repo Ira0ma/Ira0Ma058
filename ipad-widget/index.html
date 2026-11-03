@@ -76,7 +76,15 @@ body {
 #clock .note { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); margin-top: 12px; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
 
 /* markets */
-#markets { left: 281px; top: 35px; width: 903px; height: 276px; display: grid; grid-template-columns: 1fr 1px 1fr 1px 1fr 1px 1fr; }  /* ゴールド・ドル円・BTC・オイル */
+#markets { left: 281px; top: 35px; width: 903px; height: 276px; display: grid; grid-template-columns: 1fr 1px 1fr 1px 1fr; }  /* ゴールド・ドル円・BTC（＋横にずらすとオイル） */
+/* 横向きの画面：3枚を少しだけ詰めて（300→288px）4枚目（オイル）の端をのぞかせ、カードの列を横にずらすと全部出る。右端の「›」とフェードも目印（端まで行くと消える） */
+html:not(.flow) #markets { --mk-peek: 36px; --mkw: calc((903px - 2px - var(--mk-peek)) / 3); display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; scrollbar-width: none; overscroll-behavior-x: contain; }
+html:not(.flow) #markets::-webkit-scrollbar { display: none; }
+html:not(.flow) #markets > .mkt { flex: 0 0 var(--mkw); scroll-snap-align: start; }
+html:not(.flow) #markets > .sep { flex: 0 0 1px; }
+.mk-cue { display: none; }
+html:not(.flow) .mk-cue { display: flex; position: sticky; right: 0; flex: 0 0 34px; margin-left: -34px; align-self: stretch; align-items: center; justify-content: flex-end; padding: 0 6px 0 0; border: 0; font: inherit; font-size: 22px; line-height: 1; color: var(--ink-2); background: linear-gradient(90deg, rgba(10,12,18,0), rgba(10,12,18,.72) 70%); cursor: pointer; z-index: 2; }
+html:not(.flow) #markets.at-end .mk-cue { visibility: hidden; }
 #markets .sep { background: var(--glass-line); margin: 22px 0; }
 .mkt { padding: 18px 20px 8px; display: flex; flex-direction: column; min-width: 0; }
 /* 高さが決まっているカード（横向きの画面）では、小さなチャートが残りの高さに合わせて伸び縮みする。
@@ -746,6 +754,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <canvas class="chart"></canvas>
       <div class="tabs" role="group" aria-label="期間"></div>
     </div>
+    <button type="button" class="mk-cue" aria-label="横にずらすとオイル（OILCash）のカードがあります。タップで表示">›</button>
   </section>
 
   <!-- indicators -->
@@ -1933,6 +1942,12 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   oilMk.el.addEventListener("click", function (e) { var b = e.target.closest("[data-oil-open]"); if (b) { e.stopPropagation(); openDash("oil", b); } });
   window.addEventListener("storage", function (e) { if (e.key === OIL_KEY) oilMk.feed(market && (market.instruments || market).usoil); });  // saved on the OIL dashboard
   markets.push(oilMk);
+  (function () {  // the ›: shows that the row scrolls to the oil card; tapping it goes there, at the end it hides
+    var row = document.getElementById("markets"), cue = row.querySelector(".mk-cue");
+    var mark = function () { row.classList.toggle("at-end", row.scrollLeft + row.clientWidth >= row.scrollWidth - 4); };
+    row.addEventListener("scroll", mark, { passive: true }); window.addEventListener("resize", mark); mark();
+    cue.addEventListener("click", function () { row.scrollTo({ left: row.scrollWidth, behavior: reduce ? "auto" : "smooth" }); });
+  })();
 
   /* ---------- weather ---------- */
   var ICON = {
