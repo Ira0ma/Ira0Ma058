@@ -44,8 +44,9 @@ test("weekly hours are shown in Japan time and follow US summer time", () => {
   assert.match(C.hoursNote("fx", winter), /日本時間 月曜07:00〜土曜07:00/);
   assert.match(C.hoursNote("cme", summer), /月曜07:00〜土曜06:00、毎朝06:00〜07:00は休止/);
   assert.match(C.hoursNote("cme", winter), /月曜08:00〜土曜07:00、毎朝07:00〜08:00は休止/);
-  assert.match(C.hoursNote("vix", summer), /平日16:15〜翌朝05:15/);
-  assert.match(C.hoursNote("vix", winter), /平日17:15〜翌朝06:15/);
+  assert.match(C.hoursNote("vix", summer), /平日の16:15から、日をまたいで05:15まで/);
+  assert.match(C.hoursNote("vix", winter), /平日の17:15から、日をまたいで06:15まで/);
+  assert.doesNotMatch(C.hoursNote("vix", winter), /翌/);
   assert.doesNotMatch(C.hoursNote("fx", summer) + C.hoursNote("cme", summer) + C.hoursNote("ice", summer) + C.hoursNote("vix", summer), /NY|ニューヨーク/);
   assert.match(C.marketState("gold", U("2026-07-08T21:30:00Z")).reason, /日本時間 06:00〜07:00/);
   assert.match(C.marketState("usdjpy", summer).note, /米国の夏時間/);

@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="82ac405f94">
+<meta name="build" content="ce9ef4b64d">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -169,11 +169,12 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .card-title .ico { width: 26px; height: 26px; flex: none; }
 .card-title .aside { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--ink-2); }
 .ind-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; }
-.ind-list li { display: grid; grid-template-columns: 54px 1fr auto; gap: 0 4px; align-items: start; padding: 9px 0; border-bottom: 1px solid var(--glass-line); }
-.ind-list .t { font-size: 15px; font-weight: 600; white-space: nowrap; }
-.ind-list .t .date { display: block; font-size: 10px; font-weight: 600; color: var(--gold); margin-bottom: 1px; }
+.ind-list li { display: grid; grid-template-columns: 1fr auto; gap: 0 4px; align-items: start; padding: 9px 0; border-bottom: 1px solid var(--glass-line); }
+.ind-list .t { font-size: 14px; font-weight: 600; white-space: nowrap; }
+.ind-list .t .date { font-weight: 600; color: var(--gold); }
+.ind-list .t .tz { font-size: 10px; font-weight: 600; color: var(--ink-3); margin-left: 3px; }
 .ind-list .t .next { font-size: 10px; font-weight: 600; color: var(--gold); margin-right: 1px; }
-.ind-list li > div:nth-child(2) { min-width: 0; }
+.ind-list li > .b { grid-column: 1 / -1; min-width: 0; margin-top: 2px; }
 .ind-list .n { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ind-list .s { font-size: 11.5px; color: var(--ink-3); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ind-list .stars { color: var(--star); font-size: 13px; letter-spacing: 1px; padding-top: 2px; }
@@ -916,6 +917,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
      この画面の時刻はすべて日本時間で、時計にも JST を付けている */
   var HHMM = function (d) { return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
   var MDHM = function (d) { return (d.getMonth() + 1) + "/" + d.getDate() + " " + HHMM(d) + " JST"; };
+  var MDW = function (d) { return (d.getMonth() + 1) + "/" + d.getDate() + "（" + WD[d.getDay()] + "）"; };  // 11/4（水）
   var sameDay = function (a, b) { return a.toDateString() === b.toDateString(); };
   var stampAt = function (d) { return sameDay(d, new Date()) ? HHMM(d) : MDHM(d); };
   var updAt = function (d) { return stampAt(d) + " 更新"; };
@@ -2627,12 +2629,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       var mins = (e.t - now) / 60000;
       if (mins < -30) li.classList.add("past");  // just released: stay bright while the result comes in
       var hm = HHMM(e.t);
-      var nextDay = !sameDay(e.t, now);  // 日付が変わる指標は「翌」ではなく日付をつける
       var sub = [e.forecast ? "予想 " + e.forecast : "", e.previous ? "前回 " + e.previous : ""].filter(Boolean).join(" / ");
-      li.innerHTML = '<div class="t num"></div><div><div class="n"></div><div class="s num"></div></div><div class="stars"></div>';
-      li.children[0].innerHTML = e.later
-        ? '<small class="date">' + (e.t.getMonth() + 1) + "/" + e.t.getDate() + "(" + WD[e.t.getDay()] + ")</small>" + hm
-        : (nextDay ? '<small class="date">' + (e.t.getMonth() + 1) + "/" + e.t.getDate() + "(" + WD[e.t.getDay()] + ")</small>" : "") + hm;
+      li.innerHTML = '<div class="t num"></div><div class="stars"></div><div class="b"><div class="n"></div><div class="s num"></div></div>';
+      // every row carries its own date and time on one line: 11/4（水）00:16 JST
+      li.children[0].innerHTML = '<span class="date">' + MDW(e.t) + "</span>" + hm + '<span class="tz">JST</span>';
       if (e.later) li.classList.add("later");
       li.querySelector(".n").textContent = jaTitle(e);
       var s = li.querySelector(".s");
@@ -2754,8 +2754,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var now = new Date(), nx = calEvents.filter(function (e) { return e.stars === 3 && e.t > now; }).sort(function (a, b) { return a.t - b.t; })[0];
     if (!nx) { l1.textContent = "今週これからの重要指標（★3）はありません"; l2.textContent = ""; return; }
     var mins = Math.max(1, Math.ceil((nx.t - now) / 60000)), h = Math.floor(mins / 60), m = mins % 60, t = nx.t;
-    var tom = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    var day = t.toDateString() === now.toDateString() ? "" : t.toDateString() === tom.toDateString() ? "明日 " : (t.getMonth() + 1) + "/" + t.getDate() + "(" + WD[t.getDay()] + ") ";
+    var day = t.toDateString() === now.toDateString() ? "" : MDW(t);  // tomorrow too: the date, not 「明日」
     l1.textContent = "次の指標まで あと" + (h ? h + "時間" : "") + (h && !m ? "" : m + "分");
     l2.innerHTML = esc(day + HHMM(t) + " JST " + jaTitle(nx)) + '<span class="stars">★★★</span>';
     el.classList.toggle("soon", mins <= 30);

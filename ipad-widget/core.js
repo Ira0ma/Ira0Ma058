@@ -64,7 +64,7 @@
   function hoursNote(kind, t) {
     var us = isDst("America/New_York", t) ? "米国の夏時間中" : "米国の冬時間中";
     if (kind === "crypto") return "暗号資産：24時間・年中無休（取引所の臨時メンテナンスは判定できません）";
-    if (kind === "vix") return "VIX：日本時間 平日" + nyInJst(t, 3, 15) + "〜翌朝" + nyInJst(t, 16, 15) + "を目安（" + us + "。祝日は含めていません）";
+    if (kind === "vix") return "VIX：日本時間 平日の" + nyInJst(t, 3, 15) + "から、日をまたいで" + nyInJst(t, 16, 15) + "までを目安（" + us + "。祝日は含めていません）";
     var w = weeklyHours(kind, t), close = w.close, open = w.open;
     us = (w.dst ? "米国の夏時間" : "米国の冬時間") + "・" + REOPEN_NOTE;
     if (kind === "fx") return "外国為替：日本時間 月曜" + open + "〜土曜" + close + "（" + us + "。週末のみ判定し、祝日・年末年始は含めていません）";
