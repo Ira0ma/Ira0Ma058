@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="5815c05365">
+<meta name="build" content="817b7c3a23">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -133,6 +133,7 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .kl b .kl-none{font-size:11px;font-weight:500;color:var(--muted)}
 .kl.now{background:rgba(80,140,255,.1);border-color:rgba(80,140,255,.45)}.kl.now b{color:#9cc0ff}
 .ms-hold{color:#f0c36a;margin-top:4px}
+.ms-break,.ms-next{margin-top:4px;line-height:1.5}.ms-next{color:#d9b458}
 .mtfscore{border-radius:14px;padding:12px 14px;border:1px solid #2a3440;background:#0f141a}
 .mtfscore.up{border-color:rgba(66,213,156,.5);background:linear-gradient(180deg,rgba(66,213,156,.08),rgba(66,213,156,.02))}
 .mtfscore.down{border-color:rgba(255,105,105,.5);background:linear-gradient(180deg,rgba(255,105,105,.09),rgba(255,105,105,.02))}
@@ -2536,13 +2537,30 @@ function mtfScore0(){
   rows.forEach((r,i)=>{if(r){sw+=MTF_W[MTF_TFS[i]];sv+=MTF_W[MTF_TFS[i]]*r.s}});
   if(!sw)return null;
   const avg=sv/sw,dir=avg>=.25?1:avg<=-.25?-1:0;
-  return {rows,avg,dir,score:Math.round(Math.abs(avg)*100),label:dir>0?'買い優勢':dir<0?'売り優勢':'様子見'};
+  // 内訳（B3）：時間足ごとの判定（＋1〜−1）を重み付きで、買い向きの分と売り向きの分に分けた点数（各0〜100）。
+  // 買い点−売り点＝一致度（向きつき）。丸めても差が一致度と同じになるように、売り点は買い点から引いて出す
+  let bp=0;rows.forEach((r,i)=>{if(r&&r.s>0)bp+=MTF_W[MTF_TFS[i]]*r.s});
+  const signed=Math.round(avg*100),buy=Math.round(bp/sw*100),sell=buy-signed;
+  return {rows,avg,dir,score:Math.abs(signed),buy,sell,label:dir>0?'買い優勢':dir<0?'売り優勢':'様子見'};
+}
+// 一致度の内訳・境目・アラートとの関係（B3）と、様子見のときに次に待つもの（B5）。同じ総合判定の結果から出す
+const MTF_EDGE=25;  // 買い優勢＝買い点が売り点より25点以上多い（平均+0.25以上）。売り優勢はその逆。差が25点未満は様子見
+function mtfExplain(m){
+  const thr=n(alertCfg.thr)||70,diff=m.buy-m.sell;
+  let next='';
+  if(m.raw?m.raw.dir===0:m.dir===0){  // 様子見：近い方の向きまで、あと何点か。その向きを向いていない時間足の名前
+    const up=diff>=0,need=Math.max(1,MTF_EDGE-Math.abs(diff)),side=up?'買い':'売り';
+    const off=m.rows.map((r,i)=>r&&(up?r.s<=0:r.s>=0)?MTF_TFS[i].toUpperCase()+'（'+r.judge+'）':'').filter(Boolean);
+    next=`<div class="sub ms-next">次に待つもの：${side}優勢まで あと${need}点（いま買い${m.buy}点・売り${m.sell}点）`+(off.length?`｜${side}向きでない時間足：${esc(off.join('・'))}`:'')+'</div>';
+  }
+  return `<div class="sub ms-break">一致度 ${m.score}＝買い${m.buy}点と売り${m.sell}点の差（${diff>0?'買い向き':diff<0?'売り向き':'差なし'}）｜境目：買い優勢・売り優勢は差が${MTF_EDGE}点以上、${MTF_EDGE}点未満は様子見｜アラートは一致度${thr}以上で通知されます</div>`+next;
 }
 function renderMtf(){
   const m=mtfScore(),el=$('mtfScore');
   if(!m){el.className='mtfscore';el.innerHTML='<div class="sub">データ取得中...</div>';$('mtfTable').innerHTML='';return null}
   el.className='mtfscore '+(m.dir>0?'up':m.dir<0?'down':'flat');
   el.innerHTML=`<div class="ms-main"><div><small>総合判定 <i>ルールベース</i></small><b>${m.dir>0?'↗':m.dir<0?'↘':'→'} ${m.label}</b></div><div class="ms-num">${m.score}<small>一致度 /100</small></div></div>`+
+    mtfExplain(m)+
     (m.held?`<div class="sub ms-hold">判定が境目付近で揺れています（いまの計算は「${esc(m.raw.label)}・一致度${m.raw.score}」。2回続けば切り替えます）</div>`:'')+
     `<div class="ms-tfs">${m.rows.map((r,i)=>`<button type="button" data-tf="${MTF_TFS[i]}" class="${r?r.cls:''}"><span>${MTF_TFS[i].toUpperCase()}</span><b>${r?r.arrow:'—'}</b><small>${r?r.judge:'—'}</small></button>`).join('')}</div>`+
     `<div class="sub ms-at">計算 ${LT_FMT.format(new Date())}（価格 ${state.spot?LT_FMT.format(new Date(state.spot.asof)):'--'}時点・15分足は ${state.m15.length?HM_FMT.format(new Date(state.m15.at(-1).t)):'--'} の足まで）</div>`;
