@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="e67e528989">
+<meta name="build" content="d96f7f6ee0">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1901,7 +1901,7 @@ function renderKeyLv(){
   if(!k){el.innerHTML='<div class="sub">取得中...</div>';return}
   const row=(cls,name,l)=>`<div class="kl ${cls}"><span>${name}</span><b>${l?fmt(l.price):'<span class="kl-none">'+(cls==='r'?'上に水平線なし':'下に水平線なし')+'</span>'}</b><small>${l&&l.tf?(l.tf!=='h1'?l.tf.toUpperCase()+'｜':'')+(l.price>k.px?'+':'−')+INSTR.dist(Math.abs(l.price-k.px)):''}</small></div>`;
   el.innerHTML=row('r','Resistance 2',k.r[1])+row('r','Resistance 1',k.r[0])+row('now','現在価格',{price:k.px})+row('s','Support 1',k.s[0])+row('s','Support 2',k.s[1]);
-  keyPost(k);
+  keyPost(k);hbarsPost();
 }
 // トレードデスクの中で動いているときは、R1・R2・S1・S2をデスクへ知らせる（価格パネルに並べる）
 // 第5部：ホームの「今日の注目ポイント」も同じ値を使う。水平線の時間足（根拠）・この画面の現在価格（距離の計算用）・
@@ -1914,6 +1914,14 @@ function keyPost(k){
   const msg={type:'dash-levels',key:INSTR.key,r:k.r.map(l=>l.price),s:k.s.map(l=>l.price),rt:k.r.map(l=>l.tf||'h1'),st:k.s.map(l=>l.tf||'h1'),view,sma:s.sma||null};
   const j=JSON.stringify(msg),now=Date.now();if(j===keyPosted&&now-keyPostAt<5000)return;keyPosted=j;keyPostAt=now;
   try{window.parent.postMessage({...msg,px:k.px,at:now},'*')}catch{}
+}
+// 追加C：ホームの「昨日の答え合わせ」用に、確定した1時間足（直近7日・この画面の価格の基準）を知らせる。確定足が変わったときだけ
+var hbarsPosted=0;  // var：読み込みの早い段階から呼ばれる
+function hbarsPost(){
+  if(window.parent===window||state.h1.length<3)return;
+  const done=state.h1.slice(0,-1),last=done.at(-1).t;if(last===hbarsPosted)return;hbarsPosted=last;
+  const from=Date.now()-7*86400000;
+  try{window.parent.postMessage({type:'dash-hbars',key:INSTR.key,bars:done.filter(b=>b.t>=from).map(b=>[b.t,b.h,b.l,b.c])},'*')}catch{}
 }
 /* 第2部 A2：水平線は「確定した足」が変わったときだけ計算し直す。形成中の最新足は価格が動くたびに高値・安値が変わり、
    サイトの読み直し（約9分遅れの足）とライブ価格の足とで交互に線が出たり消えたりしていた（ドル円の R2 が 158.993 と
