@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="5f80f3610e">
+<meta name="build" content="0079fb17b6">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -109,7 +109,7 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .dxybox{margin-top:10px;background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:10px 11px;font-size:11.5px;display:grid;gap:7px}
 .dxybox .dh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 8px}.dxybox .dh b{white-space:nowrap}
 .dxybox .dh b{font-size:13px}.dxybox .dh span{color:var(--muted)}
-.dxyrow{display:grid;grid-template-columns:6.6em minmax(0,1fr) 12.8em;gap:8px;align-items:center;white-space:nowrap}
+.dxyrow{display:grid;grid-template-columns:6.6em minmax(0,1fr) 14em;gap:8px;align-items:center;white-space:nowrap}
 @media (max-width:520px){.dxyrow{grid-template-columns:6em minmax(0,1fr);row-gap:3px}.dxyrow .v{grid-column:2;text-align:left}}
 .dxyrow .lb{color:var(--muted)}
 .dxyrow .v{text-align:right}
@@ -133,6 +133,8 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .cbands .cb1{border-color:var(--cb1)}.cbands .cb2{border-color:var(--cb2)}.cbands .cb3{border-color:#4a5663}.cbands .cb4{border-color:var(--cb4)}.cbands .cb5{border-color:var(--cb5)}
 @media (max-width:520px){.cbands{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .dxysrc{color:var(--muted);font-size:10.5px;line-height:1.5}
+.matline{line-height:1.55}.matline>b:first-child{color:#e6c973}.matline .sub{display:block;font-size:11px}
+.matsec{font-size:12px;font-weight:800;margin-top:2px}.matsec span{font-weight:400;color:var(--muted);font-size:11px}
 .dxyrow .v{font-weight:800;white-space:nowrap}
 .dxynote{color:var(--muted);line-height:1.5}.dxynote b{color:var(--text)}
 .keylvhead{display:flex;align-items:baseline;justify-content:space-between;margin:12px 0 6px}.keylvhead b{font-size:13px}
@@ -535,6 +537,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div class="keylvhead"><b>重要価格帯<button type="button" class="gq" data-gloss="水平線" aria-label="用語集：水平線">?</button></b><span class="sub">1時間足の水平線から</span></div>
       <div id="keyLv" class="keylv"></div>
       <div id="dxyBox" class="dxybox" hidden></div>
+      <div id="fxMat" class="dxybox" hidden></div>
     </div>
 
     <div class="hero-signal">
@@ -3042,7 +3045,7 @@ const CORR_BANDS=[
   {k:'cb2',rng:'−0.5〜−0.2',t:'やや逆相関',in:r=>r<=-0.2},
   {k:'cb3',rng:'−0.2〜＋0.2',t:'連動ほぼなし',in:r=>r<0.2},
   {k:'cb4',rng:'＋0.2〜＋0.5',t:'やや相関（同じ向き）',in:r=>r<0.5},
-  {k:'cb5',rng:'＋0.5〜＋1.0',t:'相関が効いている（同じ向き）',in:()=>true}];
+  {k:'cb5',rng:'＋0.5〜＋1.0',t:'相関が効いている',in:()=>true}];
 const CORR_DIV=0.3;  // 1日と1週間の差がこれ以上なら注意書き
 function corrBand(r){return r==null?null:CORR_BANDS.find(b=>b.in(r))}
 function corrLabel(r){const b=corrBand(r);return b?[b.t,b.k]:['--','']}
@@ -3090,6 +3093,77 @@ function renderDxy(){
     corrRowsHtml(rows)+corrDivWarn(r1,rw)+corrLegendHtml()+
     `<div class="dxynote">−1に近いほど「ドル高＝${ASSET}安」がはっきり。${ASSET}とドルはふだん逆相関です。境目の値は強い側に入れます（−0.50は「効いている」）。</div>`+
     `<div class="dxysrc">出典：Yahoo Finance（DX-Y.NYB）・${at}。DXYと相関はサイトの定期取得（約15分ごと。遅れることがあります）で更新されるため、画面の価格より遅い時点の値です。前日比の強さ：${DXY_FLAT.toFixed(2)}%未満は「ほぼ横ばい」、${DXY_CLEAR.toFixed(2)}%未満は「やや」。</div>`+DXY_GUIDE;
+  el.hidden=false;
+}
+/* ===== ドル円の材料（ドル円のダッシュボードだけ。読み取り専用：セットアップ判定・トレード前チェックには入れない） =====
+   データはどれもサイトの定期取得（Yahoo Finance）。取れない・古い（4日より前）値は使わず「取得できませんでした」と出す。
+   結論の1行：3つの材料の強さを0〜1で出し、いちばん大きいもの（MAT_LEAD 以上）を主導とする。
+     金利＝米10年債利回りとの1週間（H1）の相関の大きさ（符号は問わない）
+     円　＝ユーロ円・ポンド円のうち、ドル円と同じ向き（当日の変化が ±MAT_FLAT% 以上）に動いた本数 ÷ 2（ドル円が横ばいなら0）
+     地合い＝VIX・日経平均・S&P500 のうちリスクオン側の数とリスクオフ側の数の差 ÷ 3
+   同じ強さなら 金利 → 円 → 地合い の順。すべて MAT_LEAD 未満なら「材料が割れている」 */
+const MAT_FLAT=0.10,MAT_LEAD=0.5,RISK_VIX=3,RISK_IDX=0.5,Y_FLAT=2,Y_CLEAR=5,MAT_OLD=4*86400e3;
+const matFmt=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+const matDay=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric'});
+function matOk(x){return x&&x.price>0&&x.asOf&&Date.now()-toMs(x.asOf)<MAT_OLD?x:null}
+function pctTxt(v){return (v>=0?'+':'−')+Math.abs(v).toFixed(2)+'%'}
+function dayChg(x){return x&&x.prevClose?(x.price/x.prevClose-1)*100:null}  // 前日比（24時間の市場はNY17時区切り）
+// 株価指数・VIX：直近の取引日の日足と、その前の日足の終値の変化（日付つき）
+function sessChg(x){const d=x?.candles?.['1d'];if(!d||d.length<2)return null;const a=d[d.length-2][4],b=d[d.length-1][4];return a?{v:(b/a-1)*100,day:matDay.format(new Date(d[d.length-1][0]*1000))}:null}
+function sgn(v,th){return v==null?null:v>=th?1:v<=-th?-1:0}
+function yDir(bp){const a=Math.abs(bp);return a<Y_FLAT?'ほぼ横ばい':a<Y_CLEAR?(bp>0?'やや上昇':'やや低下'):(bp>0?'上昇':'低下')}
+const MAT_GUIDE=`<div class="dxyguide"><h4>米金利との相関の使い分け</h4>
+<dl><dt>1週間（H1）</dt><dd><b>基本の判断に使う</b>（結論の1行の「金利」の強さはこの値）。＋0.5以上（相関が効いている）なら「米金利が上がる＝ドル円も上がる」が効いている状態で、米金利の向きをドル円の方向の確認に使えます。−0.2〜＋0.2（連動ほぼなし）なら金利は判断材料から外します。</dd>
+<dt>1日（H1）</dt><dd><b>変化の早期発見</b>。1週間との差が${CORR_DIV.toFixed(1)}以上あるときは、指標や要人発言でいつもの関係が崩れている合図です（注意書きが出ます）。1日の値だけで判断しないこと。</dd>
+<dt>1か月（H4）</dt><dd><b>大きな流れ（背景）の確認</b>。1週間と同じ帯なら、その関係は当面続きやすいと考えます。</dd></dl>
+<div class="warn">※相関は「これまで一緒にどう動いたか」を示すだけで、先の値動きを予測するものではありません。このパネルは材料の読み取り専用で、セットアップ判定やトレード前チェックの条件には入っていません。</div></div>`;
+function renderFxMat(){
+  const el=$('fxMat');if(!IS_FX){el.hidden=true;return}
+  const all=siteCache.d?.instruments;if(!all||state.h1.length<30){el.hidden=true;return}
+  const at=x=>!x?'--':x.asOf?matFmt.format(new Date(toMs(x.asOf)))+'時点':'時刻不明';
+  // 1) 米10年債利回り
+  const y=matOk(all.us10y),hour=t=>Math.floor(t/3600);
+  const rows=[['1日（H1）',24,'1h',state.h1],['1週間（H1）',120,'1h',state.h1],['1か月（H4）',120,'4h',state.h4||[]]]
+    .map(([lb,n,tf,mine])=>[lb,y?.candles?.[tf]?corrOf(...pairedReturns(mine,y.candles[tf],hour,n)):null]);
+  const r1=rows[0][1],rw=rows[1][1];
+  const ybp=y&&y.prevClose?(y.price-y.prevClose)*100:null;
+  const yLine=y?`米10年債利回り ${y.price.toFixed(3)}%（前日比 ${ybp==null?'--':(ybp>=0?'+':'−')+Math.abs(ybp).toFixed(1)+'bp・'+yDir(ybp)}）`:'米10年債利回り：取得できませんでした';
+  // 2) 円の強弱（当日の変化。NY17時区切りの前日比）
+  const u=matOk(all.usdjpy),eu=matOk(all.eurjpy),gb=matOk(all.gbpjpy);
+  const du=dayChg(u),de=dayChg(eu),dg=dayChg(gb),su=sgn(du,MAT_FLAT);
+  let yen,yenWhy,sY=0;
+  if(du==null||de==null||dg==null){yen='取得できませんでした';yenWhy=[!u&&'ドル円',!eu&&'ユーロ円',!gb&&'ポンド円'].filter(Boolean).join('・')+'の値がありません'}
+  else{
+    const f=su?[de,dg].filter(v=>sgn(v,MAT_FLAT)===su).length:0;sY=f/2;
+    yen=!su?'拮抗（ドル円がほぼ横ばい）':f===2?'円主導':f===0?'ドル主導':'拮抗';
+    yenWhy=!su?'ドル円の当日の変化が±'+MAT_FLAT.toFixed(2)+'%未満':f===2?'クロス円も同じ向きに動いています。円が全体に'+(su>0?'売られて':'買われて')+'います':f===0?'クロス円はドル円と同じ向きに動いていません（ドルの売買で動いています）':'クロス円の1本だけが同じ向きです';
+  }
+  const yenNums=du==null?'':`ドル円 ${pctTxt(du)}・ユーロ円 ${de==null?'--':pctTxt(de)}・ポンド円 ${dg==null?'--':pctTxt(dg)}（当日＝NY17時区切りの前日比。±${MAT_FLAT.toFixed(2)}%未満は横ばい扱い）`;
+  // 3) 地合い（直近の取引日の変化）
+  const vx=sessChg(matOk(all.vix)),nk=sessChg(matOk(all.nikkei)),sp=sessChg(matOk(all.spx));
+  const parts=[['VIX',vx,v=>-sgn(v,RISK_VIX),v=>v>=RISK_VIX?'上昇':v<=-RISK_VIX?'低下':'横ばい'],['日経平均',nk,v=>sgn(v,RISK_IDX),v=>v>=RISK_IDX?'上昇':v<=-RISK_IDX?'下落':'横ばい'],['S&P500',sp,v=>sgn(v,RISK_IDX),v=>v>=RISK_IDX?'上昇':v<=-RISK_IDX?'下落':'横ばい']];
+  const got=parts.filter(p=>p[1]);let score=0;got.forEach(p=>score+=p[2](p[1].v));
+  const sK=got.length?Math.abs(score)/3:0;
+  const risk=!got.length?'取得できませんでした':score>=2?'リスクオン寄り':score<=-2?'リスクオフ寄り':'中立';
+  const riskWhy=parts.map(([nm,c,,w])=>c?`${nm} ${w(c.v)} ${pctTxt(c.v)}（${c.day}）`:`${nm} 取得できませんでした`).join('・');
+  // 結論
+  const sR=rw==null?0:Math.abs(rw);
+  const cand=[['金利',sR],['円',sY],['地合い',sK]];let lead=null;cand.forEach(c=>{if(c[1]>=MAT_LEAD&&(!lead||c[1]>lead[1]))lead=c});
+  let concl;
+  if(!lead)concl='いまは材料が割れていて、方向感が出にくい状態です';
+  else if(lead[0]==='金利')concl=rw>0?`いまのドル円は金利主導です。米金利が上がると、ドル円も上がりやすい状態です（いま米金利は${ybp==null?'前日比不明':yDir(ybp)}）`:`いまのドル円は金利主導ですが、いつもと逆向きです。米金利が上がると、ドル円は下がりやすい状態です（いま米金利は${ybp==null?'前日比不明':yDir(ybp)}）`;
+  else if(lead[0]==='円')concl=`いまのドル円は円主導です。ドルより円の売買で動いています（円${su>0?'安':'高'}）`;
+  else concl=`いまは地合い（リスクの取り方）が主役です（${risk}。${score<0?'リスクオフでは円が買われやすい傾向':'リスクオンでは円が売られやすい傾向'}）`;
+  const basis=`強さ：金利 ${sR.toFixed(2)}（1週間の相関 ${corrNum(rw)}）／円 ${sY.toFixed(2)}（${du==null?'データなし':'クロス円2本のうち'+(su?[de,dg].filter(v=>sgn(v,MAT_FLAT)===su).length:0)+'本が同じ向き'}）／地合い ${sK.toFixed(2)}（${got.length?'オン'+got.filter(p=>p[2](p[1].v)>0).length+'・オフ'+got.filter(p=>p[2](p[1].v)<0).length:'データなし'}）`;
+  el.innerHTML=`<div class="dh"><b>ドル円の材料</b><span>読み取り専用（判定には使いません）</span></div>`+
+    `<div class="dxyhead"><b>${concl}</b><span class="sub">${basis}</span></div>`+
+    `<div class="matsec">米金利との相関 <span>${yLine}</span></div>`+
+    `<div class="dxynote">金利が上がるとドルが買われやすく、金利が下がるとドルが売られやすい、という関係が今どれくらい効いているか（＋1に近いほど「米金利が上がる＝ドル円も上がる」がはっきり）。</div>`+
+    corrRowsHtml(rows)+corrDivWarn(r1,rw)+corrLegendHtml()+
+    `<div class="matline"><b>円の強弱：${yen}</b>${yen==='取得できませんでした'?'':'（'+yenWhy+'）'}<span class="sub">${yen==='取得できませんでした'?yenWhy:yenNums}</span></div>`+
+    `<div class="matline"><b>地合い：${risk}</b><span class="sub">${riskWhy}。VIX ±${RISK_VIX}%以上・株価指数 ±${RISK_IDX}%以上で向きを数え、オン・オフの差が2以上なら「寄り」</span></div>`+
+    `<div class="dxysrc">結論の決め方：3つの材料の強さを0〜1で出し、いちばん大きいもの（${MAT_LEAD}以上）を主導とします。金利＝1週間の相関の大きさ（符号は問わない）、円＝クロス円2本のうちドル円と同じ向きの本数÷2（ドル円が横ばいなら0）、地合い＝VIX・日経平均・S&P500のオンとオフの数の差÷3。同じ強さなら金利→円→地合いの順。すべて${MAT_LEAD}未満なら「材料が割れている」。米10年債の前日比は${Y_FLAT}bp未満を「ほぼ横ばい」、${Y_CLEAR}bp未満を「やや」とします。</div>`+
+    `<div class="dxysrc">出典：Yahoo Finance（^TNX・EURJPY=X・GBPJPY=X・^VIX・^N225・^GSPC。ドル円の変化もサイトの同じ取得分）。サイトの定期取得（約15分ごと。遅れることがあります）。時点：米10年債 ${y?at(y):'--'}・ユーロ円 ${eu?at(eu):'--'}・VIX ${at(all.vix)}・日経平均 ${at(all.nikkei)}・S&P500 ${at(all.spx)}。4日より前の値は使いません。</div>`+MAT_GUIDE;
   el.hidden=false;
 }
 // 判定の大きな表示：エントリーならその向き、方向は出ても条件（利確余地など）で入らないときは「見送り」（本文の結論と同じ）
@@ -3203,7 +3277,7 @@ function renderSnapshot(){
     renderPatList(s);
   }
   renderPlan(s);
-  renderDxy();
+  renderDxy();renderFxMat();
 
   $('miniPrice').textContent=fmt(state.spot.price);
   $('miniChange').textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%';
@@ -4280,7 +4354,7 @@ $('fvgBtn').classList.toggle('on',state.showFvg);$('fvgBtn').setAttribute('aria-
     set(v){v=v==null?'':String(v);if(this.__html===v&&this.__last===this.lastChild)return;H.set.call(this,v);this.__html=v;this.__last=this.lastChild}});
   const text=el=>Object.defineProperty(el,'textContent',{configurable:true,get(){return T.get.call(this)},
     set(v){v=v==null?'':String(v);if(T.get.call(this)===v)return;T.set.call(this,v)}});
-  ['tfGrid','dxyBox','fibNow','chNow','keyLv','waitFor','patList','signal'].forEach(id=>{const e=$(id);if(e)html(e)});
+  ['tfGrid','dxyBox','fxMat','fibNow','chNow','keyLv','waitFor','patList','signal'].forEach(id=>{const e=$(id);if(e)html(e)});
   ['confidence','dayHigh','dayLow','dayRange','goldChange','goldFresh','goldJpy','goldPrice','miniChange','miniPrice','miniSignal','sma120','usdjpy','lastUpdate','srcLine','nextInfo','mainStatus',
    'reasonSma','reasonMom','reasonRange','reasonTp','reasonTp15','reasonTp5','reasonTpDay','reasonCup','cautionText','cautionCount'].forEach(id=>{const e=$(id);if(e)text(e)});
 })();
