@@ -311,3 +311,24 @@ test("journalDays: calendar-day streak and week, skips counted, today still open
   assert.equal(r.today, false);
   assert.equal(C.journalDays([], now).streak, 0);
 });
+
+test("dailyBook: a day's daily input wins over its trades, deposits only from daily input", () => {
+  const rows = [
+    { id: "a", time: "2026-11-02T01:00:00Z", day: "2026-11-02", pnl: 3000 },
+    { id: "b", time: "2026-11-02T03:00:00Z", day: "2026-11-02", pnl: -1000 },
+    { id: "c", time: "2026-11-03T03:00:00Z", day: "2026-11-03", pnl: 500 },
+    { id: "d", time: "2026-11-04T03:00:00Z", day: "2026-11-04", kind: "skip", pnl: null },
+    { id: "e", time: "2026-11-05T03:00:00Z", day: "2026-11-05", pnl: null }];
+  const daily = { "2026-11-03": { pnl: 1200, dep: 50000, wd: null }, "2026-11-06": { pnl: null, dep: null, wd: 20000 }, "2026-11-02": { pnl: "", dep: 10000 } };
+  const b = C.dailyBook(rows, daily);
+  assert.deepEqual([b["2026-11-02"].pnl, b["2026-11-02"].src, b["2026-11-02"].dep], [2000, "trades", 10000], "blank daily P&L: the trades count");
+  assert.deepEqual([b["2026-11-03"].pnl, b["2026-11-03"].src, b["2026-11-03"].dep], [1200, "daily", 50000], "daily input is the truth, not 1200 + 500");
+  assert.equal(b["2026-11-04"].skip, true); assert.equal(b["2026-11-04"].pnl, null);
+  assert.equal(b["2026-11-05"].pnl, null, "a trade without P&L adds nothing");
+  assert.deepEqual([b["2026-11-06"].pnl, b["2026-11-06"].wd], [null, 20000]);
+  const s = C.periodSummary(b, "2026-11-01", "2026-11-30");
+  assert.deepEqual([s.pnl, s.win, s.loss, s.days, s.dep, s.wd, s.best.day, s.worst.day], [3200, 2, 0, 2, 60000, 20000, "2026-11-02", "2026-11-03"]);
+  assert.deepEqual(C.weekOf("2026-11-05"), { from: "2026-11-02", to: "2026-11-08" }, "Monday to Sunday");
+  assert.deepEqual(C.weekOf("2026-11-02"), { from: "2026-11-02", to: "2026-11-08" });
+  assert.deepEqual(C.weekOf("2026-11-01"), { from: "2026-10-26", to: "2026-11-01" }, "a Sunday ends its week");
+});

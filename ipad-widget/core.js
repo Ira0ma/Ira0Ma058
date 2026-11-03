@@ -297,6 +297,46 @@
     for (var i = 0; i <= dow; i++) if (days[key(now - i * DAY)]) week++;
     return { days: days, streak: streak, week: week, today: !!days[today] };
   }
+  /* 収支（A）：1日ごとの確定損益と入出金。daily は日次入力 { "YYYY-MM-DD": { pnl, dep, wd } }（円。空欄は null）。
+     その日の損益：日次入力に損益があればそれを正とし、取引ごとの記録とは足さない。なければ取引ごとの記録（見送りは除く）の合計。
+     入金・出金は日次入力からだけ数える。返すのは { "YYYY-MM-DD": { pnl, src: "daily"|"trades"|null, dep, wd, trades, skip } } */
+  function dailyBook(rows, daily) {
+    var out = {}, day = function (k) { return out[k] || (out[k] = { pnl: null, src: null, dep: null, wd: null, trades: 0, sum: 0, skip: false }); };
+    (rows || []).forEach(function (r) {
+      if (!r) return; var k = r.day || (fin(Date.parse(r.time)) ? dayKey(Date.parse(r.time)) : ""); if (!k) return;
+      var d = day(k);
+      if (r.kind === "skip") { d.skip = true; return; }
+      if (fin(+r.pnl) && r.pnl !== null && r.pnl !== "") { d.sum += +r.pnl; d.trades++; }
+    });
+    Object.keys(daily || {}).forEach(function (k) {
+      var v = daily[k]; if (!v || !/^\d{4}-\d\d-\d\d$/.test(k)) return;
+      var d = day(k), n = function (x) { return x === null || x === "" || x === undefined || !fin(+x) ? null : +x; };
+      d.dep = n(v.dep); d.wd = n(v.wd);
+      if (n(v.pnl) !== null) { d.pnl = n(v.pnl); d.src = "daily"; }
+    });
+    Object.keys(out).forEach(function (k) { var d = out[k]; if (d.src === null && d.trades) { d.pnl = d.sum; d.src = "trades"; } delete d.sum; });
+    return out;
+  }
+  // 期間のまとめ：from〜to（"YYYY-MM-DD"、両端を含む）の日を集計
+  function periodSummary(book, from, to) {
+    var s = { pnl: 0, win: 0, loss: 0, flat: 0, days: 0, best: null, worst: null, dep: 0, wd: 0, any: false };
+    Object.keys(book || {}).forEach(function (k) {
+      if (k < from || k > to) return; var d = book[k];
+      if (d.dep !== null) { s.dep += d.dep; s.any = true; } if (d.wd !== null) { s.wd += d.wd; s.any = true; }
+      if (d.pnl === null) return;
+      s.any = true; s.days++; s.pnl += d.pnl;
+      if (d.pnl > 0) s.win++; else if (d.pnl < 0) s.loss++; else s.flat++;
+      if (!s.best || d.pnl > s.best.pnl) s.best = { day: k, pnl: d.pnl };
+      if (!s.worst || d.pnl < s.worst.pnl) s.worst = { day: k, pnl: d.pnl };
+    });
+    return s;
+  }
+  // 週は月曜はじまり（日本の日付）。key の週の月曜と日曜
+  function weekOf(key) {
+    var p = key.split("-").map(Number), t = Date.UTC(p[0], p[1] - 1, p[2]), dow = (new Date(t).getUTCDay() + 6) % 7;
+    var f = function (x) { var d = new Date(x); return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0"); };
+    return { from: f(t - dow * DAY), to: f(t + (6 - dow) * DAY) };
+  }
   // the trading day key (Japan date) a time belongs to
   function dayKey(t) { var p = partsIn("Asia/Tokyo", t); return p.y + "-" + String(p.mo).padStart(2, "0") + "-" + String(p.d).padStart(2, "0"); }
 
@@ -432,7 +472,7 @@
       /^(gold|usdjpy|btc)_(tf|levels|trend|fvg|ma|hidden_lv|ev_filter|dir|tv_layout|tv_sc_name|chart_src)$/, /^tv_via_shortcut$/],
     notify: [/^desk_sound$/, /^desk_notify$/, /^(gold|usdjpy|btc)_alerts$/, /^td-notify-v1$/],
     trading: [/^(gold|usdjpy|btc)_(capital|risk_pct|lot_manual|sl_mult|rr|auto_risk|broker|contract|tp_basis|checks|xm_.*|xs_.*)$/, /^pt-v1$/,
-      /^td-journal-v1$/, /^td-signals-v1$/, /^td-checks-v1$/, /^td-risk-v1$/]
+      /^td-journal-v1$/, /^td-daily-v1$/, /^td-signals-v1$/, /^td-checks-v1$/, /^td-risk-v1$/]
   };
   var CACHE = [/_auto_cache_final$/, /^quote-/];
   function groupOf(k) {
@@ -560,7 +600,7 @@
     KIND: KIND, marketState: marketState, hoursNote: hoursNote, nextOpen: nextOpen, sessions: sessions, RULES: RULES, freshness: freshness, ago: ago, jst: jst,
     checkMarket: checkMarket, realCandles: realCandles, sequencer: sequencer,
     weeklyHours: weeklyHours, REOPEN_NOTE: REOPEN_NOTE, LEVEL_JA: LEVEL_JA,
-    positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey, journalDays: journalDays,
+    positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey, journalDays: journalDays, dailyBook: dailyBook, periodSummary: periodSummary, weekOf: weekOf,
     SURGE: SURGE, SURGE_GAP: SURGE_GAP, SURGE_COOL: SURGE_COOL, SURGE_SHOW: SURGE_SHOW, surgeAdd: surgeAdd, surgeCheck: surgeCheck, surgeGate: surgeGate, surgeText: surgeText, interventionPick: interventionPick,
     newStore: newStore, updateSignal: updateSignal, expireSignals: expireSignals, loadStore: loadStore, COOLDOWN: COOLDOWN,
     toCSV: toCSV, parseCSV: parseCSV, importCSV: importCSV,
