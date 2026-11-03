@@ -74,6 +74,21 @@ body {
 #clock .time { font-family: var(--display); font-size: 70px; font-weight: 300; letter-spacing: -.02em; line-height: 1; }
 #clock .date .tz { font-size: 11px; font-weight: 600; letter-spacing: .04em; color: var(--ink-3); margin-left: 6px; }
 #clock .date { font-size: 21px; font-weight: 500; margin-top: 8px; }
+/* B：ゴトー日（その日だけ）。金のバッジ・仲値までの時間・意味の1行 */
+#clock .gt { margin-top: 5px; font-size: 11px; line-height: 1.45; color: var(--ink-2); }
+#clock .gt b { display: inline-block; font-size: 11px; font-weight: 700; color: #14100a; background: var(--gold); border-radius: 999px; padding: 1px 8px; margin-right: 6px; }
+#clock .gt .gt-c { font-weight: 600; color: var(--gold); font-variant-numeric: tabular-nums; }
+#clock .gt .gt-c.done { color: var(--ink-3); font-weight: 400; }
+#clock .gt small { display: block; font-size: 10.5px; color: var(--ink-3); }
+#clock.has-gt .q-text, #clock.has-gt .q-edit { display: none; }  /* ゴトー日だけ、言葉の欄にバッジを出す（言葉は翌日に戻る） */
+#clock.has-gt .time { font-size: 54px; }
+#clock.has-gt .date { font-size: 18px; margin-top: 4px; }
+#clock.has-gt .content { padding-top: 36px; }
+.mkt .gt-tag { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 700; line-height: 1.5; color: #14100a; background: var(--gold); border-radius: 999px; padding: 0 6px; vertical-align: 2px; }
+.mkt .gt-tag[hidden] { display: none; }
+.grid7 .d s.g { position: absolute; left: 3px; top: 2px; width: 5px; height: 5px; border-radius: 1px; background: var(--gold); }
+.grid7 .d s.g.m { background: transparent; box-shadow: inset 0 0 0 1px rgba(227,184,103,.75); }
+.cal-legend i.gt { border-radius: 1px; background: var(--gold); } .cal-legend i.gtm { border-radius: 1px; box-shadow: inset 0 0 0 1px rgba(227,184,103,.75); }
 #clock .note { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); margin-top: 12px; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
 
 /* markets */
@@ -740,6 +755,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <div class="content">
       <div class="time num" data-clock="hm">--:--</div>
       <div class="date" data-clock="md">読み込み中…</div>
+      <div class="gt" id="gt" hidden></div>
       <div class="note q-text" id="q-text">継続が、
 未来の自分を変えていく。</div>
     </div>
@@ -897,7 +913,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <div class="month" data-offset="0"></div>
     <div class="sep"></div>
     <div class="month" data-offset="1"></div>
-    <div class="cal-legend"><span><i class="ev3"></i>重要指標（★3）</span><span><i class="ev"></i>指標</span><span><i class="mh"></i>米・英の市場休場（目安）</span><span><b>金色の日付</b>＝日本の祝日・土日</span></div>
+    <div class="cal-legend"><span><i class="ev3"></i>重要指標（★3）</span><span><i class="ev"></i>指標</span><span><i class="mh"></i>米・英の市場休場（目安）</span><span><i class="gt"></i>ゴトー日<i class="gtm" style="margin-left:6px"></i>実質（振替）</span><span><b>金色の日付</b>＝日本の祝日・土日</span></div>
     <div class="cal-detail" id="cal-detail" hidden aria-live="polite"></div>
   </section>
 
@@ -1410,6 +1426,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   /* ---------- clock ---------- */
   function tickClock() {
+    if (window.TDCore) try { paintGotobi(); } catch (e) {}
     var d = new Date();
     var hm = HHMM(d);
     var md = (d.getMonth() + 1) + "月" + d.getDate() + "日(" + WD[d.getDay()] + ")";
@@ -2632,6 +2649,32 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   }
   function eventsOn(k) { return (calEvents || []).filter(function (e) { return evDay(e.t) === k; }).sort(function (a, b) { return a.t - b.t || b.stars - a.stars; }); }
   function key(y, m, d) { return y + "-" + String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0"); }
+  /* B：ゴトー日。決め方は core.js（TDCore.gotobi）。営業日の判定に使う日本の祝日は HOL（holidays.json、読めないときは上の組み込みの一覧） */
+  var isJpHol = function (k) { return HOL.indexOf(k) >= 0; };
+  function gotoOf(k) { return window.TDCore && TDCore.gotobi ? TDCore.gotobi(k, isJpHol) : null; }
+  function gotoWhy(k) {  // 本来の日がなぜ営業日でないか（例：15日が日曜）
+    var p = k.split("-").map(Number), w = new Date(p[0], p[1] - 1, p[2]).getDay();
+    return p[2] + "日が" + (HOL_NAMES[k] ? "祝日（" + HOL_NAMES[k] + "）" : w === 0 ? "日曜" : w === 6 ? "土曜" : "祝日");
+  }
+  function gotoLine(g) {
+    var base = g.moved.length ? "（" + g.moved.map(gotoWhy).join("・") + "のため前倒し）" : "";
+    return g.kind === "real" ? "ゴトー日（仲値 9:55）" + (base ? "。あわせて" + base.slice(1, -1) : "") : "実質ゴトー日" + base + "（仲値 9:55）";
+  }
+  var gtShown = "";
+  function paintGotobi() {
+    var now = Date.now(), k = TDCore.dayKey(now), g = gotoOf(k), el = document.getElementById("gt"), card = document.getElementById("clock");
+    var p = TDCore.partsIn("Asia/Tokyo", now), mins = 9 * 60 + 55 - (p.h * 60 + p.mi), html = "";
+    if (g) {
+      var cd = mins > 0 ? '<span class="gt-c">仲値 9:55 まで あと' + (mins >= 60 ? Math.floor(mins / 60) + "時間" : "") + (mins % 60 || mins < 60 ? (mins % 60) + "分" : "") + "</span>" : '<span class="gt-c done">仲値は通過済み</span>';
+      html = "<b>" + (g.kind === "real" ? "ゴトー日" : "ゴトー日（振替）") + "</b>" + cd + "<small>実需のドル買いが出やすく、仲値にかけてドル円が上振れしやすい日です（傾向）</small>";
+    }
+    if (html !== gtShown) { gtShown = html; el.innerHTML = html; el.hidden = !g; card.classList.toggle("has-gt", !!g); }
+    if (markets) markets.forEach(function (mk) {
+      var t = mk.el.querySelector(".gt-tag"), on = !!g && mk.key === "usdjpy";
+      if (!t && on) { t = document.createElement("span"); t.className = "gt-tag"; t.textContent = g.kind === "real" ? "ゴトー日" : "ゴトー日（振替）"; mk.el.querySelector(".head .sym").after(t); }
+      if (t) { t.hidden = !on; if (on) t.textContent = g.kind === "real" ? "ゴトー日" : "ゴトー日（振替）"; }
+    });
+  }
   var evMarks = {};
   function renderCal() {
     var now = new Date();
@@ -2653,8 +2696,9 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
         if (y === now.getFullYear() && m === now.getMonth() && d === now.getDate()) cls += " today";
         if (evs) cls += evs === 3 ? " ev3" : " ev";
         if (MKT_HOL[k]) cls += " mh";
+        var gt = gotoOf(k); if (gt) cls += gt.kind === "real" ? " gt" : " gt gtm";
         if (k === calSel) cls += " sel";
-        html += '<div class="' + cls + '" data-k="' + k + '" role="button" tabindex="0" aria-label="' + (m + 1) + "月" + d + "日" + (HOL_NAMES[k] ? "・" + HOL_NAMES[k] : "") + (evs ? "・指標あり" : "") + (MKT_HOL[k] ? "・海外市場休場（目安）" : "") + '"' + title + ">" + d + (MKT_HOL[k] ? "<i></i>" : "") + "</div>";
+        html += '<div class="' + cls + '" data-k="' + k + '" role="button" tabindex="0" aria-label="' + (m + 1) + "月" + d + "日" + (HOL_NAMES[k] ? "・" + HOL_NAMES[k] : "") + (evs ? "・指標あり" : "") + (MKT_HOL[k] ? "・海外市場休場（目安）" : "") + (gt ? (gt.kind === "real" ? "・ゴトー日" : "・実質ゴトー日（振替）") : "") + '"' + title + ">" + d + (gt ? '<s class="g' + (gt.kind === "real" ? "" : " m") + '"></s>' : "") + (MKT_HOL[k] ? "<i></i>" : "") + "</div>";
       }
       box.innerHTML = html + "</div>";
     });
@@ -2666,6 +2710,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var p = calSel.split("-"), dt = new Date(+p[0], +p[1] - 1, +p[2]), rg = evRange(), evs = eventsOn(calSel), lines = [];
     if (HOL_NAMES[calSel]) lines.push("<p>🎌 日本の祝日：" + esc(HOL_NAMES[calSel]) + "</p>");
     (MKT_HOL[calSel] || []).forEach(function (h) { lines.push("<p>" + esc(MKT_NAME[h[0]] || h[0]) + "市場は休場（目安）：" + esc(h[1]) + "</p>"); });
+    { var g = gotoOf(calSel); if (g) lines.push("<p>💴 " + esc(gotoLine(g)) + "</p>"); }
     var inRange = rg && calSel >= rg.from && calSel <= rg.to;
     if (evs.length) lines.push("<ul>" + evs.map(function (e) { return '<li><span class="num">' + HHMM(e.t) + "</span><span>" + esc(jaTitle(e)) + '</span><span class="st">' + "★★★".slice(0, e.stars) + "</span></li>"; }).join("") + "</ul>" +
       '<button type="button" class="cd-btn" data-ind-day="' + calSel + '">この日の指標を一覧に表示</button>');
