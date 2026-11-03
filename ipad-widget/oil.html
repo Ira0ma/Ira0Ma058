@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="3b8934ded1">
+<meta name="build" content="6604a6b4a4">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -693,7 +693,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div class="oilchip" id="oilAdjChip">補正なし</div>
       <canvas id="oilAdjCv" class="oilcv" aria-label="OILCash（補正表示）のチャート"></canvas>
     </div>
-    <div class="sub oilnote">チャートは上のチャートと同じ時間足で、足の値に差を加えたものです。差は先物の限月の切り替えなどで変わることがあるため、入力から35日を過ぎると補正を外します。</div>
+    <div class="sub oilnote">チャートは上のチャートと同じ時間足で、CL=F 先物の足の値に差を加えたものです。差は先物の限月の切り替えなどで変わることがあるため、入力から35日を過ぎると補正を外します。</div>
     <div id="oilPrompt" class="oilprompt"></div>
     <div class="sub oiltiming">差は保存時点の価格で計算します。大きく動いている最中を避け、落ち着いたタイミングで入れると正確になります。</div>
     <form id="oilForm" class="oilform" autocomplete="off">
@@ -3814,17 +3814,17 @@ loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(sche
 checkClosed();setInterval(checkClosed,60000);
 refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(releaseHot())refreshLiveTalk()},5000);startLive();setTimeout(fillRecentGold,20000);setInterval(fillRecentGold,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
 // ===== OILCash（補正表示）：USオイル版だけ =====
-// 差＝入力したMT5のOILCash値−そのときのこのページの価格（サイトが現物 XTI/USD に換算した値）。現物に換算できていないとき
-// （CL=F 先物のまま）は保存せず、補正も加えない。入力から35日を過ぎた差は使わない（補正なし）。
-// 保存は usoil_oilcash_adj（以前のCL=F基準の記録 btc_oil_adj は基準が違うため使わない。消さずに残す）
+// 差＝入力したMT5のOILCash値−そのときのこのページの価格（サイトの定期取得の CL=F 先物）。入力から35日を過ぎた差は使わない（補正なし）。
+// 保存は btc_oil_adj（最初にBTCのページで入れていたCL=F基準の記録と同じ場所。以前の入力もそのまま有効）。
+// サイトが現物に換算した価格（spotAdjusted）のときは基準が違うので、CL=F基準の差は足さない（いまはオイルの現物は取っていない）
 (function(){
   if(!IS_OIL)return;
   const sec=$('secOil');if(!sec)return;sec.hidden=false;
-  const KEY=LSP+'oilcash_adj',MAX_AGE=35*86400000,KEEP=10;
+  const KEY='btc_oil_adj',MAX_AGE=35*86400000,KEEP=10;
   const JST=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
   const jst=ms=>JST.format(new Date(ms))+' JST';
   const f2=v=>Number(v).toFixed(2),sg=v=>(v>=0?'+':'−')+f2(Math.abs(v));
-  const isSpot=()=>!!state.spot&&oilSpot;
+  const isSpot=()=>!!state.spot&&oilSpot,onBase=()=>!!state.spot&&!oilSpot;  // onBase：CL=F 先物の価格を表示中（補正の基準）
   function hist(){try{const h=JSON.parse(lsGet(KEY,'null'));return Array.isArray(h?.hist)?h.hist:[]}catch{return []}}
   function active(){const h=hist()[0];return h&&Number.isFinite(h.diff)&&Date.now()-h.t<=MAX_AGE?h:null}
   function draw(cv,bars,add){
@@ -3851,17 +3851,17 @@ refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(release
   let drawnFor='';
   function render(){
     if(sheetHidden())return;  // デスクの裏では描かない（開いたときの renderAll で描く）
-    const a=active(),h=hist(),px=state.spot?.price,c=$('oilAdjChip'),use=a&&isSpot();
+    const a=active(),h=hist(),px=state.spot?.price,c=$('oilAdjChip'),use=a&&onBase();
     const tag=$('oilSpotTag');tag.textContent=!state.spot?'現物：確認中':isSpot()?'現物の価格：取得済み':'現物の価格：未取得（CL=F）';tag.style.color=isSpot()?'#42d59c':'#f0c36a';
-    $('oilSub').textContent=(isSpot()?'USオイルの現物の価格（サイトの定期取得。SwissquoteのXTI/USDに換算）に、入力されたMT5値との差を加えた推定表示です。'
-      :'いまは現物の価格が取れていないため、USオイルの価格をサイトの定期取得（CL=F 先物）で表示しています。現物の価格が取れるまでは補正を加えず、そのままの値を出します。')+'XMの配信値そのものではありません';
+    $('oilSub').textContent=(isSpot()?'いまはUSオイルの価格が現物に換算されています。補正（CL=F 先物との差）は基準が違うため加えず、そのままの値を出します。'
+      :'USオイルの価格（サイトの定期取得・CL=F 先物。現物の価格は未取得）に、入力されたMT5値との差を加えた推定表示です。')+'XMの配信値そのものではありません';
     $('oilAdjPx').textContent=px?f2(px+(use?a.diff:0)):'--';
     const st=mktClosed?'休場中':state.spot?.freshness==='stale'?'遅延':'最新';
-    if(use){c.className='oilchip';c.textContent='補正あり：'+jst(a.t)+'入力・差 '+sg(a.diff)+'（推定表示）・元の価格 '+state.src.spot+'・'+st}
-    else{c.className='oilchip off';c.textContent='補正なし（'+(state.src.spot||'価格')+'の値のまま）'+(a&&!isSpot()?'・現物の価格が届くまで補正を使いません':'')}
+    if(use){c.className='oilchip';c.textContent='補正あり：'+jst(a.t)+'入力・差 '+sg(a.diff)+'（推定表示）・元の価格 CL=F 先物・'+st}
+    else{c.className='oilchip off';c.textContent='補正なし（'+(state.src.spot||'価格')+'の値のまま）'+(a&&isSpot()?'・現物の価格には CL=F 基準の差を使いません':'')}
     $('oilPrompt').textContent=a?'':h.length?'前回の入力から35日を過ぎたため補正を外しました。MT5の値を1回入れてください。':'MT5の値を1回入れてください（入れるまで補正なしで表示します）。';
-    $('oilHist').innerHTML=h.length?'<table><tr><th>入力日時</th><th>入力値（MT5）</th><th>同時点の現物</th><th>現物の時刻</th><th>差</th></tr>'+
-      h.slice(0,5).map(x=>`<tr><td>${jst(x.t)}</td><td>${f2(x.input)}</td><td>${f2(x.base)}</td><td>${x.baseAt?jst(x.baseAt):'—'}</td><td>${sg(x.diff)}</td></tr>`).join('')+'</table>':'まだありません';
+    $('oilHist').innerHTML=h.length?'<table><tr><th>入力日時</th><th>入力値（MT5）</th><th>同時点のCL=F</th><th>CL=Fの時刻</th><th>差</th></tr>'+
+      h.slice(0,5).map(x=>`<tr><td>${jst(x.t)}</td><td>${f2(x.input)}</td><td>${f2(x.cl)}</td><td>${x.clAt?jst(x.clAt):'—'}</td><td>${sg(x.diff)}</td></tr>`).join('')+'</table>':'まだありません';
     const bars=state[state.tf],cv=$('oilAdjCv'),key=[state.tf,bars.length,bars.at(-1)?.t,bars.at(-1)?.c,use?a.diff:0,cv.clientWidth,cv.clientHeight].join('|');
     if(key!==drawnFor){drawnFor=key;draw(cv,bars,use?a.diff:0)}  // 足・差・大きさが変わったときだけ描き直す
   }
@@ -3871,10 +3871,10 @@ refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(release
     btn.disabled=true;msg.textContent='いまの価格を確認中…';
     siteCache.t=0;state.nextSpot=0;try{await refreshSpot()}catch{}
     btn.disabled=false;
-    if(!isSpot()){msg.textContent='現物の価格が取れていない（CL=F 先物で表示中）ため保存していません。現物の価格が届いてからもう一度どうぞ';return}
+    if(!onBase()){msg.textContent=state.spot?'いまの価格は現物に換算された値で、CL=F 基準の差が計算できないため保存していません':'価格を取得できなかったため保存していません。少しあとでもう一度どうぞ';return}
     const q=state.spot,old=Date.now()-q.asof>15*60000;
-    if(Math.abs(v/q.price-1)>.15){msg.textContent='現物の価格（'+f2(q.price)+'）と15%以上離れているため保存していません。数字を確かめてください';return}
-    const rec={t:Date.now(),input:v,base:q.price,baseAt:q.asof,src:state.src.spot,diff:Math.round((v-q.price)*1000)/1000};
+    if(Math.abs(v/q.price-1)>.15){msg.textContent='CL=F の価格（'+f2(q.price)+'）と15%以上離れているため保存していません。数字を確かめてください';return}
+    const rec={t:Date.now(),input:v,cl:q.price,clAt:q.asof,diff:Math.round((v-q.price)*1000)/1000};  // 以前のCL=F基準の記録と同じ形
     lsSet(KEY,JSON.stringify({hist:[rec,...hist()].slice(0,KEEP)}));
     $('oilIn').value='';msg.textContent='保存しました（差 '+sg(rec.diff)+'）'+(old?'。このページの価格は'+jst(q.asof)+'のもので、MT5の今の値と時刻がずれています。差がずれやすいので、価格が新しくなった直後に入れ直すと正確です':'');
     render();

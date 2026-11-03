@@ -17,6 +17,10 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 UA = {"User-Agent": "Mozilla/5.0 (TradeDeskWidget)"}
+# US oil's spot symbol at Swissquote. Off: on 2026-11-03 Swissquote's public feed answered XTI/USD with no prices
+# ("swissquote: no prices"), so oil stays on CL=F. Set it to "XTI" to try again (the futures are then moved onto
+# the spot bid as for gold, and the pages say 現物 instead of CL=F 先物).
+OIL_SPOT = None
 # key: (Yahoo symbol, Japanese name, level step, decimals, gold-api spot symbol for futures)
 INSTRUMENTS = {
     "usdjpy": ("JPY=X", "ドル円", 0.05, 2, None),
@@ -31,7 +35,7 @@ INSTRUMENTS = {
     "usdcad": ("CAD=X", "ドルカナダ", 0.0005, 4, None),
     "gold": ("GC=F", "ゴールド", 5.0, 0, "XAU"),
     "silver": ("SI=F", "シルバー", 0.05, 2, "XAG"),
-    "usoil": ("CL=F", "USオイル", 0.05, 2, "XTI"),  # WTI futures moved onto Swissquote's XTI/USD spot (if it answers)
+    "usoil": ("CL=F", "USオイル", 0.05, 2, OIL_SPOT),  # WTI futures; moved onto a spot price only if OIL_SPOT is set
     "btc": ("BTC-USD", "BTC/USD", 100.0, 0, None),
     "dxy": ("DX-Y.NYB", "ドル指数", 0.05, 2, None),
     "jxy": (None, "円指数", 0.05, 2, None),  # computed below from six yen crosses
