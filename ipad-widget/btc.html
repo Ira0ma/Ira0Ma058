@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="e9be4e778b">
+<meta name="build" content="b326d1613d">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -239,7 +239,7 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .tpbasis .seg{padding:6px 11px}.tpbasis .segmented{flex-wrap:wrap;flex:0 1 auto}
 .reason.unused{opacity:.6}.tpuse{color:var(--gold2);font-weight:700}
 .plrow.tp15 b{color:#5cc8ff}.plrow span b{font-size:12px;text-align:left}.plrow.sl b{color:var(--red)}
-.plfoot{font-size:10px;color:var(--muted);text-align:right;margin-top:4px}
+.plfoot{font-size:10px;color:var(--muted);text-align:right;margin-top:4px}.plfoot.warn{color:var(--amber)}
 .nextev{background:#0d1217;border:1px solid #232d37;border-radius:13px;padding:12px}
 .nextev.alert{border-color:#6c4f16;background:#22190c}
 .nextev .count{font-size:26px;font-weight:950;margin:6px 0 2px}
@@ -3204,7 +3204,7 @@ function renderPlan(s){
     (pl.tpSrc!=='H1水平線'&&pl.tp60?row('参考 <b class="tf60">1時間足</b>',fmt(pl.tp60.price),'+'+Math.round(pl.tp60.pips)+'pips｜1時間足の水平線','tp'):'')+
     row('損切り目安',fmt(pl.sl),'−'+Math.round(pl.slPips)+'pips｜'+(pl.slSrc||'M15 ATR×'+(n($('slMult').value)||1.2)),'sl')+
     (pl.near?row('手前の線（1時間足）',fmt(pl.near.price),(pl.dir>0?'+':'−')+pl.near.pips.toFixed(1)+'pips｜5pips以内で近すぎるため利確目標にしません。この線を'+(pl.dir>0?'上':'下')+'に越える前提のプランです','near'):'')+
-    `<div class="plfoot">RR ${pl.rr.toFixed(2)}｜${INSTR.pipNote}｜利確が複数あるときは「判定に使用」の付いたものでエントリー可否（利確余地）を判定し、ほかは手前・先の目安です</div>`;
+    `<div class="plfoot${pl.rr<1?' warn':''}">${pl.rr<1?'⚠ ':''}RR ${pl.rr.toFixed(2)}${pl.rr<1?'（1未満：損切りの幅の方が利確の幅より大きい）':''}｜${INSTR.pipNote}｜利確が複数あるときは「判定に使用」の付いたものでエントリー可否（利確余地）を判定し、ほかは手前・先の目安です</div>`;
 }
 function renderRebound(){
   const r=rebound();
