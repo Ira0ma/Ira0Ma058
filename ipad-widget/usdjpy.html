@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="908ac3b1fa">
+<meta name="build" content="d7588f8cf8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1270,7 +1270,7 @@ async function refreshSpot(){
       if(fx)state.goldJpy=px*fx;
       updateRolling(px);mergeSpotAll(px,asof);
       state.health.spot=true;state.lastOk=Date.now();state.nextSpot=Date.now()+INTERVALS.spot;
-      saveCache();setStatus('',oilSpot?'定期取得（現物）':'定期取得（CL=F）');showError('');renderAll();if(state.prevPrice!==px)flashPrice();  // リアルタイムではないので LIVE とは出さない
+      saveCache();setStatus('',state.spot.freshness==='stale'?'遅延データ':oilSpot?'定期取得（現物）':'定期取得（CL=F）');showError('');renderAll();if(state.prevPrice!==px)flashPrice();  // リアルタイムではないので LIVE とは出さない
     }catch(e){
       state.health.spot=false;
       setStatus(state.lastOk?'live':'error',state.lastOk?'キャッシュ表示中':'接続再試行中');
