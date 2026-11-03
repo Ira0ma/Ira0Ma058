@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="305859ed36">
+<meta name="build" content="f7695590ab">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -174,7 +174,7 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .gxtoast.al{color:#ffd57a;border-color:rgba(255,213,122,.7)}
 .stat{background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:9px 10px;min-width:0}
 .stat span{display:block;color:var(--muted);font-size:10px}.stat b{display:block;font-size:14px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.signal{padding:12px;text-align:center;border-radius:14px;font-size:30px;font-weight:950;letter-spacing:.08em}
+.signal{padding:12px;text-align:center;border-radius:14px;font-size:clamp(18px,5.2vw,24px);font-weight:900;letter-spacing:.02em;line-height:1.3}  /* 結論は行動の文（長め）なので、1〜2行に収まる大きさ */
 .signal.buy{background:#0e2d23;border:1px solid #275e49;color:var(--green)}
 .signal.sell{background:#35181b;border:1px solid #71343a;color:var(--red)}
 .signal.wait{background:#2c2414;border:1px solid #654f1f;color:var(--amber)}
@@ -467,7 +467,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 
 <div id="mini" class="mini" aria-hidden="true">
   <span><span id="miniSym">XAU</span> <b id="miniPrice">--</b> <span id="miniChange">--</span></span>
-  <span id="miniSignal" class="chip">WAIT</span>
+  <span id="miniSignal" class="chip">取得中</span>
   <span id="miniNext" class="sub">--</span>
 </div>
 
@@ -499,7 +499,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 <div id="notice" class="notice"></div>
 
 <section id="caution" class="caution hidden">
-  <div><div class="caution-title">⚠ TRADE CAUTION</div><div id="cautionText" class="caution-sub">重要指標が近づいています。</div></div>
+  <div><div class="caution-title">⚠ 重要指標の前後です（新しく入らない）</div><div id="cautionText" class="caution-sub">重要指標が近づいています。</div></div>
   <div id="cautionCount" class="caution-count">--:--</div>
 </section>
 
@@ -524,12 +524,12 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     </div>
 
     <div class="hero-signal">
-      <div class="cardhead"><div><div class="title">セットアップ判定<button type="button" class="gq" data-gloss="SMA" aria-label="用語集：SMA">?</button></div><div class="sub" id="setupSub">3条件・チャートパターン＋利確余地で自動判定</div></div><span class="tag">SIGNAL</span></div>
-      <div id="signal" class="signal wait">WAIT<small>データ取得中</small></div>
+      <div class="cardhead"><div><div class="title">セットアップ判定<button type="button" class="gq" data-gloss="SMA" aria-label="用語集：SMA">?</button></div><div class="sub" id="setupSub">3条件・チャートパターン＋利確余地で自動判定</div></div><span class="tag">判定</span></div>
+      <div id="signal" class="signal wait">データ取得中<small>データ取得中</small></div>
       <div id="talkAlert" class="talkalert" hidden></div>
       <div id="waitFor" class="waitfor" hidden></div>
       <div class="meter"><i id="meter"></i></div>
-      <div class="sub">判定強度 <b id="confidence">--</b></div>
+      <div class="sub">条件のそろい具合 <b id="confidence">--</b></div>
       <div class="tpbasis"><span>利確判定の基準<button type="button" class="gq" data-gloss="ch:トレードスタイル" aria-label="用語集：トレードスタイル">?</button></span><div class="segmented" id="tpBasisSeg">
         <button class="seg" data-tpb="h1">1時間足</button><button class="seg" data-tpb="m15">15分足</button><button class="seg" data-tpb="m5" title="5分足の水平線で利確を判定">スキャルピング</button><button class="seg" data-tpb="day" title="4時間足・日足の水平線で利確を判定">デイトレード</button><button class="seg" data-tpb="all">すべて</button></div></div>
       <div class="reasons">
@@ -2339,7 +2339,7 @@ function riskDirection(){
     riskWhy=s.entry?'セットアップ判定（'+side+'エントリー）に連動':side+'方向ですが'+(s.forced?'重要指標の前後のため待機中':'見送り')+'のため、参考の計算例です（エントリーは確定していません）';
     return sig==='SELL'?-1:1}
   const m=mtfScore();
-  if(m&&m.dir){riskWhy='セットアップ判定はWAIT。総合判定（'+m.label+'）に合わせた想定';return m.dir}
+  if(m&&m.dir){riskWhy='セットアップ判定は「待つ」。総合判定（'+m.label+'）に合わせた計算例です';return m.dir}
   // 方向が未定のとき：トレード前チェック1と同じ基準（価格が120SMAの上＝買い目線／下＝売り目線）で計算例の向きを決める
   if(s.ready&&s.sma){const up=s.price>=s.sma;riskWhy='方向が未定のため、目線（'+(up?'買い':'売り')+'）に沿った計算例です（価格は120SMAの'+(up?'上':'下')+'）';return up?1:-1}
   riskWhy='方向が未定のため、買い想定の計算例（120SMAの計算に必要な足がまだありません）';return 1;
@@ -2843,7 +2843,13 @@ function renderDxy(){
   el.hidden=false;
 }
 // 判定の大きな表示：エントリーならその向き、方向は出ても条件（利確余地など）で入らないときは「見送り」（本文の結論と同じ）
-function sigLabel(s){return mktClosed?closedLabel():s.entry?(s.sig==='BUY'?'買いエントリー':'売りエントリー'):s.sig!=='WAIT'&&s.ready?(s.forced?'待機':'見送り')+'（'+(s.sig==='BUY'?'買い':'売り')+'方向）':s.sig}
+// 結論は「買う／売る／待つ（何もしない）」が初見で分かる文にする（英語の SIGNAL・WAIT は主表示に出さない）
+// 3条件それぞれの向き（①120SMA ②モメンタム ③レンジ位置）。判定と同じ評価結果から数える
+function condDirs(s){if(!s||!s.ready)return [];const th=INSTR.momTh;return [s.price>=s.sma?1:-1,s.mom>th?1:s.mom<-th?-1:0,s.price>=s.mid?1:-1]}
+function condCount(s){const d=condDirs(s);return {buy:d.filter(x=>x>0).length,sell:d.filter(x=>x<0).length,none:d.filter(x=>x===0).length}}
+function sigLabel(s){return mktClosed?closedLabel()+'：取引しない':!s.ready?'データ取得中':s.entry?(s.sig==='BUY'?'買いエントリーの条件がそろっています':'売りエントリーの条件がそろっています'):
+  s.sig!=='WAIT'?(s.forced?'待つ：重要指標の前後は新しく入らない':'見送り：今は買わない・売らない'):'待つ：条件がそろうまで何もしない'}
+function sigShort(s){return mktClosed?closedLabel():!s.ready?'取得中':s.entry?(s.sig==='BUY'?'買いエントリー':'売りエントリー'):s.sig!=='WAIT'&&!s.forced?'見送り':'待つ'}  // 上の帯の小さな札
 function sigClass(s){return mktClosed||!s.entry&&s.sig!=='WAIT'?'wait':s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait'}
 function renderSnapshot(){
   const s=calcSignal();
@@ -2851,18 +2857,21 @@ function renderSnapshot(){
   state.signal=s.sig;
   notifyDesk(s);
   const el=$('signal');
+  const cnt=condCount(s);
   const sub=!s.ready?'データ取得中':mktClosed?(closedLabel()==='休止中'?'毎日の休止時間のためエントリー判定は停止':'市場休場中のためエントリー判定は停止'):s.forced?'重要指標前後のため待機':
     s.via.length?(s.entry3?'3条件一致＋':'')+s.via.join('・')+'（'+(s.sig==='BUY'?'買い':'売り')+'）・利確目安（'+TP_BASIS_NAME[state.tpBasis]+'）まで'+Math.round(tpPipsBy(s.plan))+'pips':
-    s.sig==='WAIT'?'条件がそろうまで待機':
+    s.sig==='WAIT'?'3条件のうち 買い向き'+cnt.buy+'個・売り向き'+cnt.sell+'個'+(cnt.none?'・どちらでもない'+cnt.none+'個':'')+'。買い向きと売り向きの差が2個以上になるまで待ちます':
     s.entry?'3条件一致・利確目安（'+TP_BASIS_NAME[state.tpBasis]+'）まで'+Math.round(tpPipsBy(s.plan))+'pips':
-    s.aligned?'3条件一致｜利確余地（'+TP_BASIS_NAME[state.tpBasis]+'）が'+MIN_TP_PIPS+'pips未満のため見送り':'3条件中2つが一致｜エントリー待ち';
+    s.aligned?'条件はそろっていますが、利確余地が足りないため見送りです（'+TP_BASIS_NAME[state.tpBasis]+'の目標まで'+Math.round(tpPipsBy(s.plan))+'pips・'+MIN_TP_PIPS+'pips以上必要）':
+    '3条件のうち2つが'+(s.sig==='BUY'?'買い':'売り')+'向き。3つそろうまで見送りです';
   const label=sigLabel(s);
   el.innerHTML=esc(label)+'<small>'+esc(mktClosed&&reopenText?sub+'｜再開 '+reopenText+'（日本時間・'+(CORE?CORE.REOPEN_NOTE:'取引所の時刻')+'）':sub)+'</small>';
   el.className='signal '+sigClass(s)+(s.entry?' entry':'');
   renderWait(s);
+  // 条件のそろい具合（旧「判定強度」）：3条件の合計点（買い向き＋1・売り向き−1）の大きさ÷3。エントリーしてよいかではない
   const conf=s.ready?Math.min(100,Math.round(Math.abs(s.score)/3*100)):0;
   $('meter').style.width=conf+'%';
-  $('confidence').textContent=s.ready?conf+'%（スコア '+(s.score>0?'+':'')+s.score+'）':'--';
+  $('confidence').textContent=s.ready?conf+'%（3条件のうち 買い向き'+cnt.buy+'個・売り向き'+cnt.sell+'個'+(cnt.none?'・どちらでもない'+cnt.none+'個':'')+'）':'--';
 
   if(!state.spot)return;
   // 前日比：ホームのカードと同じく、サイトの前日終値（NY17時区切りの日の終値）から。届く前は今日の始値から
@@ -2928,7 +2937,7 @@ function renderSnapshot(){
   $('miniPrice').textContent=fmt(state.spot.price);
   $('miniChange').textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%';
   $('miniChange').className=pct>=0?'up':'down';
-  $('miniSignal').textContent=sigLabel(s);
+  $('miniSignal').textContent=sigShort(s);
   $('miniSignal').className='chip signal '+sigClass(s)+(s.entry?' entry':'');
 }
 // エントリーポイント・利確目安・損切り目安（BUY/SELLのとき表示。エントリー条件を満たすと強調）
@@ -3637,9 +3646,9 @@ function renderChecks(risk,reb){
   if(!reb)reb=rebound();
   const s=calcSignal(),caution=nextCautionEvent(),nx=upcomingEvent(),a=currentAtr();
   const live={
-    trend:s.ready?[s.sig==='WAIT'?'wn':'ok',s.entry?'エントリー':s.sig,`価格は120SMAの${s.price>=s.sma?'上 → 買い目線':'下 → 売り目線'}（SMA ${fmt(s.sma)}）`]:['na','待機','H1データ接続待ち'],
+    trend:s.ready?[s.sig==='WAIT'?'wn':'ok',s.entry?'エントリー':s.sig==='BUY'?'買い向き':s.sig==='SELL'?'売り向き':'待つ',`価格は120SMAの${s.price>=s.sma?'上 → 買い目線':'下 → 売り目線'}（SMA ${fmt(s.sma)}）`]:['na','待機','H1データ接続待ち'],
     atr:a?['ok',INSTR.dist(a),`SL幅 ${INSTR.dist(risk.sl)}（ATR×${n($('slMult').value)||1.2}）`]:['na','待機','M15データ接続待ち'],
-    news:caution?['ng','CAUTION',`${caution.currency} ${caution.title} の前後です`]:nx?['ok','OK',`次は ${hhmm(nx.ts)} ${nx.currency} ${nx.title}`]:['ok','OK','直近の重要指標なし'],
+    news:caution?['ng','指標注意',`${caution.currency} ${caution.title} の前後です`]:nx?['ok','OK',`次は ${hhmm(nx.ts)} ${nx.currency} ${nx.title}`]:['ok','OK','直近の重要指標なし'],
     lot:risk.lot?[risk.lotStep>=0.01?'ok':'wn',risk.lotStep>=0.01?risk.lotStep.toFixed(2)+' lot':'最小ロットでも上限超え',risk.lotStep>=0.01?`最大損失 ${$('riskYen').textContent}／0.01lot刻み`:`0.01lotでも ${$('lotRound').textContent.match(/損失(¥[\d,]+)/)?.[1]||''}（上限 ${$('riskYen').textContent}）`]:['na','待機','価格・為替の取得待ち'],
     rebound:reb.touch?['ok','反発',`上 ${INSTR.dist(Math.max(0,reb.up))} / 下 ${INSTR.dist(Math.max(0,reb.down))}（${hhmm(reb.touch.t)}タッチ）`]:['na','なし','直近の120SMAタッチなし']
   };
