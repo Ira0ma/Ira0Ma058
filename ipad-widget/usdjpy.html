@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="8909705c43">
+<meta name="build" content="35418657f5">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2242,7 +2242,13 @@ function riskDirection(){
   if(state.dir==='sell')return -1;
   return calcSignal().sig==='SELL'?-1:1;
 }
-function currentAtr(){return atr(state.m15,14)}
+// ロット計算・損切りの目安・テクニカル詳細のATRは、すべてこの1つの値（M15のATR14。ワイルダーの平滑化＝チャートのATR欄と同じ計算）
+let atrMemo={k:'',v:0};
+function currentAtr(){
+  const b=state.m15,l=b.at(-1),k=b.length+'|'+(l?l.t+'|'+l.h+'|'+l.l+'|'+l.c:'');
+  if(k!==atrMemo.k)atrMemo={k,v:atrSeries(b).at(-1)||0};
+  return atrMemo.v;
+}
 function autoRisk(){
   const on=$('autoRisk').checked;
   ['entry','stop','target'].forEach(id=>$(id).readOnly=on);
