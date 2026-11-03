@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="0e480a7fbb">
+<meta name="build" content="acc28009f6">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -555,7 +555,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gb-idx button em { font-style: normal; color: #a37a2c; font-size: 11px; white-space: nowrap; }
 .gb-nav { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 8px 14px 12px; color: var(--ink-2); font-size: 12.5px; }
 .gb-nav .gb-btn { min-width: 92px; }
-.gb-nav .gb-btn:disabled { opacity: .35; cursor: default; }
+.gb-nav .gb-btn:disabled, .gb-bar .gb-btn:disabled { opacity: .35; cursor: default; }
 .gb-prog { flex: 0 1 260px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; }
 .gb-prog i { display: block; height: 100%; background: var(--gold); width: 0; transition: width .2s; }
 .gb-measure { position: fixed; left: -9999px; top: 0; visibility: hidden; }
@@ -849,7 +849,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 <div class="gbook" id="gbook" hidden role="dialog" aria-modal="true" aria-label="FX用語集">
   <div class="gb-bar">
     <span class="gb-title">📖 FX用語集</span><span class="gb-chap" id="gb-chap"></span>
-    <button type="button" class="gb-btn" data-gl="search" aria-label="検索">🔍<span class="gb-bl"> 検索</span></button><button type="button" class="gb-btn" data-gl="toc">目次</button><button type="button" class="gb-btn" data-gl="idx">索引</button><button type="button" class="gb-btn gb-x" data-gl="close">閉じる</button>
+    <button type="button" class="gb-btn" data-gl="back" aria-label="戻る（移動する前のページへ）" title="関連・目次・索引・検索で移動する前のページへ戻ります" disabled>↩<span class="gb-bl"> 戻る</span></button><button type="button" class="gb-btn" data-gl="search" aria-label="検索">🔍<span class="gb-bl"> 検索</span></button><button type="button" class="gb-btn" data-gl="toc">目次</button><button type="button" class="gb-btn" data-gl="idx">索引</button><button type="button" class="gb-btn gb-x" data-gl="close">閉じる</button>
   </div>
   <div class="gb-search" id="gb-search" hidden role="search"><input type="search" placeholder="用語・別名・説明の言葉で検索（5冊すべて）" aria-label="用語集を検索" enterkeyhint="search"><ul aria-live="polite"></ul></div>
   <div class="gb-stage" id="gb-stage"><div class="gb-spread" id="gb-spread"></div></div>
@@ -3764,13 +3764,25 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       book.querySelector('[data-gl="prev"]').disabled = i === 0;
       book.querySelector('[data-gl="next"]').disabled = i + step >= pages.length;
       if (i > 0) try { localStorage.setItem(BK.bm, String(i)); } catch (e) {}
+      book.querySelector('[data-gl="back"]').disabled = !backStack.length;
+    }
+    // 戻る：関連・目次・索引・検索で移動したとき、移動する前の本とページを覚えておく（ページめくり・スワイプは覚えない）
+    var backStack = [];
+    function jump(go) {
+      var from = { id: BK.id, p: cur }; go();
+      if (BK.id !== from.id || cur !== from.p) { backStack.push(from); if (backStack.length > 30) backStack.shift(); }
+      book.querySelector('[data-gl="back"]').disabled = !backStack.length;
+    }
+    function goBack() {
+      var b = backStack.pop(); if (!b) return;
+      setBook(b.id); closeSearch(); paginate(); show(b.p, -1);
     }
     function open(i, from) {
-      opener = from || document.activeElement;
+      opener = from || document.activeElement; backStack = [];
       book.hidden = false; show(i || 0);
       book.querySelector('[data-gl="next"]').focus();
     }
-    function close() { closeZoom(); closeSearch(); book.hidden = true; if (opener && opener.focus) opener.focus(); }
+    function close() { closeZoom(); closeSearch(); book.hidden = true; backStack = []; if (opener && opener.focus) opener.focus(); }
     // 用語を光らせる（索引やダッシュボードの「?」から来たとき）
     function mark(name) { var el = spread.querySelector('.gb-term[data-term="' + name.replace(/"/g, '\\"') + '"]'); if (!el) return; el.classList.remove("hit"); void el.offsetWidth; el.classList.add("hit"); }
     // ダッシュボードの「?」ボタンなどから：用語名（または「ch:章の名前」）でそのページを開く
@@ -3786,7 +3798,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     }
     function goTo(r, from) {
       setBook(r.book);
-      if (book.hidden) { opener = from || document.activeElement; book.hidden = false; }
+      if (book.hidden) { opener = from || document.activeElement; book.hidden = false; backStack = []; }
       closeSearch(); paginate();
       var k = r.key;
       if (/^ch:/.test(k)) { var ci = BK.data.map(function (c) { return c.t; }).indexOf(k.slice(3)); show(ci >= 0 ? chStart[ci] : 0); }
@@ -3850,11 +3862,12 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       var tb = e.target.closest("[data-glbook]");
       if (tb) { tileBook = tb.getAttribute("data-glbook"); try { localStorage.setItem("gloss-book", tileBook); } catch (er) {} renderTile(); return; }
       var zb = e.target.closest("[data-zoom]"); if (zb && book.contains(zb)) { openZoom(zb); return; }
-      var rb = e.target.closest("[data-ref]"); if (rb && book.contains(rb)) { var r = resolve(rb.getAttribute("data-ref")); if (r) goTo(r); else ensureAll().then(function () { var r2 = resolve(rb.getAttribute("data-ref")); if (r2) goTo(r2); }); return; }
+      var rb = e.target.closest("[data-ref]"); if (rb && book.contains(rb)) { var r = resolve(rb.getAttribute("data-ref")); if (r) jump(function () { goTo(r); }); else ensureAll().then(function () { var r2 = resolve(rb.getAttribute("data-ref")); if (r2) jump(function () { goTo(r2); }); }); return; }
       var g = e.target.closest("[data-gl],[data-go]"); if (!g) return;
-      if (g.hasAttribute("data-go")) { var to = +g.getAttribute("data-go"); show(to, to >= cur ? 1 : -1); if (g.getAttribute("data-term")) mark(g.getAttribute("data-term")); return; }
+      if (g.hasAttribute("data-go")) { var to = +g.getAttribute("data-go"); jump(function () { show(to, to >= cur ? 1 : -1); }); if (g.getAttribute("data-term")) mark(g.getAttribute("data-term")); return; }
       var a = g.getAttribute("data-gl");
       if (a === "close") close();
+      else if (a === "back") goBack();
       else if (a === "search") { if (sbox.hidden) openSearch(); else closeSearch(); }
       else if (a === "prev") show(cur - (two ? 2 : 1), -1);
       else if (a === "next") show(cur + (two ? 2 : 1), 1);
@@ -3862,8 +3875,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
         var go = function () { setBook(tileBook); open(a === "idx" ? -1 : a === "ch" ? -2 : 0, g); if (a === "idx") show(idxStart); if (a === "ch") show(chStart[+g.getAttribute("data-ch")]); };
         ensureAll(); if (BOOKS[tileBook].data) go(); else ensureBook(tileBook).then(go, function () {});
       }
-      else if (a === "toc") { closeSearch(); show(0, -1); }
-      else if (a === "idx") { closeSearch(); show(idxStart, 1); }
+      else if (a === "toc") { closeSearch(); jump(function () { show(0, -1); }); }
+      else if (a === "idx") { closeSearch(); jump(function () { show(idxStart, 1); }); }
     });
     document.addEventListener("keydown", function (e) {
       if (book.hidden) return;
