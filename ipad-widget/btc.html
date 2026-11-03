@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="772a4e189e">
+<meta name="build" content="84dec074d6">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -588,7 +588,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 
   <!-- ===== リスク・ロット ===== -->
   <section id="secRisk" class="panel s4">
-    <div class="cardhead"><div><div class="title">リスク・ロット計算<button type="button" class="gq" data-gloss="許容リスク" aria-label="用語集：許容リスク">?</button></div><div class="sub">ライブ価格とM15 ATRからSL/TPを算出</div></div><span class="tag">RISK</span></div>
+    <div class="cardhead"><div><div class="title">リスク・ロット計算<button type="button" class="gq" data-gloss="許容リスク" aria-label="用語集：許容リスク">?</button></div><div class="sub" id="riskHeadSub">価格とM15 ATRからSL/TPを算出</div></div><span class="tag">RISK</span></div>
     <div class="brokerrow"><span class="sub">口座</span>
       <div class="segmented" id="brokerSeg">
         <button class="seg" data-broker="xm"><b>XM KIWAMI極</b><small>1000倍</small></button>
@@ -2334,6 +2334,10 @@ function calcRisk(){
 
   const dirTxt=isBuy?'<b class="up">買い（BUY）</b>':'<b class="down">売り（SELL）</b>';
   const why=riskWhy||'手動指定';
+  {  // 見出しの「何の価格から算出したか」を、いまの価格の状態どおりに出す
+    const sp=state.spot,at=sp?new Intl.DateTimeFormat('ja-JP',{hour:'2-digit',minute:'2-digit'}).format(new Date(sp.asof)):'',src=String(state.src.spot||'');
+    $('riskHeadSub').textContent=(!sp?'価格の取得待ち':mktClosed?'休場前の最終値（'+at+'）':sp.freshness==='stale'?'遅延データの価格（'+at+'時点）':src.startsWith('リアルタイム')?'ライブ価格':'最新の価格（'+at+'時点）')+'とM15 ATRからSL/TPを算出';
+  }
   $('dirLabel').innerHTML='想定方向：'+dirTxt+' <span class="sub">｜'+why+'</span>';
   $('settingsSum').textContent='口座設定（'+BROKERS[state.broker].name+' '+lev+'倍・'+yen(capital)+'・リスク'+rp+'%・'+contract.toLocaleString('ja-JP')+INSTR.unit+'/lot・スプレッド'+sprPips.toFixed(1)+'pips）';
   $('atrNote').textContent=(state.m15.length?'M15 ATR14 '+INSTR.dist(currentAtr())+'｜':'')+($('autoRisk').checked
