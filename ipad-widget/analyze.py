@@ -286,6 +286,7 @@ def analyze(key, done, price):
     # 第2部 B5：水準の根拠（前日の足から出すピボット、なければ ATR の半分の目安）を文に添える
     piv = {s2: "S2", s1: "S1", p: "ピボット", r1: "R1", r2: "R2"}
     why = lambda v: f"（前日のピボット{piv[v]}）" if v in piv and piv[v] != "ピボット" else "（前日のピボット）" if v in piv else "（ATRの半分の目安）"
+    why2 = lambda v: why(v) if v in piv else "（ATRの半分先の目安）"  # 「視野」側：次のピボット、なければ1つ目の水準から ATR の半分先
 
     if s20 and s50 and s20 > s50 and price > s20:
         trend = "up"
@@ -304,18 +305,18 @@ def analyze(key, done, price):
     elif kind == "index":
         title = {"up": f"{name}：上昇トレンド", "down": f"{name}：下落トレンド", "range": f"{name}：レンジ内の推移"}[trend]
         if trend == "up":
-            body = f"{f(sup)}{why(sup)}付近が下値の目安。\n{f(res)}{why(res)}を上抜ければ{f(res2)}が視野。"
+            body = f"{f(sup)}{why(sup)}付近が下値の目安。\n{f(res)}{why(res)}を上抜ければ{f(res2)}{why2(res2)}が視野。"
         elif trend == "down":
-            body = f"{f(res)}{why(res)}付近が上値の目安。\n{f(sup)}{why(sup)}を割り込めば{f(sup2)}が視野。"
+            body = f"{f(res)}{why(res)}付近が上値の目安。\n{f(sup)}{why(sup)}を割り込めば{f(sup2)}{why2(sup2)}が視野。"
         else:
             lo, hi = (s1, r1) if s1 < price < r1 else (sup, res)
             body = f"{f(lo)}〜{f(hi)}のレンジを想定。\n抜けた方向に注目。"
     elif trend == "up":
         title = f"{name}：押し目買い目線"
-        body = f"{f(sup)}{why(sup)}付近の押し目に注目。\n{f(res)}{why(res)}を上抜ければ{f(res2)}が視野。"
+        body = f"{f(sup)}{why(sup)}付近の押し目に注目。\n{f(res)}{why(res)}を上抜ければ{f(res2)}{why2(res2)}が視野。"
     elif trend == "down":
         title = f"{name}：戻り売り目線"
-        body = f"{f(res)}{why(res)}付近の戻りに注目。\n{f(sup)}{why(sup)}を割り込めば{f(sup2)}が視野。"
+        body = f"{f(res)}{why(res)}付近の戻りに注目。\n{f(sup)}{why(sup)}を割り込めば{f(sup2)}{why2(sup2)}が視野。"
     elif kind is None:
         lo, hi = (s1, r1) if s1 < price < r1 else (sup, res)
         title = f"{name}：レンジ内の攻防"
