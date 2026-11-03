@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="a87dcf468a">
+<meta name="build" content="605ad729cc">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1300,7 +1300,8 @@ async function oilBarsFromOkx(){
     for(let i=got.h1.length-1;i>=0;i--){const c=cl.get(got.h1[i].t);if(c){gap=got.h1[i].c-c;gapAt=got.h1[i].t;break}}
     for(const tf in OKX_TF)state[tf]=got[tf];
     state.h4=h4.map(({k,...b})=>b);
-    if(gap!=null){for(const tf of ['d1','w1','mn'])state[tf]=state[tf].map(b=>({...b,o:b.o+gap,h:b.h+gap,l:b.l+gap,c:b.c+gap}));state.oilGap={v:gap,at:gapAt}}
+    if(gap!=null){for(const tf of ['d1','w1','mn'])state[tf]=state[tf].map(b=>({...b,o:b.o+gap,h:b.h+gap,l:b.l+gap,c:b.c+gap}));
+      const was=state.oilGap?.v;state.oilGap={v:gap,at:gapAt};if(was!==gap)saveCache()}  // 差の換算が変わったら、ホームのカードにも同じ値をすぐ渡す
     state.oilBars='okx';state.src.chart='OKX（WTI連動パーペチュアル）'+(gap!=null?'・日足以上はCL=Fを差だけずらした足':'・日足以上はCL=F');
     state.health.h1=state.health.m15=true;
     replayLive();if(state.spot)mergeSpotAll(state.spot.price,state.spot.asof);
