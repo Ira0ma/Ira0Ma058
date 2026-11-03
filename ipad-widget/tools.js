@@ -18,7 +18,7 @@
   var SIDE = { buy: "買い", sell: "売り" };
 
   /* ---------- dialog ---------- */
-  var TABS = [["guide", "使い方"], ["money", "資金管理"], ["check", "取引前チェック"], ["journal", "日誌"], ["signals", "シグナル履歴"], ["hours", "市場時間"], ["status", "データ状態"], ["settings", "設定"]];
+  var TABS = [["guide", "使い方"], ["money", "資金管理"], ["check", "取引前チェック"], ["journal", "日誌"], ["pnl", "収支"], ["signals", "シグナル履歴"], ["hours", "市場時間"], ["status", "データ状態"], ["settings", "設定"]];
   var css = document.createElement("style");
   css.textContent = [
     ".tdt{position:fixed;inset:0;z-index:45;background:rgba(4,5,8,.72);display:flex;align-items:stretch;justify-content:center;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}",
@@ -70,6 +70,24 @@
     ".tdt .jcal b{color:#b9b2a3;font-weight:600}.tdt .jcal span{padding:5px 0;border-radius:8px;background:#181b24}.tdt .jcal span.t{background:rgba(227,184,103,.28);color:#fff}.tdt .jcal span.s{box-shadow:inset 0 0 0 1px rgba(227,184,103,.6)}.tdt .jcal span.now{outline:1px solid #e3b867}",
     ".tdt .jcalh{display:flex;align-items:center;gap:8px;margin:6px 0}.tdt .jcalh button{min-height:36px;min-width:36px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:none;cursor:pointer}",
     ".tdt .streak{font-size:15px;font-weight:700;color:#e3b867;margin:4px 0}",
+    /* 収支（A）：黒×金、数字は大きな細字・桁そろえ、罫線より余白。アニメーション・ぼかしなし */
+    ".tdt .pl-up{color:#5fd99a}.tdt .pl-dn{color:#ff9d90}",
+    ".tdt .pl-in{background:#14161e;border-radius:14px;padding:10px 12px;margin:4px 0 14px}.tdt .pl-in>b{color:#e3b867;font-size:14px}",
+    ".tdt .pl-head{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;align-items:end;margin:8px 0 6px}",
+    ".tdt .pl-big small{display:block;color:#b9b2a3;font-size:12px}.tdt .pl-big b{font-size:34px;font-weight:300;letter-spacing:.01em;font-variant-numeric:tabular-nums;line-height:1.15}.tdt .pl-big i{font-style:normal;font-size:14px;margin-left:3px;color:#b9b2a3}",
+    ".tdt .pl-kv{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:12px;color:#b9b2a3}.tdt .pl-kv b{display:block;font-size:17px;font-weight:300;color:#f4f1ea;font-variant-numeric:tabular-nums}",
+    ".tdt .pl-spark{grid-column:1/-1;width:100%;height:44px;display:block}",
+    ".tdt .pl-cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;font-variant-numeric:tabular-nums}",
+    ".tdt .pl-cal>b{font-size:11.5px;color:#b9b2a3;font-weight:600;text-align:center;padding:2px 0}.tdt .pl-cal>b.sat{color:#8fb4ff}.tdt .pl-cal>b.sun{color:#ff9d90}",
+    ".tdt .pl-cal button{min-height:62px;display:flex;flex-direction:column;align-items:flex-end;gap:1px;padding:4px 5px;border-radius:10px;border:0;background:#161922;cursor:pointer;text-align:right;overflow:hidden}",
+    ".tdt .pl-cal button>span{align-self:flex-start;font-size:11.5px;color:#b9b2a3}.tdt .pl-cal button.now{box-shadow:inset 0 0 0 1px #e3b867}.tdt .pl-cal button.now>span{color:#e3b867;font-weight:700}.tdt .pl-cal button.sel{background:#1f2330}",
+    ".tdt .pl-cal em{font-style:normal;font-size:13px;font-weight:400;white-space:nowrap}.tdt .pl-cal em.pl-skip{font-size:10.5px;color:#b9b2a3}.tdt .pl-cal small{font-size:10px;white-space:nowrap;color:#d9c08a}.tdt .pl-cal small.pl-wd{color:#b9b2a3}",
+    ".tdt .pl-dayd{margin:10px 0;padding:8px 12px;border-radius:12px;background:#14161e}",
+    ".tdt .pl-seg{display:inline-flex;gap:4px;margin:2px 0 6px}.tdt .pl-seg button{min-height:40px;min-width:56px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:none;cursor:pointer;font-weight:700;color:#cfc8ba}.tdt .pl-seg button[aria-pressed=true]{background:#e3b867;color:#14100a;border-color:#e3b867}",
+    ".tdt .pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px 16px;margin:6px 0 10px}.tdt .pl-grid span{display:block;font-size:12px;color:#b9b2a3}.tdt .pl-grid b{font-size:20px;font-weight:300;font-variant-numeric:tabular-nums}.tdt .pl-grid small{display:block;font-size:11px;color:#b9b2a3}",
+    ".tdt .pl-year td{font-variant-numeric:tabular-nums;white-space:nowrap}.tdt .pl-year tr.now td{background:rgba(227,184,103,.08)}.tdt .pl-barc{width:40%;min-width:120px}",
+    ".tdt .pl-bar{position:relative;display:block;height:10px;background:linear-gradient(90deg,transparent calc(50% - .5px),rgba(255,255,255,.25) calc(50% - .5px),rgba(255,255,255,.25) calc(50% + .5px),transparent calc(50% + .5px))}.tdt .pl-bar i{position:absolute;top:0;bottom:0;border-radius:2px}.tdt .pl-bar i.up{background:#5fd99a}.tdt .pl-bar i.dn{background:#ff9d90}",
+    "@media (max-width:520px){.tdt .pl-cal button{min-height:54px;padding:3px}.tdt .pl-cal em{font-size:11px}.tdt .pl-cal small{font-size:9px}.tdt .pl-big b{font-size:28px}.tdt .pl-head{grid-template-columns:1fr}}",
     ".tdt .skiprow{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.tdt .skiprow label.f{flex:1;min-width:200px}",
     "@media (max-width:600px){.tdt{padding:0}.tdt-box{border-radius:0}.tdt-body{padding:12px}}"
   ].join("\n");
@@ -148,12 +166,15 @@
   };
 
   /* ---------- money: position size, risk/reward, daily loss ---------- */
-  var JOURNAL = "td-journal-v1", RISK = "td-risk-v1", CHECKS = "td-checks-v1";
+  var JOURNAL = "td-journal-v1", RISK = "td-risk-v1", CHECKS = "td-checks-v1", DAILY = "td-daily-v1";
   function journal() { var j = get(JOURNAL, []); return Array.isArray(j) ? j : []; }
+  // 日次入力（収支）：{ "YYYY-MM-DD": { pnl, dep, wd, at } }（円。空欄は null）
+  function dailyIn() { var d = get(DAILY, {}); return d && typeof d === "object" && !Array.isArray(d) ? d : {}; }
   var HELP = {
     money: ["口座の条件と損切り価格を入れると、許容損失に収まる数量が出ます。足りない項目があると数量は出しません。", "money"],
     check: ["入る前に7つの項目を確かめて「記録する」。次の重要指標と今日の損失も自動で表示します。"],
     journal: ["取引のあとに、まずは4項目だけで1件。くわしくは「詳しく書く」から。取引しなかった日は「見送り」も残せます。"],
+    pnl: ["日ごとの確定損益と入出金をカレンダーで見て、週・月・年でまとめます。「今日の収支を入れる」で1日分をまとめて入れられます。"],
     signals: ["ダッシュボードの判定（買い候補・売り候補・見送り）と、その時点の根拠の記録です。売買の指示ではありません。"],
     hours: ["東京・ロンドン・ニューヨークの時間と、銘柄ごとの取引時間（目安）を日本時間で表示します。"],
     status: ["価格・ローソク足・自動分析が、いつ・どこから届いたかを確かめる画面です。数字がおかしいと思ったらまずここ。"],
@@ -182,6 +203,11 @@
       "下の一覧の「編集」で直せます。「削除」は元に戻せません。",
       "「CSVに書き出す」で表計算ソフトに、「CSVを読み込む」で別の端末から取り込めます（同じ記録は二重に入りません）。"],
       "成績のまとめは日誌に入れた実際の取引だけで計算します（見送りは含みません）。20件未満の区分は勝ちの割合を出しません。連続記録とカレンダーには見送りも数えます。"],
+    ["pnl", "収支（カレンダーと集計）", "日ごとの確定損益と入金・出金を、家計簿のように見る場所です。", [
+      "「今日の収支を入れる」で、日付・確定損益・入金・出金を入れて保存します（空欄でも保存できます。あとから同じ日付で直せます）。",
+      "カレンダーには、日ごとの確定損益（＋は緑、−は赤）と、入金・出金が出ます。日をタップすると、その日の内訳と記録の編集へ進めます。",
+      "上には月の合計・入金・出金・勝ち日と負け日・損益の積み上がり。下の「期間のまとめ」で週・月・年を切り替えられます（週は月曜はじまり）。"],
+      "その日の損益は、日次入力に確定損益があればそれを使い、日誌の取引ごとの損益とは足しません。日次入力がない日は、日誌の取引ごとの損益の合計です。入金・出金は日次入力だけから数えます。"],
     ["signals", "シグナル履歴", "アプリの判定がいつ・なぜ出たかの記録です。判定を振り返るときに開きます。", [
       "「いまの判定」で、各銘柄が買い候補・売り候補・見送りのどれかと、その理由が分かります。",
       "履歴の行をタップすると、成立した条件・足りなかった条件・判定時の価格と時刻・有効期限・取り消しになった理由が見られます。",
@@ -409,23 +435,15 @@
         chips("jn-reflect", ["ルール通りできた", "損切りが遅れた", "利確が早すぎた", "数量が大きすぎた", "見送りが正解だった", "感情で入ってしまった"]) + "</details>" +
         '<div class="btns"><button type="button" class="btn pri" id="jn-save">' + (d.id ? "更新する" : "記録する") + "</button></div>" +
         (d.id ? "" : '<h3>取引しなかった日</h3><div class="skiprow"><label class="f">一言メモ（任意）<input id="jn-skipmemo" maxlength="400"></label><button type="button" class="btn" id="jn-skip">見送りを記録</button></div>') +
-        '<h3>記録した日</h3><div class="jcalh"><button type="button" id="jc-prev" aria-label="前の月">‹</button><b id="jc-title"></b><button type="button" id="jc-next" aria-label="次の月">›</button></div><div class="jcal" id="jn-cal"></div>' +
-        '<p class="note">■ 取引の記録がある日　□ 見送りだけの日</p>' +
+        '<h3>収支のカレンダー</h3><p class="note">記録した日の確定損益・入出金は「収支」に、日ごとのカレンダーと週・月・年のまとめで出ます。</p><div class="btns"><button type="button" class="btn" data-tab="pnl" id="jn-topnl">収支（カレンダーと集計）を開く</button></div>' +
         '<div class="btns"><button type="button" class="btn" id="jn-csv">CSVに書き出す</button><button type="button" class="btn" id="jn-imp">CSVを読み込む</button></div>' +
         '<div id="jn-msg" class="note" aria-live="polite"></div><h3>成績のまとめ</h3><div id="jn-stats"></div><h3>記録</h3><div id="jn-list"></div>';
-      var calMonth = new Date(); calMonth.setDate(1);
+      // 記録した日のカレンダーは「収支」の金額のカレンダーに統合（A）。ここは連続記録だけ
       var drawCal = function () {
-        var jd = C.journalDays(journal(), Date.now()), y = calMonth.getFullYear(), mo = calMonth.getMonth(), first = new Date(y, mo, 1).getDay(), n = new Date(y, mo + 1, 0).getDate();
-        var z = function (x) { return String(x).padStart(2, "0"); }, todayK = C.dayKey(Date.now()), cells = "";
-        ["日", "月", "火", "水", "木", "金", "土"].forEach(function (w) { cells += "<b>" + w + "</b>"; });
-        for (var i = 0; i < first; i++) cells += "<i></i>";
-        for (var dd = 1; dd <= n; dd++) { var k = y + "-" + z(mo + 1) + "-" + z(dd), v = jd.days[k];
-          cells += '<span class="' + (v === "trade" ? "t" : v === "skip" ? "s" : "") + (k === todayK ? " now" : "") + '" title="' + (v === "trade" ? "取引の記録あり" : v === "skip" ? "見送りのみ" : "") + '">' + dd + "</span>"; }
-        $("#jn-cal").innerHTML = cells; $("#jc-title").textContent = y + "年" + (mo + 1) + "月";
+        var jd = C.journalDays(journal(), Date.now());
         $("#jn-streak").innerHTML = '<p class="streak">' + (jd.streak ? jd.streak + "日連続で記録中" : "今日から記録を始めましょう") + "・今週は" + jd.week + "日記録</p>";
       };
-      $("#jc-prev").addEventListener("click", function () { calMonth.setMonth(calMonth.getMonth() - 1); drawCal(); });
-      $("#jc-next").addEventListener("click", function () { calMonth.setMonth(calMonth.getMonth() + 1); drawCal(); });
+      $("#jn-topnl").addEventListener("click", function () { show("pnl"); });
       // 今のデスク価格を入れる：その銘柄のデスクの表示価格（出典・時刻つき）。「その他」や価格がないときは押せない
       var pxState = function () {
         var k = $("#jn-key").value, card = k === "other" ? null : cardOf(k), ok = !!(card && isFinite(card.value) && card.value);
@@ -492,6 +510,113 @@
         });
       });
       paint();
+    },
+
+    /* ---------- 収支（A）：日ごとの確定損益と入出金のカレンダー、週・月・年のまとめ、1日分の入力 ---------- */
+    pnl: function () {
+      var todayK = C.dayKey(Date.now()), sel = pnlSel || todayK, mode = pnlMode || "month";
+      var ym = (pnlMonth || todayK).slice(0, 7);
+      var yen = function (v, sign) { return v == null ? "—" : (sign && v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v), 0); };
+      var cls = function (v) { return v > 0 ? "pl-up" : v < 0 ? "pl-dn" : ""; };
+      // カレンダーの中は幅が狭いので、スマホでは1万以上を「万」で（例：+1.2万）。合計や一覧は円まで出す
+      var wide = body.clientWidth >= 640;  // iPad など広い画面では円まで、スマホでは1万以上を「万」で
+      var short = function (v, sign) { var a = Math.abs(v); return (sign && v > 0 ? "+" : v < 0 ? "−" : "") + (a >= (wide ? 1e6 : 1e4) ? (a / 1e4).toFixed(a >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "万" : fmt(a, 0)); };
+      var dayName = function (k) { var p = k.split("-").map(Number), w = "日月火水木金土"[new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay()]; return p[1] + "/" + p[2] + "（" + w + "）"; };
+      var di = dailyIn(), cur = di[sel] || {};
+      body.innerHTML = '<h3>収支</h3>' +
+        '<div class="pl-head" id="pl-head"></div><div class="jcalh"><button type="button" id="pl-prev" aria-label="前の月">‹</button><b id="pl-title"></b><button type="button" id="pl-next" aria-label="次の月">›</button><button type="button" class="btn" id="pl-today">今日</button></div>' +
+        '<div class="pl-cal" id="pl-cal"></div><div id="pl-day" class="pl-dayd"></div>' +
+        '<div class="pl-in"><b>今日の収支を入れる</b><div class="grid">' +
+        field("pl-dayin", "日付", sel, "date") + field("pl-pnl", "確定損益（円・手数料込み）", cur.pnl, "number") + field("pl-dep", "入金（円）", cur.dep, "number") + field("pl-wd", "出金（円）", cur.wd, "number") + "</div>" +
+        '<div class="btns"><button type="button" class="btn pri" id="pl-save">保存する</button><button type="button" class="btn danger" id="pl-clear">この日の入力を消す</button></div>' +
+        '<p class="note">空欄は「なし」。この日の確定損益を入れると、日誌の取引ごとの損益の合計ではなく、この数字をその日の損益にします（足しません）。入金・出金はここだけから数えます。</p><div class="note" id="pl-msg" aria-live="polite"></div></div>' +
+        '<h3>期間のまとめ</h3><div class="pl-seg" role="group" aria-label="期間">' + [["week", "週"], ["month", "月"], ["year", "年"]].map(function (x) { return '<button type="button" data-pm="' + x[0] + '" aria-pressed="' + (x[0] === mode) + '">' + x[1] + "</button>"; }).join("") + "</div>" +
+        '<div id="pl-sum"></div>';
+      var book = function () { return C.dailyBook(journal(), dailyIn()); };
+      var paintCal = function () {
+        var b = book(), y = +ym.slice(0, 4), mo = +ym.slice(5, 7), n = new Date(Date.UTC(y, mo, 0)).getUTCDate(), first = (new Date(Date.UTC(y, mo - 1, 1)).getUTCDay() + 6) % 7;
+        var z = function (x) { return String(x).padStart(2, "0"); }, cells = "";
+        ["月", "火", "水", "木", "金", "土", "日"].forEach(function (w, i) { cells += '<b class="' + (i === 5 ? "sat" : i === 6 ? "sun" : "") + '">' + w + "</b>"; });
+        for (var i = 0; i < first; i++) cells += "<i></i>";
+        var cum = 0, pts = [];
+        for (var dd = 1; dd <= n; dd++) {
+          var k = ym + "-" + z(dd), d = b[k] || {};
+          if (d.pnl != null) cum += d.pnl; pts.push(k <= todayK ? cum : null);
+          var lines = (d.pnl != null ? '<em class="' + cls(d.pnl) + '">' + short(d.pnl, true) + "</em>" : d.skip ? '<em class="pl-skip">見送り</em>' : "") +
+            (d.dep ? '<small class="pl-dep">入 ' + short(d.dep) + "</small>" : "") + (d.wd ? '<small class="pl-wd">出 ' + short(d.wd) + "</small>" : "");
+          cells += '<button type="button" data-pd="' + k + '" class="' + (k === todayK ? "now" : "") + (k === sel ? " sel" : "") + '" aria-label="' + esc(dayName(k) + (d.pnl != null ? " 損益 " + yen(d.pnl, true) + "円" : "")) + '"><span>' + dd + "</span>" + lines + "</button>";
+        }
+        $("#pl-cal").innerHTML = cells; $("#pl-title").textContent = y + "年" + mo + "月";
+        var s = C.periodSummary(b, ym + "-01", ym + "-" + z(n));
+        // 損益の積み上がり（月の初めから。今日より先は描かない）
+        var vals = pts.filter(function (v) { return v != null; }), lo = Math.min.apply(null, [0].concat(vals)), hi = Math.max.apply(null, [0].concat(vals)), W = 300, H = 44;
+        var X = function (i) { return 4 + i * (W - 8) / Math.max(1, n - 1); }, Y = function (v) { return hi === lo ? H / 2 : 4 + (hi - v) * (H - 8) / (hi - lo); };
+        var path = pts.map(function (v, i) { return v == null ? "" : X(i).toFixed(1) + "," + Y(v).toFixed(1); }).filter(Boolean).join(" ");
+        var spark = vals.length ? '<svg class="pl-spark" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" role="img" aria-label="月の損益の積み上がり"><line x1="0" x2="' + W + '" y1="' + Y(0).toFixed(1) + '" y2="' + Y(0).toFixed(1) + '" stroke="rgba(255,255,255,.18)" stroke-dasharray="3 3"/><polyline points="' + path + '" fill="none" stroke="' + (cum >= 0 ? "#5fd99a" : "#ff9d90") + '" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>' : "";
+        $("#pl-head").innerHTML = '<div class="pl-big"><small>' + mo + "月の確定損益</small><b class=\"" + cls(s.pnl) + '">' + (s.days ? yen(s.pnl, true) : "—") + '<i>円</i></b></div>' +
+          '<div class="pl-kv"><span>入金<b>' + yen(s.dep) + "</b></span><span>出金<b>" + yen(s.wd) + "</b></span><span>勝ち日<b>" + s.win + "</b></span><span>負け日<b>" + s.loss + "</b></span></div>" + spark;
+      };
+      var paintDay = function () {
+        var b = book(), d = b[sel] || {}, di2 = dailyIn()[sel], rows = journal().filter(function (r) { return (r.day || C.dayKey(Date.parse(r.time))) === sel; });
+        var h = "<b>" + dayName(sel) + "</b>　" + (d.pnl != null ? '損益 <span class="' + cls(d.pnl) + '">' + yen(d.pnl, true) + "円</span>（" + (d.src === "daily" ? "日次入力" : "日誌の取引の合計") + "）" : "損益の記録なし");
+        if (d.src === "daily" && d.trades) h += '<p class="note">この日は日次入力を正としています。日誌の取引 ' + d.trades + "件の損益は足していません。</p>";
+        if (di2) h += '<p class="note">日次入力：損益 ' + yen(di2.pnl == null || di2.pnl === "" ? null : +di2.pnl, true) + "・入金 " + yen(di2.dep) + "・出金 " + yen(di2.wd) + '　<button type="button" class="btn" id="pl-editday">入力欄で直す</button></p>';
+        h += rows.length ? '<div class="tw"><table><tr><th>時刻</th><th>銘柄</th><th>向き</th><th>損益</th><th></th></tr>' + rows.map(function (r) {
+          var sk = r.kind === "skip";
+          return "<tr><td>" + esc(C.jst(Date.parse(r.time), false)) + "</td><td>" + esc(sk ? "—" : r.key) + "</td><td>" + (sk ? '<span class="tag">見送り</span>' : esc(SIDE[r.side] || r.side || "")) + '</td><td class="' + cls(r.pnl) + '">' + (!sk && r.pnl != null && isFinite(r.pnl) ? yen(r.pnl, true) : "—") +
+            '</td><td><button type="button" class="btn" data-jed="' + esc(r.id) + '">日誌で編集</button></td></tr>';
+        }).join("") + "</table></div>" : '<p class="note">この日の日誌の記録はありません。</p>';
+        $("#pl-day").innerHTML = h;
+        var e = $("#pl-editday"); if (e) e.addEventListener("click", function () { pnlSel = sel; VIEWS.pnl(); $("#pl-pnl").focus(); });
+      };
+      var paintSum = function () {
+        var b = book(), z = function (x) { return String(x).padStart(2, "0"); }, y = +ym.slice(0, 4), mo = +ym.slice(5, 7), html = "";
+        var rng = mode === "week" ? C.weekOf(sel) : mode === "month" ? { from: ym + "-01", to: ym + "-" + z(new Date(Date.UTC(y, mo, 0)).getUTCDate()) } : { from: y + "-01-01", to: y + "-12-31" };
+        var s = C.periodSummary(b, rng.from, rng.to);
+        var label = mode === "week" ? dayName(rng.from) + "〜" + dayName(rng.to) + "（月曜はじまり）" : mode === "month" ? y + "年" + mo + "月" : y + "年";
+        html += '<p class="note">' + esc(label) + "</p>" + '<div class="pl-grid">' +
+          [["確定損益の合計", s.days ? '<b class="' + cls(s.pnl) + '">' + yen(s.pnl, true) + "円</b>" : "<b>—</b>"], ["勝ち日／負け日", "<b>" + s.win + "／" + s.loss + "</b>"], ["取引した日数", "<b>" + s.days + "日</b>"],
+           ["最大の勝ち日", s.best && s.best.pnl > 0 ? '<b class="pl-up">' + yen(s.best.pnl, true) + "</b><small>" + dayName(s.best.day) + "</small>" : "<b>—</b>"],
+           ["最大の負け日", s.worst && s.worst.pnl < 0 ? '<b class="pl-dn">' + yen(s.worst.pnl, true) + "</b><small>" + dayName(s.worst.day) + "</small>" : "<b>—</b>"],
+           ["入金／出金", "<b>" + yen(s.dep) + "／" + yen(s.wd) + "</b>"]].map(function (x) { return "<div><span>" + x[0] + "</span>" + x[1] + "</div>"; }).join("") + "</div>";
+        if (mode === "year") {
+          var ms = []; for (var m = 1; m <= 12; m++) { var n = new Date(Date.UTC(y, m, 0)).getUTCDate(); ms.push(C.periodSummary(b, y + "-" + z(m) + "-01", y + "-" + z(m) + "-" + z(n))); }
+          var mx = Math.max.apply(null, ms.map(function (x) { return Math.abs(x.pnl); }).concat([1])), nowYm = todayK.slice(0, 7);
+          html += '<div class="tw"><table class="pl-year"><tr><th>月</th><th>確定損益</th><th class="pl-barh">月ごとの損益</th><th>勝ち／負け</th><th>入金／出金</th></tr>' + ms.map(function (x, i) {
+            var k = y + "-" + z(i + 1), w = (Math.abs(x.pnl) / mx * 50).toFixed(1);
+            return '<tr class="' + (k === nowYm ? "now" : "") + '"><td>' + (i + 1) + "月" + (k === nowYm ? '<span class="tag">今月</span>' : "") + '</td><td class="' + cls(x.pnl) + '">' + (x.days ? yen(x.pnl, true) : "—") +
+              '</td><td class="pl-barc"><span class="pl-bar"><i class="' + (x.pnl >= 0 ? "up" : "dn") + '" style="' + (x.pnl >= 0 ? "left:50%" : "right:50%") + ";width:" + (x.days ? w : 0) + '%"></i></span></td><td>' + x.win + "／" + x.loss + "</td><td>" + yen(x.dep) + "／" + yen(x.wd) + "</td></tr>";
+          }).join("") + "</table></div>";
+        }
+        $("#pl-sum").innerHTML = html;
+        body.querySelectorAll("[data-pm]").forEach(function (bt) { bt.setAttribute("aria-pressed", bt.getAttribute("data-pm") === mode ? "true" : "false"); });
+      };
+      var paint = function () { paintCal(); paintDay(); paintSum(); };
+      var shift = function (dm) { var y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1 + dm; y += Math.floor(m / 12); m = ((m % 12) + 12) % 12; ym = y + "-" + String(m + 1).padStart(2, "0"); pnlMonth = ym + "-01"; paint(); };
+      $("#pl-prev").addEventListener("click", function () { shift(-1); });
+      $("#pl-next").addEventListener("click", function () { shift(1); });
+      $("#pl-today").addEventListener("click", function () { sel = todayK; pnlSel = sel; ym = todayK.slice(0, 7); pnlMonth = todayK; $("#pl-dayin").value = sel; load(); paint(); });
+      $("#pl-cal").addEventListener("click", function (e) { var b = e.target.closest("[data-pd]"); if (!b) return; sel = pnlSel = b.getAttribute("data-pd"); $("#pl-dayin").value = sel; load(); paint(); });
+      body.querySelectorAll("[data-pm]").forEach(function (bt) { bt.addEventListener("click", function () { mode = pnlMode = bt.getAttribute("data-pm"); paintSum(); }); });
+      var load = function () { var v = dailyIn()[$("#pl-dayin").value] || {}; $("#pl-pnl").value = v.pnl == null ? "" : v.pnl; $("#pl-dep").value = v.dep == null ? "" : v.dep; $("#pl-wd").value = v.wd == null ? "" : v.wd; };
+      $("#pl-dayin").addEventListener("change", function () { if (/^\d{4}-\d\d-\d\d$/.test(this.value)) { sel = pnlSel = this.value; ym = sel.slice(0, 7); pnlMonth = sel; load(); paint(); } });
+      var numOrNull = function (id) { var v = $(id).value.trim(); if (v === "") return null; var x = Number(v); return isFinite(x) ? x : NaN; };
+      $("#pl-save").addEventListener("click", function () {
+        var k = $("#pl-dayin").value, v = { pnl: numOrNull("#pl-pnl"), dep: numOrNull("#pl-dep"), wd: numOrNull("#pl-wd") };
+        if (!/^\d{4}-\d\d-\d\d$/.test(k)) { $("#pl-msg").textContent = "日付を入れてください。"; return; }
+        if ([v.pnl, v.dep, v.wd].some(function (x) { return x !== null && !isFinite(x); })) { $("#pl-msg").textContent = "金額は数字で入れてください。"; return; }
+        if ((v.dep !== null && v.dep < 0) || (v.wd !== null && v.wd < 0)) { $("#pl-msg").textContent = "入金・出金は0以上の数字で入れてください（出金は出金の欄へ）。"; return; }
+        var all = dailyIn();
+        if (v.pnl === null && v.dep === null && v.wd === null) delete all[k]; else { v.at = new Date().toISOString(); all[k] = v; }
+        if (put(DAILY, all, "収支")) { sel = pnlSel = k; ym = k.slice(0, 7); pnlMonth = k; paint(); $("#pl-msg").textContent = dayName(k) + "の収支を保存しました。"; }
+      });
+      $("#pl-clear").addEventListener("click", function () {
+        var k = $("#pl-dayin").value, all = dailyIn(); if (!all[k]) { $("#pl-msg").textContent = "この日の日次入力はありません。"; return; }
+        if (!confirm(dayName(k) + "の日次入力（損益・入金・出金）を消します。日誌の取引の記録は消えません。よろしいですか？")) return;
+        delete all[k]; if (put(DAILY, all, "収支")) { load(); paint(); $("#pl-msg").textContent = "消しました。"; }
+      });
+      paint();
+      $("#pl-day").addEventListener("click", function (e) { var b = e.target.closest("[data-jed]"); if (!b) return; draft = journal().filter(function (x) { return x.id === b.getAttribute("data-jed"); })[0]; show("journal"); });
     },
 
     /* ---------- signal history ---------- */
@@ -615,7 +740,7 @@
       });
     }
   };
-  var draft = null;
+  var draft = null, pnlSel = "", pnlMonth = "", pnlMode = "";
   var num = function (v) { var x = Number(v); return v === "" || !isFinite(x) ? null : x; };
   var toLocal = function (iso) { var t = new Date(iso), z = function (x) { return String(x).padStart(2, "0"); }; return t.getFullYear() + "-" + z(t.getMonth() + 1) + "-" + z(t.getDate()) + "T" + z(t.getHours()) + ":" + z(t.getMinutes()); };
   var JCOLS = [{ name: "id", type: "string", required: true }, { name: "time", type: "time", required: true }, { name: "key", type: "string", required: true },
