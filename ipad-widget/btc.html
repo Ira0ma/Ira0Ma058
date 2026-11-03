@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="35a64076ba">
+<meta name="build" content="eda17f34cd">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1913,7 +1913,9 @@ function keyPost(k){
   const s=calcSignal(),view=s.ready&&s.sma?(k.px>=s.sma?1:-1):0;
   const msg={type:'dash-levels',key:INSTR.key,r:k.r.map(l=>l.price),s:k.s.map(l=>l.price),rt:k.r.map(l=>l.tf||'h1'),st:k.s.map(l=>l.tf||'h1'),view,sma:s.sma||null};
   const j=JSON.stringify(msg),now=Date.now();if(j===keyPosted&&now-keyPostAt<5000)return;keyPosted=j;keyPostAt=now;
-  try{window.parent.postMessage({...msg,px:k.px,at:now},'*')}catch{}
+  // 戦略文の値幅目安：日足のATR(14)（チャートのATRの欄と同じ計算＝atrSeries の最新の値）と、その表示（INSTR.dist）をそのまま
+  const ad=state.d1&&state.d1.length>15?atrSeries(state.d1).at(-1):null;
+  try{window.parent.postMessage({...msg,px:k.px,at:now,atrD:ad,atrDTxt:ad?INSTR.dist(ad):''},'*')}catch{}
 }
 // 追加C：ホームの「昨日の答え合わせ」用に、確定した1時間足（直近7日・この画面の価格の基準）を知らせる。確定足が変わったときだけ
 var hbarsPosted=0;  // var：読み込みの早い段階から呼ばれる
