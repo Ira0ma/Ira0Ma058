@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="f02b4133f6">
+<meta name="build" content="e85eb91dbf">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -612,9 +612,9 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     </div>
     <div id="dirLabel" class="dirlabel">--</div>
     <div class="form">
-      <label>エントリー<input id="entry" type="number" step="0.01" inputmode="decimal"></label>
-      <label>損切り SL<input id="stop" type="number" step="0.01" inputmode="decimal"></label>
-      <label>利確 TP<input id="target" type="number" step="0.01" inputmode="decimal"></label>
+      <label>エントリー<input id="entry" type="number" step="any" inputmode="decimal"></label>
+      <label>損切り SL<input id="stop" type="number" step="any" inputmode="decimal"></label>
+      <label>利確 TP<input id="target" type="number" step="any" inputmode="decimal"></label>
     </div>
     <label class="inlinecheck"><input id="autoRisk" type="checkbox" checked> 価格・SL・TPを自動入力（OFFで手入力）</label>
     <div class="form lotrow">
@@ -2331,8 +2331,11 @@ let riskWhy='';
 function riskDirection(){
   if(state.dir==='buy'){riskWhy='手動指定';return 1}
   if(state.dir==='sell'){riskWhy='手動指定';return -1}
-  const sig=calcSignal().sig;
-  if(sig==='BUY'||sig==='SELL'){riskWhy='セットアップ判定（'+sig+'）に連動';return sig==='SELL'?-1:1}
+  const s=calcSignal(),sig=s.sig;
+  if(sig==='BUY'||sig==='SELL'){  // 結論がエントリーのときだけ「連動」。見送り・待機のときは確定と読まれない言い方に
+    const side=sig==='BUY'?'買い':'売り';
+    riskWhy=s.entry?'セットアップ判定（'+side+'エントリー）に連動':side+'方向ですが'+(s.forced?'重要指標の前後のため待機中':'見送り')+'のため、参考の計算例です（エントリーは確定していません）';
+    return sig==='SELL'?-1:1}
   const m=mtfScore();
   if(m&&m.dir){riskWhy='セットアップ判定はWAIT。総合判定（'+m.label+'）に合わせた想定';return m.dir}
   riskWhy='方向が未定のため、買い想定の計算例';return 1;
@@ -2352,11 +2355,13 @@ function autoRisk(){
   const direction=riskDirection(), s=calcSignal();
   // セットアップ判定と同じ売買プラン（利確はH1水平線、なければ損切り幅×目標RR。カップウィズハンドルのエントリーはその形のプラン）
   const plan=s.patPlan&&s.plan.dir===direction?s.plan:tradePlan(direction);
-  $('entry').value=plan.entry.toFixed(2);
-  $('stop').value=plan.sl.toFixed(2);
+  // 価格は銘柄の桁数のまま入れる（ドル円は小数3桁。2桁に丸めると数pipsの利確幅でRRが変わってしまう）
+  $('entry').value=plan.entry.toFixed(INSTR.dp);
+  $('stop').value=plan.sl.toFixed(INSTR.dp);
   // 利確判定を15分足（5分足）にしているときは、利確の入力もその時間足の線にする
   const tpBy=state.tpBasis==='m15'&&plan.tp15?['15分足',plan.tp15]:state.tpBasis==='m5'&&plan.tp5?['5分足',plan.tp5]:state.tpBasis==='day'&&plan.tpDay?['日足',plan.tpDay]:null;
-  $('target').value=(tpBy?tpBy[1].price:plan.tp).toFixed(2);
+  $('target').value=(tpBy?tpBy[1].price:plan.tp).toFixed(INSTR.dp);state.riskTpBy=tpBy?tpBy[0]:'';
+  {const tpx=tpBy?tpBy[1].price:plan.tp,sd=Math.abs(plan.entry-plan.sl);state.riskRR=sd?Math.abs(tpx-plan.entry)/sd:null}  // 参考プランと同じ（丸める前の値で計算）
   // 脚注に出すTPの決め方（実際に入れた値の出どころ）
   state.riskTpDesc=tpBy?tpBy[0]+'の直近の水平線まで':plan.tpSrc==='H1水平線'?'直近のH1水平線まで（5pips以上先）':plan.tpSrc==='損切り幅×目標RR'?'SL×'+(n($('rrTarget').value)||2)+'（近くに水平線がないとき）':plan.tpSrc;
 }
@@ -2416,7 +2421,9 @@ function calcRisk(){
   $('slDist').textContent=sl?INSTR.dist(sl):'--';
   $('tpDist').textContent=tp?INSTR.dist(tp):'--';
   $('profitYen').textContent=profit?yen(profit):'--';
-  $('rr').textContent='RR '+(sl?(tp/sl).toFixed(2):'--')+(sl&&spr?'（実質 '+(tpEff/slEff).toFixed(2)+'）':'');
+  // RR：利確幅÷損切り幅（参考プランと同じ計算）。カッコはスプレッドを引いた実質の値。利確を別の時間足の線にしているときはそれも書く
+  const rrv=$('autoRisk').checked&&state.riskRR!=null?state.riskRR:sl?tp/sl:null;  // 自動のときは参考プランと同じ値。手入力のときは入力した値から
+  $('rr').textContent='RR '+(rrv!=null?rrv.toFixed(2):'--')+(sl&&spr?'（スプレッド込みの実質 '+(tpEff/slEff).toFixed(2)+'）':'')+($('autoRisk').checked&&state.riskTpBy?'・利確は'+state.riskTpBy+'の線':'');
   const sprCost=fx?spr*contract*useLot*fx:0;
   $('sprVal').textContent=spr?(sprCost?yen(sprCost):'--'):'0';
   $('sprSub').textContent=sprPips.toFixed(1)+'pips・'+BROKERS[state.broker].name+' '+BROKERS[state.broker].acct+'｜'+useLot.toFixed(2)+' lot';
