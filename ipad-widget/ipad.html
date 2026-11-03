@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="8e8b70974c">
+<meta name="build" content="5caa5b4f72">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -280,6 +280,9 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .pm-map li.none { display: block; } .pm-map li.none .nm { font-weight: 400; }
 .pm-next { margin: 4px 0 0; font-size: 12px; color: var(--gold); }
 .pm-ans { margin: 6px 0 0; font-size: 11px; line-height: 1.5; color: var(--ink-3); } .pm-ans b { display: block; font-weight: 600; color: var(--ink-2); } .pm-ans span { display: block; } .pm-ans span.hit { color: var(--ink-2); }
+.pt-list p .st-type, .pt-list p .st-row, .pt-list p .st-note, .pt-list p .st-ans { display: block; }
+.pt-list p .st-type b { color: var(--gold); font-weight: 600; } .pt-list p .st-row { font-size: 11.5px; } .pt-list p .st-row b { color: var(--ink); font-weight: 600; }
+.pt-list p .st-note { margin-top: 3px; } .pt-list p .st-ans { margin-top: 3px; font-size: 11px; color: var(--ink-3); }
 .pm-wait { margin: 8px 0; font-size: 12px; color: var(--ink-3); }
 #pt-map { border-bottom: 1px solid var(--glass-line); }
 .ptl { display: grid; grid-template-columns: 22px 1fr auto 44px; gap: 6px; align-items: baseline; line-height: 1.5; white-space: nowrap; }
@@ -1177,10 +1180,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=1a50288903", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=d96f7f6ee0", title: "ドル円分析" },
-    btc: { src: "btc.html?v=35a64076ba", title: "BTC分析" },
-    oil: { src: "oil.html?v=5a8fc62117", title: "オイル分析" }
+    gold: { src: "gold.html?v=85ce6d8b29", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=4685b2f2b3", title: "ドル円分析" },
+    btc: { src: "btc.html?v=eda17f34cd", title: "BTC分析" },
+    oil: { src: "oil.html?v=1f83edc638", title: "オイル分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -3213,9 +3216,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     foot.textContent = "水準＝ダッシュボードの水平線・目線＝H1の120SMAの上下・接近＝" + PT_NEAR_TXT[ptTab] + "以内・" + updAt(new Date(ptShownAt)) +
       (u ? "／戦略文：自動分析 " + (stale ? MDHM(u) + "（更新が止まっています）" : stampAt(u) + "（約15分ごと）") : "");
     foot.style.color = stale ? "var(--up-red)" : "";
+    if (market) renderStrategy();  // 戦略文も同じ材料（目線・値幅・答え合わせ）に追随
   }
   document.querySelector("#pt-map .pm-tabs").addEventListener("click", function (e) { var b = e.target.closest("[data-pmt]"); if (!b) return; ptTab = b.getAttribute("data-pmt"); ptTabByUser = true; ptRows(); });
-  function refreshPoints() { ptRows(); if (market) renderStrategy(); }
+  function refreshPoints() { ptRows(); }
   setInterval(ptRows, 2000);  // 距離はダッシュボードの価格に合わせて
   /* Daily report (strategy.json): written each weekday morning by the scheduled report task.
      It fills row 3 for its own trading day (Fri's also covers the weekend); otherwise row 3 falls back to the automatic text. */
@@ -3255,37 +3259,46 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       .then(function (d) { if (d && typeof d === "object") { report = d; renderStrategy(); srcMark("report", true); } else srcMark("report", false, "まだ作成されていません"); })
       .catch(function () { srcMark("report", false); });
   }
+  /* 本日のトレード戦略（3部構成＋昨日の答え合わせ）。新しい判定は作らず、既にある材料だけを束ねる：
+     ①今日の型：今日（取引日）に★3の数値発表（予想・前回・結果のどれかがある★3）があれば「指標の日」、なければ「静かな日」。
+     ②4銘柄：目線は水準マップと同じ（H1の120SMAの上下）、値幅目安は各ダッシュボードの日足ATR(14)とその表示のまま。
+     ③今日の注意：指標の日は発表前／発表後で切り替え、静かな日は一般的な注意。売買の指示はしない。
+     ④昨日の答え合わせ：水準マップの答え合わせと同じ結果。記録がない銘柄は書かない */
+  function isNumeric3(e) { return e.stars === 3 && !!(e.forecast || e.previous || e.actual); }
+  function stratHtml(now) {
+    var dd = tradingDay(now), today = (calEvents || []).filter(function (e) { return isNumeric3(e) && e.t >= dd.start && e.t < dd.end; }).sort(function (a, b) { return a.t - b.t; });
+    var up = today.filter(function (e) { return e.t > now; }), done = today.filter(function (e) { return e.t <= now; });
+    var type, note, nm = { gold: "ゴールド", usdjpy: "ドル円", btc: "BTC", usoil: "オイル" };
+    if (!calEvents) { type = "今日の型：指標データを読み込んでいます"; note = ""; }
+    else if (today.length) {
+      var e = up[0] || done[done.length - 1];
+      type = "<b>今日は指標の日</b>：" + esc(HHMM(e.t) + " " + jaTitle(e)) + (up[0] ? "" : "（発表済み）") + (today.length > 1 ? "ほか★3 " + (today.length - 1) + "件" : "");
+      if (up.length) note = "注意：" + esc(HHMM(up[0].t) + " " + jaTitle(up[0])) + "の前後は値が飛びやすく、値幅目安を超えることもあります。発表前に無理に入らず、結果と最初の動きを見てから考える。";
+      else { var last = done[done.length - 1];
+        note = "注意：" + esc(jaTitle(last)) + "は発表済み" + (last.actual ? "（結果 " + esc(last.actual) + (last.forecast ? "・予想 " + esc(last.forecast) : "") + "）" : "") + "。結果を受けた動きが落ち着くまでは値幅が広がりやすいので、目線と水準を確かめ直してから。"; }
+    } else {
+      var small = calEvents.some(function (x) { return x.t > now && x.t < dd.end; }), nx = calEvents.filter(function (x) { return isNumeric3(x) && x.t > now; }).sort(function (a, b) { return a.t - b.t; })[0];
+      type = "<b>今日は静かな日</b>：大型の数値発表なし（" + (small ? "小型の指標のみ" : "このあとの予定なし") + "）" + (nx ? "。次の★3は " + esc(MDHM(nx.t) + " " + jaTitle(nx)) : "");
+      note = "注意：大きな材料がない日は、値幅目安の範囲で、目線の方向に沿った動きを基本に考える。範囲を大きく超える動きには飛びつかない。";
+    }
+    var rows = PT_TABS.map(function (k) {
+      var lv = keyLv[k];
+      if (!lv || !lv.px) return '<span class="st-row"><b>' + nm[k] + "</b>：ダッシュボードの計算待ち</span>";
+      var view = lv.view > 0 ? "押し目買い目線（H1は120SMAの上）" : lv.view < 0 ? "戻り売り目線（H1は120SMAの下）" : "目線はデータ待ち";
+      return '<span class="st-row"><b>' + nm[k] + "</b>：" + view + "・値幅目安 " + (lv.atrDTxt ? esc(lv.atrDTxt) + "/日" : "計算中") + "</span>";
+    }).join("");
+    var ans = PT_TABS.map(function (k) { var a = ptAnswer(k); return a && a.items.length ? nm[k] + " " + a.items.map(function (x) { return x.nm + (x.hit ? " 到達" : " 未到達"); }).join("・") : ""; }).filter(Boolean);
+    var aDay = PT_TABS.map(function (k) { var a = ptAnswer(k); return a && a.items.length ? a.label : ""; }).filter(Boolean)[0];
+    return '<span class="st-type">' + type + "</span>" + rows + (note ? '<span class="st-note">' + note + "</span>" : "") +
+      (ans.length ? '<span class="st-ans">' + esc(aDay) + "の答え合わせ：" + esc(ans.join("／")) + "</span>" : "");
+  }
   function renderStrategy() {
     var li3 = document.getElementById("pt-strat"), useReport = reportIsCurrent(new Date());
     li3.classList.toggle("has-report", useReport);
     if (useReport) { setPoint(5, report.title || "本日のトレード戦略", report.headline); return; }
     document.getElementById("rep").hidden = true;
     if (!market) return;
-    var now = new Date(), line1 = "このあと本日は米国・日本の重要な発表なし。\nテクニカル主導の値動きを想定。";
-    if (calEvents) {
-      var next = calEvents.filter(function (e) {
-        return e.stars === 3 && e.t > now && e.t < tradingDay(now).end;
-      }).sort(function (a, b) { return a.t - b.t; })[0];
-      if (next) line1 = (sameDay(next.t, now) ? HHMM(next.t) : MDHM(next.t)) + " " + jaTitle(next) + (isEventOnly(next) ? "（イベント）" : "") + "に注意。";
-      else {
-        // タスク7：今日すでに★3が出ていれば、それを書く（重要指標カードと食い違う「大型指標なし」は出さない）
-        var dd = tradingDay(now), done = calEvents.filter(function (e) { return e.stars === 3 && e.t >= dd.start && e.t <= now; }).sort(function (a, b) { return b.t - a.t; })[0];
-        var small = calEvents.some(function (e) { return e.t > now && e.t < dd.end; });
-        if (done) line1 = "本日の大型" + (isEventOnly(done) ? "イベント" : "指標") + "（" + HHMM(done.t) + " " + jaTitle(done) + "）は" + (isEventOnly(done) ? "開始済み" : "発表済み") + "。\nこのあとは" + (small ? "小型の指標のみ。" : "予定なし。") + "結果のあとの値動きに注意。";
-        else if (small) line1 = "このあと本日は大型の数値発表なし（小型の指標のみ）。\nテクニカル主導の値動きを想定。";
-      }
-    }
-    var all = market.instruments || market, notes2 = [];
-    var sel = [0, 1].map(function (i) { var k = pointKey(i); return [all[k] && all[k].analysis, INST[k].name, k]; });
-    sel.forEach(function (x) {
-      if (!x[0] || x[0].rsi == null) return;
-      if (x[0].rsi >= 70) notes2.push(x[1] + "はRSI" + Math.round(x[0].rsi) + "で過熱、高値追いは慎重に。");
-      else if (x[0].rsi <= 30) notes2.push(x[1] + "はRSI" + Math.round(x[0].rsi) + "で売られ過ぎ。");
-    });
-    var body = line1;
-    if (notes2.length) body = line1.split("\n")[0] + "\n" + notes2[0];
-    else if (sel[0][0] && sel[0][0].atr) body = line1.split("\n")[0] + "\n値幅目安：" + sel[0][1] + " " + atrText(sel[0][2], sel[0][0].atr) + "/日";
-    setPoint(5, "本日のトレード戦略", body);
+    setPoint(5, "本日のトレード戦略", "", stratHtml(new Date()));
   }
   var marketSeq = TDCore.sequencer(), marketCheck = null;
   function loadMarket() {
