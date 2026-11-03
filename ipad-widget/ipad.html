@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="f97a5813f0">
+<meta name="build" content="d033fedf6d">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1774,6 +1774,35 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
         .catch(function () { srcMark("swissquote", false); });
     });
   }
+  /* BTC price unification: the desk fetches no BTC price of its own. The BTC dashboard (btc.html) already
+     runs hidden behind the desk and, every 30 seconds, saves the spot price it fetched (Coinbase) with its
+     time into this device's storage (btc_auto_cache_final) — the same cache it reloads itself from. The desk
+     reads that cache: one acquisition path (the dashboard) and one store, as with the dashboards' other
+     reports to the desk. A cache older than 3 minutes means the dashboard is not running (or not fetching),
+     and the site's periodic price from market.json stands, labelled as such. A cache entry that is just the
+     site's own price relayed by the dashboard (same price, same time) also counts as the site's price. */
+  function btcDashPrice(siteBtc) {
+    var px = 0, asof = 0;
+    try {
+      var c = JSON.parse(localStorage.getItem("btc_auto_cache_final") || "null"), s = c && c.spot;
+      px = s && +s.price; asof = s && +s.asof;
+    } catch (e) {}
+    if (!px || !asof || Date.now() - asof > 3 * 60000) return null;
+    if (siteBtc && px === +siteBtc.price && Math.abs(asof - (siteBtc.asOf || 0) * 1000) < 5000) return null;  // the dashboard itself fell back to the site's price
+    return { price: px, asOf: asof / 1000 };
+  }
+  function applyBtcDash() {  // between market.json reloads: follow the dashboard's price as it lands in the cache
+    var dash = btcDashPrice(market && (market.instruments || market).btc);
+    if (!dash) return;
+    markets.forEach(function (mk) {
+      if (mk.key !== "btc" || !mk.live) return;
+      if (dash.asOf <= (mk.asOf || 0) && dash.price === mk.price) return;  // nothing newer to show
+      if (mk.price && Math.abs(dash.price - mk.price) > mk.price * 0.02) return;  // far from the shown price: a broken cache entry (same guard as the live feed)
+      mk.asOf = dash.asOf;
+      mk.prov = { src: "BTCダッシュボード（Coinbase）", type: "裏で動いているBTCダッシュボードが取得した現在値（この端末の中で共有）" };
+      mk.applyLive(dash.price);
+    });
+  }
   var nf = function (dec) { return function (v) { return v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec }); }; };
   /* Selectable instruments. demo is the offline sample price; spot is the gold-api.com symbol for minute updates. */
   var BADGE = {
@@ -2672,13 +2701,19 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
           mk.unadjusted = !!INST[mk.key].spot && m.spotAdjusted === false;
           // spot-priced instruments keep their fresher minute quote
           var keepSpot = mk.live && (INST[mk.key].spot || INST[mk.key].live) && mk.asOf > (m.asOf || 0) && !marketClosed(mk.key);
+          // BTC fetches nothing of its own here: a fresh price from the BTC dashboard running behind
+          // the desk (btcDashPrice) outranks the site's periodic one, so card and dashboard agree
+          var dash = mk.key === "btc" ? btcDashPrice(m) : null;
           if (keepSpot) mk.alignSpot(mk.price);
-          if (!keepSpot) {
+          if (dash) {
+            mk.asOf = dash.asOf;
+            mk.prov = { src: "BTCダッシュボード（Coinbase）", type: "裏で動いているBTCダッシュボードが取得した現在値（この端末の中で共有）" };
+          } else if (!keepSpot) {
             mk.asOf = m.asOf;
             mk.prov = { src: "サイトの定期取得（Yahoo Finance）", type: INST[mk.key].spot ? (m.spotAdjusted ? "先物の足を現物に換算した値（補正値）" : "先物の足の終値（換算前）")
               : mk.key === "jxy" ? "6通貨の足から独自に計算した値" : "最新の足の終値（Bid/Askの区別は非公開）" };
           }
-          mk.applyLive(keepSpot ? mk.price : m.price);
+          mk.applyLive(dash ? dash.price : keepSpot ? mk.price : m.price);
           mk.gen(); mk.draw();
         });
         refreshPoints();
@@ -3951,6 +3986,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   if (loc.gps) locate(loadWeather, function () {});
   setInterval(loadPrices, 60000);
   liveWatch(); setInterval(liveWatch, 5000);
+  setInterval(applyBtcDash, 5000);  // BTC card follows the background dashboard's cached price
   checkUpdate(); setInterval(checkUpdate, 10 * 60000);
   loadCalendar();
   loadMarket(); setInterval(loadMarket, 5 * 60000);
