@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="ce9ef4b64d">
+<meta name="build" content="30af457725">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -916,8 +916,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   /* 時刻の書き方（画面全体で1つ）：時刻は HH:MM。日付が要るときは M/D HH:MM JST。更新時刻は「HH:MM 更新」（日付つきは「M/D HH:MM JST 更新」）。
      この画面の時刻はすべて日本時間で、時計にも JST を付けている */
   var HHMM = function (d) { return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
-  var MDHM = function (d) { return (d.getMonth() + 1) + "/" + d.getDate() + " " + HHMM(d) + " JST"; };
   var MDW = function (d) { return (d.getMonth() + 1) + "/" + d.getDate() + "（" + WD[d.getDay()] + "）"; };  // 11/4（水）
+  var MDHM = function (d) { return MDW(d) + HHMM(d) + " JST"; };  // 11/4（水）00:16 JST — every date with a time has its weekday
   var sameDay = function (a, b) { return a.toDateString() === b.toDateString(); };
   var stampAt = function (d) { return sameDay(d, new Date()) ? HHMM(d) : MDHM(d); };
   var updAt = function (d) { return stampAt(d) + " 更新"; };
@@ -1538,8 +1538,9 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var sameDay = st.at && TDCore.dayKey(st.at) === TDCore.dayKey(Date.now());
     b.type = "button"; b.className = "mst lv-" + lv;
     var p = st.at ? TDCore.partsIn("Asia/Tokyo", st.at) : null;  // today: the time; an earlier day: the date only (the full time is in the label and the status screen)
-    var z2 = function (x) { return String(x).padStart(2, "0"); };  // 今日は HH:MM、前の日は M/D HH:MM JST
-    b.innerHTML = '<i aria-hidden="true"></i>' + (!p ? "—" : sameDay ? z2(p.h) + ":" + z2(p.mi) : p.mo + "/" + p.d + " " + z2(p.h) + ":" + z2(p.mi) + " JST") + "・" + label;
+    var z2 = function (x) { return String(x).padStart(2, "0"); };  // 今日は HH:MM、前の日は M/D（曜）HH:MM JST
+    var wd = p ? WD[p.dow] : "";
+    b.innerHTML = '<i aria-hidden="true"></i>' + (!p ? "—" : sameDay ? z2(p.h) + ":" + z2(p.mi) : p.mo + "/" + p.d + "（" + wd + "）" + z2(p.h) + ":" + z2(p.mi) + " JST") + "・" + label;
     var full = st.name + "：" + TDCore.jst(st.at) + "の価格（" + st.prov.src + "・" + st.prov.type + "）。状態：" + (st.held ? "データ確認中（" + st.held.join("・") + "）" : st.price.label) +
       (st.analysis.level === "stale" ? "。自動分析は" + TDCore.ago(st.analysis.age) + "の計算で古くなっています" : "") + "。タップでデータ状態を表示";
     b.setAttribute("aria-label", full); b.title = full;
@@ -3076,7 +3077,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       ["要人発言", "", "中央銀行の総裁や財務大臣など、えらい人の発言。金利や介入の見通しが変わると、相場が大きく動く。"],
       ["リスクオン・リスクオフ", "", "みんなが強気で、株や金利の高い通貨が買われるのが「リスクオン」。みんなが不安になって、円・金・アメリカの国債など安全なものにお金が逃げるのが「リスクオフ」。", { fig: "riskonoff" }],
       ["東京・ロンドン・NY時間", "", "世界の主な取引の時間帯。東京は朝〜夕方、ロンドンは日本の夕方〜、ニューヨーク（NY）は日本の夜。ロンドンとNYの時間に大きく動きやすい。", { fig: "sessions" }],
-      ["値決め", "フィキシング", "その日の為替レートを決める時刻。大きな注文がこの時刻に集まるので、その前後は上下に大きくぶれやすい。", { fig: "fix", aka: ["東京仲値", "ロンパチ", "ロンドンフィックス", "ロンフィク"], pts: ["東京仲値：9:55（日本の銀行がその日のレートを決める）", "ロンパチ：ロンドン8時＝日本時間17:00（夏時間は16:00）", "ロンドンフィックス（ロンフィク）：ロンドン16時＝日本時間 翌1:00（夏時間は0:00）"] }],
+      ["値決め", "フィキシング", "その日の為替レートを決める時刻。大きな注文がこの時刻に集まるので、その前後は上下に大きくぶれやすい。", { fig: "fix", aka: ["東京仲値", "ロンパチ", "ロンドンフィックス", "ロンフィク"], pts: ["東京仲値：9:55（日本の銀行がその日のレートを決める）", "ロンパチ：ロンドン8時＝日本時間17:00（夏時間は16:00）", "ロンドンフィックス（ロンフィク）：ロンドン16時＝日本時間 深夜1:00（日をまたぎます。夏時間は0:00）"] }],
       ["ゴトー日", "5・10日", "5日・10日・15日・20日・25日・30日（5と10のつく日）。会社の支払いが多く、朝の9:55（東京仲値）に向けてドルを買う動きが増えやすい。", { fig: "goto", aka: ["仲値"] }],
       ["月末フロー", "", "月末や期末に、大きな投資家や会社がまとめて行う売り買い。決まった時刻に集中し、チャートの形や景気と関係なく大きく動くことがある。", { fig: "fix", pts: ["月末の東京仲値・ロンパチ・ロンフィクにかけては乱高下に注意", "突発的な動きが来ても、絶対に逆張りしない", "週末・月末はポジションの持ち越しを小さく"] }],
       ["窓開け", "ギャップ", "週末をはさんで、金曜の終わりの値段と月曜の始まりの値段の間にすき間（窓）ができること。週末に大きなニュースがあると起きやすい。", { fig: "gapfig" }],
