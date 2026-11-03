@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="a1b2f497a0">
+<meta name="build" content="ceb50cea03">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -714,9 +714,9 @@ html:not(.beginner) .step-tag { display: none; }
 #layout-toggle:hover, #layout-toggle:focus-visible { background: var(--gold); color: #14100a; outline: none; }
 .dk-dock { position: fixed; z-index: 30; left: calc(env(safe-area-inset-left, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 4px); display: flex; gap: 8px; }
 .dk-dock #layout-toggle { position: static; }
-#tools-toggle { font: inherit; font-size: 12px; font-weight: 700; color: var(--gold); background: rgba(14,16,22,.85); border: 1px solid rgba(227,184,103,.5); border-radius: 999px; padding: 3px 11px; line-height: 1.4; cursor: pointer; }
-#tools-toggle:hover, #tools-toggle:focus-visible { background: var(--gold); color: #14100a; outline: none; }
-@media (pointer: coarse) { .dk-dock #layout-toggle, #tools-toggle { min-height: 36px; padding: 6px 14px; } }
+#tools-toggle, .dk-dock .dk-btn { font: inherit; font-size: 12px; font-weight: 700; color: var(--gold); background: rgba(14,16,22,.85); border: 1px solid rgba(227,184,103,.5); border-radius: 999px; padding: 3px 11px; line-height: 1.4; cursor: pointer; }
+#tools-toggle:hover, #tools-toggle:focus-visible, .dk-dock .dk-btn:hover, .dk-dock .dk-btn:focus-visible { background: var(--gold); color: #14100a; outline: none; }
+@media (pointer: coarse) { .dk-dock #layout-toggle, #tools-toggle, .dk-dock .dk-btn { min-height: 36px; padding: 6px 14px; } }
 .mkt .chg .mst { font: inherit; font-size: 11px; font-weight: 600; color: var(--ink-3); margin-left: 8px; padding: 1px 7px; border-radius: 999px; border: 1px solid transparent; background: none; cursor: pointer; white-space: nowrap; vertical-align: 1px; }
 .mkt .chg .mst:hover, .mkt .chg .mst:focus-visible { border-color: var(--glass-line); outline: none; }
 .mst i { font-style: normal; margin-right: 3px; }
@@ -1020,7 +1020,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   var toolsBtn = document.createElement("button"); toolsBtn.type = "button"; toolsBtn.id = "tools-toggle"; toolsBtn.innerHTML = "🧰 ツール";
   toolsBtn.title = "資金管理・取引前チェック・日誌・シグナル履歴・市場時間・データ状態・設定";
   toolsBtn.addEventListener("click", function () { openTools("", toolsBtn); });
-  paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn); document.body.appendChild(dock);
+  // A：日誌・収支も1タップで（ドックは「見る順番・ツール・日誌・収支」の4つまで。これ以上は増やさない）
+  var dockBtn = function (id, html, title, tab) { var b = document.createElement("button"); b.type = "button"; b.id = id; b.className = "dk-btn"; b.innerHTML = html; b.title = title; b.addEventListener("click", function () { openTools(tab, b); }); return b; };
+  var jnBtn = dockBtn("journal-toggle", "📝 日誌", "取引の記録を入れる・一覧", "journal"), plBtn = dockBtn("pnl-toggle", "📅 収支", "日ごとの確定損益・入出金のカレンダーと、週・月・年のまとめ", "pnl");
+  paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn); dock.appendChild(jnBtn); dock.appendChild(plBtn); document.body.appendChild(dock);
   layoutBtn.addEventListener("click", function () {
     beginner = !beginner;
     try { localStorage.setItem("desk-layout", beginner ? "beginner" : "normal"); } catch (e) {}
