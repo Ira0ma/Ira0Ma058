@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="003f8402bd">
+<meta name="build" content="17901fe6fd">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2259,7 +2259,10 @@ function autoRisk(){
   $('entry').value=plan.entry.toFixed(2);
   $('stop').value=plan.sl.toFixed(2);
   // 利確判定を15分足（5分足）にしているときは、利確の入力もその時間足の線にする
-  $('target').value=(state.tpBasis==='m15'&&plan.tp15?plan.tp15.price:state.tpBasis==='m5'&&plan.tp5?plan.tp5.price:state.tpBasis==='day'&&plan.tpDay?plan.tpDay.price:plan.tp).toFixed(2);
+  const tpBy=state.tpBasis==='m15'&&plan.tp15?['15分足',plan.tp15]:state.tpBasis==='m5'&&plan.tp5?['5分足',plan.tp5]:state.tpBasis==='day'&&plan.tpDay?['日足',plan.tpDay]:null;
+  $('target').value=(tpBy?tpBy[1].price:plan.tp).toFixed(2);
+  // 脚注に出すTPの決め方（実際に入れた値の出どころ）
+  state.riskTpDesc=tpBy?tpBy[0]+'の直近の水平線まで':plan.tpSrc==='H1水平線'?'直近のH1水平線まで（5pips以上先）':plan.tpSrc==='損切り幅×目標RR'?'SL×'+(n($('rrTarget').value)||2)+'（近くに水平線がないとき）':plan.tpSrc;
 }
 function calcRisk(){
   autoRisk();
@@ -2324,7 +2327,7 @@ function calcRisk(){
   $('dirLabel').innerHTML='想定方向：'+dirTxt+' <span class="sub">｜'+why+'</span>';
   $('settingsSum').textContent='口座設定（'+BROKERS[state.broker].name+' '+lev+'倍・'+yen(capital)+'・リスク'+rp+'%・'+contract.toLocaleString('ja-JP')+INSTR.unit+'/lot・スプレッド'+sprPips.toFixed(1)+'pips）';
   $('atrNote').textContent=(state.m15.length?'M15 ATR14 '+INSTR.dist(currentAtr())+'｜':'')+($('autoRisk').checked
-    ?'自動SL = ATR×'+(n($('slMult').value)||1.2)+'（最低'+INSTR.dist(INSTR.slMin)+'）／TP = SL×'+(n($('rrTarget').value)||2)+(state.m15.length?'':'｜M15データ待ちのため価格の0.12%で代用')
+    ?'自動SL = ATR×'+(n($('slMult').value)||1.2)+'（最低'+INSTR.dist(INSTR.slMin)+'）／TP = '+(state.riskTpDesc||'直近のH1水平線まで（なければSL×'+(n($('rrTarget').value)||2)+'）')+(state.m15.length?'':'｜M15データ待ちのため価格の0.12%で代用')
     :'手入力モード：エントリー・SL・TPを自由に入力できます。')+(spr?'｜ロット・損失・利益はスプレッド'+sprPips.toFixed(1)+'pips込み':'');
   return manual>0?{lot:manual,lotStep:manual,sl}:{lot,lotStep,sl};
 }
