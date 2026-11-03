@@ -31,10 +31,11 @@ bt_build = hashlib.sha1(bt.encode()).hexdigest()[:10]
 bt = bt.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name="build" content="%s">\n' % bt_build, 1)
 here.joinpath("btc.html").write_text(bt, encoding="utf-8")
 
-# oil.html: the OIL dashboard (US oil CL=F and OILCash corrected), its own page from oil.src.html,
-# wearing the GOLD dashboard's styles so it looks the same as the others
-gold_style = re.search(r"<style>\n(.*?)</style>", gold, re.S).group(1)
-oil = here.joinpath("oil.src.html").read_text(encoding="utf-8").replace("/*GOLD_STYLE*/\n", gold_style, 1)
+# oil.html: the same page again, as US oil (WTI); it also carries the OILCash (補正表示) panel
+oil = re.sub(r'<meta name="build" content="[^"]*">\n', "", gold)
+oil = oil.replace("<title>GOLD Trade Dashboard</title>", "<title>USOIL Trade Dashboard</title>", 1)
+oil = oil.replace('<meta name="apple-mobile-web-app-title" content="GOLD">', '<meta name="apple-mobile-web-app-title" content="USOIL">', 1)
+oil = oil.replace("<script>\nconst $ = id =>", "<script>window.INSTR_KEY='usoil';</script>\n<script>\nconst $ = id =>", 1)
 oil_build = hashlib.sha1(oil.encode()).hexdigest()[:10]
 oil = oil.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name="build" content="%s">\n' % oil_build, 1)
 here.joinpath("oil.html").write_text(oil, encoding="utf-8")
