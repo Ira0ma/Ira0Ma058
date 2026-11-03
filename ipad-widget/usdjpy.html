@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="fb1d1178ad">
+<meta name="build" content="f802828ddb">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2352,6 +2352,8 @@ function oilPatterns(){
   }
   oilPatCache={k,v:out};return out;
 }
+// ③（オイル）の形成中の型：待ち条件の③と③の詳細はこの同じ一覧から出す（向きが今の方向と違う型も「◯の形」として出す）
+function oilForming(s){return (s.pats||[]).filter(p=>p.judge&&p.state==='forming')}
 // ③（オイル）：判定に使う型のブレイクの向き（買い＝+1、売り＝−1、なければ0）
 function oilPat3(){const ps=oilPatterns().filter(p=>p.judge&&p.state==='breakout'&&p.dir);return ps.length?{d:ps[0].dir,pt:ps[0]}:{d:0,pt:null}}
 // 日足の背景：日足でブレイクしている型を1行で（判定には数えない）
@@ -2993,8 +2995,8 @@ function renderWait(s){
   const d=s.score>0?1:s.score<0?-1:smaD,side=d>0?'買い':'売り',lines=[];
   // オイルの③：判定に使う型（1時間足）が d の向きにブレイクしたら成立。形成中の型があればそのネックライン・境界を待つ
   const oil3=()=>{if(rngD===d&&s.p3.pt)return item(true,'③'+s.p3.pt.name+'を'+(d>0?'上抜け':'下抜け'));
-    const fm=(s.pats||[]).filter(p=>p.judge&&p.state==='forming'&&(p.dir===d||!p.dir));
-    if(fm.length)return fm.slice(0,2).map(p=>item(false,'③'+p.name+'形成中｜'+(p.dir?'ネックライン '+fmt(p.neck)+(p.dir>0?' の上抜け待ち':' の下抜け待ち'):'上の境界 '+fmt(p.up)+' の上抜け／下の境界 '+fmt(p.lo)+' の下抜け待ち'))).join('');
+    const fm=oilForming(s);
+    if(fm.length)return fm.slice(0,2).map(p=>item(false,'③'+p.name+'形成中'+(p.dir&&p.dir!==d?'（'+(p.dir>0?'買い':'売り')+'の形）':'')+'｜'+(p.dir?'ネックライン '+fmt(p.neck)+(p.dir>0?' の上抜け待ち':' の下抜け待ち'):'上の境界 '+fmt(p.up)+' の上抜け／下の境界 '+fmt(p.lo)+' の下抜け待ち'))).join('');
     return item(false,'③パターンのブレイク待ち（ダブルボトム・逆三尊・三角保ち合いの形がまだありません）')};
   const parts=[
     smaD===d?item(true,'①120SMAより'+(d>0?'上':'下')):item(false,'①120SMA '+fmt(s.sma)+(d>0?' の上抜け待ち':' の下抜け待ち')),
@@ -3134,7 +3136,7 @@ function renderSnapshot(){
     det('detSma','SMA '+fmt(s.sma)+'・現在 '+fmt(s.price)+'｜あと '+dx(Math.abs(s.price-s.sma))+' で'+(up?'下抜け（売り向きに変わる）':'上抜け（買い向きに変わる）'));
     det('detMom','基準：1時間足3本で +'+dx(th)+' より上がれば上昇、−'+dx(th)+' より下がれば下降、その間は横ばい｜今 '+(m>=0?'+':'−')+dx(Math.abs(m))+
       (m>th?'（横ばいまで あと '+dx(m-th)+'）':m<-th?'（横ばいまで あと '+dx(-th-m)+'）':'（上昇まで あと '+dx(th-m)+'・下降まで あと '+dx(m+th)+'）'));
-    if(s.p3){const fm=(s.pats||[]).filter(p=>p.judge&&p.state==='forming');
+    if(s.p3){const fm=oilForming(s);
       det('detRange',(s.p3.pt?s.p3.pt.label+'：ネックライン '+fmt(s.p3.pt.neck)+' をブレイク｜'+s.p3.pt.stat:fm.length?fm.slice(0,2).map(p=>p.label+' 形成中：'+(p.dir?'ネックライン '+fmt(p.neck)+' まで あと '+dx(Math.abs(s.price-p.neck)):'上の境界 '+fmt(p.up)+'・下の境界 '+fmt(p.lo))).join('／'):
         '判定に使う型（1時間足のダブルボトム・逆三尊・対称三角・上昇三角）がまだ見つかっていません。形ができ、ネックライン（三角は境界）を抜けると成立')+
         (s.hi&&s.lo?'｜参考：今日の中値 '+fmt(s.mid)+'・現在は'+(s.price>=s.mid?'上半分':'下半分'):''));
