@@ -1681,6 +1681,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   };
   /* Real quote from the network. The change is measured against the last price seen on an earlier day (kept on this device). */
   Market.prototype.applyLive = function (p) {
+    if (this.key === "btc" && typeof btcRef === "function" && !btcAgree(p, btcRef())) {  // どの経路から来ても、サイトの値と5%以上違う BTC は出さない
+      srcMark("btc-check", false, "表示しようとした値 " + Math.round(p) + " がサイトの値 " + Math.round(btcRef()) + " と5%以上違うため出しません");
+      this.held = ["BTCの値がサイトの値と大きく違います"]; this.chip = null; if (this.live) this.render(); return;
+    }
     if (this.prevClose) { // real previous close from market.json
       var first0 = !this.live, dir0 = Math.sign(p - this.price);
       this.live = true; this.o.prev = this.prevClose; this.price = p;
@@ -1863,13 +1867,20 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     if (siteBtc && px === +siteBtc.price && Math.abs(asof - (siteBtc.asOf || 0) * 1000) < 5000) return null;  // the dashboard itself fell back to the site's price
     return { price: px, asOf: asof / 1000 };
   }
+  /* BTC の値の確かめ（第2部 A1）：ホームに出す BTC の値は、もう一方の取得元（サイトの定期取得＝Yahoo、
+     ダッシュボード＝Coinbase）と5%以内のときだけ使う。以前は「いま表示中の値」と比べていたので、一度おかしな値が
+     出ると、正しい値のほうが「離れすぎ」として捨てられ、次のサイト更新まで直らなかった。
+     2つが5%以上食い違うときは、どちらも出さずに「確認中」とする（誤った値を表示しない） */
+  var BTC_TOL = 0.05;
+  function btcRef() { var m = market && (market.instruments || market).btc; return m && +m.price && Date.now() - (m.asOf || 0) * 1000 < 90 * 60000 ? +m.price : 0; }
+  function btcAgree(px, ref) { return !ref || !px || Math.abs(px / ref - 1) <= BTC_TOL; }
   function applyBtcDash() {  // between market.json reloads: follow the dashboard's price as it lands in the cache
     var dash = btcDashPrice(market && (market.instruments || market).btc);
     if (!dash) return;
     markets.forEach(function (mk) {
       if (mk.key !== "btc" || !mk.live) return;
       if (dash.asOf <= (mk.asOf || 0) && dash.price === mk.price) return;  // nothing newer to show
-      if (mk.price && Math.abs(dash.price - mk.price) > mk.price * 0.02) return;  // far from the shown price: a broken cache entry (same guard as the live feed)
+      if (!btcAgree(dash.price, btcRef())) { srcMark("btc-check", false, "ダッシュボードの値 " + Math.round(dash.price) + " がサイトの値 " + Math.round(btcRef()) + " と5%以上違うため使いません"); return; }
       mk.asOf = dash.asOf;
       mk.prov = { src: "BTCダッシュボード（Coinbase）", type: "裏で動いているBTCダッシュボードが取得した現在値（この端末の中で共有）" };
       mk.applyLive(dash.price);
@@ -3075,6 +3086,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
           // BTC fetches nothing of its own here: a fresh price from the BTC dashboard running behind
           // the desk (btcDashPrice) outranks the site's periodic one, so card and dashboard agree
           var dash = mk.key === "btc" ? btcDashPrice(m) : null;
+          if (mk.key === "btc" && dash && !btcAgree(dash.price, +m.price)) {  // 2つの取得元が5%以上違う：どちらが正しいか決められないので出さない
+            srcMark("btc-check", false, "ダッシュボード " + Math.round(dash.price) + " とサイト " + Math.round(m.price) + " が5%以上違います");
+            mk.held = ["BTCの取得元2つの値が食い違っています"]; mk.chip = null; mk.render(); return;
+          }
           if (keepSpot) mk.alignSpot(mk.price);
           if (dash) {
             mk.asOf = dash.asOf;
