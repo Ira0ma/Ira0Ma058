@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="06a2c6d9e6">
+<meta name="build" content="0440671874">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -147,7 +147,8 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .ms-tfs button span{font-size:11px;font-weight:700}.ms-tfs button b{font-size:20px;line-height:1.1}.ms-tfs button small{font-size:10.5px}
 .ms-tfs .up b,.ms-tfs .up small,.mt-r .up{color:#42d59c}.ms-tfs .down b,.ms-tfs .down small,.mt-r .down{color:#ff6969}.ms-tfs .flat b{color:#ffd166}
 .mtftable{margin-top:10px;font-size:12.5px}
-.mt-h,.mt-r{display:grid;grid-template-columns:.8fr 1.3fr 1fr .8fr 1.1fr;gap:6px;padding:7px 4px;border-bottom:1px solid #1e2730;align-items:center}
+.mt-h,.mt-r{display:grid;grid-template-columns:.7fr 1.4fr .8fr .9fr .8fr 1.2fr;gap:6px;padding:7px 4px;border-bottom:1px solid #1e2730;align-items:center}
+.mt-p{font-size:9.5px;color:var(--muted);margin-left:2px}.mt-note{margin-top:6px;line-height:1.55}
 .mt-h{font-size:10.5px;color:var(--muted);padding-top:0}.mt-r>span:first-child{font-weight:700}
 .techlist{display:grid}
 .tl{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 2px;border-bottom:1px solid #1e2730;font-size:12.5px;align-items:center}
@@ -563,7 +564,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div><div class="title" id="chartTitle">GOLDチャート</div><div id="chartMeta" class="sub">取得中...</div></div>
       <div class="charttools"><div class="segmented" id="srcSeg" role="group" aria-label="チャートの種類"><button type="button" class="seg" data-src="own">自作チャート</button><button type="button" class="seg" data-src="tv">TradingView</button></div><a id="tvOpen" class="tvopen" href="https://www.tradingview.com/chart/" target="_blank" rel="noopener">プレミアムで開く ↗</a><button type="button" id="fullBtn" class="fullbtn" aria-pressed="false">⤢ 大きく表示</button></div>
     </div>
-    <div class="tfcap">時間足｜下段＝ダウ理論のトレンドとST（スーパートレンド）の向き</div>
+    <div class="tfcap">時間足｜下段＝ダウ理論のトレンドとST（スーパートレンド）の向き（別の見方なので、逆を向くことがあります）</div>
     <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
     <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button><button type="button" id="fvgBtn" class="seg on" aria-pressed="true" title="FVG（3本の足で、1本目と3本目の値幅が重ならない帯）を表示"><i style="height:8px;background:linear-gradient(90deg,rgba(66,213,156,.55) 50%,rgba(255,105,105,.55) 50%)"></i>FVG</button><button type="button" class="gq" data-gloss="fvg:fvg-01" aria-label="FVG詳説：FVGとは">?</button></div>
     <div id="lvList" class="lvlist" role="group" aria-label="水平線を1本ずつ消す・戻す" hidden></div>
@@ -2540,7 +2541,7 @@ function mtfRow(tf){
     const dk=dowTrend(B,DOW_K[tf]).kind,dow=dk==='up'||dk==='upt'?1:dk==='down'||dk==='downt'?-1:0;
     const st=superTrend(B).dir.at(-1)||0,g=gmmaState(B),gm=g?(g.above&&g.sd>0?1:!g.above&&g.sd<0?-1:0):0;
     const rsi=rsiSeries(B).at(-1),rv=rsi==null?0:rsi>=55?1:rsi<=45?-1:0,s=(dow+st+gm+rv)/4;
-    v={tf,dk,g,rsi,s,arrow:'',judge:s>=.5?'上昇':s<=-.5?'下降':'レンジ',cls:s>=.25?'up':s<=-.25?'down':'flat'};
+    v={tf,dk,g,rsi,s,parts:{dow,st,gm,rv},arrow:'',judge:s>=.5?'上昇':s<=-.5?'下降':'レンジ',cls:s>=.25?'up':s<=-.25?'down':'flat'};
     v.arrow=s>=.5?'↑':s>=.25?'↗':s<=-.5?'↓':s<=-.25?'↘':'→';
   }
   mtfCache[tf]={k,v};return v;
@@ -2592,9 +2593,12 @@ function renderMtf(){
     `<div class="ms-tfs">${m.rows.map((r,i)=>`<button type="button" data-tf="${MTF_TFS[i]}" class="${r?r.cls:''}"><span>${MTF_TFS[i].toUpperCase()}</span><b>${r?r.arrow:'—'}</b><small>${r?r.judge:'—'}</small></button>`).join('')}</div>`+
     `<div class="sub ms-at">計算 ${LT_FMT.format(new Date())}（価格 ${state.spot?LT_FMT.format(new Date(state.spot.asof)):'--'}時点・15分足は ${state.m15.length?HM_FMT.format(new Date(state.m15.at(-1).t)):'--'} の足まで）</div>`;
   const gdir=g=>!g?'—':g.sd>0?'<span class="up">上向き</span>':g.sd<0?'<span class="down">下向き</span>':'横ばい';
-  $('mtfTable').innerHTML='<div class="mt-h"><span>時間足</span><span>トレンド</span><span>GMMA</span><span>RSI</span><span>判定</span></div>'+
-    m.rows.map((r,i)=>r?`<div class="mt-r"><span>${MTF_TFS[i].toUpperCase()}</span><span class="${dowCls(r.dk)}">${DOW_SHORT[r.dk]}</span><span>${gdir(r.g)}</span><span>${r.rsi==null?'—':r.rsi.toFixed(1)}</span><span class="${r.cls}">${r.arrow} ${r.judge}</span></div>`:
-      `<div class="mt-r"><span>${MTF_TFS[i].toUpperCase()}</span><span class="sub">データ不足</span><span></span><span></span><span></span></div>`).join('');
+  // 第2部 A5：判定は同じ行の4つ（トレンド・ST・GMMA・RSI）の向きの平均。各欄に「判定への寄与（+1／−1／0）」を出し、判定がどこから来たか読めるようにする
+  const pt=v=>'<small class="mt-p">（'+(v>0?'+1':v<0?'−1':'0')+'）</small>';
+  $('mtfTable').innerHTML='<div class="mt-h"><span>時間足</span><span>トレンド（ダウ理論）</span><span>ST</span><span>GMMA</span><span>RSI</span><span>判定（4つの平均）</span></div>'+
+    m.rows.map((r,i)=>r?`<div class="mt-r"><span>${MTF_TFS[i].toUpperCase()}</span><span class="${dowCls(r.dk)}">${DOW_SHORT[r.dk]}${pt(r.parts.dow)}</span><span class="${r.parts.st>0?'up':r.parts.st<0?'down':''}">${r.parts.st>0?'▲':r.parts.st<0?'▼':'—'}${pt(r.parts.st)}</span><span>${gdir(r.g)}${pt(r.parts.gm)}</span><span>${r.rsi==null?'—':r.rsi.toFixed(1)}${pt(r.parts.rv)}</span><span class="${r.cls}">${r.arrow} ${r.judge}</span></div>`:
+      `<div class="mt-r"><span>${MTF_TFS[i].toUpperCase()}</span><span class="sub">データ不足</span><span></span><span></span><span></span><span></span></div>`).join('')+
+    '<div class="sub mt-note">判定＝同じ行の4つの向きの平均（+0.5以上で上昇、−0.5以下で下降、その間はレンジ。矢印↗↘はレンジの中で±0.25以上の傾き）。GMMAは短期組が上で上向きのとき+1（上向きでも短期組が下なら0）。上のボタンの矢印も同じ判定です。トレンド（ダウ理論＝高値・安値の切り上げ／切り下げ）とST（スーパートレンド＝値動きの幅を使った線）は別の見方なので、逆を向くことがあります。「下降崩れ」は下降の流れが崩れた（上向きの兆し）、「上昇崩れ」はその逆です。</div>';
   scorePost(m);
   return m;
 }
