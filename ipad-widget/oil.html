@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="86b0793152">
+<meta name="build" content="158b38d608">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2725,6 +2725,9 @@ function renderDxy(){
     `<div class="dxynote">${note}<br>（−1に近いほど「ドル高＝${ASSET}安」がはっきり。${ASSET}とドルはふだん逆相関です）</div>`+DXY_GUIDE;
   el.hidden=false;
 }
+// 判定の大きな表示：エントリーならその向き、方向は出ても条件（利確余地など）で入らないときは「見送り」（本文の結論と同じ）
+function sigLabel(s){return mktClosed?closedLabel():s.entry?(s.sig==='BUY'?'買いエントリー':'売りエントリー'):s.sig!=='WAIT'&&s.ready?(s.forced?'待機':'見送り')+'（'+(s.sig==='BUY'?'買い':'売り')+'方向）':s.sig}
+function sigClass(s){return mktClosed||!s.entry&&s.sig!=='WAIT'?'wait':s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait'}
 function renderSnapshot(){
   const s=calcSignal();
   if(mktClosed)s.entry=false;  // 休場中はエントリーを出さない
@@ -2736,9 +2739,9 @@ function renderSnapshot(){
     s.sig==='WAIT'?'条件がそろうまで待機':
     s.entry?'3条件一致・利確目安（'+TP_BASIS_NAME[state.tpBasis]+'）まで'+Math.round(tpPipsBy(s.plan))+'pips':
     s.aligned?'3条件一致｜利確余地（'+TP_BASIS_NAME[state.tpBasis]+'）が'+MIN_TP_PIPS+'pips未満のため見送り':'3条件中2つが一致｜エントリー待ち';
-  const label=mktClosed?closedLabel():s.entry?(s.sig==='BUY'?'買いエントリー':'売りエントリー'):s.sig;
+  const label=sigLabel(s);
   el.innerHTML=esc(label)+'<small>'+esc(mktClosed&&reopenText?sub+'｜再開 '+reopenText+'（日本時間）':sub)+'</small>';
-  el.className='signal '+(mktClosed?'wait':s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait')+(s.entry?' entry':'');
+  el.className='signal '+sigClass(s)+(s.entry?' entry':'');
   renderWait(s);
   const conf=s.ready?Math.min(100,Math.round(Math.abs(s.score)/3*100)):0;
   $('meter').style.width=conf+'%';
@@ -2804,8 +2807,8 @@ function renderSnapshot(){
   $('miniPrice').textContent=fmt(state.spot.price);
   $('miniChange').textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%';
   $('miniChange').className=pct>=0?'up':'down';
-  $('miniSignal').textContent=mktClosed?closedLabel():s.entry?(s.sig==='BUY'?'買いエントリー':'売りエントリー'):s.sig;
-  $('miniSignal').className='chip signal '+(mktClosed?'wait':s.sig==='BUY'?'buy':s.sig==='SELL'?'sell':'wait')+(s.entry?' entry':'');
+  $('miniSignal').textContent=sigLabel(s);
+  $('miniSignal').className='chip signal '+sigClass(s)+(s.entry?' entry':'');
 }
 // エントリーポイント・利確目安・損切り目安（BUY/SELLのとき表示。エントリー条件を満たすと強調）
 function renderPlan(s){
