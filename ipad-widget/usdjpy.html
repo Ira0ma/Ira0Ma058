@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="bea67ce291">
+<meta name="build" content="e67e528989">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -39,6 +39,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 display:grid;place-items:center;color:#0e1012;font-size:19px;font-weight:950;box-shadow:0 0 28px rgba(217,180,88,.2)}
 h1{margin:0;font-size:clamp(20px,2.6vw,30px);line-height:1.05}
 h1 em{font-style:normal;color:var(--gold2)}
+.gototag{display:inline-block;margin-left:10px;font-size:12px;font-weight:800;line-height:1.6;color:#14100a;background:var(--gold2);border-radius:999px;padding:0 9px;vertical-align:4px;letter-spacing:0}.gototag[hidden]{display:none}
 .subtitle{margin-top:4px;color:var(--muted);font-size:12px}
 .head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .pill{display:inline-flex;align-items:center;gap:7px;background:#10161c;border:1px solid #2c3742;border-radius:999px;padding:8px 11px;font-size:12px}
@@ -491,7 +492,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 <header>
   <div class="brand">
     <div class="logo">Au</div>
-    <div><h1><span id="h1Sym">GOLD</span> Trade <em>Dashboard</em></h1>
+    <div><h1><span id="h1Sym">GOLD</span> Trade <em>Dashboard</em><span id="gotoTag" class="gototag" hidden title="ゴトー日：実需のドル買いが出やすく、仲値（9:55）にかけてドル円が上振れしやすい日です（傾向）"></span></h1>
       <div class="subtitle" id="subTitle">XAU/USD専用｜自動更新｜iPad・iPhone・Android対応</div>
     </div>
   </div>
@@ -4363,8 +4364,15 @@ $('fvgBtn').classList.toggle('on',state.showFvg);$('fvgBtn').setAttribute('aria-
    'reasonSma','reasonMom','reasonRange','reasonTp','reasonTp15','reasonTp5','reasonTpDay','reasonCup','cautionText','cautionCount'].forEach(id=>{const e=$(id);if(e)text(e)});
 })();
 loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(scheduler,1000);
-checkClosed();setInterval(checkClosed,60000);
+checkClosed();setInterval(checkClosed,60000);paintGoto();setInterval(paintGoto,60000);
 refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(releaseHot())refreshLiveTalk()},5000);startLive();setTimeout(fillRecentGold,20000);setInterval(fillRecentGold,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
+// ===== B：ゴトー日のタグ（ドル円だけ）。決め方は core.js（TDCore.gotobi）、日本の祝日はサイトの holidays.json（デスクと同じ） =====
+function paintGoto(){  // 祝日の一覧は関数に持たせる（読み込みの早い段階＝定期の呼び出しの登録時から呼ばれるため）
+  if(!IS_FX||!window.TDCore||!TDCore.gotobi)return;
+  if(!paintGoto.hol){paintGoto.hol={};fetch('holidays.json?v='+new Date().toDateString().replace(/ /g,''),{cache:'no-store'}).then(r=>r.ok?r.json():{}).then(j=>{paintGoto.hol=j||{};paintGoto()}).catch(()=>{})}
+  const H=paintGoto.hol,g=TDCore.gotobi(TDCore.dayKey(Date.now()),k=>!!H[k]),el=$('gotoTag');
+  el.hidden=!g;if(g)el.textContent=g.kind==='real'?'ゴトー日':'ゴトー日（振替）';
+}
 // ===== OILCash（補正表示）：USオイル版だけ =====
 // 記録（btc_oil_adj。以前のCL=F基準の記録もそのまま有効、入力から35日で外れる）は1件に2つの差を持てる：
 //   diff＝MT5値−CL=F（サイトの先物）、diffPerp＝MT5値−OKXのパーペチュアル
