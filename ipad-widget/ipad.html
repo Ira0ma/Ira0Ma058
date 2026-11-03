@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="6ff8b4c061">
+<meta name="build" content="3f146ba8de">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -190,7 +190,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 #ind .card-title { gap: 8px; }
 .card-title .ico { width: 26px; height: 26px; flex: none; }
 .card-title .aside { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--ink-2); }
-.ind-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; }
+.ind-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; min-height: 0; overflow: hidden; flex: 0 1 auto; }  /* 3行が入りきらない高さでは、下の注記と「経済カレンダー」を押し出さない */
 .ind-list li { display: grid; grid-template-columns: 1fr auto; gap: 0 4px; align-items: start; padding: 9px 0; border-bottom: 1px solid var(--glass-line); }
 .ind-list .t { font-size: 14px; font-weight: 600; white-space: nowrap; }
 .ind-list .t .date { font-weight: 600; color: var(--gold); }
@@ -203,7 +203,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .ind-list .stars span { color: rgba(255,255,255,.18); }
 .ind-list li.past { opacity: .45; }
 .ind-list .s.warn { color: #f0c36a; font-size: 10.5px; margin-top: 1px; }
-.ind-note { margin: 6px 0 0; font-size: 10px; line-height: 1.5; color: var(--ink-3); }
+.ind-note { margin: 4px 0 0; font-size: 9.5px; line-height: 1.4; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: none; }
 .ind-list li.empty { display: block; color: var(--ink-2); font-size: 13px; line-height: 1.7; border-bottom: 0; }
 .more { margin-top: auto; font-size: 13px; color: var(--ink-2); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
 .more:hover { color: var(--gold); }
@@ -830,7 +830,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <ul class="ind-list" id="ind-list">
       <li class="empty">今日の経済指標を読み込んでいます…</li>
     </ul>
-    <p class="ind-note">★3＝最も重要・★2＝重要・★1＝参考。発表済みは結果つきで2時間残し、今日の予定が少ない日は今週このあとの指標（日付つき）も載せます。</p>
+    <p class="ind-note" title="★3＝最も重要・★2＝重要・★1＝参考。発表済みは結果つきで2時間残し、今日の予定が少ない日は今週このあとの指標（日付つき）も載せます。">★3＝最も重要・★2＝重要・★1＝参考｜発表済みは結果つきで2時間・予定が少ない日は今週の次も</p>
     <div class="ind-foot">
       <a class="more" href="https://jp.investing.com/economic-calendar/" target="_blank" rel="noopener">経済カレンダーを表示 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></a>
       <span class="ind-upd num" id="ind-upd"></span>
@@ -2863,7 +2863,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
         s.innerHTML = '<span class="soon"></span>';
         s.firstChild.textContent = "あと" + Math.ceil(mins) + "分" + (sub ? "｜" + sub : "");
       } else s.textContent = sub || (isEventOnly(e) ? "イベント（数値の発表なし）" : "　");
-      if (e.stars === 3 && mins > -30) {  // ★3：発表前後の注意を自動で添える
+      if (e.stars === 3 && mins > -30 && mins <= 60) {  // ★3：発表の前後（1時間前〜30分後）に注意を添える（ふだんは行を増やさない）
         var w = document.createElement("div"); w.className = "s warn"; w.textContent = "発表前後は値動きとスプレッドに注意"; li.querySelector(".b").appendChild(w);
       }
       var st = li.querySelector(".stars"); st.setAttribute("data-v", e.stars); paintStars(st);
