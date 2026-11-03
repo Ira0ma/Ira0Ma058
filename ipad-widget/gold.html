@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="5c9fdf95de">
+<meta name="build" content="824bc27ee2">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -567,7 +567,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
   <section id="secChart" class="panel s8">
     <div class="cardhead">
       <div><div class="title" id="chartTitle">GOLDチャート</div><div id="chartMeta" class="sub">取得中...</div></div>
-      <div class="charttools"><div class="segmented" id="srcSeg" role="group" aria-label="チャートの種類"><button type="button" class="seg" data-src="own">自作チャート</button><button type="button" class="seg" data-src="tv">TradingView</button></div><a id="tvOpen" class="tvopen" href="https://www.tradingview.com/chart/" target="_blank" rel="noopener">プレミアムで開く ↗</a><button type="button" id="fullBtn" class="fullbtn" aria-pressed="false">⤢ 大きく表示</button></div>
+      <div class="charttools"><div class="segmented" id="srcSeg" role="group" aria-label="チャートの種類"><button type="button" class="seg" data-src="own">自作チャート</button><button type="button" class="seg" data-src="tv">TradingView</button></div><a id="tvPartner" class="tvopen" href="https://www.tradingview.com/chart/?aff_id=1173877" target="_blank" rel="noopener sponsored">TradingViewで開く ↗</a><a id="tvOpen" class="tvopen" href="https://www.tradingview.com/chart/" target="_blank" rel="noopener">プレミアムで開く ↗</a><button type="button" id="fullBtn" class="fullbtn" aria-pressed="false">⤢ 大きく表示</button></div>
     </div>
     <div class="tfcap">時間足｜下段＝ダウ理論のトレンドとST（スーパートレンド）の向き（別の見方なので、逆を向くことがあります）</div>
     <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
@@ -4183,9 +4183,13 @@ const TV_SC_DEF={gold:'GOLD を表示',usdjpy:'TradingViewを開く',btc:'Tradin
 function tvViaSc(){return lsGet('tv_via_shortcut','')==='1'}
 function tvScName(){return lsGet(LSP+'tv_sc_name','')||TV_SC_DEF}
 function tvScUrl(){return 'shortcuts://run-shortcut?name='+encodeURIComponent(tvScName())}
+/* タスク8：TradingView への扉（外部リンクだけ。埋め込みはしない）。この銘柄の TradingView のチャートを、表示中の時間足で、
+   パートナーのパラメータ aff_id=1173877 を付けて新しいタブで開く */
+const TV_AFF='1173877';
+function tvPartnerUrl(){return 'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(TV_SYMBOL)+'&interval='+TV_IV[state.tf]+'&aff_id='+TV_AFF}
 function tvOpenUrl(){return tvLayout()||'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(TV_SYMBOL)+'&interval='+TV_IV[state.tf]}
 function paintTvOpen(){
-  const a=$('tvOpen'),lay=tvLayout();a.href=tvOpenUrl();a.classList.toggle('saved',!!lay);
+  const a=$('tvOpen'),lay=tvLayout();a.href=tvOpenUrl();a.classList.toggle('saved',!!lay);$('tvPartner').href=tvPartnerUrl();
   a.textContent='プレミアムで開く ↗';a.title=lay?'登録した保存チャート：'+lay:TV_SYMBOL+'・'+TF_NAME[state.tf];
   $('tvLayoutState').textContent=lay?'登録済み':'';$('tvSymName').textContent=TV_SYMBOL;
   if(document.activeElement!==$('tvLayoutUrl'))$('tvLayoutUrl').value=lay;
