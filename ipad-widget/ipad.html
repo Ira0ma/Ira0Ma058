@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="acc28009f6">
+<meta name="build" content="937f03b47e">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -90,7 +90,7 @@ body {
 #clock .note { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); margin-top: 12px; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
 
 /* markets */
-#markets { left: 281px; top: 35px; width: 903px; height: 276px; display: grid; grid-template-columns: 1fr 1px 1fr 1px 1fr; }  /* ドル円・ゴールド・BTC */
+#markets { left: 281px; top: 35px; width: 903px; height: 276px; display: grid; grid-template-columns: 1fr 1px 1fr 1px 1fr 1px 1fr; }  /* ゴールド・ドル円・BTC・オイル */
 #markets .sep { background: var(--glass-line); margin: 22px 0; }
 .mkt { padding: 18px 20px 8px; display: flex; flex-direction: column; min-width: 0; }
 /* 高さが決まっているカード（横向きの画面）では、小さなチャートが残りの高さに合わせて伸び縮みする。
@@ -129,6 +129,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .mkt .klv { display: flex; gap: 7px; margin-top: 5px; font-size: 10.5px; letter-spacing: -.02em; font-weight: 600; white-space: nowrap; overflow: hidden; }
 .mkt .klv span i { font-style: normal; font-size: 9px; font-weight: 700; margin-right: 2px; opacity: .8; }
 .mkt .klv .r { color: #ff8a7e; } .mkt .klv .s { color: #5fd99a; }
+.mkt [data-f="oiladj"] { color: var(--ink-3); } .mkt [data-f="oiladj"] button { font: inherit; color: var(--gold); background: none; border: 0; padding: 0; cursor: pointer; }
 .mkt.has-klv canvas.chart { height: 88px; }
 .mkt .mscore { position: absolute; right: 18px; top: 15px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; pointer-events: none; }
 .mkt .mscore b { font-size: 11.5px; font-weight: 700; white-space: nowrap; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--glass-line); color: var(--ink-2); }
@@ -624,7 +625,7 @@ html:not(.flow) #flow { display: none; }
 .fsizer { position: relative; margin: 0 auto; }
 .fstage { position: absolute; left: 0; top: 0; display: flex; gap: 14px; align-items: flex-start; transform-origin: 0 0; }
 .flow .card { position: relative !important; left: auto !important; top: auto !important; width: 340px !important; flex: none; }
-.flow #markets { height: auto; grid-template-columns: 1fr; grid-template-rows: auto 1px auto 1px auto; }
+.flow #markets { height: auto; grid-template-columns: 1fr; grid-template-rows: auto 1px auto 1px auto 1px auto; }
 .flow #markets .sep { margin: 0 22px; }
 .flow #cal { height: auto; grid-template-columns: 1fr; grid-template-rows: auto 1px auto; }
 .flow #xfeed { height: auto; min-height: 202px; }
@@ -744,6 +745,21 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <canvas class="chart"></canvas>
       <div class="tabs" role="group" aria-label="期間"></div>
       <div class="picker" hidden><div class="picker-h"><span>銘柄を選ぶ</span><button type="button" class="picker-close">閉じる</button></div><div class="picker-list"></div></div>
+    </div>
+    <div class="sep"></div>
+    <div class="mkt mkt-oil" id="m-3">
+      <button class="head" type="button" aria-label="OILCash（補正表示）のダッシュボードを開く">
+        <span class="badge"></span>
+        <span class="names"><span class="sym"></span><span class="jp"></span></span>
+        <svg class="chev" width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      </button>
+      <div class="price num" data-f="price"></div>
+      <div class="chg num" data-f="chg"></div>
+      <div class="klv num" data-f="oiladj"></div>
+      <div class="klv num" data-f="klv" hidden></div>
+      <div class="mscore" data-f="score" hidden></div>
+      <canvas class="chart"></canvas>
+      <div class="tabs" role="group" aria-label="期間"></div>
     </div>
   </section>
 
@@ -1050,9 +1066,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=1e106e624c", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=d9164eaf1f", title: "ドル円分析" },
-    btc: { src: "btc.html?v=669a487b44", title: "BTC分析" }
+    gold: { src: "gold.html?v=d750f5499f", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=be7712ad66", title: "ドル円分析" },
+    btc: { src: "btc.html?v=a7d231cc8b", title: "BTC分析" },
+    oil: { src: "oil.html?v=d822647e0c", title: "オイル分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -1894,6 +1911,43 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     el.querySelector(".picker-close").addEventListener("click", function () { picker.hidden = true; });
     return mk;
   });
+  /* 4th card: OILCash（補正表示）. US oil (CL=F) from market.json plus the difference saved on the OIL dashboard
+     (MT5's OILCash minus CL=F at that moment; the same saved data, btc_oil_adj). Without a correction younger than
+     35 days it shows CL=F itself and says 補正なし. Its head opens the OIL dashboard (no market picker). */
+  var OIL_KEY = "btc_oil_adj", OIL_MAX = 35 * 86400000;
+  function oilAdj() {
+    var h = null; try { h = JSON.parse(localStorage.getItem(OIL_KEY) || "null"); } catch (e) {}
+    var r = h && Array.isArray(h.hist) && h.hist[0];
+    return r && isFinite(r.diff) && Date.now() - r.t <= OIL_MAX ? r : null;
+  }
+  var oilMk = new Market(document.getElementById("m-3"), "usoil");
+  oilMk.oil = true; oilMk.cv.__mkt = oilMk; if (chartRO) chartRO.observe(oilMk.cv);
+  oilMk.status = function () { var st = Market.prototype.status.call(this); st.name = "OILCash（補正表示）"; return st; };
+  oilMk.statusChip = function () {
+    var b = Market.prototype.statusChip.call(this);
+    if (!b.__oil) { b.__oil = true; var a = this.adj; b.insertAdjacentText("beforeend", a ? "・補正 " + TDCore.partsIn("Asia/Tokyo", a.t).mo + "/" + TDCore.partsIn("Asia/Tokyo", a.t).d : "・補正なし"); }
+    return b;
+  };
+  oilMk.feed = function (m) {  // market.json's usoil, moved by the saved difference
+    var a = this.adj = oilAdj(), d = a ? a.diff : 0, h = this.el.querySelector(".head");
+    h.querySelector(".sym").innerHTML = "OILCash<small>(補正表示)</small>";
+    h.querySelector(".jp").textContent = a ? "USオイル（CL=F）＋MT5との差・推定" : "USオイル（CL=F）の値のまま";
+    var adjEl = this.el.querySelector('[data-f="oiladj"]');
+    adjEl.innerHTML = a ? "差 " + (d >= 0 ? "+" : "−") + Math.abs(d).toFixed(2) + "（" + TDCore.jst(a.t) + " 入力・推定）"
+      : '補正なし <button type="button" data-oil-open>MT5の値を入れる →</button>';
+    this.chip = null;
+    if (!m) return;
+    var sh = function (r) { return [r[0], r[1] + d, r[2] + d, r[3] + d, r[4] + d]; }, c = {};
+    Object.keys(m.candles || {}).forEach(function (tf) { c[tf] = (m.candles[tf] || []).map(sh); });
+    this.series = c; this.prevClose = m.prevClose != null ? m.prevClose + d : null; this.asOf = m.asOf;
+    this.prov = { src: "サイトの定期取得（Yahoo Finance・USオイル CL=F）", type: a ? "CL=Fに、" + TDCore.jst(a.t) + "に入力されたMT5値との差（" + (d >= 0 ? "+" : "−") + Math.abs(d).toFixed(2) + "）を加えた推定値。XMの配信値そのものではありません" : "補正なし（CL=Fの最新の足の終値のまま）" };
+    this.applyLive(m.price + d); this.gen(); this.draw();
+  };
+  oilMk.feed(null);
+  oilMk.el.querySelector(".head").addEventListener("click", function () { openDash("oil", this); });
+  oilMk.el.addEventListener("click", function (e) { var b = e.target.closest("[data-oil-open]"); if (b) { e.stopPropagation(); openDash("oil", b); } });
+  window.addEventListener("storage", function (e) { if (e.key === OIL_KEY) oilMk.feed(market && (market.instruments || market).usoil); });  // saved on the OIL dashboard
+  markets.push(oilMk);
 
   /* ---------- weather ---------- */
   var ICON = {
@@ -2697,6 +2751,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
           var m = all[mk.key];
           mk.held = chk.ok[mk.key] === false ? chk.problems[mk.key] : null;
           if (!m) { if (mk.held && !mk.live) mk.render(); return; }
+          if (mk.oil) { mk.feed(m); return; }
           mk.series = m.candles; mk.prevClose = m.prevClose;
           mk.unadjusted = !!INST[mk.key].spot && m.spotAdjusted === false;
           // spot-priced instruments keep their fresher minute quote

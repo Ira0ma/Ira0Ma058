@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="build" content="d822647e0c">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090b0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="OIL">
+<link rel="apple-touch-icon" href="https://ira0ma.github.io/Ira0Ma058/icon-cup.png">
+<title>OIL Trade Dashboard</title>
+<!-- oil.src.html: build.py turns this into oil.html, with the GOLD dashboard's styles put in place of the line below,
+     so the OIL dashboard keeps the same look as the others. Saved corrections stay under the keys btc_oil_adj / btc_oil_tf
+     (where they were first kept on the BTC dashboard), so earlier entries carry over. -->
+<style>
+:root{
+  --bg:#090b0e;--panel:#11161c;--panel2:#0d1217;--line:#26303a;
+  --gold:#d9b458;--gold2:#f5d77e;--text:#f4f6f8;--muted:#93a0ad;
+  --green:#42d59c;--red:#ff6969;--amber:#ffca65;--blue:#68b9ff;
+  --shadow:0 12px 34px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0;background:radial-gradient(circle at top,#18130b 0,#0b0e12 30%,#07090b 100%);color:var(--text);
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP",sans-serif;-webkit-tap-highlight-color:transparent}
+body{min-height:100vh;font-variant-numeric:tabular-nums}
+button,input,select{font:inherit}
+button{border:0;border-radius:11px;padding:10px 13px;font-weight:800;cursor:pointer;color:inherit}
+button:disabled{opacity:.6;cursor:default}
+button.primary{background:linear-gradient(180deg,#eed382,#b9892d);color:#101114}
+button.ghost{background:#171d24;color:var(--gold2);border:1px solid #34404c}
+input,select{width:100%;background:#0d1217;border:1px solid #2b3540;color:var(--text);border-radius:10px;padding:10px;outline:none;margin-top:4px}
+input:focus,select:focus{border-color:#8a6f32;box-shadow:0 0 0 3px rgba(217,180,88,.12)}
+input[readonly]{color:#c9d2db;background:#0a0e12;border-style:dashed}
+.shell{max-width:1500px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 14px 28px}
+
+/* ===== header ===== */
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;gap:11px;align-items:center}
+.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(145deg,#f2d67d,#90691f);
+display:grid;place-items:center;color:#0e1012;font-size:19px;font-weight:950;box-shadow:0 0 28px rgba(217,180,88,.2)}
+h1{margin:0;font-size:clamp(20px,2.6vw,30px);line-height:1.05}
+h1 em{font-style:normal;color:var(--gold2)}
+.subtitle{margin-top:4px;color:var(--muted);font-size:12px}
+.head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:7px;background:#10161c;border:1px solid #2c3742;border-radius:999px;padding:8px 11px;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
+.dot.live{background:var(--green);box-shadow:0 0 10px rgba(66,213,156,.8)}
+.dot.error{background:var(--red)}
+.toggle{display:inline-flex;align-items:center;gap:8px;background:#171d24;border:1px solid #34404c;border-radius:999px;padding:7px 12px 7px 7px;font-size:12px}
+.toggle .knob{width:30px;height:18px;border-radius:999px;background:#2a333d;position:relative;transition:.2s}
+.toggle .knob::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#93a0ad;transition:.2s}
+.toggle.on .knob{background:#1f5c45}.toggle.on .knob::after{left:14px;background:var(--green)}
+.metaline{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--muted);font-size:11px;margin:10px 2px}
+.metaline b{color:var(--text);font-weight:700}
+.quicknav{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.quicknav::-webkit-scrollbar{display:none}
+.quicknav a{flex:none;text-decoration:none;color:#d5dde5;background:#121820;border:1px solid #2c3742;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700}
+
+/* ===== notices ===== */
+.notice{display:none;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:12px;line-height:1.6;background:#151b22;border:1px solid #31404d;color:#cbd6e0}
+.notice.show{display:block}
+.notice.err{background:#35181b;border-color:#71343a;color:#ffd1d1}
+.caution{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid #6c4f16;
+background:linear-gradient(180deg,#39280e,#1f170d);border-radius:17px;padding:13px 15px;margin-bottom:12px;--glow-sh:0 0 0 4px rgba(255,202,101,.12);--glow-t:2s}
+.caution.hidden{display:none}
+
+.caution-title{font-size:20px;font-weight:950;color:#ffd57a;letter-spacing:.06em}
+.caution-sub{font-size:12px;color:#ffe0a4;margin-top:3px}
+.caution-count{font-size:22px;font-weight:950;white-space:nowrap}
+
+/* ===== sticky mini bar ===== */
+.mini{position:fixed;left:0;right:0;top:0;z-index:20;display:flex;align-items:center;justify-content:center;gap:14px;
+padding:calc(8px + env(safe-area-inset-top)) 14px 8px;background:rgba(9,11,14,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+border-bottom:1px solid #232c35;font-size:13px;transform:translateY(-110%);transition:transform .25s}
+.mini.show{transform:none}
+.mini b{font-size:16px}
+.mini .chip{padding:3px 9px;border-radius:999px;font-weight:900;font-size:12px}
+
+/* ===== layout ===== */
+.panel{background:linear-gradient(180deg,rgba(20,26,33,.97),rgba(14,18,23,.97));
+border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow);scroll-margin-top:60px;min-width:0}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
+.s4{grid-column:span 4}.s5{grid-column:span 5}.s7{grid-column:span 7}.s8{grid-column:span 8}.s12{grid-column:span 12}
+.cardhead{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+.title{font-size:14px;font-weight:850}
+.sub{font-size:11px;color:var(--muted);line-height:1.5}
+.tag{font-size:10px;color:#ced6df;background:#111820;border:1px solid #37424e;border-radius:999px;padding:5px 8px;white-space:nowrap}
+.up{color:var(--green)}.down{color:var(--red)}.warn{color:var(--amber)}
+
+/* ===== hero ===== */
+.hero{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:16px}
+.hero>div{min-width:0}
+.hero>div+div{border-left:1px solid #222b35;padding-left:16px}
+.price{font-size:clamp(34px,4vw,52px);font-weight:950;line-height:1}  /* 色のフェードはなし：価格は毎秒動くので、フェードが途切れず続いて重くなる */
+.price.flash-up{color:var(--green)}.price.flash-down{color:var(--red)}
+.change{margin-top:7px;font-size:13px;font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:11px}
+.dxybox[hidden]{display:none}
+#cupRow[hidden]{display:none}
+.dxybox{margin-top:10px;background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:10px 11px;font-size:11.5px;display:grid;gap:7px}
+.dxybox .dh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 8px}.dxybox .dh b{white-space:nowrap}
+.dxybox .dh b{font-size:13px}.dxybox .dh span{color:var(--muted)}
+.dxyrow{display:grid;grid-template-columns:7em minmax(0,1fr) 11.5em;gap:8px;align-items:center;white-space:nowrap}
+.dxyrow .lb{color:var(--muted)}
+.dxyrow .v{text-align:right}
+.dxyguide{border-top:1px solid #232d36;padding-top:9px;display:grid;gap:7px;line-height:1.55}
+.dxyguide h4{margin:0;font-size:12.5px}
+.dxyguide dl{margin:0;display:grid;grid-template-columns:7em minmax(0,1fr);gap:5px 8px}
+.dxyguide dt{color:#e6c973;font-weight:700}.dxyguide dd{margin:0;color:var(--muted)}
+.dxyguide ol{margin:0;padding-left:1.3em;color:var(--muted)}.dxyguide ol b,.dxyguide dd b{color:var(--text,#e8edf2)}
+@media (max-width:520px){.dxyguide dl{grid-template-columns:5.6em minmax(0,1fr)}}
+.dxyguide .warn{color:var(--muted);font-size:11px}
+.dxybar{position:relative;height:8px;border-radius:999px;background:linear-gradient(90deg,rgba(66,213,156,.25),#1a222b 50%,rgba(255,105,105,.25))}
+.dxybar::after{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#4a5663}
+.dxybar i{position:absolute;top:-3px;width:4px;height:14px;border-radius:2px;background:#e6c973;transform:translateX(-2px)}
+.dxyrow .v{font-weight:800;white-space:nowrap}
+.dxynote{color:var(--muted);line-height:1.5}.dxynote b{color:var(--text)}
+.keylvhead{display:flex;align-items:baseline;justify-content:space-between;margin:12px 0 6px}.keylvhead b{font-size:13px}
+.keylv{display:grid;gap:5px}
+.kl{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:6px 10px;border-radius:9px;border:1px solid;font-size:12px}
+.kl b{font-size:14px;font-variant-numeric:tabular-nums}.kl small{font-size:10.5px;color:var(--muted);min-width:64px;text-align:right}
+.kl.r{background:rgba(255,105,105,.07);border-color:rgba(255,105,105,.35)}.kl.r b{color:#ff8a8a}
+.kl.s{background:rgba(66,213,156,.07);border-color:rgba(66,213,156,.35)}.kl.s b{color:#5fe0ad}
+.kl b .kl-none{font-size:11px;font-weight:500;color:var(--muted)}
+.kl.now{background:rgba(80,140,255,.1);border-color:rgba(80,140,255,.45)}.kl.now b{color:#9cc0ff}
+.mtfscore{border-radius:14px;padding:12px 14px;border:1px solid #2a3440;background:#0f141a}
+.mtfscore.up{border-color:rgba(66,213,156,.5);background:linear-gradient(180deg,rgba(66,213,156,.08),rgba(66,213,156,.02))}
+.mtfscore.down{border-color:rgba(255,105,105,.5);background:linear-gradient(180deg,rgba(255,105,105,.09),rgba(255,105,105,.02))}
+.ms-main{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.ms-main small{display:block;font-size:11px;color:var(--muted)}.ms-main small i{font-style:normal;font-size:9.5px;margin-left:4px}
+.ms-main b{display:block;font-size:24px;font-weight:900;margin-top:2px}
+.mtfscore.up .ms-main b,.mtfscore.up .ms-num{color:#42d59c}.mtfscore.down .ms-main b,.mtfscore.down .ms-num{color:#ff6969}
+.ms-num{font-size:40px;font-weight:900;line-height:1;text-align:right;font-variant-numeric:tabular-nums}.ms-num small{font-size:10px;font-weight:600;text-align:right}
+.ms-tfs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.ms-tfs button{font:inherit;color:#d5dde5;background:#0c1116;border:1px solid #2c3742;border-radius:10px;padding:6px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px}
+.ms-tfs button span{font-size:11px;font-weight:700}.ms-tfs button b{font-size:20px;line-height:1.1}.ms-tfs button small{font-size:10.5px}
+.ms-tfs .up b,.ms-tfs .up small,.mt-r .up{color:#42d59c}.ms-tfs .down b,.ms-tfs .down small,.mt-r .down{color:#ff6969}.ms-tfs .flat b{color:#ffd166}
+.mtftable{margin-top:10px;font-size:12.5px}
+.mt-h,.mt-r{display:grid;grid-template-columns:.8fr 1.3fr 1fr .8fr 1.1fr;gap:6px;padding:7px 4px;border-bottom:1px solid #1e2730;align-items:center}
+.mt-h{font-size:10.5px;color:var(--muted);padding-top:0}.mt-r>span:first-child{font-weight:700}
+.techlist{display:grid}
+.tl{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 2px;border-bottom:1px solid #1e2730;font-size:12.5px;align-items:center}
+.tl>span{color:#cbd6e0}.tl b{text-align:right;font-weight:700}.tl em{grid-column:1/-1;text-align:right;font-style:normal;font-size:11px;color:var(--muted)}
+.tl .up,.tl i.up{color:#42d59c}.tl .down,.tl i.down{color:#ff6969}.tl i{font-style:normal;font-weight:700}
+i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,156,.12);border-radius:6px;padding:1px 6px;margin-left:4px}
+.gq{display:inline-grid;place-items:center;width:18px;height:18px;margin-left:6px;vertical-align:2px;border-radius:50%;border:1px solid rgba(232,195,90,.55);background:rgba(232,195,90,.12);color:#e8c35a;font:700 11px/1 -apple-system,sans-serif;cursor:pointer;padding:0}.gq:hover{background:rgba(232,195,90,.3)}
+.alertgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.al-all{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#101820;border:1px solid #2c3a47;border-radius:11px;padding:10px 12px}
+.al-all b{display:block;font-size:13px}.al-all small{display:block;font-size:10.5px;color:var(--muted);margin-top:3px}.al-allbtn{display:flex;gap:6px}.al-allbtn .seg{padding:7px 14px}
+.al-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:10px 12px}
+.al-row b{display:block;font-size:13px}.al-row small{display:block;font-size:10.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+.al-in{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}.al-in label{font-size:11px;color:#cbd6e0;display:flex;align-items:center;gap:4px}
+.al-in input{width:92px;font:inherit;font-size:12px;color:#eef3f7;background:#0a0e12;border:1px solid #2c3742;border-radius:7px;padding:4px 6px}
+.al-sw{flex:none;width:44px;height:26px;border-radius:999px;border:1px solid #2c3742;background:#1a222b;position:relative;cursor:pointer;padding:0}
+.al-sw i{position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#8796a5;transition:left .15s}
+.al-sw[aria-pressed="true"]{background:#2f6fe4;border-color:#3d7bf0}.al-sw[aria-pressed="true"] i{left:21px;background:#fff}
+.alerthist{margin-top:10px;font-size:12px}.alerthist b{display:block;margin-bottom:4px}.alerthist .sub div{padding:3px 0;border-bottom:1px solid #1a222b}
+.smcguide summary{font-size:12px}
+.smcg{font-size:12px;line-height:1.7;color:#cbd6e0;padding-bottom:10px}.smcg p{margin:6px 0}
+.smcg dl{margin:6px 0;display:grid;gap:4px}.smcg dt{font-weight:900;font-size:13px;margin-top:4px}.smcg dt small{font-weight:600;font-size:10.5px;color:var(--muted);margin-left:6px}
+.smcg dt.bos{color:#5cc8ff}.smcg dt.choch{color:#ffd166}.smcg dd{margin:0 0 0 2px}
+.smcex{background:#0a0e12;border:1px solid #232d36;border-radius:9px;padding:8px 10px;margin:8px 0}.smcex b{display:block;font-size:11px;color:var(--muted)}
+.smcg .up{color:#42d59c;font-weight:700}.smcg .down{color:#ff6969;font-weight:700}.smcg ul{margin:4px 0;padding-left:1.2em}
+.gxtoast.al{color:#ffd57a;border-color:rgba(255,213,122,.7)}
+.stat{background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:9px 10px;min-width:0}
+.stat span{display:block;color:var(--muted);font-size:10px}.stat b{display:block;font-size:14px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.signal{padding:12px;text-align:center;border-radius:14px;font-size:30px;font-weight:950;letter-spacing:.08em}
+.signal.buy{background:#0e2d23;border:1px solid #275e49;color:var(--green)}
+.signal.sell{background:#35181b;border:1px solid #71343a;color:var(--red)}
+.signal.wait{background:#2c2414;border:1px solid #654f1f;color:var(--amber)}
+/* 3条件すべて一致：エントリー表示 */
+.signal.entry{color:#08110d;letter-spacing:.04em;--glow-sh:0 0 0 6px var(--glow);--glow-t:1.6s}
+.signal.entry.buy{background:linear-gradient(180deg,#5fe8b2,#2bb682);border-color:#7ff0c4;--glow:rgba(66,213,156,.45)}
+.signal.entry.sell{background:linear-gradient(180deg,#ff8a8a,#e04f55);border-color:#ffb0b0;color:#1a0708;--glow:rgba(255,105,105,.45)}
+.signal.entry small{opacity:1;font-weight:800}
+
+
+.talkalert{margin-top:8px;border:1px solid #6b4fd1;background:rgba(124,92,255,.10);border-radius:10px;padding:7px 10px;font-size:11px;color:#d9d0ff}
+.talkalert b{color:#fff}
+.talk{display:grid;gap:6px;margin-top:6px}
+.talkitem{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 8px;background:#0d1217;border:1px solid #222b35;border-radius:10px;padding:7px 9px;font-size:12px;color:var(--text);text-decoration:none}
+.talkitem .tt{color:var(--muted);font-size:11px;white-space:nowrap}
+.talkitem .tags{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 8px;font-size:10.5px;color:var(--muted)}
+.talkitem .who{color:#b9a6ff;font-weight:700}.talkitem .hawk{color:#ff9d6b;font-weight:700}.talkitem .dove{color:#6bc8ff;font-weight:700}.talkitem .intv{color:#ffb547;font-weight:700}
+.talkitem.fresh{border-color:#7c5cff;box-shadow:0 0 0 1px #7c5cff inset;--glow:rgba(124,92,255,.35);--glow-sh:0 0 0 6px var(--glow);--glow-t:1.6s}
+.talkhead{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px}
+.waitfor{margin-top:8px;background:#0d1217;border:1px solid #654f1f;border-radius:10px;padding:8px 10px;font-size:11px;display:grid;gap:5px}
+.waitfor .wh{color:var(--amber);font-weight:800}
+.waitfor .wl{display:flex;flex-wrap:wrap;gap:3px 10px;color:var(--muted)}.waitfor .wl b{color:var(--text);font-weight:700;margin-right:2px}
+.waitfor .ok{color:#42d59c}.waitfor .ng{color:#ffb547}
+.signal small{display:block;font-size:11px;letter-spacing:0;font-weight:700;margin-top:3px;opacity:.85}
+.meter{height:6px;border-radius:999px;background:#1a222b;margin:9px 0 4px;overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#b9892d,#f5d77e);transition:width .4s}
+.reasons{display:grid;gap:5px;margin-top:8px}
+.reason{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#0d1217;border:1px solid #222b35;border-radius:10px;padding:7px 9px}
+.reason span{font-size:11px;color:var(--muted)}.reason b{font-size:12px;text-align:right}
+.patlist{display:grid;gap:4px;margin-top:6px}
+.patlist .ph{font-size:11px;color:var(--muted);margin:4px 2px 0}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;align-items:center;background:#0d1217;border:1px solid #222b35;border-radius:10px;padding:6px 9px;font-size:11px}
+.prow .pn{color:var(--text);font-weight:600}.prow .ps{text-align:right;font-weight:700;color:var(--muted)}
+.prow .pc{grid-column:1/-1;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
+.prow .pc .ok{color:#42d59c}.prow .pc .ng{color:#ff6969}
+.prow.go{border-color:#42d59c;background:rgba(66,213,156,.08)}.prow.go.sell{border-color:#ff6969;background:rgba(255,105,105,.08)}
+.prow.go .ps{color:#42d59c}.prow.go.sell .ps{color:#ff6969}.prow.idle{opacity:.55}
+.planbox{margin-top:8px;border:1px solid #2b3540;border-radius:12px;padding:9px 11px;background:#0c1116;opacity:.8}
+.planbox.go{opacity:1;border-width:2px}
+.planbox.go.buy{border-color:#2f8a66;background:#0b1f18}
+.planbox.go.sell{border-color:#8a3a40;background:#22100f}
+.plhead{font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px}
+.planbox.go .plhead{color:var(--text)}
+.plrow{display:grid;grid-template-columns:auto 1fr;gap:0 10px;align-items:baseline;padding:4px 0;border-top:1px solid #1d252e}
+.plrow span{font-size:11px;color:var(--muted)}
+.plrow b{font-size:15px;text-align:right}
+.plrow em{grid-column:1/-1;font-style:normal;font-size:10px;color:var(--muted);text-align:right}
+.plrow.tp b{color:var(--green)}
+/* 利確の時間足：15分足＝水色（早めの利確）、1時間足＝緑（本命の利確） */
+.tf5{color:#c792ff}.reason .tf5{font-weight:700}.plrow.tp5 b{color:#c792ff}
+.tf15{color:#5cc8ff}.tf60{color:var(--green)}.tfday{color:#ffa94d}.reason .tf15,.reason .tf60,.reason .tfday{font-weight:700}.plrow.tpday b{color:#ffa94d}
+.tp15row{margin-left:14px;padding:5px 9px}.tp15row>span{font-size:11px}
+.tpbasis{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:8px 0 6px;font-size:11px;color:var(--muted)}
+.tpbasis .seg{padding:6px 11px}.tpbasis .segmented{flex-wrap:wrap;flex:0 1 auto}
+.reason.unused{opacity:.6}.tpuse{color:var(--gold2);font-weight:700}
+.plrow.tp15 b{color:#5cc8ff}.plrow span b{font-size:12px;text-align:left}.plrow.sl b{color:var(--red)}
+.plfoot{font-size:10px;color:var(--muted);text-align:right;margin-top:4px}
+.nextev{background:#0d1217;border:1px solid #232d37;border-radius:13px;padding:12px}
+.nextev.alert{border-color:#6c4f16;background:#22190c}
+.nextev .count{font-size:26px;font-weight:950;margin:6px 0 2px}
+.nextev .evtitle{font-size:13px;font-weight:800;line-height:1.4}
+.result-line{margin-top:8px;padding:8px 10px;border-radius:10px;background:#16130b;border:1px solid #5d4a20;font-size:13px}
+.result-line b{font-size:16px;color:var(--gold2)}
+.result-line.wait{color:var(--amber);border-style:dashed}
+.relbox{margin-top:12px;display:grid;gap:8px}
+.relbox .rh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.relbox .rh b{font-size:13px}.relbox .rh span{color:var(--muted);font-size:11px}
+.rel{background:#0d1217;border:1px solid #232d37;border-radius:11px;padding:9px 10px;font-size:12px;display:grid;gap:5px}
+.rel.fresh{border-color:#5d4a20;background:#16130b}
+.rel.wait{border-style:dashed;color:var(--amber)}
+.rel .rt{display:flex;justify-content:space-between;gap:8px;font-weight:800;line-height:1.4}
+.rel .rv b{font-size:15px;color:var(--gold2)}
+.result-line b.cmp,.rel b.cmp{font-size:inherit;color:inherit}
+.reff{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.reff .chip{padding:2px 8px;border-radius:999px;border:1px solid #2b3742;font-weight:800;font-size:12px}
+.reff .chip.up{background:rgba(66,213,156,.12);border-color:rgba(66,213,156,.45)}
+.reff .chip.down{background:rgba(255,105,105,.12);border-color:rgba(255,105,105,.45)}
+.reff .chip.flat{color:var(--muted)}
+.reff .why{color:var(--muted);font-size:11px}
+.rel .react{color:var(--muted);font-size:11px}.rel .react.warn{color:var(--amber)}
+.livedot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(66,213,156,.8);margin-right:6px;vertical-align:middle}
+
+/* ===== chart ===== */
+.segmented{display:flex;gap:5px;flex:none}
+#secChart .cardhead,#secNews .cardhead{flex-wrap:wrap}#secNews .segmented{flex-wrap:wrap}#secChart .segmented{flex-wrap:wrap;flex:0 1 auto;justify-content:flex-end}
+.seg{background:#121820;color:#d5dde5;border:1px solid #34404c;border-radius:999px;padding:7px 12px;font-size:12px}
+.seg.active{background:linear-gradient(180deg,#e6c973,#b5872d);border-color:#b5872d;color:#101114}
+.chartwrap{position:relative}
+.tvbox{margin-top:6px}.tvhost{height:min(560px,70vh);min-height:360px;border-radius:12px;overflow:hidden;border:1px solid #232d36;background:#0f1419}
+.tvhost .tradingview-widget-container{height:100%;width:100%}
+.tvopen{font-size:12px;font-weight:800;border-radius:999px;padding:6px 12px;border:1px solid #2c3742;background:#121820;color:#d5dde5;text-decoration:none;white-space:nowrap}
+.tvopen.saved{border-color:rgba(92,200,255,.6);color:#9fdcff}
+.tvlayout summary span{font-weight:600;color:#9fdcff;margin-left:auto;margin-right:8px}
+.tvl{font-size:12px;line-height:1.65;color:#cbd6e0;padding-bottom:10px}.tvl p{margin:6px 0}
+.tvl-sc{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12.5px}.tvl-sc input{width:18px;height:18px}
+.tvl-how{background:#0a0e12;border:1px solid #232d36;border-radius:9px;padding:6px 10px;margin-top:6px}.tvl-how ol{margin:4px 0;padding-left:1.3em}.tvl-how li{margin:2px 0}
+.tvl-in{display:flex;gap:6px;margin:6px 0}.tvl-in input{flex:1;min-width:0;font:inherit;font-size:12.5px;color:#eef3f7;background:#0a0e12;border:1px solid #2c3742;border-radius:8px;padding:7px 9px}
+.chnow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin:6px 0}.chn-h{font-size:11px;color:var(--muted);margin-right:2px}.chn-h small{font-weight:500;font-size:9.5px;margin-left:3px}
+.chn{font:inherit;font-size:11px;font-weight:700;border-radius:999px;padding:4px 9px;border:1px solid #2c3742;background:#0c1116;color:#cbd6e0;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.chn i{width:12px;height:0;border-top:2px solid currentColor}.chn small{font-size:9.5px;font-weight:600;opacity:.8;margin-left:2px}.chn.ref{opacity:.75;font-weight:600}
+.chn.up{color:#7fd3f7;border-color:rgba(79,195,247,.45)}.chn.down{color:#f7a8c4;border-color:rgba(244,143,177,.45)}.chn.flat{color:#ffd166;border-color:rgba(255,209,102,.45)}
+.chn.cur{background:#16202b;box-shadow:0 0 0 1px currentColor inset}
+.tvnote{font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.5}
+#secChart.tv .chartwrap,#secChart.tv #rsi,#secChart.tv #atrPane,#secChart.tv .matoggles,#secChart.tv #lvList,#secChart.tv #chartInfo,#secChart.tv .charthint{display:none!important}
+#secChart.full.tv .tvbox{flex:1 1 auto;display:flex;flex-direction:column}#secChart.full.tv .tvhost{flex:1 1 auto;height:auto}
+.tvbox[hidden]{display:none!important}  /* 自作チャートのときは全画面でも出さない */
+#rsi{height:96px;margin-top:4px;cursor:default;touch-action:pan-y}
+#rsi[hidden]{display:none}
+#atrPane{display:block;width:100%;height:80px;margin-top:4px;cursor:default;touch-action:pan-y}#atrPane[hidden]{display:none}
+.charttools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.fullbtn{font-size:12px;font-weight:800;border-radius:999px;padding:6px 12px;border:1px solid #b5872d;background:linear-gradient(180deg,#e6c973,#b5872d);color:#101114;cursor:pointer;white-space:nowrap}
+#secChart.full{position:fixed;inset:0;z-index:60;margin:0;border-radius:0;overflow:hidden;width:auto;max-width:none;background:var(--bg);
+  display:flex;flex-direction:column;padding:10px 12px calc(8px + env(safe-area-inset-bottom))}
+#secChart.full>*{flex:none}
+#secChart.full .chartwrap{flex:1 1 auto;min-height:200px}
+#chart{height:clamp(340px,66vh,720px)}  /* 画面の高さに合わせて大きく（iPad横で約550px、PCで約600px） */
+#secChart.full #chart{height:100%}
+#secChart.full #rsi{height:min(100px,12dvh)}#secChart.full #atrPane{height:min(76px,9dvh)}
+#secChart.full #chNow,#secChart.full #fibNow,#secChart.full:not(.tv) #tvLayoutBox{display:none!important}  /* 大きく表示ではチャートを優先（チャネル・フィボはチャート上に引かれている） */
+#secChart.full .charthint,#secChart.full .tfcap{display:none}
+#secChart.full .matoggles{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+#secChart.full .matoggles .seg{flex:none}
+#secChart.full .chartinfo{max-height:44px;overflow:auto}
+body.chartfull{overflow:hidden}
+canvas{display:block;width:100%;height:340px;background:linear-gradient(180deg,#0c1116,#0e151c);border:1px solid #222c36;border-radius:13px;touch-action:none;cursor:grab}
+canvas.dragging{cursor:grabbing}
+/* 強い水平線（3回以上止まった線）だけを重ねたキャンバスで点滅させる */
+/* 目にやさしく：3.2秒でゆっくり、明るさの幅は小さく（消えずに半分ほど暗くなるだけ） */
+#chartBlink{position:absolute;inset:0;width:100%;height:100%;background:none;border:0;pointer-events:none}
+#chartBlink.on{animation:srblink 2.4s ease-in-out infinite}  /* 点滅させる線があるときだけ動かす */
+/* 目にやさしく、でも分かりやすく：2.4秒でゆっくり光が強まって弱まる（チカチカしない。消えても本体の線は残る） */
+@keyframes srblink{0%,100%{opacity:1}50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){#chartBlink{animation:none}}
+/* 市場休場中は点滅・光る演出をすべて止める */
+body.mkt-closed #chartBlink,body.mkt-closed .fibnow::after,body.mkt-closed .gmmanow::after,body.mkt-closed .signal::after,body.mkt-closed .talkitem::after,body.mkt-closed .caution::after{animation:none!important}
+.chartreset{position:absolute;left:10px;top:10px;z-index:1;font-size:11px;font-weight:800;color:#101114;background:var(--gold);border-radius:999px;padding:5px 11px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.charthint{font-size:10px;color:var(--muted);margin-top:4px}
+.lvlist{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:6px;font-size:11px;color:var(--muted)}
+.lvlist[hidden]{display:none}
+.lvchip{display:inline-flex;align-items:center;gap:4px;background:#121820;color:#d5dde5;border:1px solid var(--c);border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
+.lvchip i{width:10px;height:2px;border-radius:1px;background:var(--c)}
+.lvchip.off{border-color:#34404c;color:#6f7c88;text-decoration:line-through}.lvchip.off i{opacity:.35}
+.lvchip.all{border-color:rgba(232,195,90,.7);color:var(--gold2);background:#16130b}
+.chartinfo{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted);margin-top:8px;min-height:16px}
+.chartinfo b{color:var(--text);font-weight:700}
+.levelinfo{margin-top:4px}
+.matoggles{display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 8px}
+.tfcap{font-size:10px;color:var(--muted);margin:0 2px 4px}
+.tfgrid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px;margin:0 0 8px}
+.tfgrid button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 2px;border-radius:10px;border:1px solid #34404c;background:#121820;color:#d5dde5;cursor:pointer;font:inherit;min-width:0}
+.tfgrid b{font-size:13px;font-weight:800;letter-spacing:.02em}
+.tfgrid small{font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;color:var(--muted)}
+.tfgrid .up{color:#42d59c}.tfgrid .down{color:#ff6969}.tfgrid .warn{color:#ffb547}
+.tfgrid .fibstar{font-style:normal;color:#ffd666;font-size:10px;margin-left:2px}.tfgrid button.cur .fibstar{color:#7a5200}
+.tfgrid button.fibbest{box-shadow:0 0 0 1px rgba(255,214,102,.7)}
+/* 今効いているフィボナッチの知らせ：目にやさしい、ゆっくりした光り方（3.2秒、明るさの幅は小さく） */
+.fibnow{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:6px 0;padding:7px 10px;border:1px solid rgba(255,214,102,.55);border-radius:10px;background:#16130b;font-size:11.5px;color:#e8d9a8;--glow-sh:0 0 10px 1px rgba(255,214,102,.35);--glow-t:3.2s}
+.fibnow[hidden]{display:none}
+/* GMMAのクロスの知らせ（フィボと同じく、ゆっくり光る） */
+.gmmanow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:6px 0;padding:7px 10px;border:1px solid #34404c;border-radius:10px;background:#0d1217;font-size:11.5px;color:#c9d2db}
+.gmmanow[hidden]{display:none}.gmmanow .gx{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.gmmanow .gx.up b{color:#42d59c}.gmmanow .gx.down b{color:#ff6969}.gmmanow .seg{padding:3px 9px;font-size:11px}
+.gmmanow.golden{border-color:rgba(66,213,156,.6);--glow-sh:0 0 10px 1px rgba(66,213,156,.35);--glow-t:3.2s}.gmmanow.dead{border-color:rgba(255,105,105,.6);--glow-sh:0 0 10px 1px rgba(255,105,105,.35);--glow-t:3.2s}
+.gmmanow .gxrow{background:none;border:1px solid #34404c;border-radius:999px;padding:4px 11px;font:inherit;font-size:12px;cursor:pointer}
+.gmmanow .gxrow.up{border-color:rgba(66,213,156,.55);color:#42d59c}.gmmanow .gxrow.down{border-color:rgba(255,105,105,.55);color:#ff6969}
+.gmmanow .gxrow.cur{background:#16201b}.gmmanow .gxrow.down.cur{background:#211416}
+/* 通知：画面の下に数秒出る（タップでその時間足へ） */
+.gxtoasts{position:fixed;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:6px;z-index:60;pointer-events:none;padding:0 16px}
+.gxtoast{pointer-events:auto;font:inherit;font-size:13px;font-weight:800;padding:10px 16px;border-radius:12px;background:#0d1217;border:1px solid;box-shadow:0 6px 20px rgba(0,0,0,.5);cursor:pointer;animation:gxin .35s ease-out}
+.gxtoast.up{color:#42d59c;border-color:rgba(66,213,156,.7)}.gxtoast.down{color:#ff6969;border-color:rgba(255,105,105,.7)}
+@keyframes gxin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.gxtoast{animation:none}}
+
+.fibnow b{color:#ffd666;font-size:12.5px}.fibnow .seg{padding:4px 10px;font-size:11px;margin-left:auto}
+
+/* 光る枠：影そのものを毎フレーム描き直すと重いので、影を描いた薄い層を重ね、その透明度だけを動かす（描き直しなし） */
+.caution,.signal.entry,.talkitem.fresh,.gmmanow.golden,.gmmanow.dead,.fibnow{position:relative}
+.caution::after,.signal.entry::after,.talkitem.fresh::after,.gmmanow.golden::after,.gmmanow.dead::after,.fibnow::after{content:"";position:absolute;inset:-1px;border-radius:inherit;box-shadow:var(--glow-sh);opacity:0;pointer-events:none;will-change:opacity;animation:glowfade var(--glow-t) ease-in-out infinite}
+@keyframes glowfade{0%,100%{opacity:0}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.caution::after,.signal.entry::after,.talkitem.fresh::after,.gmmanow::after,.fibnow::after{animation:none}}
+.tfgrid button.cur{background:linear-gradient(180deg,#e6c973,#b5872d);border-color:#b5872d;color:#101114}
+.tfgrid button.cur small,.tfgrid button.cur .up,.tfgrid button.cur .down,.tfgrid button.cur .warn{color:#101114}
+@media(max-width:560px){.tfgrid{grid-template-columns:repeat(4,minmax(0,1fr))}.matoggles{gap:5px}.matoggles .seg{padding:4px 8px;font-size:10.5px;gap:4px}}
+.matoggles .seg{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;font-size:11px;opacity:.55}
+.matoggles .seg i{width:12px;height:3px;border-radius:2px;display:inline-block}
+.matoggles .seg.on{opacity:1;background:#18212b;border-color:#5a6775;color:var(--text)}
+.levelinfo .r b{color:var(--red)}.levelinfo .s b{color:var(--green)}
+.legend{display:inline-flex;align-items:center;gap:5px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px}
+
+/* ===== risk ===== */
+.dirlabel{font-size:12px;margin:8px 0 0;color:var(--muted)}
+.brokerrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+#brokerSeg{flex:1;min-width:0}#brokerSeg .seg{flex:1;min-width:0;border-radius:12px;padding:6px 8px;line-height:1.3;display:grid;gap:1px;text-align:center}
+#brokerSeg .seg b{font-size:12.5px}#brokerSeg .seg small{font-size:10px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.form.lotrow{grid-template-columns:1fr auto;align-items:end}
+.form.lotrow .seg{padding:9px 12px;white-space:nowrap}
+#lotManual:not(:placeholder-shown){border-color:#8a6f32;background:#16130b}
+.dirlabel b{font-size:14px}
+.form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.form.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.form .wide{grid-column:1/-1}
+.form label{font-size:11px;color:var(--muted)}
+.inlinecheck{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:10px}
+.inlinecheck input{width:18px;height:18px;margin:0;accent-color:var(--gold)}
+.results{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
+.result{background:#0c1116;border:1px solid #242e38;border-radius:11px;padding:9px 10px;min-width:0}
+.result.key{border-color:#5d4a20;background:#16130b}
+.result span{display:block;color:var(--muted);font-size:10px}.result strong{display:block;margin-top:4px;color:var(--gold2);font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result em{display:block;font-style:normal;font-size:10px;color:var(--muted);margin-top:2px}
+details{margin-top:10px;background:#0d1217;border:1px solid #232d37;border-radius:11px;padding:0 10px}
+details summary{cursor:pointer;padding:10px 0;font-size:12px;font-weight:700;color:#d5dde5;list-style:none;display:flex;justify-content:space-between;gap:8px}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"▾";color:var(--muted)}
+details[open] summary::after{content:"▴"}
+details[open]{padding-bottom:10px}
+details .form{margin-top:0}
+.autonote{color:var(--muted);font-size:11px;margin-top:9px;line-height:1.5}
+
+/* ===== events ===== */
+.events{display:grid;gap:6px}
+.daysep{font-size:11px;color:var(--gold2);font-weight:800;margin:6px 2px 0}
+.event{display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;background:#0c1116;border:1px solid #242e38;border-radius:11px;padding:9px 10px}
+.event.past{opacity:.5}
+.event.next{border-color:#8a6f32;background:#16130b}
+.eventtime{font-weight:850;font-size:13px}
+.eventtitle{font-size:12px;font-weight:750;line-height:1.4}.eventmeta{font-size:10px;color:var(--muted);margin-top:3px}
+.star{font-size:12px;font-weight:950;text-align:right;white-space:nowrap}
+.star.high{color:var(--red)}.star.medium{color:var(--amber)}
+.star small{display:block;font-size:10px;color:var(--muted);font-weight:700;margin-top:2px}
+
+/* ===== checklist ===== */
+.progress{font-size:12px;font-weight:800;color:var(--gold2)}
+.checks{display:grid;gap:7px}
+.check{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;background:#0d1217;border:1px solid #242e38;border-radius:11px;padding:10px;cursor:pointer;user-select:none}
+.check input{width:20px;height:20px;margin:0;accent-color:var(--green)}
+.check.done{border-color:#275e49;background:#0c1c17}
+.check b{display:block;font-size:12px}.check span{display:block;font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
+.badge{font-size:10px;font-weight:900;border-radius:999px;padding:4px 8px;white-space:nowrap}
+.badge.ok{background:#0e2d23;color:var(--green)}.badge.ng{background:#35181b;color:var(--red)}.badge.na{background:#1a222b;color:var(--muted)}.badge.wn{background:#2c2414;color:var(--amber)}
+.metricgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+.metric{background:#0c1116;border:1px solid #232d37;border-radius:11px;padding:9px 10px}
+.metric span{display:block;color:var(--muted);font-size:10px}.metric b{display:block;margin-top:4px;font-size:14px}
+.linkbtn{background:none;border:0;color:var(--muted);font-size:11px;padding:4px;text-decoration:underline}
+
+/* Opened inside the Trade Desk: leave room for its close button */
+.embedded .shell{padding-top:calc(max(14px,env(safe-area-inset-top)) + 46px)}
+.embedded .mini{padding-right:120px}
+footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
+
+@media(max-width:1100px){
+ .s4,.s5,.s7,.s8{grid-column:span 12}
+ .alertgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .hero{grid-template-columns:1fr 1fr}
+ .hero>.hero-next{grid-column:1/-1;border-left:0;padding-left:0}
+}
+@media(max-width:720px){
+ .alertgrid{grid-template-columns:1fr}
+ .shell{padding-left:10px;padding-right:10px}
+ .hero{grid-template-columns:1fr;gap:14px}
+ .hero>div+div{border-left:0;padding-left:0;border-top:1px solid #222b35;padding-top:14px}
+ canvas{height:260px}
+ #chart{height:clamp(300px,50vh,460px)}  /* スマホ縦：画面の半分まで（チャートの上ではページがスクロールしないため） */
+ .results{grid-template-columns:1fr 1fr}
+ .form{grid-template-columns:1fr 1fr 1fr}
+ .head-actions{width:100%}
+ .head-actions .pill{margin-right:auto}
+}
+@media(max-width:430px){
+ .logo{width:40px;height:40px;font-size:16px}
+ h1{font-size:20px}.subtitle{display:none}
+ .price{font-size:38px}
+ .form:not(.two){grid-template-columns:repeat(3,minmax(0,1fr))}.seg{padding:7px 10px}
+ .caution-title{font-size:17px}.caution-count{font-size:19px}
+ .mini{gap:10px;font-size:12px}
+}
+</style>
+<style>
+.logo.oil{font-size:19px}
+#secOil .cardhead{flex-wrap:wrap}#secOil .segmented{flex-wrap:wrap;flex:0 1 auto}
+.oilgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media (max-width:760px){.oilgrid{grid-template-columns:1fr}}
+.oilbox{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0}
+.oilhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.oilpx{font-size:18px;font-weight:850;font-variant-numeric:tabular-nums}
+.oilchip{display:inline-block;margin:6px 0;font-size:11px;color:#ced6df;background:#111820;border:1px solid #37424e;border-radius:999px;padding:4px 9px;line-height:1.4}
+.oilchip.off{color:#f0c36a;border-color:#6b5524}.oilchip.bad{color:#ff8f8f;border-color:#6b2c2c}
+.oilcv{display:block;width:100%;height:clamp(200px,32vh,320px)}
+.oilnote{margin-top:8px}.oilprompt{margin-top:6px;font-size:12px;font-weight:700;color:#f0c36a}.oilprompt:empty{display:none}
+.oilform{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;font-size:12px}
+.oilform input{width:9em;background:#0b1015;color:var(--text);border:1px solid #34404c;border-radius:8px;padding:7px 9px;font-size:16px}
+.oilhist{margin-top:10px;font-size:12px;overflow-x:auto}.oilhist table{border-collapse:collapse;margin-top:4px;font-variant-numeric:tabular-nums}.oilhist td,.oilhist th{padding:3px 10px 3px 0;text-align:right;font-weight:500;white-space:nowrap}.oilhist th{color:var(--muted);font-size:10.5px}
+.oiltiming{margin-top:6px}
+.an-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:10px}.an-grid div{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px}.an-grid small{display:block;color:var(--muted);font-size:10.5px}.an-grid b{font-size:15px;font-variant-numeric:tabular-nums}
+.an-title{font-size:16px;font-weight:850;margin-top:2px}.an-body{white-space:pre-line;margin-top:4px;font-size:13px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="shell">
+<header>
+  <div class="brand">
+    <div class="logo oil">🛢</div>
+    <div><h1><span id="h1Sym">OIL</span> Trade <em>Dashboard</em></h1>
+      <div class="subtitle">USオイル（WTI原油先物 CL=F）／OILCash（補正表示）｜サイトの定期取得（5分ごと）</div>
+    </div>
+  </div>
+  <div class="head-actions">
+    <div class="pill"><span id="mainDot" class="dot"></span><b id="mainStatus">接続中</b></div>
+    <button id="refreshBtn" class="primary">⟳ 今すぐ更新</button>
+  </div>
+</header>
+
+<div class="metaline">
+  <span>最終確認 <b id="lastUpdate">--</b></span>
+  <span>チャート・自動分析 5分ごと（サイトの定期取得）</span>
+</div>
+
+<main class="grid">
+  <!-- ===== チャート：USオイル／OILCash（補正表示） ===== -->
+  <section id="secOil" class="panel s12">
+    <div class="cardhead">
+      <div><div class="title">チャート：USオイル／OILCash（補正表示）</div><div class="sub">USオイル（WTI原油先物 CL=F）の足はサイトの定期取得（5分ごと・Yahoo Finance）。OILCash（補正表示）は推定表示で、XMの配信値そのものではありません</div></div>
+      <div class="segmented" id="oilTf"></div>
+    </div>
+    <div class="oilgrid">
+      <div class="oilbox">
+        <div class="oilhead"><b>USオイル（CL=F）</b><span class="oilpx" id="oilPx">--</span></div>
+        <div class="oilchip" id="oilChip">未取得</div>
+        <canvas id="oilCv" class="oilcv" aria-label="USオイル（CL=F）のチャート"></canvas>
+      </div>
+      <div class="oilbox">
+        <div class="oilhead"><b>OILCash（補正表示）</b><span class="oilpx" id="oilAdjPx">--</span></div>
+        <div class="oilchip" id="oilAdjChip">補正なし</div>
+        <canvas id="oilAdjCv" class="oilcv" aria-label="OILCash（補正表示）のチャート"></canvas>
+      </div>
+    </div>
+    <div class="sub oilnote">OILCash（補正表示）は、USオイル（CL=F）に、入力されたMT5値との差を加えた推定表示です。XMの配信値そのものではありません。差は先物の限月の切り替えなどで変わるため、入力から35日を過ぎると補正を外します。</div>
+    <div id="oilPrompt" class="oilprompt"></div>
+    <div class="sub oiltiming">差は保存時点の価格で計算します。大きく動いている最中を避け、落ち着いたタイミングで入れると正確になります。</div>
+    <form id="oilForm" class="oilform" autocomplete="off">
+      <label for="oilIn">MT5で見たOILCashの値（売値）</label>
+      <input id="oilIn" type="number" inputmode="decimal" step="0.01" min="1" placeholder="MT5の売値">
+      <button type="submit" class="seg" id="oilSave">保存して差を計算</button>
+      <span class="sub" id="oilMsg"></span>
+    </form>
+    <div class="oilhist"><b>入力の記録（差の安定度の確認用・新しい順）</b><div id="oilHist" class="sub">まだありません</div></div>
+  </section>
+
+  <!-- ===== 自動分析（USオイル CL=F） ===== -->
+  <section id="secOilAn" class="panel s12">
+    <div class="cardhead"><div><div class="title">自動分析（USオイル CL=F）</div><div class="sub" id="anSub">サイトの自動分析（5分ごと）。CL=F の値で計算しています（補正前の値）。売買の指示ではありません</div></div><span class="tag">ANALYSIS</span></div>
+    <div id="anBox"><div class="sub">読み込んでいます…</div></div>
+  </section>
+</main>
+
+<footer>
+<span>データ: GitHub Actionsで定期取得した Yahoo Finance の足（USオイル＝WTI原油先物 CL=F）。OILCash（補正表示）は、入力されたMT5の値との差を加えた推定表示で、XMの配信値そのものではありません。</span>表示値は参考情報で、取引可能価格や投資助言ではありません。
+</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+function n(v){const x=Number(v);return Number.isFinite(x)?x:0}
+function lsGet(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch{return d}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch{}}
+function toMs(v){
+  if(typeof v==='number') return v<1e12?v*1000:v;
+  if(!v)return 0;
+  const p=Date.parse(String(v));
+  return Number.isFinite(p)?p:0;
+}
+function setSegActive(sel,attr,val){document.querySelectorAll(sel).forEach(b=>b.classList.toggle('active',b.dataset[attr]===val))}
+try{if(window.self!==window.top)document.documentElement.classList.add('embedded')}catch{document.documentElement.classList.add('embedded')}
+// サイト（GitHub Pages）のデータ：GitHub Actionsが定期取得した market.json（ほかのダッシュボードと同じ取得経路）
+const SITE = location.protocol.startsWith('http') && location.hostname.endsWith('github.io') ? '' : 'https://ira0ma.github.io/Ira0Ma058/';
+const URLS = {siteMarket:SITE+'market.json'};
+const INTERVALS = {chart:300000};
+async function getJSON(url, timeout=12000){
+  const c=new AbortController(); const timer=setTimeout(()=>c.abort(),timeout);
+  try{
+    const r=await fetch(url,{cache:'no-store',signal:c.signal,headers:{'Accept':'application/json'}});
+    const text=await r.text();
+    let j; try{j=JSON.parse(text)}catch{throw new Error('JSON解析エラー')}
+    if(!r.ok) throw new Error(j?.message||j?.error||('HTTP '+r.status));
+    return j;
+  } finally { clearTimeout(timer) }
+}
+// market.json は1分間だけ使い回す
+let siteCache={t:0,d:null};
+async function getSite(){
+  if(siteCache.d&&Date.now()-siteCache.t<60000)return siteCache.d;
+  const d=await getJSON(URLS.siteMarket+'?t='+Math.floor(Date.now()/60000));
+  if(!d?.instruments?.usoil)throw new Error('usoil missing');
+  siteCache={t:Date.now(),d};return d;
+}
+function siteBars(rows){return (rows||[]).map(r=>({t:toMs(r[0]),o:n(r[1]),h:n(r[2]),l:n(r[3]),c:n(r[4])})).filter(b=>b.t&&b.c)}
+function fixTail(bars,minutes){
+  if(bars.length<1||!minutes||minutes>60)return bars;
+  const ms=minutes*60000,last=bars.at(-1),b=last.t-last.t%ms;
+  if(b===last.t)return bars;
+  const prev=bars.at(-2);
+  if(prev&&prev.t===b){prev.h=Math.max(prev.h,last.h);prev.l=Math.min(prev.l,last.l);prev.c=last.c;bars.pop()}
+  else last.t=b;
+  return bars;
+}
+// トレードデスクの中で、このダッシュボードが閉じている（裏にある）か。デスクが開け閉めを知らせる
+let deskHidden=null;
+function sheetHidden(){return window.parent!==window&&(deskHidden!=null?deskHidden:innerWidth===0||innerHeight===0)}
+window.addEventListener('message',e=>{if(e.source===window.parent&&e.data&&e.data.type==='desk-sheet')deskHidden=!e.data.on});
+
+// ===== USオイル（CL=F）と OILCash（補正表示） =====
+// 価格はサイトの定期取得（market.json の usoil＝Yahoo CL=F）だけを使う。新しい取得経路は作らない。
+// 補正：差＝入力したMT5のOILCash値−その時点のCL=F値。入力から35日を過ぎた差は使わない（補正なし）
+(function(){
+  const KEY='btc_oil_adj',MAX_AGE=35*86400000,KEEP=10;
+  const TF=[['m5','5分足','5m',5],['m15','15分足','15m',15],['m30','30分足','30m',30],['h1','1時間足','1h',60],['h4','4時間足','4h',240],['d1','日足','1d',0]];
+  const JST=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  const jst=ms=>JST.format(new Date(ms))+' JST';
+  const O={tf:lsGet('btc_oil_tf','h1'),bars:{},price:0,asOf:0,last:0,err:''};
+  if(!TF.some(x=>x[0]===O.tf))O.tf='h1';
+  const f2=v=>Number(v).toFixed(2),sg=v=>(v>=0?'+':'')+f2(v);
+  function hist(){try{const h=JSON.parse(lsGet(KEY,'null'));return Array.isArray(h?.hist)?h.hist:[]}catch{return []}}
+  function active(){const h=hist()[0];return h&&Number.isFinite(h.diff)&&Date.now()-h.t<=MAX_AGE?h:null}
+  function fresh(){  // 価格の状態（休場かどうかは判定しない：時刻の経過だけで表す）
+    if(!O.asOf)return ['未取得','bad'];
+    const age=Date.now()-O.asOf;
+    return age<=15*60000?['最新','']:age<=90*60000?['遅延','off']:['停止（休場中の可能性）','off'];
+  }
+  $('oilTf').innerHTML=TF.map(([k,l])=>`<button type="button" class="seg" data-oiltf="${k}">${l}</button>`).join('');
+  $('oilTf').addEventListener('click',e=>{const b=e.target.closest('[data-oiltf]');if(!b)return;O.tf=b.dataset.oiltf;lsSet('btc_oil_tf',O.tf);render()});
+  async function load(force){
+    try{
+      const d=force?await getJSON(URLS.siteMarket+'?t='+Date.now()):await getSite();
+      const u=d?.instruments?.usoil;if(!u||!n(u.price))throw new Error('usoil missing');
+      O.price=n(u.price);O.asOf=toMs(u.asOf);O.err='';
+      for(const [k,,site,min] of TF)O.bars[k]=fixTail(siteBars(u.candles?.[site]),min);
+    }catch(e){O.err='取得できませんでした'}
+    O.last=Date.now();render();
+    return O.err?null:{price:O.price,asOf:O.asOf};
+  }
+  function draw(cv,bars,add){
+    const r=cv.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1),W=Math.round(r.width),H=Math.round(r.height);
+    if(!W||!H)return;
+    if(cv.width!==W*dpr||cv.height!==H*dpr){cv.width=W*dpr;cv.height=H*dpr}
+    const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+    const B=(bars||[]).slice(-Math.max(20,Math.min(90,Math.floor((W-52)/6))));
+    g.fillStyle='#93a0ad';g.font='11px system-ui,sans-serif';
+    if(B.length<2){g.fillText(O.err||'データを読み込んでいます…',10,20);return}
+    let lo=Infinity,hi=-Infinity;for(const b of B){lo=Math.min(lo,b.l+add);hi=Math.max(hi,b.h+add)}
+    const pad=(hi-lo)*.06||.5;lo-=pad;hi+=pad;
+    const L=4,R=W-50,T=6,Bt=H-18,y=v=>T+(hi-v)/(hi-lo)*(Bt-T),step=(R-L)/B.length,bw=Math.max(1,step*.62);
+    g.strokeStyle='#1d252e';g.lineWidth=1;g.textAlign='left';
+    for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4,yy=Math.round(y(v))+.5;g.beginPath();g.moveTo(L,yy);g.lineTo(R,yy);g.stroke();g.fillText(f2(v),R+4,yy+4)}
+    B.forEach((b,i)=>{const x=L+step*i+step/2,up=b.c>=b.o;g.strokeStyle=g.fillStyle=up?'#42d59c':'#ff6969';
+      g.beginPath();g.moveTo(Math.round(x)+.5,y(b.h+add));g.lineTo(Math.round(x)+.5,y(b.l+add));g.stroke();
+      const y1=y(Math.max(b.o,b.c)+add),y2=y(Math.min(b.o,b.c)+add);g.fillRect(x-bw/2,y1,bw,Math.max(1,y2-y1))});
+    const lc=B.at(-1).c+add,ly=Math.round(y(lc))+.5;g.strokeStyle='#d9b458';g.setLineDash([3,3]);g.beginPath();g.moveTo(L,ly);g.lineTo(R,ly);g.stroke();g.setLineDash([]);
+    g.fillStyle='#d9b458';g.fillRect(R+1,ly-8,49,16);g.fillStyle='#090b0e';g.fillText(f2(lc),R+4,ly+4);
+    g.fillStyle='#93a0ad';const day=O.tf==='d1',long=O.tf==='h1'||O.tf==='h4',tl=t=>new Intl.DateTimeFormat('ja-JP',day?{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric'}:long?{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}:{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'}).format(new Date(t));
+    g.fillText(tl(B[0].t),L,H-4);g.textAlign='right';g.fillText(tl(B.at(-1).t)+' JST',R,H-4);g.textAlign='left';
+  }
+  function render(){
+    setSegActive('[data-oiltf]','oiltf',O.tf);
+    const [st,cls]=O.err?['未取得','bad']:fresh(),a=active(),h=hist(),bars=O.bars[O.tf]||[];
+    $('oilPx').textContent=O.price?f2(O.price):'--';
+    const c1=$('oilChip');c1.className='oilchip '+cls;c1.textContent='USオイル（CL=F）・'+(O.asOf?jst(O.asOf)+'の価格・':'')+st;
+    const c2=$('oilAdjChip');
+    if(a){$('oilAdjPx').textContent=O.price?f2(O.price+a.diff):'--';c2.className='oilchip '+cls;
+      c2.textContent='補正あり：'+jst(a.t)+'入力・差 '+sg(a.diff)+'（推定表示）'+(O.asOf?'・元の価格 '+st:'')}
+    else{$('oilAdjPx').textContent=O.price?f2(O.price):'--';c2.className='oilchip off';c2.textContent='補正なし（USオイル CL=F の値のまま）'}
+    $('oilPrompt').textContent=a?'':h.length?'前回の入力から35日を過ぎたため補正を外しました。MT5の値を1回入れてください。':'MT5の値を1回入れてください（入れるまで補正なしで表示します）。';
+    $('oilHist').innerHTML=h.length?'<table><tr><th>入力日時</th><th>入力値（MT5）</th><th>同時点のCL=F</th><th>CL=Fの時刻</th><th>差</th></tr>'+
+      h.slice(0,5).map(x=>`<tr><td>${jst(x.t)}</td><td>${f2(x.input)}</td><td>${f2(x.cl)}</td><td>${x.clAt?jst(x.clAt):'—'}</td><td>${sg(x.diff)}</td></tr>`).join('')+'</table>':'まだありません';
+    if(sheetHidden())return;
+    draw($('oilCv'),bars,0);draw($('oilAdjCv'),bars,a?a.diff:0);
+  }
+  $('oilForm').addEventListener('submit',async e=>{
+    e.preventDefault();const v=Number($('oilIn').value),msg=$('oilMsg'),btn=$('oilSave');
+    if(!(v>0)){msg.textContent='数字を入れてください';return}
+    btn.disabled=true;msg.textContent='その時点のCL=F値を取得中…';
+    const q=await load(true);btn.disabled=false;
+    if(!q){msg.textContent='CL=F値を取得できなかったため保存していません。少しあとでもう一度どうぞ';return}
+    if(Math.abs(v/q.price-1)>.15){msg.textContent='CL=F値（'+f2(q.price)+'）と15%以上離れているため保存していません。数字を確かめてください';return}
+    const rec={t:Date.now(),input:v,cl:q.price,clAt:q.asOf,diff:Math.round((v-q.price)*1000)/1000};
+    lsSet(KEY,JSON.stringify({hist:[rec,...hist()].slice(0,KEEP)}));
+    $('oilIn').value='';msg.textContent='保存しました（差 '+sg(rec.diff)+'）'+(Date.now()-q.asOf>15*60000?'。CL=F値は'+jst(q.asOf)+'のもので、少し古い点に注意してください':'');
+    render();
+  });
+  load();
+  setInterval(()=>{if(!sheetHidden()&&Date.now()-O.last>=INTERVALS.chart)load()},30000);  // 更新はチャートと同じ5分ごと。デスクの裏では取りに行かない
+  window.addEventListener('resize',()=>requestAnimationFrame(render));
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!sheetHidden())render()});
+  window.addEventListener('message',e=>{if(e.source===window.parent&&e.data&&e.data.type==='desk-sheet')setTimeout(()=>{if(!sheetHidden()){if(Date.now()-O.last>=INTERVALS.chart)load();else render()}},0)});
+})();
+
+// 自動分析（サイトの analysis。USオイルは CL=F の値で計算されている）
+(function(){
+  const TR={up:'上昇',down:'下落',range:'レンジ'};
+  const JSTF=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  async function show(){
+    if(sheetHidden())return;
+    try{
+      const d=await getSite(),u=d.instruments.usoil,a=u.analysis||{},at=Date.parse(u.updated||d.updated||'');
+      const old=at&&Date.now()-at>3*3600000;
+      const f=v=>v==null||!Number.isFinite(+v)?'—':(+v).toFixed(2);
+      $('anBox').innerHTML=(a.title?'<div class="an-title">'+esc(a.title)+'</div>':'')+(a.body?'<div class="an-body">'+esc(a.body)+'</div>':'')+
+        '<div class="an-grid"><div><small>流れ</small><b>'+(TR[a.trend]||'—')+'</b></div><div><small>RSI</small><b>'+(a.rsi==null?'—':(+a.rsi).toFixed(1))+'</b></div><div><small>ATR（値幅の目安）</small><b>'+f(a.atr)+'</b></div><div><small>サポート</small><b>'+f(a.support)+'</b></div><div><small>レジスタンス</small><b>'+f(a.resistance)+'</b></div></div>'+
+        '<div class="sub" style="margin-top:8px">計算：'+(at?JSTF.format(new Date(at))+' JST':'時刻不明')+(old?'（古くなっています。参考にしないでください）':'')+'</div>';
+      $('mainStatus').textContent=old?'分析が古い':'受信';$('mainDot').className='dot '+(old?'':'live');
+    }catch(e){$('anBox').innerHTML='<div class="sub">自動分析を取得できませんでした。</div>';$('mainStatus').textContent='取得できません';$('mainDot').className='dot error'}
+    $('lastUpdate').textContent=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date())+' JST';
+  }
+  function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+  show();setInterval(show,INTERVALS.chart);
+  window.addEventListener('message',e=>{if(e.source===window.parent&&e.data&&e.data.type==='desk-sheet'&&e.data.on)setTimeout(show,0)});
+  $('refreshBtn').addEventListener('click',()=>{siteCache.t=0;show();document.querySelector('#oilTf .seg.active')?.click()});
+})();
+// 新しい版が公開されたら（ほかのダッシュボードと同じ流儀）：デスクの中や裏では自動で、単独で開いているときは確認してから入れ替える
+function checkUpdate(){
+  const cur=document.querySelector('meta[name="build"]');
+  if(!cur||!location.protocol.startsWith('http'))return;
+  fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():Promise.reject())
+    .then(t=>{const m=t.match(/<meta name="build" content="([^"]+)"/);if(m&&m[1]!==cur.content){if(document.documentElement.classList.contains('embedded')||document.hidden)location.replace(location.pathname+'?v='+m[1]);else offerUpdate(m[1])}})
+    .catch(()=>{});
+}
+let updBar=null;
+function offerUpdate(v){
+  if(updBar)return;updBar=document.createElement('div');updBar.setAttribute('role','status');
+  updBar.style.cssText='position:fixed;z-index:99;left:50%;top:8px;transform:translateX(-50%);display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 32px);padding:8px 12px;border-radius:14px;background:#151b22;border:1px solid #37424e;color:#f4f6f8;font-size:13px';
+  updBar.innerHTML='<span>新しい版があります。</span><button type="button" data-u="now" style="min-height:36px;padding:4px 14px;border-radius:999px;border:0;background:#e3b867;font-weight:700">今すぐ更新</button><button type="button" data-u="later" style="min-height:36px;padding:4px 14px;border-radius:999px;border:1px solid #37424e;background:none;color:inherit">あとで</button>';
+  updBar.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.u==='now')location.replace(location.pathname+'?v='+v);else{updBar.remove();updBar=null}});
+  document.body.appendChild(updBar);
+}
+checkUpdate();setInterval(checkUpdate,10*60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
+</script>
+</body>
+</html>
