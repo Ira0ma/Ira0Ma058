@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="29e051abeb">
+<meta name="build" content="e6108104d6">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -879,6 +879,8 @@ function toMs(v){
   return Number.isFinite(p)?p:0;
 }
 function setStatus(type,text){
+  // 上の状態は価格の札と同じ判断にする（価格が10分以上前なら「遅延データ」。LIVEと遅延が同時に出ないように）
+  if(text==='LIVE'&&state.spot&&state.spot.freshness==='stale'){type='';text='遅延データ'}
   if(IS_OIL&&text==='LIVE'){type='';text=oilSpot?'定期取得（現物）':'定期取得（CL=F）'}  // 原油はリアルタイムではないので LIVE とは出さない
   if(mktClosed&&type!=='error'){text=closedLabel()+(reopenText?'（再開 '+reopenText+'）':'');type=''}  // 休場中は「LIVE」ではなく休場中と出す
   $('mainStatus').textContent=text;
