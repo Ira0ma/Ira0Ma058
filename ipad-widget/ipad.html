@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="ca7b0ce0e4">
+<meta name="build" content="218ead49dc">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1096,10 +1096,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=e538fbdd66", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=97b68176d2", title: "ドル円分析" },
-    btc: { src: "btc.html?v=230b4da39d", title: "BTC分析" },
-    oil: { src: "oil.html?v=29fea360a7", title: "オイル分析" }
+    gold: { src: "gold.html?v=e00772e6f8", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=e8b440ce22", title: "ドル円分析" },
+    btc: { src: "btc.html?v=cffb687559", title: "BTC分析" },
+    oil: { src: "oil.html?v=af0f9c84db", title: "オイル分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -1188,7 +1188,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       if (shut) {  // closed: say so instead of a call made on the last prices before the close
         var ms = TDCore.marketState(mk.key, Date.now()), re = TDCore.nextOpen(mk.key, Date.now());
         el.hidden = false; mk.el.classList.add("has-score"); el.removeAttribute("title");
-        el.innerHTML = '<b class="closed">' + (ms.state === "break" ? "休止中" : "休場中") + "</b>" + (re ? '<span class="reopen">再開 ' + re + "</span>" : "");
+        el.innerHTML = '<b class="closed">' + (ms.state === "break" ? "休止中" : "休場中") + "</b>" + (re ? '<span class="reopen" title="' + TDCore.REOPEN_NOTE + '">再開 ' + re + "</span>" : "");
         return;
       }
       el.hidden = !d; mk.el.classList.toggle("has-score", !!d);

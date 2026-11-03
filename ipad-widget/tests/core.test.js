@@ -40,22 +40,30 @@ test("gold and oil: daily 17-18 break, Sunday opens at 18:00; BTC never closes",
 
 test("weekly hours are shown in Japan time and follow US summer time", () => {
   const summer = U("2026-07-08T03:00:00Z"), winter = U("2026-12-09T03:00:00Z");
-  assert.match(C.hoursNote("fx", summer), /日本時間 月曜6:00〜土曜6:00/);
-  assert.match(C.hoursNote("fx", winter), /日本時間 月曜7:00〜土曜7:00/);
-  assert.match(C.hoursNote("cme", summer), /月曜7:00〜土曜6:00、毎朝6:00〜7:00は休止/);
-  assert.match(C.hoursNote("cme", winter), /月曜8:00〜土曜7:00、毎朝7:00〜8:00は休止/);
-  assert.match(C.hoursNote("vix", summer), /平日16:15〜翌朝5:15/);
-  assert.match(C.hoursNote("vix", winter), /平日17:15〜翌朝6:15/);
+  assert.match(C.hoursNote("fx", summer), /日本時間 月曜06:00〜土曜06:00/);
+  assert.match(C.hoursNote("fx", winter), /日本時間 月曜07:00〜土曜07:00/);
+  assert.match(C.hoursNote("cme", summer), /月曜07:00〜土曜06:00、毎朝06:00〜07:00は休止/);
+  assert.match(C.hoursNote("cme", winter), /月曜08:00〜土曜07:00、毎朝07:00〜08:00は休止/);
+  assert.match(C.hoursNote("vix", summer), /平日16:15〜翌朝05:15/);
+  assert.match(C.hoursNote("vix", winter), /平日17:15〜翌朝06:15/);
   assert.doesNotMatch(C.hoursNote("fx", summer) + C.hoursNote("cme", summer) + C.hoursNote("ice", summer) + C.hoursNote("vix", summer), /NY|ニューヨーク/);
-  assert.match(C.marketState("gold", U("2026-07-08T21:30:00Z")).reason, /日本時間 6:00〜7:00/);
-  assert.match(C.marketState("usdjpy", summer).note, /夏時間中/);
+  assert.match(C.marketState("gold", U("2026-07-08T21:30:00Z")).reason, /日本時間 06:00〜07:00/);
+  assert.match(C.marketState("usdjpy", summer).note, /米国の夏時間/);
+  // the week of the switch back to winter time (Sat 31 Oct 2026, still summer in New York): the tools show the time
+  // that will apply on Monday, the same as the desk's 再開 (the owner's broker: GOLD 8:00 in winter, 7:00 in summer)
+  const sat = U("2026-10-31T00:00:00Z");
+  assert.match(C.hoursNote("cme", sat), /月曜08:00〜/);
+  assert.equal(C.nextOpen("gold", sat), "月 08:00");
+  assert.match(C.hoursNote("fx", sat), /月曜07:00〜/);
+  assert.match(C.hoursNote("cme", U("2026-03-07T00:00:00Z")), /月曜07:00〜/, "Sat 7 Mar: summer time starts on Sunday 8 Mar");
+  assert.match(C.hoursNote("cme", sat), /取引所の時刻（ブローカーの再開も同じ）/);
 });
 
 test("next opening time of a closed market, in Japan time", () => {
-  assert.equal(C.nextOpen("usdjpy", U("2026-10-31T00:00:00Z")), "月 7:00", "Sat: FX opens Sunday 17:00 NY = Mon 7:00 JST (US back on winter time on 1 Nov)");
-  assert.equal(C.nextOpen("gold", U("2026-10-31T00:00:00Z")), "月 8:00");
-  assert.equal(C.nextOpen("usdjpy", U("2026-07-11T00:00:00Z")), "月 6:00", "summer");
-  assert.equal(C.nextOpen("gold", U("2026-07-08T21:30:00Z")), "木 7:00", "daily pause ends 18:00 NY");
+  assert.equal(C.nextOpen("usdjpy", U("2026-10-31T00:00:00Z")), "月 07:00", "Sat: FX opens Sunday 17:00 NY = Mon 7:00 JST (US back on winter time on 1 Nov)");
+  assert.equal(C.nextOpen("gold", U("2026-10-31T00:00:00Z")), "月 08:00");
+  assert.equal(C.nextOpen("usdjpy", U("2026-07-11T00:00:00Z")), "月 06:00", "summer");
+  assert.equal(C.nextOpen("gold", U("2026-07-08T21:30:00Z")), "木 07:00", "daily pause ends 18:00 NY");
   assert.equal(C.nextOpen("usdjpy", U("2026-07-08T12:00:00Z")), "", "open now");
   assert.equal(C.nextOpen("btc", U("2026-07-11T00:00:00Z")), "");
 });

@@ -43,16 +43,32 @@
   // the Japan clock time of a New York wall-clock time on the New York date of t (summer time included)
   function nyInJst(t, h, mi) {
     var p = partsIn("America/New_York", t), q = partsIn("Asia/Tokyo", zoneTime("America/New_York", p.y, p.mo, p.d, h, mi || 0));
-    return q.h + ":" + String(q.mi).padStart(2, "0");
+    return String(q.h).padStart(2, "0") + ":" + String(q.mi).padStart(2, "0");
   }
-  // the weekly hours in Japan time, for the date of t (they move by an hour with US summer time)
+  /* The one definition of the weekly reopening (月曜の再開) and closing, used by the desk, the tools and the dashboards:
+     FX reopens Sunday 17:00 New York, gold / oil (CME) Sunday 18:00 New York, both close Friday 17:00 New York; in Japan
+     time that is Monday 7:00 / 8:00 in US winter and 6:00 / 7:00 in US summer (the owner checked: their broker's GOLD
+     reopens Monday 8:00 in winter, 7:00 in summer, the same as the exchange). The times are those of the coming weekend,
+     so a week that changes summer time shows the time that will actually apply. */
+  var REOPEN_NOTE = "取引所の時刻（ブローカーの再開も同じ）";
+  function nyWeekday(t, dow, h) {  // the next New York weekday dow (0 = Sunday) at hour h, as an instant, on or after the New York date of t
+    var p = partsIn("America/New_York", t), ahead = (dow - p.dow + 7) % 7;
+    return zoneTime("America/New_York", p.y, p.mo, p.d + ahead, h, 0);
+  }
+  function jstHm(x) { var q = partsIn("Asia/Tokyo", x); return String(q.h).padStart(2, "0") + ":" + String(q.mi).padStart(2, "0"); }  // HH:MM（画面全体の書き方）
+  function weeklyHours(kind, t) {
+    var open = nyWeekday(t, 0, kind === "fx" ? 17 : 18), close = nyWeekday(t, 5, 17);
+    return { open: jstHm(open), close: jstHm(close), openAt: open, dst: isDst("America/New_York", open) };
+  }
+  // the weekly hours in Japan time (the coming weekend's; they move by an hour with US summer time)
   function hoursNote(kind, t) {
     var us = isDst("America/New_York", t) ? "米国の夏時間中" : "米国の冬時間中";
     if (kind === "crypto") return "暗号資産：24時間・年中無休（取引所の臨時メンテナンスは判定できません）";
     if (kind === "vix") return "VIX：日本時間 平日" + nyInJst(t, 3, 15) + "〜翌朝" + nyInJst(t, 16, 15) + "を目安（" + us + "。祝日は含めていません）";
-    var close = nyInJst(t, 17, 0), open = kind === "fx" ? close : nyInJst(t, 18, 0);
+    var w = weeklyHours(kind, t), close = w.close, open = w.open;
+    us = (w.dst ? "米国の夏時間" : "米国の冬時間") + "・" + REOPEN_NOTE;
     if (kind === "fx") return "外国為替：日本時間 月曜" + open + "〜土曜" + close + "（" + us + "。週末のみ判定し、祝日・年末年始は含めていません）";
-    if (kind === "cme") return "先物（CME）：日本時間 月曜" + open + "〜土曜" + close + "、毎朝" + close + "〜" + open + "は休止（" + us + "。祝日の短縮取引は含めていません）";
+    if (kind === "cme") return "先物（CME）：日本時間 月曜" + open + "〜土曜" + close + "、毎朝" + nyInJst(t, 17, 0) + "〜" + nyInJst(t, 18, 0) + "は休止（" + us + "。祝日の短縮取引は含めていません）";
     return "ドル指数（ICE）：日本時間 月曜" + open + "〜土曜" + close + "を目安（" + us + "。祝日は含めていません）";
   }
   function marketState(key, t) {
@@ -87,7 +103,7 @@
     for (var i = 0; i < 3 * 24 * 12; i++, s += 5 * MIN) {  // 5-minute steps, up to three days ahead
       if (marketState(key, s).state === "open") {
         var p = partsIn("Asia/Tokyo", s);
-        return ["日", "月", "火", "水", "木", "金", "土"][p.dow] + " " + p.h + ":" + String(p.mi).padStart(2, "0");
+        return ["日", "月", "火", "水", "木", "金", "土"][p.dow] + " " + jstHm(s);
       }
     }
     return "";
@@ -457,6 +473,7 @@
   return { MIN: MIN, HOUR: HOUR, DAY: DAY, partsIn: partsIn, zoneOffset: zoneOffset, zoneTime: zoneTime, isDst: isDst,
     KIND: KIND, marketState: marketState, hoursNote: hoursNote, nextOpen: nextOpen, sessions: sessions, RULES: RULES, freshness: freshness, ago: ago, jst: jst,
     checkMarket: checkMarket, realCandles: realCandles, sequencer: sequencer,
+    weeklyHours: weeklyHours, REOPEN_NOTE: REOPEN_NOTE,
     positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey, journalDays: journalDays,
     newStore: newStore, updateSignal: updateSignal, expireSignals: expireSignals, loadStore: loadStore, COOLDOWN: COOLDOWN,
     toCSV: toCSV, parseCSV: parseCSV, importCSV: importCSV,

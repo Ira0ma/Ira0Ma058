@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="e538fbdd66">
+<meta name="build" content="e00772e6f8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -747,6 +747,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 </footer>
 </div>
 
+<script src="core.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 /* 銘柄ごとの設定。同じページを usdjpy.html として配信すると USD/JPY 版になる（build.py が生成） */
@@ -886,7 +887,7 @@ function setStatus(type,text){
   // 上の状態は価格の札と同じ判断にする（価格が10分以上前なら「遅延データ」。LIVEと遅延が同時に出ないように）
   if(text==='LIVE'&&state.spot&&state.spot.freshness==='stale'){type='';text='遅延データ'}
   if(IS_OIL&&text==='LIVE'&&!oilLive){type='';text=oilSpot?'定期取得（現物）':'定期取得（CL=F）'}  // 原油は OKX の価格が届いている間だけ LIVE
-  if(mktClosed&&type!=='error'){text=closedLabel()+(reopenText?'（再開 '+reopenText+'）':'');type=''}  // 休場中は「LIVE」ではなく休場中と出す
+  if(mktClosed&&type!=='error'){text=closedLabel()+(reopenText?'（再開 '+reopenText+'・取引所の時刻）':'');type=''}  // 休場中は「LIVE」ではなく休場中と出す
   $('mainStatus').textContent=text;
   $('mainDot').className='dot '+(type==='live'?'live':type==='error'?'error':'');
 }
@@ -1103,8 +1104,11 @@ async function refreshFx(){
 /* 市場の休場：ゴールド・ドル円は週末（NY時間 金曜17時〜日曜17時。ゴールドは日曜18時まで、平日17〜18時も休み）は動かない。
    XAUTなどの配信は週末も動くので、休場中は配信の値を使わず、点滅も止める（BTCは24時間なので対象外） */
 const NY_FMT=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'numeric',minute:'numeric',hourCycle:'h23'});
+// 市場の開閉と再開時刻は core.js（TDCore）の1か所の定義を使う（デスク・ツールと同じ）。読み込めなかったときだけ下の同じ規則で判定
+const CORE=window.TDCore&&TDCore.marketState?TDCore:null;
 function marketClosed(t){
   if(IS_BTC)return false;
+  if(CORE)return CORE.marketState(INSTR.key,t||Date.now()).state!=='open';
   const p={};NY_FMT.formatToParts(new Date(t||Date.now())).forEach(x=>p[x.type]=x.value);
   const d=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(p.weekday),h=+p.hour+ +p.minute/60;
   const cme=IS_GOLD||IS_OIL;  // 原油もゴールドと同じCMEの時間（日曜18時から、平日17〜18時は休止）
@@ -1116,6 +1120,7 @@ const JST_DOW=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Tokyo',weekday:'sh
 let reopenText='';
 function findReopen(){
   if(!mktClosed)return '';
+  if(CORE)return CORE.nextOpen(INSTR.key,Date.now());
   let t=Math.ceil(Date.now()/300000)*300000;
   for(let i=0;i<864&&marketClosed(t);i++)t+=300000;  // 5分ずつ、3日先まで
   if(marketClosed(t))return '';
@@ -2796,7 +2801,7 @@ function renderSnapshot(){
     s.entry?'3条件一致・利確目安（'+TP_BASIS_NAME[state.tpBasis]+'）まで'+Math.round(tpPipsBy(s.plan))+'pips':
     s.aligned?'3条件一致｜利確余地（'+TP_BASIS_NAME[state.tpBasis]+'）が'+MIN_TP_PIPS+'pips未満のため見送り':'3条件中2つが一致｜エントリー待ち';
   const label=sigLabel(s);
-  el.innerHTML=esc(label)+'<small>'+esc(mktClosed&&reopenText?sub+'｜再開 '+reopenText+'（日本時間）':sub)+'</small>';
+  el.innerHTML=esc(label)+'<small>'+esc(mktClosed&&reopenText?sub+'｜再開 '+reopenText+'（日本時間・'+(CORE?CORE.REOPEN_NOTE:'取引所の時刻')+'）':sub)+'</small>';
   el.className='signal '+sigClass(s)+(s.entry?' entry':'');
   renderWait(s);
   const conf=s.ready?Math.min(100,Math.round(Math.abs(s.score)/3*100)):0;
