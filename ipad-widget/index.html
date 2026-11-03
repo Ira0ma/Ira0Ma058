@@ -2858,11 +2858,13 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       return { t: t, title: e.title || e.name || e.event || "", country: c, actual: e.actual };
     }).filter(function (e) { return e.actual !== undefined && e.actual !== null && e.actual !== "" && !isNaN(e.t); });
   }
+  function valUnit(v) { var m = String(v == null ? "" : v).trim().match(/(%|[KMBT])\s*$/i); return m ? m[1].toUpperCase() : ""; }
   function mergeActuals(target, extra) {
     extra.forEach(function (x) {
       var best = null, bestScore = 0.5;
       target.forEach(function (e) {
         if (e.actual || e.country !== x.country || Math.abs(e.t - x.t) > 3 * 60000) return;
+        var want = valUnit(e.forecast) || valUnit(e.previous); if (want && valUnit(x.actual) !== want) return;  // 単位（%・K・M）が違う結果は別の指標のもの
         var sc = titleScore(e.title, x.title);
         if (sc >= bestScore && (!best || sc > bestScore)) { best = e; bestScore = sc; }
       });

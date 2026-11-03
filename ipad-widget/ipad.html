@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="603ca76e89">
+<meta name="build" content="c7a3124187">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1123,10 +1123,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=e0f75237f1", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=08a2362d87", title: "ドル円分析" },
-    btc: { src: "btc.html?v=449657f313", title: "BTC分析" },
-    oil: { src: "oil.html?v=7024dbc737", title: "オイル分析" }
+    gold: { src: "gold.html?v=7ec106f0c8", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=0521747647", title: "ドル円分析" },
+    btc: { src: "btc.html?v=4dc2761c47", title: "BTC分析" },
+    oil: { src: "oil.html?v=d883e3d65d", title: "オイル分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -2873,11 +2873,13 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       return { t: t, title: e.title || e.name || e.event || "", country: c, actual: e.actual };
     }).filter(function (e) { return e.actual !== undefined && e.actual !== null && e.actual !== "" && !isNaN(e.t); });
   }
+  function valUnit(v) { var m = String(v == null ? "" : v).trim().match(/(%|[KMBT])\s*$/i); return m ? m[1].toUpperCase() : ""; }
   function mergeActuals(target, extra) {
     extra.forEach(function (x) {
       var best = null, bestScore = 0.5;
       target.forEach(function (e) {
         if (e.actual || e.country !== x.country || Math.abs(e.t - x.t) > 3 * 60000) return;
+        var want = valUnit(e.forecast) || valUnit(e.previous); if (want && valUnit(x.actual) !== want) return;  // 単位（%・K・M）が違う結果は別の指標のもの
         var sc = titleScore(e.title, x.title);
         if (sc >= bestScore && (!best || sc > bestScore)) { best = e; bestScore = sc; }
       });

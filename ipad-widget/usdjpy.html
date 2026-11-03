@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="08a2362d87">
+<meta name="build" content="0521747647">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3518,14 +3518,18 @@ let liveTalk=[],liveBusy=false,liveResults=[];
 const FJ_RESULT=/^(.*?)\s+Actual\s+(.+?)\s*\(Forecast\s*(.*?),\s*Previous\s*(.*?)\)\s*$/i;
 function fjNorm(t){return String(t).toLowerCase().replace(/\bm\/m\b|\bmom\b|\bmm\b/g,' mom ').replace(/\by\/y\b|\byoy\b|\byy\b/g,' yoy ').replace(/\bq\/q\b|\bqoq\b|\bqq\b/g,' qoq ').replace(/jobless/g,'unemployment').replace(/\binitial\b/g,' ')}
 function sameVal(a,b){const x=num(a),y=num(b);return x!=null&&y!=null&&Math.abs(x-y)<1e-9}
+/* 第2部 A3：結果の単位（%・K・M・B・T）は予想・前回と同じでなければ使わない。以前は、同じ時刻（±6分）の候補が
+   1つしかないと名前が似ていなくても結果を当てはめていたので、JOLTS求人件数（予想 7.15M）に同時刻の別の指標の「1.8%」が入った */
+function valUnit(v){const m=String(v??'').trim().match(/(%|[KMBT])\s*$/i);return m?m[1].toUpperCase():''}
+function unitFits(e,actual){const want=valUnit(e.forecast)||valUnit(e.previous);return !want||valUnit(actual)===want}
 function applyLiveResults(){
   let changed=false;
   liveResults.forEach(r=>{
     const cur=/^(US|U\.S\.|United States)\b/i.test(r.name)?'USD':/^(Japan|Japanese|JP)\b/i.test(r.name)?'JPY':'';if(!cur)return;
     const cands=state.events.filter(e=>!e.speech&&e.currency===cur&&Math.abs(e.ts-r.t*1000)<=6*60000&&(!e.actual||e.actualSrc==='fj'));
     let best=null,bestScore=-1;
-    cands.forEach(e=>{const sc=titleScore(fjNorm(e.title),fjNorm(r.name))+(sameVal(e.forecast,r.forecast)?.6:0)+(sameVal(e.previous,r.previous)?.3:0);if(sc>bestScore){best=e;bestScore=sc}});
-    if(!best||(bestScore<.5&&cands.length>1)||best.actual===r.actual)return;
+    cands.filter(e=>unitFits(e,r.actual)).forEach(e=>{const sc=titleScore(fjNorm(e.title),fjNorm(r.name))+(sameVal(e.forecast,r.forecast)?.6:0)+(sameVal(e.previous,r.previous)?.3:0);if(sc>bestScore){best=e;bestScore=sc}});
+    if(!best||bestScore<.5||best.actual===r.actual)return;  // 名前（または予想・前回の一致）で確かめられないものは当てはめない
     best.actual=r.actual;best.actualAt=best.actualAt||Date.now();best.actualSrc='fj';changed=true;
   });
   return changed;
