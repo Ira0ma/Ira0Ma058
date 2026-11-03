@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="d883e3d65d">
+<meta name="build" content="06a2c6d9e6">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2337,7 +2337,9 @@ function tradePlan0(dir,cup){
   const tp=lv?lv.price:entry+dir*slDist*(n($('rrTarget').value)||2);
   const sl=entry-dir*slDist;
   const tpPips=Math.abs(tp-entry)/PIP, slPips=slDist/PIP;
-  return {dir,entry,tp,sl,tpPips,slPips,rr:tpPips/slPips,tpSrc:lv?'H1水平線':'損切り幅×目標RR'};
+  // 第2部 A4：5pips以内のすぐ手前の線は利確目標にしない（決め方は今までどおり）。その線を越える前提のプランであることを画面に出すため覚えておく
+  const near=h1Levels().filter(l=>dir>0?l.price>entry&&l.price<=entry+5*PIP:l.price<entry&&l.price>=entry-5*PIP).sort((x,y)=>Math.abs(x.price-entry)-Math.abs(y.price-entry))[0];
+  return {dir,entry,tp,sl,tpPips,slPips,rr:tpPips/slPips,tpSrc:lv?'H1水平線':'損切り幅×目標RR',near:near?{price:near.price,pips:Math.abs(near.price-entry)/PIP}:null};
 }
 function detectTouch(){
   if(state.h1.length<120)return null;
@@ -2393,7 +2395,7 @@ function autoRisk(){
   $('target').value=(tpBy?tpBy[1].price:plan.tp).toFixed(INSTR.dp);state.riskTpBy=tpBy?tpBy[0]:'';
   {const tpx=tpBy?tpBy[1].price:plan.tp,sd=Math.abs(plan.entry-plan.sl);state.riskRR=sd?Math.abs(tpx-plan.entry)/sd:null}  // 参考プランと同じ（丸める前の値で計算）
   // 脚注に出すTPの決め方（実際に入れた値の出どころ）
-  state.riskTpDesc=tpBy?tpBy[0]+'の直近の水平線まで':plan.tpSrc==='H1水平線'?'直近のH1水平線まで（5pips以上先）':plan.tpSrc==='損切り幅×目標RR'?'SL×'+(n($('rrTarget').value)||2)+'（近くに水平線がないとき）':plan.tpSrc;
+  state.riskTpDesc=tpBy?tpBy[0]+'の直近の水平線まで':plan.tpSrc==='H1水平線'?'直近のH1水平線まで（5pips以上先）':plan.tpSrc==='損切り幅×目標RR'?'SL×'+(n($('rrTarget').value)||2)+(plan.near?'（すぐ手前の1時間足の線 '+fmt(plan.near.price)+' は'+plan.near.pips.toFixed(1)+'pips先で近すぎるため利確目標にせず、越える前提。その先に5pips以上離れた線がないとき）':'（5pips以上先に1時間足の水平線がないとき）'):plan.tpSrc;
 }
 function calcRisk(){
   autoRisk();
@@ -2956,7 +2958,8 @@ function renderSnapshot(){
     det('detMom','基準：1時間足3本で +'+dx(th)+' より上がれば上昇、−'+dx(th)+' より下がれば下降、その間は横ばい｜今 '+(m>=0?'+':'−')+dx(Math.abs(m))+
       (m>th?'（横ばいまで あと '+dx(m-th)+'）':m<-th?'（横ばいまで あと '+dx(-th-m)+'）':'（上昇まで あと '+dx(th-m)+'・下降まで あと '+dx(m+th)+'）'));
     det('detRange',s.hi&&s.lo?'今日 高 '+fmt(s.hi)+'・安 '+fmt(s.lo)+'・中値 '+fmt(s.mid)+'・現在 '+fmt(s.price)+'｜中値まで '+dx(Math.abs(s.price-s.mid))+'（'+(s.price>=s.mid?'下回ると下半分':'上回ると上半分')+'）':'');
-    det('detTp',s.plan?'基準：'+pipsTxt(MIN_TP_PIPS)+'以上｜'+INSTR.pipNote+(tpPipsBy(s.plan)>=MIN_TP_PIPS?'':'｜あと '+pipsTxt(MIN_TP_PIPS-tpPipsBy(s.plan))+' 足りない'):
+    det('detTp',s.plan?'基準：'+pipsTxt(MIN_TP_PIPS)+'以上｜'+INSTR.pipNote+(tpPipsBy(s.plan)>=MIN_TP_PIPS?'':'｜あと '+pipsTxt(MIN_TP_PIPS-tpPipsBy(s.plan))+' 足りない')+
+      (s.plan.near&&state.tpBasis==='h1'?'｜すぐ手前の線 '+fmt(s.plan.near.price)+'（'+s.plan.near.pips.toFixed(1)+'pips先）は近すぎるため目標にせず、越える前提で計算':''):
       '買いか売りの向きが決まると、その向きの目標（水平線）までの距離で計算します。いまは向きが決まっていません｜基準：'+pipsTxt(MIN_TP_PIPS)+'以上');
   }else['detSma','detMom','detRange','detTp'].forEach(id=>det(id,''));
   const all=state.tpBasis==='all',use60=all||state.tpBasis==='h1',use15=all||state.tpBasis==='m15',use5=state.tpBasis==='m5',useDay=state.tpBasis==='day';
@@ -3016,7 +3019,8 @@ function renderPlan(s){
       .filter(Boolean).sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join('')+
     (pl.tpSrc!=='H1水平線'&&pl.tp60?row('参考 <b class="tf60">1時間足</b>',fmt(pl.tp60.price),'+'+Math.round(pl.tp60.pips)+'pips｜1時間足の水平線','tp'):'')+
     row('損切り目安',fmt(pl.sl),'−'+Math.round(pl.slPips)+'pips｜'+(pl.slSrc||'M15 ATR×'+(n($('slMult').value)||1.2)),'sl')+
-    `<div class="plfoot">RR ${pl.rr.toFixed(2)}｜${INSTR.pipNote}</div>`;
+    (pl.near?row('手前の線（1時間足）',fmt(pl.near.price),(pl.dir>0?'+':'−')+pl.near.pips.toFixed(1)+'pips｜5pips以内で近すぎるため利確目標にしません。この線を'+(pl.dir>0?'上':'下')+'に越える前提のプランです','near'):'')+
+    `<div class="plfoot">RR ${pl.rr.toFixed(2)}｜${INSTR.pipNote}｜利確が複数あるときは「判定に使用」の付いたものでエントリー可否（利確余地）を判定し、ほかは手前・先の目安です</div>`;
 }
 function renderRebound(){
   const r=rebound();
