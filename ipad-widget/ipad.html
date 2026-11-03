@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="5f68e94d43">
+<meta name="build" content="af669ac632">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1076,10 +1076,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=7a8e149ee3", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=985093deb3", title: "ドル円分析" },
-    btc: { src: "btc.html?v=2a84f06f13", title: "BTC分析" },
-    oil: { src: "oil.html?v=f44c361fde", title: "オイル分析" }
+    gold: { src: "gold.html?v=22283d3a54", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=ba36e07535", title: "ドル円分析" },
+    btc: { src: "btc.html?v=d513f784b3", title: "BTC分析" },
+    oil: { src: "oil.html?v=d4a28a11b8", title: "オイル分析" }
   };
   var openSheet = null, sheetOpener = null;
   function ensureSheet(key) {
@@ -1968,7 +1968,12 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   oilMk.feed(null);
   oilMk.el.querySelector(".head").addEventListener("click", function () { openDash("oil", this); });
   oilMk.el.addEventListener("click", function (e) { var b = e.target.closest("[data-oil-open]"); if (b) { e.stopPropagation(); openDash("oil", b); } });
-  var oilRefeed = function () { oilMk.feed(market && (market.instruments || market).usoil); };
+  var oilFedFor = "";
+  var oilRefeed = function () {  // only when the price, the correction or its freshness changed (moving every candle costs)
+    var m = market && (market.instruments || market).usoil; if (!m) return;
+    var a = oilAdj(), d = oilDashPrice(m), key = [m.asOf, m.price, d ? d.price + "@" + d.asOf : "-", a ? a.t : "-"].join("|");
+    if (key === oilFedFor) return; oilFedFor = key; oilMk.feed(m);
+  };
   window.addEventListener("storage", function (e) { if (e.key === OIL_KEY || e.key === OIL_CACHE) oilRefeed(); });  // saved by the oil dashboard
   setInterval(oilRefeed, 30000);  // freshness and the 35 days
   markets.push(oilMk);
@@ -2781,7 +2786,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
           var m = all[mk.key];
           mk.held = chk.ok[mk.key] === false ? chk.problems[mk.key] : null;
           if (!m) { if (mk.held && !mk.live) mk.render(); return; }
-          if (mk.oil) { mk.feed(m); return; }
+          if (mk.oil) { oilFedFor = ""; oilRefeed(); return; }
           mk.series = m.candles; mk.prevClose = m.prevClose;
           mk.unadjusted = !!INST[mk.key].spot && m.spotAdjusted === false;
           // spot-priced instruments keep their fresher minute quote

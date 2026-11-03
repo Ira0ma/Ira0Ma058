@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="f44c361fde">
+<meta name="build" content="d4a28a11b8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3849,7 +3849,9 @@ refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(release
     const day=['d1','w1','mn'].includes(state.tf),tl=t=>new Intl.DateTimeFormat('ja-JP',day?{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric'}:{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(t));
     g.fillStyle='#93a0ad';g.fillText(tl(B[0].t),L,H-4);g.textAlign='right';g.fillText(tl(B.at(-1).t)+' JST',R,H-4);g.textAlign='left';
   }
+  let drawnFor='';
   function render(){
+    if(sheetHidden())return;  // デスクの裏では描かない（開いたときの renderAll で描く）
     const a=active(),h=hist(),px=state.spot?.price,c=$('oilAdjChip'),use=a&&isSpot();
     $('oilAdjPx').textContent=px?f2(px+(use?a.diff:0)):'--';
     const st=mktClosed?'休場中':state.spot?.freshness==='stale'?'遅延':'最新';
@@ -3858,7 +3860,8 @@ refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(release
     $('oilPrompt').textContent=a?'':h.length?'前回の入力から35日を過ぎたため補正を外しました。MT5の値を1回入れてください。':'MT5の値を1回入れてください（入れるまで補正なしで表示します）。';
     $('oilHist').innerHTML=h.length?'<table><tr><th>入力日時</th><th>入力値（MT5）</th><th>同時点の現物</th><th>現物の時刻</th><th>差</th></tr>'+
       h.slice(0,5).map(x=>`<tr><td>${jst(x.t)}</td><td>${f2(x.input)}</td><td>${f2(x.base)}</td><td>${x.baseAt?jst(x.baseAt):'—'}</td><td>${sg(x.diff)}</td></tr>`).join('')+'</table>':'まだありません';
-    if(!sheetHidden())draw($('oilAdjCv'),state[state.tf],use?a.diff:0);
+    const bars=state[state.tf],cv=$('oilAdjCv'),key=[state.tf,bars.length,bars.at(-1)?.t,bars.at(-1)?.c,use?a.diff:0,cv.clientWidth,cv.clientHeight].join('|');
+    if(key!==drawnFor){drawnFor=key;draw(cv,bars,use?a.diff:0)}  // 足・差・大きさが変わったときだけ描き直す
   }
   $('oilForm').addEventListener('submit',async e=>{
     e.preventDefault();const v=Number($('oilIn').value),msg=$('oilMsg'),btn=$('oilSave');
