@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="3ac33115f8">
+<meta name="build" content="8bb5bee6af">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -109,7 +109,8 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .dxybox{margin-top:10px;background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:10px 11px;font-size:11.5px;display:grid;gap:7px}
 .dxybox .dh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 8px}.dxybox .dh b{white-space:nowrap}
 .dxybox .dh b{font-size:13px}.dxybox .dh span{color:var(--muted)}
-.dxyrow{display:grid;grid-template-columns:7em minmax(0,1fr) 11.5em;gap:8px;align-items:center;white-space:nowrap}
+.dxyrow{display:grid;grid-template-columns:6.6em minmax(0,1fr) 12.8em;gap:8px;align-items:center;white-space:nowrap}
+@media (max-width:520px){.dxyrow{grid-template-columns:6em minmax(0,1fr);row-gap:3px}.dxyrow .v{grid-column:2;text-align:left}}
 .dxyrow .lb{color:var(--muted)}
 .dxyrow .v{text-align:right}
 .dxyguide{border-top:1px solid #232d36;padding-top:9px;display:grid;gap:7px;line-height:1.55}
@@ -119,9 +120,19 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .dxyguide ol{margin:0;padding-left:1.3em;color:var(--muted)}.dxyguide ol b,.dxyguide dd b{color:var(--text,#e8edf2)}
 @media (max-width:520px){.dxyguide dl{grid-template-columns:5.6em minmax(0,1fr)}}
 .dxyguide .warn{color:var(--muted);font-size:11px}
-.dxybar{position:relative;height:8px;border-radius:999px;background:linear-gradient(90deg,rgba(66,213,156,.25),#1a222b 50%,rgba(255,105,105,.25))}
-.dxybar::after{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#4a5663}
-.dxybar i{position:absolute;top:-3px;width:4px;height:14px;border-radius:2px;background:#e6c973;transform:translateX(-2px)}
+/* 相関の帯（凡例と同じ5色。左＝逆相関、右＝同じ向き）。点は今の係数 */
+.dxybar{position:relative;height:10px;border-radius:999px;background:linear-gradient(90deg,var(--cb1) 0 25%,var(--cb2) 25% 40%,var(--cb3) 40% 60%,var(--cb4) 60% 75%,var(--cb5) 75% 100%)}
+.dxybox,.cbands{--cb1:#2f7fb8;--cb2:#26506e;--cb3:#2a333d;--cb4:#6e5426;--cb5:#b8862f}
+.dxybar::after{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#5a6673}
+.dxybar i{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:#f4f7fa;border:2px solid #0c1116;box-shadow:0 0 0 1px #f4f7fa;transform:translate(-50%,-50%)}
+.dxyrow .v.cb1,.cbands .cb1 b{color:#7cc4f2}.dxyrow .v.cb2,.cbands .cb2 b{color:#a9cbe2}.dxyrow .v.cb4,.cbands .cb4 b{color:#e2c58f}.dxyrow .v.cb5,.cbands .cb5 b{color:#f0b962}
+.dxyhead{font-size:12.5px;line-height:1.5;padding:7px 9px;border-radius:9px;background:#121a22;border:1px solid #2a3642}.dxyhead b{color:#e6c973}.dxyhead .sub{display:block;font-size:11px;margin-top:2px}
+.dxywarn{color:#f0b962;line-height:1.5}
+.cbands{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;font-size:10.5px;line-height:1.35}
+.cbands span{display:block;border-top:4px solid;padding-top:3px;color:var(--muted)}.cbands span b{display:block;font-weight:700}
+.cbands .cb1{border-color:var(--cb1)}.cbands .cb2{border-color:var(--cb2)}.cbands .cb3{border-color:#4a5663}.cbands .cb4{border-color:var(--cb4)}.cbands .cb5{border-color:var(--cb5)}
+@media (max-width:520px){.cbands{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dxysrc{color:var(--muted);font-size:10.5px;line-height:1.5}
 .dxyrow .v{font-weight:800;white-space:nowrap}
 .dxynote{color:var(--muted);line-height:1.5}.dxynote b{color:var(--text)}
 .keylvhead{display:flex;align-items:baseline;justify-content:space-between;margin:12px 0 6px}.keylvhead b{font-size:13px}
@@ -3025,37 +3036,60 @@ function pairedReturns(ga,da,keyOf,len){
   }
   return [g.slice(-len),d.slice(-len)];
 }
-function corrLabel(r){
-  if(r==null)return ['--',''];
-  return r<=-0.6?['強い逆相関','up']:r<=-0.3?['逆相関','up']:r<0.3?['連動ほぼなし','']:r<0.6?['相関（同じ向き）','down']:['強い相関（同じ向き）','down'];
+// 係数の帯（凡例・ラベル・使い分け文・結論の1行で共通）。境目の値は強い側に入れる（−0.50 は「効いている」、−0.20 は「やや」）
+const CORR_BANDS=[
+  {k:'cb1',rng:'−1.0〜−0.5',t:'逆相関が効いている',in:r=>r<=-0.5},
+  {k:'cb2',rng:'−0.5〜−0.2',t:'やや逆相関',in:r=>r<=-0.2},
+  {k:'cb3',rng:'−0.2〜＋0.2',t:'連動ほぼなし',in:r=>r<0.2},
+  {k:'cb4',rng:'＋0.2〜＋0.5',t:'やや相関（同じ向き）',in:r=>r<0.5},
+  {k:'cb5',rng:'＋0.5〜＋1.0',t:'相関が効いている（同じ向き）',in:()=>true}];
+const CORR_DIV=0.3;  // 1日と1週間の差がこれ以上なら注意書き
+function corrBand(r){return r==null?null:CORR_BANDS.find(b=>b.in(r))}
+function corrLabel(r){const b=corrBand(r);return b?[b.t,b.k]:['--','']}
+function corrNum(r){return r==null?'--':(r>0?'+':r<0?'−':'')+Math.abs(r).toFixed(2)}
+function corrRowsHtml(rows){
+  return rows.map(([lb,r])=>{const [tx,cl]=corrLabel(r);return `<div class="dxyrow"><span class="lb">${lb}</span><span class="dxybar" role="img" aria-label="${lb} ${corrNum(r)}">${r==null?'':`<i style="left:${(1+Math.max(-1,Math.min(1,r)))*50}%"></i>`}</span><span class="v ${cl}">${r==null?'-- 計算できるデータなし':corrNum(r)+' '+tx}</span></div>`}).join('');
 }
+function corrLegendHtml(){return '<div class="cbands" aria-label="係数の帯の見方">'+CORR_BANDS.map(b=>`<span class="${b.k}"><b>${b.t}</b>${b.rng}</span>`).join('')+'</div>'}
+function corrDivWarn(r1,rw){return r1!=null&&rw!=null&&Math.round(Math.abs(r1-rw)*100)>=Math.round(CORR_DIV*100)?`<div class="dxywarn">⚠ 1日（${corrNum(r1)}）が1週間（${corrNum(rw)}）から${CORR_DIV.toFixed(1)}以上ずれています。指標や発言でいつもの関係が崩れている合図なので、落ち着くまで様子見に。</div>`:''}
+// DXY の前日比の強さ：0.10%未満は「ほぼ横ばい」、0.10〜0.30%未満は「やや」、0.30%以上ははっきり
+const DXY_FLAT=0.10,DXY_CLEAR=0.30;
+function dxyDir(chg){const a=Math.abs(chg);return a<DXY_FLAT?['ほぼ横ばい',0]:a<DXY_CLEAR?[chg>0?'ややドル高':'ややドル安',Math.sign(chg)]:[chg>0?'ドル高':'ドル安',Math.sign(chg)]}
 // How to use the three readings, shown under them
 const DXY_GUIDE=`<div class="dxyguide"><h4>DXYの使い分け</h4>
-<dl><dt>1週間（H1）</dt><dd><b>基本の判断に使う</b>。−0.5以下なら「ドル高＝${ASSET}安」が効いている状態で、DXYの向きを${ASSET}の方向の確認に使えます。0付近ならDXYは判断材料から外します。</dd>
-<dt>1日（H1）</dt><dd><b>変化の早期発見</b>。1週間と大きく違うときは、指標や要人発言でいつもの関係が崩れている合図です。1日の値だけで判断しないこと。</dd>
-<dt>1か月（H4）</dt><dd><b>大きな流れ（背景）の確認</b>。1週間と同じ向きなら、その関係は当面続きやすいと考えます。</dd>
+<dl><dt>1週間（H1）</dt><dd><b>基本の判断に使う</b>（上の結論の1行はこの値から出しています）。−0.5以下（逆相関が効いている）なら「ドル高＝${ASSET}安」が効いている状態で、DXYの向きを${ASSET}の方向の確認に使えます。−0.5〜−0.2（やや逆相関）は参考程度。−0.2より上（連動ほぼなし・同じ向き）ならDXYは判断材料から外します。</dd>
+<dt>1日（H1）</dt><dd><b>変化の早期発見</b>。1週間との差が${CORR_DIV.toFixed(1)}以上あるときは、指標や要人発言でいつもの関係が崩れている合図です（注意書きが出ます）。1日の値だけで判断しないこと。</dd>
+<dt>1か月（H4）</dt><dd><b>大きな流れ（背景）の確認</b>。1週間と同じ帯なら、その関係は当面続きやすいと考えます。</dd>
 <dt>分足</dt><dd>相関は当てになりません（市場ごとの反応のずれで0に近づくため）。指標・発言の瞬間に、DXYと${ASSET}が逆に跳ねたかを目で確かめる程度にします。</dd></dl>
 <h4>エントリー前の確認手順</h4>
-<ol><li>1週間の値で、いまドルと逆相関かどうかを見る。</li>
-<li>逆相関なら、DXYの向きがエントリーと合うか確認する。<b>買いはドル安</b>、<b>売りはドル高</b>なら追い風。逆なら見送りか、ロットを控えめに。</li>
-<li>1日の値が1週間から大きくずれていたら（注意書きが出たら）、落ち着くまで様子見。</li></ol>
-<div class="warn">※相関は「これまで一緒にどう動いたか」を示すだけで、先の値動きを予測するものではありません。</div></div>`;
+<ol><li>1週間の値で、いまドルと逆相関が効いているか（−0.5以下か）を見る。</li>
+<li>効いているなら、DXYの向きがエントリーと合うか確認する。<b>買いはドル安</b>、<b>売りはドル高</b>なら追い風。逆なら見送りか、ロットを控えめに。DXYがほぼ横ばいならドル要因の後押しは小さい。</li>
+<li>1日の値が1週間から${CORR_DIV.toFixed(1)}以上ずれていたら（注意書きが出たら）、落ち着くまで様子見。</li></ol>
+<div class="warn">※相関は「これまで一緒にどう動いたか」を示すだけで、先の値動きを予測するものではありません。セットアップ判定やトレード前チェックの条件には入っていません。</div></div>`;
+// 結論の1行：必ず1週間の値から（1日の値では出さない）
+function dxyConclusion(rw,dd){
+  const b=corrBand(rw),other=IS_BTC?'リスク回避（株安）や暗号資産そのものの材料':IS_OIL?'景気の見通しや在庫・産油国の動き':'リスク回避（有事の買い）や金利';
+  if(!b)return 'いま：1週間の相関を出すデータが足りないので、DXY は判断材料にしない';
+  if(b.k==='cb1'){const [w,d]=dd;
+    return `いま：「ドル高＝${ASSET}安」が効いている。`+(d>0?`DXYは${w}なので、<b>売りには追い風、買いには逆風</b>`:d<0?`DXYは${w}なので、<b>買いには追い風、売りには逆風</b>`:'DXYはほぼ横ばいなので、いまはドル要因の後押しは小さい')}
+  if(b.k==='cb2')return 'いま：ドルとやや逆向き（効き目は弱め）。DXY の向きは参考程度にとどめる';
+  if(b.k==='cb3')return 'いま：連動が弱いので、DXY は判断材料にしなくてよい';
+  return `いま：ドルと${b.k==='cb5'?'同じ向きに動いている':'やや同じ向き'}（いつもの逆相関ではない）。DXY は判断材料にしない。${other}で動いている可能性`;
+}
 function renderDxy(){
   const el=$('dxyBox');if(IS_FX){el.hidden=true;return}
   const dx=siteCache.d?.instruments?.dxy;if(!dx?.candles?.['1h']||state.h1.length<30){el.hidden=true;return}
   const hour=t=>Math.floor(t/3600);
   const rows=[['1日（H1）',...pairedReturns(state.h1,dx.candles['1h'],hour,24)],['1週間（H1）',...pairedReturns(state.h1,dx.candles['1h'],hour,120)],
     ['1か月（H4）',...pairedReturns(state.h4||[],dx.candles['4h']||[],hour,120)]].map(([lb,g,d])=>[lb,corrOf(g,d)]);
-  const chg=dx.prevClose?(dx.price/dx.prevClose-1)*100:0,dir=chg>0.05?'ドル高':chg<-0.05?'ドル安':'横ばい';
+  const chg=dx.prevClose?(dx.price/dx.prevClose-1)*100:0,dd=dxyDir(chg);
   const r1=rows[0][1],rw=rows[1][1];
-  let note;
-  if(r1!=null&&r1<=-0.3)note=`いまは<b>ドルと逆向き</b>に動きやすい状態です。DXYが${dir==='ドル高'?'上がっている（ドル高）ので、${ASSET}には<b>逆風</b>':dir==='ドル安'?'下がっている（ドル安）ので、${ASSET}には<b>追い風</b>':'横ばいなので、ドル要因の影響は小さめ'}です。`;
-  else if(r1!=null&&r1>=0.3)note=`いまはドルと<b>同じ向き</b>に動いています。${IS_BTC?'リスク回避（株安）や暗号資産そのものの材料':IS_OIL?'景気の見通しや産油国の動きなど、ドル以外の材料':'リスク回避（有事の買い）など、ドル以外の材料'}で${ASSET}が動いている可能性があります。`;
-  else note=`いまはドルとの連動が<b>弱い</b>状態です。${ASSET}はドル以外の材料（${IS_BTC?'株・リスク・需給':IS_OIL?'景気・在庫・産油国の動き':'金利・リスク・需給'}）で動いています。`;
-  if(rw!=null&&r1!=null&&Math.abs(r1-rw)>0.5)note+=` 1週間の関係（${rw.toFixed(2)}）から大きく変わっているので注意。`;
-  el.innerHTML=`<div class="dh"><b>DXY（ドル指数）との相関</b><span>DXY ${fmt(dx.price,2)}（${chg>=0?'+':''}${chg.toFixed(2)}%・${dir}）｜${dx.asOf?new Intl.DateTimeFormat('ja-JP',{hour:'2-digit',minute:'2-digit'}).format(new Date(toMs(dx.asOf)))+'時点（サイトの定期取得）':'時刻不明'}</span></div>`+
-    rows.map(([lb,r])=>{const [tx,cl]=corrLabel(r);return `<div class="dxyrow"><span class="lb">${lb}</span><span class="dxybar">${r==null?'':`<i style="left:${(1+r)*50}%"></i>`}</span><span class="v ${cl}">${r==null?'--':(r>0?'+':'')+r.toFixed(2)} ${tx}</span></div>`}).join('')+
-    `<div class="dxynote">${note}<br>（−1に近いほど「ドル高＝${ASSET}安」がはっきり。${ASSET}とドルはふだん逆相関です）</div>`+DXY_GUIDE;
+  const at=dx.asOf?new Intl.DateTimeFormat('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(toMs(dx.asOf)))+'時点':'時刻不明';
+  el.innerHTML=`<div class="dh"><b>DXY（ドル指数）との相関</b><span>DXY ${fmt(dx.price,2)}（前日比 ${chg>=0?'+':'−'}${Math.abs(chg).toFixed(2)}%・${dd[0]}）</span></div>`+
+    `<div class="dxyhead"><b>${dxyConclusion(rw,dd)}</b><span class="sub">根拠：1週間（H1）の係数 ${corrNum(rw)}${rw==null?'':'「'+corrLabel(rw)[0]+'」'}・DXY 前日比 ${chg>=0?'+':'−'}${Math.abs(chg).toFixed(2)}%（${dd[0]}）</span></div>`+
+    corrRowsHtml(rows)+corrDivWarn(r1,rw)+corrLegendHtml()+
+    `<div class="dxynote">−1に近いほど「ドル高＝${ASSET}安」がはっきり。${ASSET}とドルはふだん逆相関です。境目の値は強い側に入れます（−0.50は「効いている」）。</div>`+
+    `<div class="dxysrc">出典：Yahoo Finance（DX-Y.NYB）・${at}。DXYと相関はサイトの定期取得（約15分ごと。遅れることがあります）で更新されるため、画面の価格より遅い時点の値です。前日比の強さ：${DXY_FLAT.toFixed(2)}%未満は「ほぼ横ばい」、${DXY_CLEAR.toFixed(2)}%未満は「やや」。</div>`+DXY_GUIDE;
   el.hidden=false;
 }
 // 判定の大きな表示：エントリーならその向き、方向は出ても条件（利確余地など）で入らないときは「見送り」（本文の結論と同じ）
