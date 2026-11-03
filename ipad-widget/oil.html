@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="d4a28a11b8">
+<meta name="build" content="16863afae0">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -687,7 +687,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 
   <!-- ===== OILCash（補正表示）：USオイル版だけ表示 ===== -->
   <section id="secOil" class="panel s12" hidden>
-    <div class="cardhead"><div><div class="title">OILCash（補正表示）</div><div class="sub">USオイルの現物の価格（Swissquote XTI/USD）に、入力されたMT5値との差を加えた推定表示です。XMの配信値そのものではありません</div></div><span class="tag">OILCash</span></div>
+    <div class="cardhead"><div><div class="title">OILCash（補正表示）</div><div class="sub" id="oilSub">このページのUSオイルの価格に、入力されたMT5値との差を加えた推定表示です。XMの配信値そのものではありません</div></div><span class="tag">OILCash</span></div>
     <div class="oilbox">
       <div class="oilhead"><b>OILCash（補正表示）</b><span class="oilpx" id="oilAdjPx">--</span></div>
       <div class="oilchip" id="oilAdjChip">補正なし</div>
@@ -772,7 +772,7 @@ const INSTRUMENTS={
     dp:2,pip:0.01,minTp:15,pipNote:'1pips＝$0.01',momTh:0.02,slMin:0.05,tolMin:0.015,unit:'バレル',contract:'100',patterns:true,spread:{xm:'5',xs:'5'},
     brokerNote:'原油の1lotの量（バレル数）は業者・口座で違います。XMのOILCashなど、ご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,2),
-    footer:'データ: Swissquote（USオイル XTI/USD の現物レート）／GitHub Actionsで定期取得したYahoo Finance足（WTI原油先物 CL=F・チャート）・Forex Factory（経済指標）。'}
+    footer:'データ: GitHub Actionsで定期取得したYahoo Finance足（WTI原油先物 CL=F・価格とチャート）／Swissquote（XTI/USD の現物レート。取れたときだけ）・Forex Factory（経済指標）。'}
 };
 const INSTR=INSTRUMENTS[window.INSTR_KEY||(/usdjpy/i.test(location.pathname)?'usdjpy':/btc/i.test(location.pathname)?'btc':/oil/i.test(location.pathname)?'usoil':'gold')];
 const IS_GOLD=INSTR.key==='gold',IS_FX=INSTR.key==='usdjpy',IS_BTC=INSTR.key==='btc',IS_OIL=INSTR.key==='usoil';
@@ -3853,6 +3853,8 @@ refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(release
   function render(){
     if(sheetHidden())return;  // デスクの裏では描かない（開いたときの renderAll で描く）
     const a=active(),h=hist(),px=state.spot?.price,c=$('oilAdjChip'),use=a&&isSpot();
+    $('oilSub').textContent=(isSpot()?'USオイルの現物の価格（'+state.src.spot+'）に、入力されたMT5値との差を加えた推定表示です。'
+      :'いまはUSオイルの価格をサイトの定期取得（CL=F 先物）で表示しています。現物の価格が取れるまでは補正を加えず、そのままの値を出します。')+'XMの配信値そのものではありません';
     $('oilAdjPx').textContent=px?f2(px+(use?a.diff:0)):'--';
     const st=mktClosed?'休場中':state.spot?.freshness==='stale'?'遅延':'最新';
     if(use){c.className='oilchip';c.textContent='補正あり：'+jst(a.t)+'入力・差 '+sg(a.diff)+'（推定表示）・元の価格 '+state.src.spot+'・'+st}
