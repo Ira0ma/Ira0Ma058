@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="a7d231cc8b">
+<meta name="build" content="669a487b44">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -84,6 +84,18 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .title{font-size:14px;font-weight:850}
 .sub{font-size:11px;color:var(--muted);line-height:1.5}
 .tag{font-size:10px;color:#ced6df;background:#111820;border:1px solid #37424e;border-radius:999px;padding:5px 8px;white-space:nowrap}
+#secOil[hidden]{display:none}
+#secOil .cardhead{flex-wrap:wrap}#secOil .segmented{flex-wrap:wrap;flex:0 1 auto}
+.oilgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media (max-width:760px){.oilgrid{grid-template-columns:1fr}}
+.oilbox{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0}
+.oilhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.oilpx{font-size:18px;font-weight:850;font-variant-numeric:tabular-nums}
+.oilchip{display:inline-block;margin:6px 0;font-size:11px;color:#ced6df;background:#111820;border:1px solid #37424e;border-radius:999px;padding:4px 9px;line-height:1.4}
+.oilchip.off{color:#f0c36a;border-color:#6b5524}.oilchip.bad{color:#ff8f8f;border-color:#6b2c2c}
+.oilcv{display:block;width:100%;height:clamp(200px,32vh,320px)}
+.oilnote{margin-top:8px}.oilprompt{margin-top:6px;font-size:12px;font-weight:700;color:#f0c36a}.oilprompt:empty{display:none}
+.oilform{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;font-size:12px}
+.oilform input{width:9em;background:#0b1015;color:var(--text);border:1px solid #34404c;border-radius:8px;padding:7px 9px;font-size:16px}
+.oilhist{margin-top:10px;font-size:12px;overflow-x:auto}.oilhist table{border-collapse:collapse;margin-top:4px;font-variant-numeric:tabular-nums}.oilhist td,.oilhist th{padding:3px 10px 3px 0;text-align:right;font-weight:500;white-space:nowrap}.oilhist th{color:var(--muted);font-size:10.5px}
 .up{color:var(--green)}.down{color:var(--red)}.warn{color:var(--amber)}
 
 /* ===== hero ===== */
@@ -673,6 +685,35 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <div class="cardhead"><div><div class="title">アラート・通知設定</div><div class="sub">オンにした条件がそろうと、画面の下に通知を出して音で知らせます（この端末に銘柄ごとに保存）</div></div><span class="tag">ALERT</span></div>
     <div id="alertList" class="alertgrid"></div>
     <div class="alerthist"><b>最近の通知</b><div id="alertHist" class="sub">まだありません</div></div>
+  </section>
+
+  <!-- ===== オイル（BTC版だけ表示） ===== -->
+  <section id="secOil" class="panel s12" hidden>
+    <div class="cardhead">
+      <div><div class="title">オイル：USオイル／OILCash（補正表示）</div><div class="sub">USオイル（WTI原油先物 CL=F）の足はサイトの定期取得（5分ごと・Yahoo Finance）。OILCash（補正表示）は推定表示で、XMの配信値そのものではありません</div></div>
+      <div class="segmented" id="oilTf"></div>
+    </div>
+    <div class="oilgrid">
+      <div class="oilbox">
+        <div class="oilhead"><b>USオイル（CL=F）</b><span class="oilpx" id="oilPx">--</span></div>
+        <div class="oilchip" id="oilChip">未取得</div>
+        <canvas id="oilCv" class="oilcv" aria-label="USオイル（CL=F）のチャート"></canvas>
+      </div>
+      <div class="oilbox">
+        <div class="oilhead"><b>OILCash（補正表示）</b><span class="oilpx" id="oilAdjPx">--</span></div>
+        <div class="oilchip" id="oilAdjChip">補正なし</div>
+        <canvas id="oilAdjCv" class="oilcv" aria-label="OILCash（補正表示）のチャート"></canvas>
+      </div>
+    </div>
+    <div class="sub oilnote">OILCash（補正表示）は、USオイル（CL=F）に、入力されたMT5値との差を加えた推定表示です。XMの配信値そのものではありません。差は先物の限月の切り替えなどで変わるため、入力から35日を過ぎると補正を外します。</div>
+    <div id="oilPrompt" class="oilprompt"></div>
+    <form id="oilForm" class="oilform" autocomplete="off">
+      <label for="oilIn">MT5で見たOILCashの値（売値）</label>
+      <input id="oilIn" type="number" inputmode="decimal" step="0.01" min="1" placeholder="MT5の売値">
+      <button type="submit" class="seg" id="oilSave">保存して差を計算</button>
+      <span class="sub" id="oilMsg"></span>
+    </form>
+    <div class="oilhist"><b>入力の記録（差の安定度の確認用・新しい順）</b><div id="oilHist" class="sub">まだありません</div></div>
   </section>
 
   <!-- ===== 経済指標 ===== -->
@@ -3736,6 +3777,92 @@ $('fvgBtn').classList.toggle('on',state.showFvg);$('fvgBtn').setAttribute('aria-
 loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(scheduler,1000);
 checkClosed();setInterval(checkClosed,60000);
 refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(releaseHot())refreshLiveTalk()},5000);startLive();setTimeout(fillRecentGold,20000);setInterval(fillRecentGold,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
+// ===== オイル（BTC版だけ）：USオイル（CL=F）と OILCash（補正表示） =====
+// 価格はサイトの定期取得（market.json の usoil＝Yahoo CL=F）だけを使う。新しい取得経路は作らない。
+// 補正：差＝入力したMT5のOILCash値−その時点のCL=F値。入力から35日を過ぎた差は使わない（補正なし）
+(function(){
+  if(!IS_BTC)return;
+  const sec=$('secOil');if(!sec)return;sec.hidden=false;
+  const KEY=LSP+'oil_adj',MAX_AGE=35*86400000,KEEP=10;
+  const TF=[['m5','5分足','5m',5],['m15','15分足','15m',15],['m30','30分足','30m',30],['h1','1時間足','1h',60],['h4','4時間足','4h',240],['d1','日足','1d',0]];
+  const JST=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  const jst=ms=>JST.format(new Date(ms))+' JST';
+  const O={tf:lsGet(LSP+'oil_tf','h1'),bars:{},price:0,asOf:0,last:0,err:''};
+  if(!TF.some(x=>x[0]===O.tf))O.tf='h1';
+  const f2=v=>Number(v).toFixed(2),sg=v=>(v>=0?'+':'')+f2(v);
+  function hist(){try{const h=JSON.parse(lsGet(KEY,'null'));return Array.isArray(h?.hist)?h.hist:[]}catch{return []}}
+  function active(){const h=hist()[0];return h&&Number.isFinite(h.diff)&&Date.now()-h.t<=MAX_AGE?h:null}
+  function fresh(){  // 価格の状態（休場かどうかは判定しない：時刻の経過だけで表す）
+    if(!O.asOf)return ['未取得','bad'];
+    const age=Date.now()-O.asOf;
+    return age<=15*60000?['最新','']:age<=90*60000?['遅延','off']:['停止（休場中の可能性）','off'];
+  }
+  $('oilTf').innerHTML=TF.map(([k,l])=>`<button type="button" class="seg" data-oiltf="${k}">${l}</button>`).join('');
+  $('oilTf').addEventListener('click',e=>{const b=e.target.closest('[data-oiltf]');if(!b)return;O.tf=b.dataset.oiltf;lsSet(LSP+'oil_tf',O.tf);render()});
+  async function load(force){
+    try{
+      const d=force?await getJSON(URLS.siteMarket+'?t='+Date.now()):await getSite();
+      const u=d?.instruments?.usoil;if(!u||!n(u.price))throw new Error('usoil missing');
+      O.price=n(u.price);O.asOf=toMs(u.asOf);O.err='';
+      for(const [k,,site,min] of TF)O.bars[k]=fixTail(siteBars(u.candles?.[site]),min);
+    }catch(e){O.err='取得できませんでした'}
+    O.last=Date.now();render();
+    return O.err?null:{price:O.price,asOf:O.asOf};
+  }
+  function draw(cv,bars,add){
+    const r=cv.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1),W=Math.round(r.width),H=Math.round(r.height);
+    if(!W||!H)return;
+    if(cv.width!==W*dpr||cv.height!==H*dpr){cv.width=W*dpr;cv.height=H*dpr}
+    const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+    const B=(bars||[]).slice(-Math.max(20,Math.min(90,Math.floor((W-52)/6))));
+    g.fillStyle='#93a0ad';g.font='11px system-ui,sans-serif';
+    if(B.length<2){g.fillText(O.err||'データを読み込んでいます…',10,20);return}
+    let lo=Infinity,hi=-Infinity;for(const b of B){lo=Math.min(lo,b.l+add);hi=Math.max(hi,b.h+add)}
+    const pad=(hi-lo)*.06||.5;lo-=pad;hi+=pad;
+    const L=4,R=W-50,T=6,Bt=H-18,y=v=>T+(hi-v)/(hi-lo)*(Bt-T),step=(R-L)/B.length,bw=Math.max(1,step*.62);
+    g.strokeStyle='#1d252e';g.lineWidth=1;g.textAlign='left';
+    for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4,yy=Math.round(y(v))+.5;g.beginPath();g.moveTo(L,yy);g.lineTo(R,yy);g.stroke();g.fillText(f2(v),R+4,yy+4)}
+    B.forEach((b,i)=>{const x=L+step*i+step/2,up=b.c>=b.o;g.strokeStyle=g.fillStyle=up?'#42d59c':'#ff6969';
+      g.beginPath();g.moveTo(Math.round(x)+.5,y(b.h+add));g.lineTo(Math.round(x)+.5,y(b.l+add));g.stroke();
+      const y1=y(Math.max(b.o,b.c)+add),y2=y(Math.min(b.o,b.c)+add);g.fillRect(x-bw/2,y1,bw,Math.max(1,y2-y1))});
+    const lc=B.at(-1).c+add,ly=Math.round(y(lc))+.5;g.strokeStyle='#d9b458';g.setLineDash([3,3]);g.beginPath();g.moveTo(L,ly);g.lineTo(R,ly);g.stroke();g.setLineDash([]);
+    g.fillStyle='#d9b458';g.fillRect(R+1,ly-8,49,16);g.fillStyle='#090b0e';g.fillText(f2(lc),R+4,ly+4);
+    g.fillStyle='#93a0ad';const day=O.tf==='d1',long=O.tf==='h1'||O.tf==='h4',tl=t=>new Intl.DateTimeFormat('ja-JP',day?{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric'}:long?{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}:{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'}).format(new Date(t));
+    g.fillText(tl(B[0].t),L,H-4);g.textAlign='right';g.fillText(tl(B.at(-1).t)+' JST',R,H-4);g.textAlign='left';
+  }
+  function render(){
+    setSegActive('[data-oiltf]','oiltf',O.tf);
+    const [st,cls]=O.err?['未取得','bad']:fresh(),a=active(),h=hist(),bars=O.bars[O.tf]||[];
+    $('oilPx').textContent=O.price?f2(O.price):'--';
+    const c1=$('oilChip');c1.className='oilchip '+cls;c1.textContent='USオイル（CL=F）・'+(O.asOf?jst(O.asOf)+'の価格・':'')+st;
+    const c2=$('oilAdjChip');
+    if(a){$('oilAdjPx').textContent=O.price?f2(O.price+a.diff):'--';c2.className='oilchip '+cls;
+      c2.textContent='補正あり：'+jst(a.t)+'入力・差 '+sg(a.diff)+'（推定表示）'+(O.asOf?'・元の価格 '+st:'')}
+    else{$('oilAdjPx').textContent=O.price?f2(O.price):'--';c2.className='oilchip off';c2.textContent='補正なし（USオイル CL=F の値のまま）'}
+    $('oilPrompt').textContent=a?'':h.length?'前回の入力から35日を過ぎたため補正を外しました。MT5の値を1回入れてください。':'MT5の値を1回入れてください（入れるまで補正なしで表示します）。';
+    $('oilHist').innerHTML=h.length?'<table><tr><th>入力日時</th><th>入力値（MT5）</th><th>同時点のCL=F</th><th>CL=Fの時刻</th><th>差</th></tr>'+
+      h.slice(0,5).map(x=>`<tr><td>${jst(x.t)}</td><td>${f2(x.input)}</td><td>${f2(x.cl)}</td><td>${x.clAt?jst(x.clAt):'—'}</td><td>${sg(x.diff)}</td></tr>`).join('')+'</table>':'まだありません';
+    if(sheetHidden())return;
+    draw($('oilCv'),bars,0);draw($('oilAdjCv'),bars,a?a.diff:0);
+  }
+  $('oilForm').addEventListener('submit',async e=>{
+    e.preventDefault();const v=Number($('oilIn').value),msg=$('oilMsg'),btn=$('oilSave');
+    if(!(v>0)){msg.textContent='数字を入れてください';return}
+    btn.disabled=true;msg.textContent='その時点のCL=F値を取得中…';
+    const q=await load(true);btn.disabled=false;
+    if(!q){msg.textContent='CL=F値を取得できなかったため保存していません。少しあとでもう一度どうぞ';return}
+    if(Math.abs(v/q.price-1)>.15){msg.textContent='CL=F値（'+f2(q.price)+'）と15%以上離れているため保存していません。数字を確かめてください';return}
+    const rec={t:Date.now(),input:v,cl:q.price,clAt:q.asOf,diff:Math.round((v-q.price)*1000)/1000};
+    lsSet(KEY,JSON.stringify({hist:[rec,...hist()].slice(0,KEEP)}));
+    $('oilIn').value='';msg.textContent='保存しました（差 '+sg(rec.diff)+'）'+(Date.now()-q.asOf>15*60000?'。CL=F値は'+jst(q.asOf)+'のもので、少し古い点に注意してください':'');
+    render();
+  });
+  load();
+  setInterval(()=>{if(!sheetHidden()&&Date.now()-O.last>=INTERVALS.chart)load()},30000);  // 更新はチャートと同じ5分ごと。デスクの裏では取りに行かない
+  window.addEventListener('resize',()=>requestAnimationFrame(render));
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!sheetHidden())render()});
+  window.addEventListener('message',e=>{if(e.source===window.parent&&e.data&&e.data.type==='desk-sheet')setTimeout(()=>{if(!sheetHidden()){if(Date.now()-O.last>=INTERVALS.chart)load();else render()}},0)});
+})();
 </script>
 </body>
 </html>
