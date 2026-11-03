@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="46c02a96b8">
+<meta name="build" content="b50ae175bb">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2250,42 +2250,86 @@ const OIL_STAT={
   'd-flag':{txt:'$0.50到達 88.5%・$3.00到達 70.5%（61件）'},'d-tri':{txt:'$3.00到達 82.8%（29件）'}
 };
 const OIL_STAT_NOTE='統計：WTI 過去データの集計（1時間足は約2年分・日足は10年分）。過去の統計は将来の結果を保証しません。';
-const OIL_DBIHS={k:3,sepMin:10,sepMax:80,tol:0.05,depMin:3,depMax:20,useSma:0,prior:1,wait:25};
-const OIL_IHS={k:5,sepMin:20,sepMax:120,tol:0.05,depMin:1.5,depMax:10,useSma:0,prior:1,wait:25};
-// 直近の山・谷に引いた2本の線が近づいていく形（三角保ち合い）。上の線がほぼ水平で下が上がる＝上昇三角、
-// 下がほぼ水平で上が下がる＝下降三角、上が下がり下が上がる＝対称三角。最新の価格が線の外に出たら「ブレイク」
-function pivHighs(B,k){const out=[];for(let j=k;j<B.length-k;j++){let ok=true;for(let q=j-k;q<=j+k;q++)if(B[q].h>B[j].h||(B[q].h===B[j].h&&q<j)){ok=false;break}if(ok)out.push(j)}return out}
 function fitLine(pts){const n=pts.length,mx=pts.reduce((s,p)=>s+p[0],0)/n,my=pts.reduce((s,p)=>s+p[1],0)/n;let sxx=0,sxy=0;pts.forEach(p=>{sxx+=(p[0]-mx)**2;sxy+=(p[0]-mx)*(p[1]-my)});const sl=sxx?sxy/sxx:0;return {sl,at:x=>my+sl*(x-mx)}}
-function detectTriangle(B,P,a,W=70){
-  const n=B.length;if(n<W+5||!a)return null;
-  const off=n-W,S=B.slice(off),k=3,hi=pivHighs(S,k).slice(-3),lo=pivotLows(S,k).slice(-3);
-  if(hi.length<2||lo.length<2)return null;
-  const i0=Math.min(hi[0],lo[0]);if(W-1-i0<15)return null;
-  const U=fitLine(hi.map(j=>[j,S[j].h])),L=fitLine(lo.map(j=>[j,S[j].l])),flat=a*0.5/20,now=W-1;
-  const wStart=U.at(i0)-L.at(i0),wNow=U.at(now)-L.at(now);
-  if(!(wStart>a*1.5)||!(wNow>0)||wNow>wStart*0.85)return null;  // 近づいていない／狭すぎる
-  for(let j=i0;j<now-3;j++){if(S[j].h>U.at(j)+a*0.3||S[j].l<L.at(j)-a*0.3)return null}  // 線の外に大きくはみ出す足があれば三角ではない
-  const upF=Math.abs(U.sl)<=flat,loF=Math.abs(L.sl)<=flat;
-  const kind=U.sl<-flat&&L.sl>flat?'tri-sym':upF&&L.sl>flat?'tri-asc':U.sl<-flat&&loF?'tri-desc':null;if(!kind)return null;
-  for(let j=now-3;j<now;j++){if(S[j].c>U.at(j)+a*0.1||S[j].c<L.at(j)-a*0.1)return null}  // もっと前に抜けて終わっている
-  const up=U.at(now),dn=L.at(now),b=P>up+a*0.1?1:P<dn-a*0.1?-1:0;
-  if(kind==='tri-asc'&&b<0||kind==='tri-desc'&&b>0)return null;  // 型と逆に抜けた＝否定
-  const d=b||(kind==='tri-asc'?1:kind==='tri-desc'?-1:0);
-  return {kind,state:b?'breakout':'forming',dir:d,up,lo:dn,neck:b>0?up:b<0?dn:(d>0?up:d<0?dn:null),stop:b>0?dn:b<0?up:null,height:wStart,i0:off+i0,t0:B[off+i0].t,
-    upAt:x=>U.at(x-off),loAt:x=>L.at(x-off)};
-}
-// フラッグ／ペナント：短い間の大きな動き（旗ざお）のあとの小さな保ち合い。保ち合いを旗ざおの向きに抜けたらブレイク
-function detectFlag(B,P,a){
-  const n=B.length;if(n<40||!a)return null;
-  for(let e=n-6;e>=n-25;e--){
-    for(let s0=e-3;s0>=e-10;s0--){
-      if(s0<0)break;const mv=B[e].c-B[s0].c;if(Math.abs(mv)<a*3)continue;
-      const dir=Math.sign(mv),seg=B.slice(e+1,n-1);if(seg.length<4||seg.length>20)continue;
-      const hi=Math.max(...seg.map(b=>b.h)),lo=Math.min(...seg.map(b=>b.l));
-      if(hi-lo>Math.abs(mv)*0.5)continue;
-      const brk=dir>0?P>hi:P<lo;
-      return {kind:'flag',state:brk?'breakout':'forming',dir,neck:dir>0?hi:lo,stop:dir>0?lo:hi,height:Math.abs(mv),t0:B[s0].t};
+/* 第4部（調査の定義に合わせた検出）：WTI の調査スクリプトの1時間足の設定のまま。ブレイクの確定はすべて終値。
+   価格が $5 以下の期間は検出しない。ライブでは、確定足の終値が初めて抜けてから3本までを「ブレイク」として③に使う */
+const RS={piv:8,gapMin:30,dbTol:.006,hMin:.008,brkMax:150,inval:.006,headMin:.004,shTol:.01,win:120,step:20,triSl:.0025,triNarrow:.85,triRng:.015,
+  poleN:12,poleMin:.025,consMin:3,consMax:36,consRng:.7,consRet:.5,fresh:3};
+function rsPiv(B,key,cmp){const k=RS.piv,out=[];for(let j=k;j<B.length-k;j++){let ok=true;for(let q=j-k;q<=j+k;q++){if(q===j)continue;if(cmp(B[q][key],B[j][key])>=0){ok=false;break}}if(ok)out.push(j)}return out}
+const rsHi=B=>rsPiv(B,'h',(a,b)=>a-b),rsLo=B=>rsPiv(B,'l',(a,b)=>b-a);  // 前後8本で最大（最小）・並ぶものがない
+// 確定足（最後の足は形成中なので除く）の終値で、i0 より後に初めて条件を満たした足。見つからなければ -1
+function rsFirst(B,i0,end,f){for(let q=i0+1;q<=end;q++)if(f(q))return q;return -1}
+function rsState(brk,end){return brk<0?'forming':end-brk<RS.fresh?'breakout':'done'}
+// ダブルボトム（d=1）・ダブルトップ（d=−1）
+function rsDouble(B,d){
+  const n=B.length,end=n-2;if(end<60)return null;
+  const lows=d>0?rsLo(B):rsHi(B),highs=d>0?rsHi(B):rsLo(B),v=(j)=>d>0?B[j].l:B[j].h,pv=(j)=>d>0?B[j].h:B[j].l;
+  for(let b=lows.length-1;b>=1;b--){const j2=lows[b];if(end-j2>RS.brkMax)break;
+    for(let a=b-1;a>=0;a--){const j1=lows[a],gap=j2-j1;if(gap<RS.gapMin)continue;
+      const p1=v(j1),p2=v(j2),mean=(p1+p2)/2;if(mean<=5||Math.abs(p1-p2)>mean*RS.dbTol)continue;
+      const mid=highs.filter(j=>j>j1&&j<j2);if(!mid.length)continue;
+      const neck=d>0?Math.max(...mid.map(pv)):Math.min(...mid.map(pv)),bot=d>0?Math.min(p1,p2):Math.max(p1,p2),height=Math.abs(neck-bot);
+      if(height<mean*RS.hMin)continue;
+      const lim=Math.min(end,j2+RS.brkMax),brk=rsFirst(B,j2,lim,q=>d>0?B[q].c>neck:B[q].c<neck);
+      const bad=rsFirst(B,j2,brk<0?lim:brk,q=>d>0?B[q].c<bot*(1-RS.inval):B[q].c>bot*(1+RS.inval));if(bad>=0)continue;
+      if(brk<0&&j2+RS.brkMax<end)continue;  // 150本のうちに抜けなかった
+      const st=rsState(brk,end);if(st==='done')continue;
+      return {state:st,neck,stop:bot,height,t0:B[j1].t,i1:j1,i2:j2,brk};
     }
+  }return null;
+}
+// 逆三尊（d=1）・三尊（d=−1）：連続する3つの谷（山）。ネックラインは両肩の間の山（谷）2点を結ぶ直線
+function rsHS(B,d){
+  const n=B.length,end=n-2;if(end<60)return null;
+  const lows=d>0?rsLo(B):rsHi(B),highs=d>0?rsHi(B):rsLo(B),v=j=>d>0?B[j].l:B[j].h,pv=j=>d>0?B[j].h:B[j].l;
+  for(let c=lows.length-1;c>=2;c--){const rs=lows[c],hd=lows[c-1],ls=lows[c-2];if(end-rs>RS.brkMax)break;
+    const P=(v(ls)+v(rs))/2;if(P<=5)continue;
+    const ex=d>0?Math.min(v(ls),v(rs))-v(hd):v(hd)-Math.max(v(ls),v(rs));if(ex<P*RS.headMin)continue;  // 頭が両肩より0.4%以上突き出る
+    if(Math.abs(v(ls)-v(rs))>P*RS.shTol)continue;
+    const pk1=highs.filter(j=>j>ls&&j<hd),pk2=highs.filter(j=>j>hd&&j<rs);if(!pk1.length||!pk2.length)continue;
+    const a=pk1.reduce((x,y)=>d*pv(y)>d*pv(x)?y:x),b=pk2.reduce((x,y)=>d*pv(y)>d*pv(x)?y:x),sl=(pv(b)-pv(a))/(b-a),nk=q=>pv(a)+sl*(q-a);
+    const height=Math.abs(nk(hd)-v(hd));if(height<P*RS.hMin)continue;
+    const lim=Math.min(end,rs+RS.brkMax),brk=rsFirst(B,rs,lim,q=>d>0?B[q].c>nk(q):B[q].c<nk(q));
+    if(brk<0&&rs+RS.brkMax<end)continue;
+    const st=rsState(brk,end);if(st==='done')continue;
+    return {state:st,neck:nk(brk<0?n-1:brk),stop:v(rs),height,t0:B[ls].t,brk,nkAt:nk};
+  }return null;
+}
+// 三角保ち合い：120本の窓を20本ずつずらし、窓の山・谷に回帰直線。傾きは窓全体での変化を価格に対する割合で見る
+function rsTriangle(B){
+  const n=B.length,end=n-2;if(end<RS.win)return null;
+  const H=rsHi(B),L=rsLo(B);let best=null;
+  for(let s0=Math.floor((end-RS.win)/RS.step)*RS.step;s0>=0&&end-(s0+RS.win)<=RS.brkMax;s0-=RS.step){
+    const e0=s0+RS.win-1,hs=H.filter(j=>j>=s0&&j<=e0),ls=L.filter(j=>j>=s0&&j<=e0);if(hs.length<2||ls.length<2)continue;
+    let hi=-Infinity,lo=Infinity;for(let j=s0;j<=e0;j++){hi=Math.max(hi,B[j].h);lo=Math.min(lo,B[j].l)}
+    const P=(hi+lo)/2;if(P<=5||hi-lo<P*RS.triRng)continue;
+    const U=fitLine(hs.map(j=>[j,B[j].h])),D=fitLine(ls.map(j=>[j,B[j].l])),su=U.sl*RS.win/P,sd=D.sl*RS.win/P;
+    const kind=su<-RS.triSl&&sd>RS.triSl?'tri-sym':Math.abs(su)<=RS.triSl&&sd>RS.triSl?'tri-asc':Math.abs(sd)<=RS.triSl&&su<-RS.triSl?'tri-desc':null;if(!kind)continue;
+    const w0=U.at(s0)-D.at(s0),w1=U.at(e0)-D.at(e0);if(!(w1>0)||w1>=w0*RS.triNarrow)continue;
+    const lim=Math.min(end,e0+RS.brkMax),brk=rsFirst(B,e0,lim,q=>B[q].c>U.at(q)||B[q].c<D.at(q));
+    if(brk<0&&e0+RS.brkMax<end)continue;
+    const st=rsState(brk,end);if(st==='done')continue;
+    const dir=brk<0?(kind==='tri-asc'?1:kind==='tri-desc'?-1:0):B[brk].c>U.at(brk)?1:-1;
+    best={kind,state:st,dir,up:U.at(n-1),lo:D.at(n-1),neck:brk<0?(dir>0?U.at(n-1):dir<0?D.at(n-1):null):dir>0?U.at(brk):D.at(brk),stop:brk<0?null:dir>0?D.at(brk):U.at(brk),
+      height:hi-lo,i0:s0,t0:B[s0].t,upAt:U.at,loAt:D.at,brk};
+    break;  // いちばん新しい窓
+  }return best;
+}
+// フラッグ／ペナント：12本で2.5%以上の旗竿、そのあと3〜36本・値幅が旗竿の70%以内・逆行が半分までの保ち合い
+function rsFlag(B){
+  const n=B.length,end=n-2;if(end<RS.poleN+RS.consMin+2)return null;
+  for(let pe=end-RS.consMin;pe>=Math.max(RS.poleN,end-RS.consMax-RS.fresh);pe--){
+    const ps=pe-RS.poleN,mv=B[pe].c-B[ps].c,P=B[ps].c;if(P<=5||Math.abs(mv)<P*RS.poleMin)continue;
+    const dir=Math.sign(mv),pole=Math.abs(mv);let hi=-Infinity,lo=Infinity,brk=-1;
+    {let top=true;for(let q=ps;q<pe;q++)if(dir*B[q].c>=dir*B[pe].c){top=false;break}if(!top)continue}  // 旗竿の終わり＝その12本でいちばん先まで進んだ終値（保ち合いの途中を旗竿の終わりにしない）
+    for(let q=pe+1;q<=end;q++){
+      if(q-pe>RS.consMin&&(dir>0?B[q].c>hi:B[q].c<lo)){brk=q;break}
+      hi=Math.max(hi,B[q].h);lo=Math.min(lo,B[q].l);
+      if(q-pe>RS.consMax||hi-lo>pole*RS.consRng||(dir>0?B[pe].c-lo:hi-B[pe].c)>pole*RS.consRet){hi=null;break}
+    }
+    if(hi===null||(brk<0&&end-pe<RS.consMin))continue;
+    const st=rsState(brk,end);if(st==='done')continue;
+    return {kind:'flag',state:st,dir,neck:dir>0?hi:lo,stop:dir>0?lo:hi,height:pole,t0:B[ps].t,brk};
   }return null;
 }
 let oilPatCache={k:'',v:[]};
@@ -2294,21 +2338,16 @@ function oilPatterns(){
   const price=state.spot.price,k=state.h1.length+':'+(state.h1.at(-1)?.t)+':'+(state.h1.at(-1)?.c)+':'+price.toFixed(3);
   if(oilPatCache.k===k)return oilPatCache.v;
   const out=[],B=state.h1,a=atr(B,14);
-  if(B.length>=120&&a){
-    const neg=B.map(b=>({t:b.t,o:-b.o,h:-b.l,l:-b.h,c:-b.c}));
-    const one=(id,dir,name,r,judge,ref)=>{if(!r)return;out.push({id,tf:'h1',dir,label:'1時間足'+name,name,state:r.state,neck:dir*r.neck,stop:dir*r.stop,height:r.height,
-      target:dir*(r.neck+r.height),t0:r.t0,atr:a,useSma:0,entry:false,judge,ref,stat:OIL_STAT[id].txt})};
-    one('db',1,'ダブルボトム',detectDB(B,price,a,OIL_DBIHS),true);
-    one('ihs',1,'逆三尊',detectIHS(B,price,a,OIL_IHS),true);
-    one('dt',-1,'ダブルトップ',detectDB(neg,-price,a,OIL_DBIHS),false);
-    one('hs',-1,'三尊',detectIHS(neg,-price,a,OIL_IHS),false);
-    const t=detectTriangle(B,price,a);
-    if(t){const nm={'tri-sym':'対称三角','tri-asc':'上昇三角','tri-desc':'下降三角'}[t.kind];
-      out.push({id:t.kind,tf:'h1',dir:t.dir,label:'1時間足'+nm,name:nm,state:t.state,neck:t.neck,stop:t.stop,height:t.height,up:t.up,lo:t.lo,i0:t.i0,upAt:t.upAt,loAt:t.loAt,
-        target:t.neck!=null&&t.dir?t.neck+t.dir*t.height:null,t0:t.t0,atr:a,useSma:0,entry:false,judge:t.kind!=='tri-desc',ref:t.kind==='tri-desc',stat:OIL_STAT[t.kind].txt})}
-    const f=detectFlag(B,price,a);
-    if(f)out.push({id:'flag',tf:'h1',dir:f.dir,label:'1時間足フラッグ／ペナント',name:'フラッグ／ペナント',state:f.state,neck:f.neck,stop:f.stop,height:f.height,t0:f.t0,atr:a,useSma:0,entry:false,judge:false,ref:true,
-      stat:OIL_STAT.flag.txt,warn:'ダマシが多い型です。参考表示'});
+  if(B.length>=140&&a){
+    const add=(id,name,r,judge,ref,extra)=>{if(!r)return;const dir=r.dir!=null?r.dir:extra.dir;
+      out.push({id,tf:'h1',dir,label:'1時間足'+name,name,state:r.state,neck:r.neck,stop:r.stop,height:r.height,up:r.up,lo:r.lo,i0:r.i0,upAt:r.upAt,loAt:r.loAt,
+        target:r.neck!=null&&dir?r.neck+dir*r.height:null,t0:r.t0,atr:a,useSma:0,entry:false,judge,ref,stat:OIL_STAT[id].txt,warn:extra.warn})};
+    add('db','ダブルボトム',rsDouble(B,1),true,false,{dir:1});
+    add('ihs','逆三尊',rsHS(B,1),true,false,{dir:1});
+    add('dt','ダブルトップ',rsDouble(B,-1),false,false,{dir:-1});
+    add('hs','三尊',rsHS(B,-1),false,false,{dir:-1});
+    const t=rsTriangle(B);if(t)add(t.kind,{'tri-sym':'対称三角','tri-asc':'上昇三角','tri-desc':'下降三角'}[t.kind],t,t.kind!=='tri-desc',t.kind==='tri-desc',{});
+    const f=rsFlag(B);if(f)add('flag','フラッグ／ペナント',f,false,true,{warn:'ダマシが多い型です。参考表示'});
   }
   oilPatCache={k,v:out};return out;
 }
@@ -2319,9 +2358,8 @@ let oilDayCache={k:'',v:''};
 function oilDailyBg(){
   const B=state.d1||[],k=B.length+':'+(B.at(-1)?.t)+':'+(state.spot?.price||0).toFixed(2);if(oilDayCache.k===k)return oilDayCache.v;
   let v='';const a=atr(B,14),P=state.spot?.price;
-  if(B.length>=60&&a&&P){
-    const f=detectFlag(B,P,a),t=detectTriangle(B,P,a,60),p={k:2,sepMin:5,sepMax:40,tol:0.06,depMin:2,depMax:20,useSma:0,prior:0,wait:15};
-    const db=detectDB(B,P,a,p),dt=detectDB(B.map(b=>({t:b.t,o:-b.o,h:-b.l,l:-b.h,c:-b.c})),-P,a,p);
+  if(B.length>=140&&a&&P){
+    const f=rsFlag(B),t=rsTriangle(B),db=rsDouble(B,1),dt=rsDouble(B,-1);
     const side=d=>d>0?'上抜け中':'下抜け中';
     v=f&&f.state==='breakout'?'日足：フラッグ／ペナントを'+side(f.dir)+'（'+OIL_STAT['d-flag'].txt+'）':
       t&&t.kind==='tri-sym'&&t.state==='breakout'?'日足：対称三角を'+side(t.dir)+'（'+OIL_STAT['d-tri'].txt+'）':
