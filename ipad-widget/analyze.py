@@ -355,6 +355,18 @@ def build(fixture=None, prev=None):
                 print(key, "kept previous data from", old[key].get("updated"))
         if fixture is None:
             time.sleep(0.4)  # stay gentle with the data source
+    for key, (sym, name) in SLIM.items():
+        if fixture is not None and not any(k.startswith(sym + "|") for k in fixture):
+            continue  # an older fixture without these symbols
+        try:
+            out["instruments"][key] = dict(slim(key, sym, fixture), updated=now)
+        except Exception as e:  # the panel says 取得できませんでした; nothing else depends on these
+            print(key, sym, "failed:", e)
+            if key in old:
+                out["instruments"][key] = old[key]
+                print(key, "kept previous data from", old[key].get("updated"))
+        if fixture is None:
+            time.sleep(0.4)
     if fresh == 0 and prev:
         return prev  # nothing new at all: republish the previous file unchanged
     return out
@@ -612,6 +624,25 @@ def widen_hours(h1, *finer, sec=3600):
             r[2], r[3] = e
         elif e:
             r[2], r[3] = max(r[2], e[0]), min(r[3], e[1])
+
+
+# Read-only inputs for the USD/JPY page's 「ドル円の材料」 panel (not part of any judgment): only what the panel uses,
+# hourly (for the correlation with USD/JPY), 4-hourly and daily (for the day's change), from the same Yahoo route.
+SLIM = {"us10y": ("^TNX", "米10年債利回り"), "nikkei": ("^N225", "日経平均"), "spx": ("^GSPC", "S&P500")}
+
+
+def slim(key, sym, fixture):
+    h1 = yahoo(sym, "60m", "3mo", fixture)
+    d1 = yahoo(sym, "1d", "1y", fixture)
+    if not h1 or not d1:
+        raise ValueError("no candles")
+    last = h1[-1] if h1[-1][0] >= d1[-1][0] else d1[-1]
+    today = datetime.now(timezone.utc).date()
+    done = d1[:-1] if datetime.fromtimestamp(d1[-1][0], timezone.utc).date() >= today else d1
+    print(key, sym, "price", round(last[4], 4), "at", datetime.fromtimestamp(last[0], timezone.utc).strftime("%m-%d %H:%M"),
+          f"UTC, {len(h1)} hours, {len(d1)} days")
+    return {"price": float(f"{last[4]:.6g}"), "asOf": last[0], "prevClose": float(f"{done[-1][4]:.6g}") if done else None,
+            "candles": {"1h": r6(h1[-N_H1:]), "4h": r6(aggregate(h1, 4 * 3600, server=True)[-N_CANDLES:]), "1d": r6(d1[-30:])}}
 
 
 def one(key, sym, spot_sym, fixture, prev=None):
