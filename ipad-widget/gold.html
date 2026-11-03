@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="86153701db">
+<meta name="build" content="a34d059382">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -399,6 +399,8 @@ body.mkt-closed #chartBlink,body.mkt-closed .fibnow::after,body.mkt-closed .gmma
 .result.key{border-color:#5d4a20;background:#16130b}
 .result span{display:block;color:var(--muted);font-size:10px}.result strong{display:block;margin-top:4px;color:var(--gold2);font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .result em{display:block;font-style:normal;font-size:10px;color:var(--muted);margin-top:2px}
+.result em.warn{color:var(--amber)}
+.result.overwarn{border-color:var(--amber);background:rgba(255,181,71,.08)}.result.overwarn span{color:var(--amber);font-weight:700}.result.overwarn strong{color:var(--amber)}
 details{margin-top:10px;background:#0d1217;border:1px solid #232d37;border-radius:11px;padding:0 10px}
 details summary{cursor:pointer;padding:10px 0;font-size:12px;font-weight:700;color:#d5dde5;list-style:none;display:flex;justify-content:space-between;gap:8px}
 details summary::-webkit-details-marker{display:none}
@@ -634,11 +636,11 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div class="result"><span>TP幅</span><strong id="tpDist">--</strong></div>
       <div class="result"><span>スプレッド</span><strong id="sprVal">--</strong><em id="sprSub">--</em></div>
       <div class="result"><span>必要証拠金</span><strong id="marginYen">--</strong><em id="marginSub">--</em></div>
-      <div class="result"><span>証拠金維持率</span><strong id="marginLevel">--</strong><em>口座資金 ÷ 必要証拠金</em></div>
-      <div class="result"><span>証拠金での最大</span><strong id="maxLot">--</strong><em id="maxLotSub">--</em></div>
+      <div class="result"><span>証拠金維持率</span><strong id="marginLevel">--</strong><em id="marginWord">口座資金 ÷ 必要証拠金</em></div>
     </div>
     <details id="settings">
       <summary id="settingsSum">口座設定</summary>
+      <div class="results"><div class="result"><span>口座での最大（上限・推奨ではありません）</span><strong id="maxLot">--</strong><em id="maxLotSub">--</em></div></div>
       <div class="form two">
         <label>口座資金（円）<input id="capital" type="number" inputmode="numeric" value="100000"></label>
         <label>許容リスク（%）<input id="riskPct" type="number" step="0.1" inputmode="decimal" value="1.0"></label>
@@ -2441,13 +2443,17 @@ function calcRisk(){
     $('lotRound').textContent=!lot?'--':limited?'証拠金の上限に合わせた値':lotStep>=0.01?'0.01刻み・リスク'+yen(maxLoss)+'以内':
       '最小ロット（0.01）でも上限の'+rp+'%を超えます：損失'+yen(minLoss)+'（資金の'+(capital?(minLoss/capital*100).toFixed(2):'--')+'%）';
     $('lotRound').className=lot&&(lotStep<0.01||limited)?'warn':'';
-    $('lotLabel').textContent='目安ロット';$('lossLabel').textContent='最大損失';
+    $('lotLabel').textContent=over?'⚠ 最小ロットでも上限超え':'目安ロット';$('lossLabel').textContent='最大損失';
+    $('lotLabel').closest('.result').classList.toggle('overwarn',!!over);  // D2：推奨ではなく警告の見た目に
   }
   const margin=marginPerLot*useLot,level=margin?capital/margin*100:0;
   $('marginYen').textContent=marginPerLot?yen(margin):'--';
   $('marginSub').textContent=marginPerLot?useLot.toFixed(2)+' lot・'+BROKERS[state.broker].name+' '+lev+'倍':'--';
   $('marginLevel').textContent=level?Math.round(level).toLocaleString('ja-JP')+'%':'--';
   $('marginLevel').className=level&&level<300?'warn':'';
+  // 維持率の目安の言葉（D3）：1000%以上＝十分、300%以上＝余裕あり、100%以上＝注意、100%未満＝危険（ロスカットに近い）
+  $('marginWord').textContent=!level?'口座資金 ÷ 必要証拠金':(level>=1000?'十分':level>=300?'余裕あり':level>=100?'注意（余裕が少ない）':'危険（ロスカットに近い）')+'｜口座資金 ÷ 必要証拠金';
+  $('marginWord').className=level&&level<300?'warn':'';
   $('maxLot').textContent=marginPerLot?maxLot.toFixed(2)+' lot':'--';
   $('maxLotSub').textContent=marginPerLot?'1lot '+yen(marginPerLot):'--';
   $('slDist').textContent=sl?INSTR.dist(sl):'--';
@@ -2455,7 +2461,8 @@ function calcRisk(){
   $('profitYen').textContent=profit?yen(profit):'--';
   // RR：利確幅÷損切り幅（参考プランと同じ計算）。カッコはスプレッドを引いた実質の値。利確を別の時間足の線にしているときはそれも書く
   const rrv=$('autoRisk').checked&&state.riskRR!=null?state.riskRR:sl?tp/sl:null;  // 自動のときは参考プランと同じ値。手入力のときは入力した値から
-  $('rr').textContent='RR '+(rrv!=null?rrv.toFixed(2):'--')+(sl&&spr?'（スプレッド込みの実質 '+(tpEff/slEff).toFixed(2)+'）':'')+($('autoRisk').checked&&state.riskTpBy?'・利確は'+state.riskTpBy+'の線':'');
+  $('rr').className=rrv!=null&&rrv<1?'warn':'';  // D1：RRが1未満（損切りの幅の方が大きい）は注意の見た目
+  $('rr').textContent=(rrv!=null&&rrv<1?'⚠ ':'')+'RR '+(rrv!=null?rrv.toFixed(2):'--')+(sl&&spr?'（スプレッド込みの実質 '+(tpEff/slEff).toFixed(2)+'）':'')+($('autoRisk').checked&&state.riskTpBy?'・利確は'+state.riskTpBy+'の線':'')+(rrv!=null&&rrv<1?'｜RRが1未満：損切りの幅の方が利確の幅より大きい':'');
   const sprCost=fx?spr*contract*useLot*fx:0;
   $('sprVal').textContent=spr?(sprCost?yen(sprCost):'--'):'0';
   $('sprSub').textContent=sprPips.toFixed(1)+'pips・'+BROKERS[state.broker].name+' '+BROKERS[state.broker].acct+'｜'+useLot.toFixed(2)+' lot';
@@ -2471,7 +2478,7 @@ function calcRisk(){
   $('settingsSum').textContent='口座設定（'+BROKERS[state.broker].name+' '+lev+'倍・'+yen(capital)+'・リスク'+rp+'%・'+contract.toLocaleString('ja-JP')+INSTR.unit+'/lot・スプレッド'+sprPips.toFixed(1)+'pips）';
   $('atrNote').textContent=(state.m15.length?'M15 ATR14 '+INSTR.dist(currentAtr())+'｜':'')+($('autoRisk').checked
     ?'自動SL = ATR×'+(n($('slMult').value)||1.2)+'（最低'+INSTR.dist(INSTR.slMin)+'）／TP = '+(state.riskTpDesc||'直近のH1水平線まで（なければSL×'+(n($('rrTarget').value)||2)+'）')+(state.m15.length?'':'｜M15データ待ちのため価格の0.12%で代用')
-    :'手入力モード：エントリー・SL・TPを自由に入力できます。')+(spr?'｜ロット・損失・利益はスプレッド'+sprPips.toFixed(1)+'pips込み':'');
+    :'手入力モード：エントリー・SL・TPを自由に入力できます。')+(spr?'｜ロット・損失・利益はスプレッド'+sprPips.toFixed(1)+'pips込み｜実質RR＝スプレッドを差し引いた後の比率（利確幅−スプレッド）÷（損切り幅＋スプレッド）':'');
   return manual>0?{lot:manual,lotStep:manual,sl}:{lot,lotStep,sl};
 }
 
