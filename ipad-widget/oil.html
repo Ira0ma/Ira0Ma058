@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="e315b161f6">
+<meta name="build" content="8bf0b50e96">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3244,7 +3244,7 @@ function drawChart(){
       // 上昇・下降・クロスの判定は短期と長期の両方を表示しているときだけ
       return (gmS?`<span class="legend"><i style="background:${GMMA_SC}"></i>GMMA短期 <b>${fmt(sLo)}〜${fmt(sHi)}</b></span>`:'')+(gmL?`<span class="legend"><i style="background:${GMMA_LC}"></i>GMMA長期 <b>${fmt(lLo)}〜${fmt(lHi)}</b></span>`:'')+
         (gmS&&gmL?`<span class="legend"><i style="background:linear-gradient(90deg,${GMMA_SC} 50%,${GMMA_LC} 50%)"></i>GMMA ${st}</span>`:'')})():'')+
-    emas.map(m=>{const ev=m.vals[hi??bars.length-1];return `<span class="legend"><i style="background:${m.color}"></i>${m.len}EMA <b>${ev==null?'--':fmt(ev)}</b></span>`}).join('')+
+    emas.map(m=>{const ev=m.vals[hi??bars.length-1];return `<span class="legend"><i style="background:${m.color}"></i>${m.len}EMA <b${ev==null?' title="計算には'+m.len+'本の足が必要です"':''}>${ev==null?(source.length<m.len?'足が'+source.length+'本で不足（'+m.len+'本必要）':'この足ではまだ出ません（'+m.len+'本目から）'):fmt(ev)}</b></span>`}).join('')+
     tls.map(t=>`<span class="legend"><i style="background:${t.kind==='up'?TL_UP:TL_DOWN}"></i>${t.kind==='up'?'上昇':'下降'}トレンドライン <b>${fmt(t.p1+t.slope*(endIdx-1-t.i1))}</b>（接点${t.touches}）</span>`).join('')+
     tags.map(({l})=>`<span class="legend"><i style="background:${l.kind==='r'?'#ff6969':'#42d59c'}"></i>${l.kind==='r'?'抵抗線':'支持線'}${l.big?'（'+TF_JA[l.big]+'）':l.tf!=='h1'?'（'+l.tf.toUpperCase()+'）':''}${l.touches>=3?'★':''} <b>${fmt(l.price)}</b></span>`).join('')+
     (fib&&fib.prov?`<span class="legend"><i style="background:${FIB_COLOR}"></i>暫定フィボナッチ（${fibTag}${fib.dir>0?'上昇':'下降'}中・次の${fib.dir>0?'押し目':'戻り'}の目安） 38.2% <b>${fmt(fib.levels.find(l=>l.r===.382).p)}</b>・半値 <b>${fmt(fib.levels.find(l=>l.r===.5).p)}</b>・61.8% <b>${fmt(fib.levels.find(l=>l.r===.618).p)}</b></span>`:'')+
