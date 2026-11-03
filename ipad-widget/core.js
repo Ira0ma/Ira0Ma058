@@ -150,7 +150,7 @@
   function jst(t, withDate) {
     if (!fin(t) || t <= 0) return "—";
     var p = partsIn("Asia/Tokyo", t), z = function (x) { return String(x).padStart(2, "0"); };
-    return (withDate === false ? "" : p.mo + "/" + p.d + " ") + p.h + ":" + z(p.mi) + " JST";
+    return (withDate === false ? "" : p.mo + "/" + p.d + " ") + z(p.h) + ":" + z(p.mi) + " JST";  // M/D HH:MM JST（画面全体で同じ書き方）
   }
 
   /* ---------- payload checks ---------- */

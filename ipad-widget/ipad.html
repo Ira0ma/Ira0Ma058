@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="8a2e6dbd92">
+<meta name="build" content="ca7b0ce0e4">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -86,6 +86,7 @@ body {
 .sound-btn[data-level="low"] .w2 { display: none; }
 .sound-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 #clock .time { font-family: var(--display); font-size: 70px; font-weight: 300; letter-spacing: -.02em; line-height: 1; }
+#clock .date .tz { font-size: 11px; font-weight: 600; letter-spacing: .04em; color: var(--ink-3); margin-left: 6px; }
 #clock .date { font-size: 21px; font-weight: 500; margin-top: 8px; }
 #clock .note { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); margin-top: 12px; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
 
@@ -132,7 +133,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .mkt .price .tail { font-size: 26px; }
 .mkt .price.flash-up { color: #ffe6b0; }
 .mkt .price.flash-down { color: #c9d4ff; }
-.mkt .chg { font-size: 14px; font-weight: 500; margin-top: 4px; white-space: nowrap; }
+.mkt .chg { font-size: 14px; font-weight: 500; margin-top: 4px; white-space: nowrap; display: flex; flex-wrap: wrap; align-items: center; row-gap: 2px; }  /* 札が長いとき（前の日の時刻つき）は次の行へ */
 .mkt .chg .asof { font-size: 11px; font-weight: 500; color: var(--ink-3); margin-left: 8px; }
 .mkt .klv { display: flex; gap: 7px; margin-top: 5px; font-size: 10.5px; letter-spacing: -.02em; font-weight: 600; white-space: nowrap; overflow: hidden; }
 .mkt .klv span i { font-style: normal; font-size: 9px; font-weight: 700; margin-right: 2px; opacity: .8; }
@@ -250,6 +251,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .wx-hours .h { font-size: 11.5px; color: var(--ink-3); }
 .wx-hours svg { width: 26px; height: 22px; margin: 6px auto 4px; display: block; }
 .wx-hours .d { font-size: 13.5px; font-weight: 500; }
+.wx-at { font-size: 10px; color: var(--ink-3); text-align: right; margin-top: 2px; }
 /* earthquake alert over the hourly row (P2P地震情報: JMA quake reports and earthquake early warnings) */
 .wx-eq { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 1; min-height: 84px; border-radius: 12px; padding: 8px 30px 8px 11px; background: rgba(42,28,8,.96); border: 1px solid rgba(245,192,74,.7); box-shadow: 0 4px 18px rgba(0,0,0,.55); display: flex; flex-direction: column; justify-content: center; gap: 2px; cursor: pointer; }
 .wx-eq.warn { background: rgba(70,10,10,.97); border-color: var(--up-red); animation: eqPulse 1.1s ease-in-out infinite; }
@@ -839,6 +841,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <div class="wx-hl num">最高 <span data-wx="hi">--</span>°<br>最低 <span data-wx="lo">--</span>°</div>
     </div>
     <div class="wx-hours num" data-wx="hours"></div>
+    <div class="wx-at" data-wx="at"></div>
     <div class="wx-hz" role="group" aria-label="防災・季節の情報"><button type="button" data-hz-open="eq">地震</button><button type="button" data-hz-open="ty">台風</button><button type="button" data-hz-open="pl">花粉</button></div>
     <div class="wx-eq" id="wx-eq" role="alert" hidden><button type="button" aria-label="地震情報を閉じる">✕</button><b></b><span></span><small></small></div>
     <div class="wx-panel" hidden>
@@ -906,6 +909,13 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   var W = 1210, H = 841, scale = 1;
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   var WD = ["日", "月", "火", "水", "木", "金", "土"];
+  /* 時刻の書き方（画面全体で1つ）：時刻は HH:MM。日付が要るときは M/D HH:MM JST。更新時刻は「HH:MM 更新」（日付つきは「M/D HH:MM JST 更新」）。
+     この画面の時刻はすべて日本時間で、時計にも JST を付けている */
+  var HHMM = function (d) { return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
+  var MDHM = function (d) { return (d.getMonth() + 1) + "/" + d.getDate() + " " + HHMM(d) + " JST"; };
+  var sameDay = function (a, b) { return a.toDateString() === b.toDateString(); };
+  var stampAt = function (d) { return sameDay(d, new Date()) ? HHMM(d) : MDHM(d); };
+  var updAt = function (d) { return stampAt(d) + " 更新"; };
   /* Outside the real site (e.g. a design preview with no network) the built-in sample content stays, labelled as such.
      On the real site nothing made-up is shown: until data arrives the widgets say they are loading. */
   var PREVIEW = !/(github\.io|localhost|127\.0\.0\.1)$/.test(location.hostname);
@@ -1329,11 +1339,12 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   /* ---------- clock ---------- */
   function tickClock() {
     var d = new Date();
-    var hm = d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0");
+    var hm = HHMM(d);
     var md = (d.getMonth() + 1) + "月" + d.getDate() + "日(" + WD[d.getDay()] + ")";
     document.querySelectorAll("[data-clock]").forEach(function (el) {
       var k = el.getAttribute("data-clock");
-      el.textContent = k === "hm" ? hm : k === "md" ? md : k === "wd" ? WD[d.getDay()] : d.getDate();
+      if (k === "md") { if (el.firstChild && el.firstChild.nodeValue === md) return; el.innerHTML = md + '<small class="tz">JST</small>'; return; }  // 画面の時刻はすべて日本時間（時計の日付の行に明記）
+      el.textContent = k === "hm" ? hm : k === "wd" ? WD[d.getDay()] : d.getDate();
     });
   }
 
@@ -1521,7 +1532,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var sameDay = st.at && TDCore.dayKey(st.at) === TDCore.dayKey(Date.now());
     b.type = "button"; b.className = "mst lv-" + lv;
     var p = st.at ? TDCore.partsIn("Asia/Tokyo", st.at) : null;  // today: the time; an earlier day: the date only (the full time is in the label and the status screen)
-    b.innerHTML = '<i aria-hidden="true"></i>' + (!p ? "—" : sameDay ? p.h + ":" + String(p.mi).padStart(2, "0") : p.mo + "/" + p.d) + "・" + label;
+    var z2 = function (x) { return String(x).padStart(2, "0"); };  // 今日は HH:MM、前の日は M/D HH:MM JST
+    b.innerHTML = '<i aria-hidden="true"></i>' + (!p ? "—" : sameDay ? z2(p.h) + ":" + z2(p.mi) : p.mo + "/" + p.d + " " + z2(p.h) + ":" + z2(p.mi) + " JST") + "・" + label;
     var full = st.name + "：" + TDCore.jst(st.at) + "の価格（" + st.prov.src + "・" + st.prov.type + "）。状態：" + (st.held ? "データ確認中（" + st.held.join("・") + "）" : st.price.label) +
       (st.analysis.level === "stale" ? "。自動分析は" + TDCore.ago(st.analysis.age) + "の計算で古くなっています" : "") + "。タップでデータ状態を表示";
     b.setAttribute("aria-label", full); b.title = full;
@@ -1597,8 +1609,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
         if (tf === "1w") return d.getFullYear() + "/" + (d.getMonth() + 1);
         if (tf === "1d") return (d.getMonth() + 1) + "/" + d.getDate();
         if (tf === "4h") return (d.getMonth() + 1) + "/" + d.getDate() + " " + d.getHours() + "時";
-        if (tf === "1m" || tf === "5m") return d.getHours() + ":" + z(d.getMinutes());
-        return (d.getMonth() + 1) + "/" + d.getDate() + " " + d.getHours() + ":" + z(d.getMinutes());
+        if (tf === "1m" || tf === "5m") return z(d.getHours()) + ":" + z(d.getMinutes());
+        return (d.getMonth() + 1) + "/" + d.getDate() + " " + z(d.getHours()) + ":" + z(d.getMinutes());
       };
       c.save(); c.font = "500 9.5px -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif"; c.fillStyle = "rgba(244,241,234,.42)"; c.textBaseline = "bottom";
       [0.08, 0.5, 0.92].forEach(function (f, j) {
@@ -2006,7 +2018,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   var demoHours = [[10, "sun", 25], [13, "sun", 26], [16, "part", 26], [19, "cloud", 23], [22, "moon", 21]];
   function renderHours(list) {
     document.querySelector('[data-wx="hours"]').innerHTML = list.map(function (x) {
-      return '<div><div class="h">' + x[0] + '時</div><svg viewBox="0 0 26 22">' + ICON[x[1]] + '</svg><div class="d">' + x[2] + '°</div></div>';
+      return '<div><div class="h">' + String(x[0]).padStart(2, "0") + ':00</div><svg viewBox="0 0 26 22">' + ICON[x[1]] + '</svg><div class="d">' + x[2] + '°</div></div>';
     }).join("");
   }
   document.querySelector("[data-wx-main]").innerHTML = MAIN;
@@ -2087,6 +2099,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
           return [hr, codeIcon(j.hourly.weather_code[hr], hr), Math.round(j.hourly.temperature_2m[hr])];
         }));
         wxLoaded = true; wxAt = Date.now(); srcMark("weather", true);
+        q("at").textContent = "時間ごとの気温は予報・" + updAt(new Date(wxAt));
       })
       .catch(function () {
         srcMark("weather", false);
@@ -2107,7 +2120,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   var eqShown = null, eqClosed = "", eqWs = null, eqRetry = 0, eqStart = Date.now();
   try { eqClosed = localStorage.getItem("desk_eq_closed") || ""; } catch (e) {}
   function eqTime(s) { return s ? Date.parse(s.replace(/\//g, "-").replace(" ", "T").replace(/\.\d+$/, "") + "+09:00") : NaN; }
-  function eqHm(t) { var d = new Date(t); return d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2); }
+  function eqHm(t) { return HHMM(new Date(t)); }
   function eqRead(m) {  // -> { id, at, warn, head, line, note } or null when it is not worth an alert
     if (m.code === 556) {  // earthquake early warning (warning level: strong shaking expected)
       if (m.test || m.cancelled) return m.cancelled ? { id: "eew" + (m.issue && m.issue.eventId), cancel: true } : null;
@@ -2185,7 +2198,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   (function () {
     var sheet = document.getElementById("hz"), body = document.getElementById("hz-body"), tab = "eq", opener = null;
     var esc = function (t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
-    var hm = function (t) { var d = new Date(t); return (d.getMonth() + 1) + "/" + d.getDate() + " " + d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2); };
+    var hm = function (t) { return MDHM(new Date(t)); };
     var link = function (href, text) { return '<a class="hz-link" href="' + href + '" target="_blank" rel="noopener">' + text + ' ↗</a>'; };
     function open(t, from) { opener = from || document.activeElement; tab = t; sheet.hidden = false; render(); sheet.querySelector(".hz-x").focus(); }
     function close() { sheet.hidden = true; if (opener && opener.focus) opener.focus(); }
@@ -2387,7 +2400,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     if (HOL_NAMES[calSel]) lines.push("<p>🎌 日本の祝日：" + esc(HOL_NAMES[calSel]) + "</p>");
     (MKT_HOL[calSel] || []).forEach(function (h) { lines.push("<p>" + esc(MKT_NAME[h[0]] || h[0]) + "市場は休場（目安）：" + esc(h[1]) + "</p>"); });
     var inRange = rg && calSel >= rg.from && calSel <= rg.to;
-    if (evs.length) lines.push("<ul>" + evs.map(function (e) { return '<li><span class="num">' + e.t.getHours() + ":" + String(e.t.getMinutes()).padStart(2, "0") + "</span><span>" + esc(jaTitle(e)) + '</span><span class="st">' + "★★★".slice(0, e.stars) + "</span></li>"; }).join("") + "</ul>" +
+    if (evs.length) lines.push("<ul>" + evs.map(function (e) { return '<li><span class="num">' + HHMM(e.t) + "</span><span>" + esc(jaTitle(e)) + '</span><span class="st">' + "★★★".slice(0, e.stars) + "</span></li>"; }).join("") + "</ul>" +
       '<button type="button" class="cd-btn" data-ind-day="' + calSel + '">この日の指標を一覧に表示</button>');
     else if (!calEvents) lines.push("<p>指標データを読み込めていません。</p>");
     else if (!inRange) lines.push("<p>指標データの範囲外です（指標の予定は" + (rg ? +rg.from.slice(5, 7) + "/" + +rg.from.slice(8) + "〜" + +rg.to.slice(5, 7) + "/" + +rg.to.slice(8) : "今週") + "の分まで）。</p>");
@@ -2574,13 +2587,13 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       document.getElementById("ind-day").textContent = (dt.getMonth() + 1) + "月" + dt.getDate() + "日(" + WD[dt.getDay()] + ")だけ";
       ulF.innerHTML = evs.map(function (e) {
         var sub = [e.actual ? "結果 " + e.actual : "", e.forecast ? "予想 " + e.forecast : "", e.previous ? "前回 " + e.previous : ""].filter(Boolean).join(" / ");
-        return '<li><div class="t num">' + e.t.getHours() + ":" + String(e.t.getMinutes()).padStart(2, "0") + '</div><div><div class="n">' + esc(jaTitle(e)) + '</div><div class="s num">' + esc(sub || "　") + '</div></div><div class="stars" data-v="' + e.stars + '"></div></li>';
+        return '<li><div class="t num">' + HHMM(e.t) + '</div><div><div class="n">' + esc(jaTitle(e)) + '</div><div class="s num">' + esc(sub || "　") + '</div></div><div class="stars" data-v="' + e.stars + '"></div></li>';
       }).join("") + '<li class="empty"><button type="button" class="retry" data-ind-all>すべて表示</button></li>';
       ulF.querySelectorAll(".stars").forEach(paintStars);
       return;
     }
     var now = new Date(), day = tradingDay(now);
-    document.getElementById("ind-day").textContent = (day.start.getMonth() + 1) + "月" + day.start.getDate() + "日(" + WD[day.start.getDay()] + ")";
+    document.getElementById("ind-day").textContent = "";  // 今日の日付は時計のカードに（重ねて出さない）
     var today = calEvents.filter(function (e) {
       return e.t >= day.start && e.t < day.end;
     }).sort(function (a, b) { return a.t - b.t || b.stars - a.stars; });
@@ -2602,13 +2615,13 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       var li = document.createElement("li");
       var mins = (e.t - now) / 60000;
       if (mins < -30) li.classList.add("past");  // just released: stay bright while the result comes in
-      var hm = e.t.getHours() + ":" + String(e.t.getMinutes()).padStart(2, "0");
-      var nextDay = e.t.getDate() !== day.start.getDate();
+      var hm = HHMM(e.t);
+      var nextDay = !sameDay(e.t, now);  // 日付が変わる指標は「翌」ではなく日付をつける
       var sub = [e.forecast ? "予想 " + e.forecast : "", e.previous ? "前回 " + e.previous : ""].filter(Boolean).join(" / ");
       li.innerHTML = '<div class="t num"></div><div><div class="n"></div><div class="s num"></div></div><div class="stars"></div>';
       li.children[0].innerHTML = e.later
         ? '<small class="date">' + (e.t.getMonth() + 1) + "/" + e.t.getDate() + "(" + WD[e.t.getDay()] + ")</small>" + hm
-        : (nextDay ? '<small class="next">翌</small>' : "") + hm;
+        : (nextDay ? '<small class="date">' + (e.t.getMonth() + 1) + "/" + e.t.getDate() + "(" + WD[e.t.getDay()] + ")</small>" : "") + hm;
       if (e.later) li.classList.add("later");
       li.querySelector(".n").textContent = jaTitle(e);
       var s = li.querySelector(".s");
@@ -2683,7 +2696,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var el = document.getElementById("ind-upd");
     if (!calUpdatedAt) { el.textContent = ""; return; }
     var d = new Date(calUpdatedAt);
-    el.innerHTML = "<i></i>" + d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0") + " 更新";
+    el.innerHTML = "<i></i>" + updAt(d);
     el.title = calendarHot() ? "発表前後のため1分ごとに更新中" : "5分ごとに自動更新";
   }
   function loadCalendar() {
@@ -2733,7 +2746,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var tom = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     var day = t.toDateString() === now.toDateString() ? "" : t.toDateString() === tom.toDateString() ? "明日 " : (t.getMonth() + 1) + "/" + t.getDate() + "(" + WD[t.getDay()] + ") ";
     l1.textContent = "次の指標まで あと" + (h ? h + "時間" : "") + (h && !m ? "" : m + "分");
-    l2.innerHTML = esc(day + t.getHours() + ":" + String(t.getMinutes()).padStart(2, "0") + "（日本時間） " + jaTitle(nx)) + '<span class="stars">★★★</span>';
+    l2.innerHTML = esc(day + HHMM(t) + " JST " + jaTitle(nx)) + '<span class="stars">★★★</span>';
     el.classList.toggle("soon", mins <= 30);
   }
   document.getElementById("pt-next").addEventListener("click", function () {  // 今日の重要指標の一覧へ
@@ -2784,7 +2797,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     if (!market) return;
     var u = new Date(market.updated), foot = document.getElementById("pt-foot");
     var stale = Date.now() - u > 3 * 3600000;
-    foot.textContent = "チャートから自動分析・" + (stale ? (u.getMonth() + 1) + "/" + u.getDate() + " " : "") + u.getHours() + ":" + String(u.getMinutes()).padStart(2, "0") + "更新" + (stale ? "（更新が止まっています）" : "（参考情報）");
+    foot.textContent = "チャートから自動分析・" + (stale ? MDHM(u) + " 更新" : updAt(u)) + (stale ? "（更新が止まっています）" : "（参考情報）");
     foot.style.color = stale ? "var(--up-red)" : "";
     renderStrategy();
   }
@@ -2802,7 +2815,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function fillReport() {
     var body = document.getElementById("rep-body"), u = report.updated ? new Date(report.updated) : null;
-    document.getElementById("rep-when").textContent = report.date.slice(5).replace("-", "/") + (u && !isNaN(u) ? " " + u.getHours() + ":" + String(u.getMinutes()).padStart(2, "0") + "更新" : "");
+    document.getElementById("rep-when").textContent = report.date.slice(5).replace("-", "/").replace(/^0/, "").replace("/0", "/") + "の分" + (u && !isNaN(u) ? "・" + updAt(u) : "");
     var html = (report.sections || []).map(function (s) {
       return "<h4>" + esc(s.title) + "</h4><ul>" + (s.items || []).map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + "</ul>";
     }).join("");
@@ -2837,7 +2850,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       var next = calEvents.filter(function (e) {
         return e.stars === 3 && e.t > now && e.t < tradingDay(now).end;
       }).sort(function (a, b) { return a.t - b.t; })[0];
-      if (next) line1 = (next.t.getDate() !== tradingDay(now).start.getDate() ? "翌" : "") + next.t.getHours() + ":" + String(next.t.getMinutes()).padStart(2, "0") + " " + jaTitle(next) + "に注意。";
+      if (next) line1 = (sameDay(next.t, now) ? HHMM(next.t) : MDHM(next.t)) + " " + jaTitle(next) + "に注意。";
       else if (calEvents.some(function (e) { return e.t > now && e.t < tradingDay(now).end; }))
         line1 = "本日は大型指標なし（小型指標のみ）。\nテクニカル主導の値動きを想定。";
     }

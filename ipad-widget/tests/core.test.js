@@ -91,7 +91,7 @@ test("freshness per data type; a closed market is not called stale", () => {
   assert.equal(C.ago(0), "0秒前");
   assert.equal(C.ago(65 * MIN), "1時間5分前");
   assert.equal(C.ago(25 * HOUR), "1日1時間前");
-  assert.equal(C.jst(U("2026-07-08T15:05:00Z")), "7/9 0:05 JST");
+  assert.equal(C.jst(U("2026-07-08T15:05:00Z")), "7/9 00:05 JST");
 });
 
 test("market.json checks: shape, time, ranges, contradictions", () => {
