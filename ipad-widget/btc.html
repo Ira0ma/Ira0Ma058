@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="2d20d49630">
+<meta name="build" content="3bdff99d39">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -196,7 +196,10 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .talkitem .who{color:#b9a6ff;font-weight:700}.talkitem .hawk{color:#ff9d6b;font-weight:700}.talkitem .dove{color:#6bc8ff;font-weight:700}.talkitem .intv{color:#ffb547;font-weight:700}
 .talkitem.fresh{border-color:#7c5cff;box-shadow:0 0 0 1px #7c5cff inset;--glow:rgba(124,92,255,.35);--glow-sh:0 0 0 6px var(--glow);--glow-t:1.6s}
 .talkhead{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px}
-.waitfor[hidden]{display:none}  /* 下の display:grid が hidden 属性より強く、エントリーに変わっても前回の待ち条件が残っていた */
+.waitfor[hidden]{display:none}
+.ptag{margin-left:6px;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:999px;border:1px solid #2a3440;color:var(--muted)}.ptag.t-judge{color:#42d59c;border-color:rgba(66,213,156,.5)}.ptag.t-ref{color:#f0c36a;border-color:rgba(240,195,106,.5)}
+.pstat{display:block;color:var(--muted);font-size:10.5px}.pbg{margin:4px 0 6px;padding:5px 8px;border-radius:8px;background:rgba(240,195,106,.08);border:1px solid rgba(240,195,106,.4);font-size:11.5px;color:#f0c36a}
+.pnote{margin-top:6px;font-size:10.5px;color:var(--muted);line-height:1.5}  /* 下の display:grid が hidden 属性より強く、エントリーに変わっても前回の待ち条件が残っていた */
 .waitfor{margin-top:8px;background:#0d1217;border:1px solid #654f1f;border-radius:10px;padding:8px 10px;font-size:11px;display:grid;gap:5px}
 .waitfor .wh{color:var(--amber);font-weight:800}
 .waitfor .wl{display:flex;flex-wrap:wrap;gap:3px 10px;color:var(--muted)}.waitfor .wl b{color:var(--text);font-weight:700;margin-right:2px}
@@ -803,6 +806,7 @@ const LSP=INSTR.key+'_';  // 端末に保存する設定は銘柄ごとに分け
   document.title=INSTR.title+' Trade Dashboard';
   t('h1Sym',INSTR.title);t('subTitle',INSTR.sub);t('miniSym',INSTR.short);t('instrLabel',INSTR.label);
   t('chartTitle',INSTR.title+'チャート');t('sprPipNote',INSTR.pipNote);t('contractLabel','1lot契約量('+INSTR.unit+')');t('brokerNote',INSTR.brokerNote);
+  if(IS_OIL){const sp=$('reasonRange')?.previousElementSibling;if(sp&&sp.firstChild)sp.firstChild.textContent='③ パターンのブレイク（1時間足）'}  // 第4部
   t('relBtn',INSTR.name+'関連');t('minTpLabel',INSTR.minTp);t('minTpLabel15',INSTR.minTp);t('minTpLabel5',INSTR.minTp);t('minTpLabelDay',INSTR.minTp);t('footerSrc',INSTR.footer);
   if(IS_BTC){
     const logo=document.querySelector('.logo');if(logo){logo.textContent='₿';logo.style.fontSize='20px'}
@@ -2235,8 +2239,100 @@ function detectIHS(B,P,a,p){
   }return null;
 }
 let patCache={k:'',v:[]};
+/* ---------- 第4部：オイルのパターン（WTI 過去データの集計にもとづく入れ替え）----------
+   判定（③）に使う型（1時間足）：ダブルボトム・逆三尊・対称三角・上昇三角。下降三角は標本4件のため表示のみ。
+   参考表示：フラッグ／ペナント（1時間足・ダマシが多い）。判定に使わない型：三尊・ダブルトップ（1時間足）、15分足のパターン。
+   日足の背景：フラッグ／ペナント・対称三角・ダブルトップ・ダブルボトムのブレイクを1行で（判定には数えない） */
+const OIL_STAT={
+  db:{txt:'高さ到達 81.8%・失敗 18.2%（11件）'},ihs:{txt:'高さ到達 61.1%・失敗 38.9%（18件）'},
+  'tri-sym':{txt:'$0.50到達 94.1%・$2.00到達 82.4%・高さ到達 47.1%（17件）'},'tri-asc':{txt:'高さ到達 55.6%・$2.00到達 77.8%（9件）'},
+  'tri-desc':{txt:'1時間足では4件しかなく、到達率を示せないため表示のみ'},flag:{txt:'失敗 54.0%が高さ到達 43.9%を上回る（189件）'},
+  hs:{txt:'高さ到達 33.3%・失敗 66.7%（12件）'},dt:{txt:'高さ到達 50.0%・$0.50到達 50.0%（10件）'},
+  'd-flag':{txt:'$0.50到達 88.5%・$3.00到達 70.5%（61件）'},'d-tri':{txt:'$3.00到達 82.8%（29件）'}
+};
+const OIL_STAT_NOTE='統計：WTI 過去データの集計（1時間足は約2年分・日足は10年分）。過去の統計は将来の結果を保証しません。';
+const OIL_DBIHS={k:3,sepMin:10,sepMax:80,tol:0.05,depMin:3,depMax:20,useSma:0,prior:1,wait:25};
+const OIL_IHS={k:5,sepMin:20,sepMax:120,tol:0.05,depMin:1.5,depMax:10,useSma:0,prior:1,wait:25};
+// 直近の山・谷に引いた2本の線が近づいていく形（三角保ち合い）。上の線がほぼ水平で下が上がる＝上昇三角、
+// 下がほぼ水平で上が下がる＝下降三角、上が下がり下が上がる＝対称三角。最新の価格が線の外に出たら「ブレイク」
+function pivHighs(B,k){const out=[];for(let j=k;j<B.length-k;j++){let ok=true;for(let q=j-k;q<=j+k;q++)if(B[q].h>B[j].h||(B[q].h===B[j].h&&q<j)){ok=false;break}if(ok)out.push(j)}return out}
+function fitLine(pts){const n=pts.length,mx=pts.reduce((s,p)=>s+p[0],0)/n,my=pts.reduce((s,p)=>s+p[1],0)/n;let sxx=0,sxy=0;pts.forEach(p=>{sxx+=(p[0]-mx)**2;sxy+=(p[0]-mx)*(p[1]-my)});const sl=sxx?sxy/sxx:0;return {sl,at:x=>my+sl*(x-mx)}}
+function detectTriangle(B,P,a,W=70){
+  const n=B.length;if(n<W+5||!a)return null;
+  const off=n-W,S=B.slice(off),k=3,hi=pivHighs(S,k).slice(-3),lo=pivotLows(S,k).slice(-3);
+  if(hi.length<2||lo.length<2)return null;
+  const i0=Math.min(hi[0],lo[0]);if(W-1-i0<15)return null;
+  const U=fitLine(hi.map(j=>[j,S[j].h])),L=fitLine(lo.map(j=>[j,S[j].l])),flat=a*0.5/20,now=W-1;
+  const wStart=U.at(i0)-L.at(i0),wNow=U.at(now)-L.at(now);
+  if(!(wStart>a*1.5)||!(wNow>0)||wNow>wStart*0.85)return null;  // 近づいていない／狭すぎる
+  for(let j=i0;j<now-3;j++){if(S[j].h>U.at(j)+a*0.3||S[j].l<L.at(j)-a*0.3)return null}  // 線の外に大きくはみ出す足があれば三角ではない
+  const upF=Math.abs(U.sl)<=flat,loF=Math.abs(L.sl)<=flat;
+  const kind=U.sl<-flat&&L.sl>flat?'tri-sym':upF&&L.sl>flat?'tri-asc':U.sl<-flat&&loF?'tri-desc':null;if(!kind)return null;
+  for(let j=now-3;j<now;j++){if(S[j].c>U.at(j)+a*0.1||S[j].c<L.at(j)-a*0.1)return null}  // もっと前に抜けて終わっている
+  const up=U.at(now),dn=L.at(now),b=P>up+a*0.1?1:P<dn-a*0.1?-1:0;
+  if(kind==='tri-asc'&&b<0||kind==='tri-desc'&&b>0)return null;  // 型と逆に抜けた＝否定
+  const d=b||(kind==='tri-asc'?1:kind==='tri-desc'?-1:0);
+  return {kind,state:b?'breakout':'forming',dir:d,up,lo:dn,neck:b>0?up:b<0?dn:(d>0?up:d<0?dn:null),stop:b>0?dn:b<0?up:null,height:wStart,i0:off+i0,t0:B[off+i0].t,
+    upAt:x=>U.at(x-off),loAt:x=>L.at(x-off)};
+}
+// フラッグ／ペナント：短い間の大きな動き（旗ざお）のあとの小さな保ち合い。保ち合いを旗ざおの向きに抜けたらブレイク
+function detectFlag(B,P,a){
+  const n=B.length;if(n<40||!a)return null;
+  for(let e=n-6;e>=n-25;e--){
+    for(let s0=e-3;s0>=e-10;s0--){
+      if(s0<0)break;const mv=B[e].c-B[s0].c;if(Math.abs(mv)<a*3)continue;
+      const dir=Math.sign(mv),seg=B.slice(e+1,n-1);if(seg.length<4||seg.length>20)continue;
+      const hi=Math.max(...seg.map(b=>b.h)),lo=Math.min(...seg.map(b=>b.l));
+      if(hi-lo>Math.abs(mv)*0.5)continue;
+      const brk=dir>0?P>hi:P<lo;
+      return {kind:'flag',state:brk?'breakout':'forming',dir,neck:dir>0?hi:lo,stop:dir>0?lo:hi,height:Math.abs(mv),t0:B[s0].t};
+    }
+  }return null;
+}
+let oilPatCache={k:'',v:[]};
+function oilPatterns(){
+  if(!state.spot)return [];
+  const price=state.spot.price,k=state.h1.length+':'+(state.h1.at(-1)?.t)+':'+(state.h1.at(-1)?.c)+':'+price.toFixed(3);
+  if(oilPatCache.k===k)return oilPatCache.v;
+  const out=[],B=state.h1,a=atr(B,14);
+  if(B.length>=120&&a){
+    const neg=B.map(b=>({t:b.t,o:-b.o,h:-b.l,l:-b.h,c:-b.c}));
+    const one=(id,dir,name,r,judge,ref)=>{if(!r)return;out.push({id,tf:'h1',dir,label:'1時間足'+name,name,state:r.state,neck:dir*r.neck,stop:dir*r.stop,height:r.height,
+      target:dir*(r.neck+r.height),t0:r.t0,atr:a,useSma:0,entry:false,judge,ref,stat:OIL_STAT[id].txt})};
+    one('db',1,'ダブルボトム',detectDB(B,price,a,OIL_DBIHS),true);
+    one('ihs',1,'逆三尊',detectIHS(B,price,a,OIL_IHS),true);
+    one('dt',-1,'ダブルトップ',detectDB(neg,-price,a,OIL_DBIHS),false);
+    one('hs',-1,'三尊',detectIHS(neg,-price,a,OIL_IHS),false);
+    const t=detectTriangle(B,price,a);
+    if(t){const nm={'tri-sym':'対称三角','tri-asc':'上昇三角','tri-desc':'下降三角'}[t.kind];
+      out.push({id:t.kind,tf:'h1',dir:t.dir,label:'1時間足'+nm,name:nm,state:t.state,neck:t.neck,stop:t.stop,height:t.height,up:t.up,lo:t.lo,i0:t.i0,upAt:t.upAt,loAt:t.loAt,
+        target:t.neck!=null&&t.dir?t.neck+t.dir*t.height:null,t0:t.t0,atr:a,useSma:0,entry:false,judge:t.kind!=='tri-desc',ref:t.kind==='tri-desc',stat:OIL_STAT[t.kind].txt})}
+    const f=detectFlag(B,price,a);
+    if(f)out.push({id:'flag',tf:'h1',dir:f.dir,label:'1時間足フラッグ／ペナント',name:'フラッグ／ペナント',state:f.state,neck:f.neck,stop:f.stop,height:f.height,t0:f.t0,atr:a,useSma:0,entry:false,judge:false,ref:true,
+      stat:OIL_STAT.flag.txt,warn:'ダマシが多い型です。参考表示'});
+  }
+  oilPatCache={k,v:out};return out;
+}
+// ③（オイル）：判定に使う型のブレイクの向き（買い＝+1、売り＝−1、なければ0）
+function oilPat3(){const ps=oilPatterns().filter(p=>p.judge&&p.state==='breakout'&&p.dir);return ps.length?{d:ps[0].dir,pt:ps[0]}:{d:0,pt:null}}
+// 日足の背景：日足でブレイクしている型を1行で（判定には数えない）
+let oilDayCache={k:'',v:''};
+function oilDailyBg(){
+  const B=state.d1||[],k=B.length+':'+(B.at(-1)?.t)+':'+(state.spot?.price||0).toFixed(2);if(oilDayCache.k===k)return oilDayCache.v;
+  let v='';const a=atr(B,14),P=state.spot?.price;
+  if(B.length>=60&&a&&P){
+    const f=detectFlag(B,P,a),t=detectTriangle(B,P,a,60),p={k:2,sepMin:5,sepMax:40,tol:0.06,depMin:2,depMax:20,useSma:0,prior:0,wait:15};
+    const db=detectDB(B,P,a,p),dt=detectDB(B.map(b=>({t:b.t,o:-b.o,h:-b.l,l:-b.h,c:-b.c})),-P,a,p);
+    const side=d=>d>0?'上抜け中':'下抜け中';
+    v=f&&f.state==='breakout'?'日足：フラッグ／ペナントを'+side(f.dir)+'（'+OIL_STAT['d-flag'].txt+'）':
+      t&&t.kind==='tri-sym'&&t.state==='breakout'?'日足：対称三角を'+side(t.dir)+'（'+OIL_STAT['d-tri'].txt+'）':
+      db&&db.state==='breakout'?'日足：ダブルボトムを上抜け中':dt&&dt.state==='breakout'?'日足：ダブルトップを下抜け中':'';
+  }
+  oilDayCache={k,v};return v;
+}
 // チャートパターンの一覧（カップウィズハンドルを含む）。ブレイク中・形成中のものだけ
 function chartPatterns(){
+  if(IS_OIL)return oilPatterns();  // 第4部：オイルは WTI の集計にもとづく型だけ（他の銘柄は変えない）
   if(!INSTR.patterns||!state.spot)return [];
   const price=state.spot.price,k=state.m15.length+':'+(state.m15.at(-1)?.t)+':'+state.h1.length+':'+(state.h1.at(-1)?.t);
   if(patCache.k===k&&Date.now()-patCache.at<10000)return patCache.v;
@@ -2274,7 +2370,8 @@ function calcSignal0(){
   let score=0;
   score+=state.spot.price>=sma?1:-1;
   score+=mom>INSTR.momTh?1:mom<-INSTR.momTh?-1:0;
-  score+=state.spot.price>=mid?1:-1;
+  const p3=IS_OIL?oilPat3():null;  // 第4部：オイルの③は「判定に使う型のブレイク」（レンジ位置は内訳の参考に残す）
+  score+=IS_OIL?p3.d:state.spot.price>=mid?1:-1;
   let sig=score>=2?'BUY':score<=-2?'SELL':'WAIT', forced=false;
   if(isCautionActive()&&sig!=='WAIT'){sig='WAIT';forced=true}
   // 3条件すべてが同じ方向（スコア±3）で、重要指標のCAUTION中でなく、利確目安まで基準（ゴールド50pips・ドル円30pips）以上あればエントリー
@@ -2287,7 +2384,7 @@ function calcSignal0(){
   for(const pt of pats){
     const smaOk=!pt.useSma||(pt.dir>0?state.spot.price>=sma:state.spot.price<sma);
     const pp=pt.state==='breakout'?tradePlan(pt.dir,pt):null,tpOk=tpOkBy(pp);
-    checks.set(pt,{smaOk,plan:pp,tpOk,ok:!!pp&&pt.entry!==false&&!caution&&smaOk&&tpOk});
+    checks.set(pt,{smaOk,plan:pp,tpOk,ok:!IS_OIL&&!!pp&&pt.entry!==false&&!caution&&smaOk&&tpOk});  // オイルの型は③だけに使う（別の入り口にはしない）
   }
   const fired=pats.filter(pt=>checks.get(pt).ok).map(pt=>({pt,plan:checks.get(pt).plan}));
   if(fired.length){
@@ -2297,7 +2394,7 @@ function calcSignal0(){
       via=same.map(f=>f.pt.label);
     }
   }
-  return {sig,entry,aligned,plan,score,sma,mom,mid,hi,lo,forced,ready:true,pats,checks,caution,via,entry3,patPlan,price:state.spot.price};
+  return {sig,entry,aligned,plan,score,sma,mom,mid,hi,lo,forced,ready:true,pats,checks,caution,via,entry3,patPlan,price:state.spot.price,p3};
 }
 // ゴールドの1pips＝0.1ドル（XMなど国内向け業者の一般的な表記。1lot＝100ozで1pips＝10ドル）
 const PIP=INSTR.pip, MIN_TP_PIPS=INSTR.minTp;
@@ -2804,7 +2901,25 @@ function notifyDesk(s){
 // セットアップ判定の下に、エントリー条件にしているチャートパターンを全部並べ、それぞれ条件がそろっているかを表示
 // パターン名 → デスクのパターン図鑑の項目（「?」で解説を開く）
 const PAT_BOOK={cup:'p22',icup:'p23',ihs:'p02',hs:'p01',db:'p03',dbot:'p04'};
+// 第4部：オイルのパターン一覧（判定に使う型・参考・使わない型）と統計の根拠・出どころ・日足の背景
+function renderOilPatList(s){
+  const el=$('patList');if(!s.ready){el.hidden=true;return}
+  const found=new Map((s.pats||[]).map(p=>[p.id,p]));
+  const ROWS=[['db','ダブルボトム（買い）','judge'],['ihs','逆三尊（買い）','judge'],['tri-sym','対称三角（抜けた向き）','judge'],['tri-asc','上昇三角（買い）','judge'],
+    ['tri-desc','下降三角（売り）','ref'],['flag','フラッグ／ペナント','ref'],['hs','三尊（売り）','no'],['dt','ダブルトップ（売り）','no']];
+  const TAG={judge:'判定に使う',ref:'参考表示',no:'判定に使わない'};
+  const html=ROWS.map(([id,name,kind])=>{
+    const p=found.get(id),st=!p?'未検出':p.state==='breakout'?(p.dir>0?'上抜け':'下抜け')+(kind==='judge'?' → ③成立':''):'形成中';
+    const det=!p?'形ができ、'+(id.startsWith('tri')?'三角の境界':'ネックライン')+'を抜けると成立':p.dir?'ネックライン '+fmt(p.neck):'上の境界 '+fmt(p.up)+'・下の境界 '+fmt(p.lo);
+    return '<div class="prow '+(p&&p.state==='breakout'&&kind==='judge'?'go'+(p.dir<0?' sell':''):p?'':'idle')+'"><span class="pn">1時間足'+esc(name)+'<small class="ptag t-'+kind+'">'+TAG[kind]+'</small></span><span class="ps">'+esc(st)+'</span>'+
+      '<span class="pc"><span>'+esc(det)+'</span><span class="pstat">過去の同型：'+esc(OIL_STAT[id].txt)+(id==='flag'?'。ダマシが多い型です。参考表示':'')+'</span></span></div>';
+  }).join('');
+  const bg=oilDailyBg();
+  el.innerHTML='<div class="ph">チャートパターン（③に使う型と参考の型）</div>'+(bg?'<div class="pbg">'+esc(bg)+'（日足の背景・判定には数えません）</div>':'')+html+
+    '<div class="pnote">'+esc(OIL_STAT_NOTE)+' 15分足・5分足のパターンは統計がないため判定に使いません。</div>';el.hidden=false;
+}
 function renderPatList(s){
+  if(IS_OIL)return renderOilPatList(s);
   const el=$('patList');if(!s.ready){el.hidden=true;return}
   const rows=[...(INSTR.cupHandle?[{id:'cup',tf:'m15',dir:0,name:'カップウィズハンドル',entry:true,useSma:1}]:[]),...PATTERNS.map(c=>({id:c.id,tf:c.tf,dir:c.dir,name:c.name,entry:c.entry,useSma:c.p.useSma}))];
   const side=d=>d>0?'買い':d<0?'売り':'買い・売り';
@@ -2836,18 +2951,23 @@ function renderWait(s){
   const el=$('waitFor');
   if(!s.ready||s.entry||!state.spot||mktClosed){el.hidden=true;return}  // 休場中は待つ条件も出さない
   const price=s.price,th=INSTR.momTh,item=(ok,txt)=>'<span class="'+(ok?'ok':'ng')+'">'+(ok?'✓':'○')+' '+esc(txt)+'</span>';
-  const smaD=price>=s.sma?1:-1,momD=s.mom>th?1:s.mom<-th?-1:0,rngD=price>=s.mid?1:-1;
+  const smaD=price>=s.sma?1:-1,momD=s.mom>th?1:s.mom<-th?-1:0,rngD=s.p3?s.p3.d:price>=s.mid?1:-1;
   const d=s.score>0?1:s.score<0?-1:smaD,side=d>0?'買い':'売り',lines=[];
+  // オイルの③：判定に使う型（1時間足）が d の向きにブレイクしたら成立。形成中の型があればそのネックライン・境界を待つ
+  const oil3=()=>{if(rngD===d&&s.p3.pt)return item(true,'③'+s.p3.pt.name+'を'+(d>0?'上抜け':'下抜け'));
+    const fm=(s.pats||[]).filter(p=>p.judge&&p.state==='forming'&&(p.dir===d||!p.dir));
+    if(fm.length)return fm.slice(0,2).map(p=>item(false,'③'+p.name+'形成中｜'+(p.dir?'ネックライン '+fmt(p.neck)+(p.dir>0?' の上抜け待ち':' の下抜け待ち'):'上の境界 '+fmt(p.up)+' の上抜け／下の境界 '+fmt(p.lo)+' の下抜け待ち'))).join('');
+    return item(false,'③パターンのブレイク待ち（ダブルボトム・逆三尊・三角保ち合いの形がまだありません）')};
   const parts=[
     smaD===d?item(true,'①120SMAより'+(d>0?'上':'下')):item(false,'①120SMA '+fmt(s.sma)+(d>0?' の上抜け待ち':' の下抜け待ち')),
     momD===d?item(true,'②モメンタム'+(d>0?'上昇':'下降')):item(false,'②モメンタム'+(d>0?'上昇':'下降')+'待ち（3本で'+(d>0?'+':'−')+INSTR.dist(th)+'超、今'+(s.mom>=0?'+':'−')+INSTR.dist(Math.abs(s.mom))+'）'),
-    rngD===d?item(true,'③レンジ'+(d>0?'上半分':'下半分')):item(false,'③当日レンジ中値 '+fmt(s.mid)+(d>0?' の上抜け待ち':' の下抜け待ち'))];
+    s.p3?oil3():rngD===d?item(true,'③レンジ'+(d>0?'上半分':'下半分')):item(false,'③当日レンジ中値 '+fmt(s.mid)+(d>0?' の上抜け待ち':' の下抜け待ち'))];
   const n=[smaD,momD,rngD].filter(x=>x===d).length;
   let head='3条件（'+side+'）'+n+'/3';
   if(n===3)head+=s.forced?'｜重要指標のCAUTION明け待ち':s.plan&&!tpOkBy(s.plan)?'｜利確余地（'+TP_BASIS_NAME[state.tpBasis]+'） '+pipsTxt(tpPipsBy(s.plan))+'→'+pipsTxt(MIN_TP_PIPS)+'以上待ち':'';
   lines.push('<div class="wl"><b>'+esc(head)+'</b>'+parts.join('')+'</div>');
   // チャートパターン：形成中のブレイク待ち、ブレイク済みで条件が足りないもの
-  for(const pt of s.pats||[]){
+  for(const pt of IS_OIL?[]:s.pats||[]){  // オイルの型は③の行に出す
     const sd=pt.dir>0?'買い':'売り';
     if(pt.state==='forming'){lines.push('<div class="wl"><b>'+esc(pt.label+'（'+sd+'）')+'</b>'+item(false,'形成中｜ネックライン '+fmt(pt.neck)+(pt.dir>0?' の上抜け待ち':' の下抜け待ち'))+'</div>');continue}
     const c=s.checks?.get(pt);if(!c||pt.entry===false)continue;
@@ -2908,7 +3028,7 @@ function renderDxy(){
 // 判定の大きな表示：エントリーならその向き、方向は出ても条件（利確余地など）で入らないときは「見送り」（本文の結論と同じ）
 // 結論は「買う／売る／待つ（何もしない）」が初見で分かる文にする（英語の SIGNAL・WAIT は主表示に出さない）
 // 3条件それぞれの向き（①120SMA ②モメンタム ③レンジ位置）。判定と同じ評価結果から数える
-function condDirs(s){if(!s||!s.ready)return [];const th=INSTR.momTh;return [s.price>=s.sma?1:-1,s.mom>th?1:s.mom<-th?-1:0,s.price>=s.mid?1:-1]}
+function condDirs(s){if(!s||!s.ready)return [];const th=INSTR.momTh;return [s.price>=s.sma?1:-1,s.mom>th?1:s.mom<-th?-1:0,s.p3?s.p3.d:s.price>=s.mid?1:-1]}
 function condCount(s){const d=condDirs(s);return {buy:d.filter(x=>x>0).length,sell:d.filter(x=>x<0).length,none:d.filter(x=>x===0).length}}
 function sigLabel(s){return mktClosed?closedLabel()+'：取引しない':!s.ready?'データ取得中':s.entry?(s.sig==='BUY'?'買いエントリーの条件がそろっています':'売りエントリーの条件がそろっています'):
   s.sig!=='WAIT'?(s.forced?'待つ：重要指標の前後は新しく入らない':'見送り：今は買わない・売らない'):'待つ：条件がそろうまで何もしない'}
@@ -2964,7 +3084,8 @@ function renderSnapshot(){
     const th=INSTR.momTh;
     setReason('reasonMom',s.mom>th?'上昇 +'+INSTR.dist(s.mom)+'（+1）':s.mom<-th?'下降 −'+INSTR.dist(-s.mom)+'（−1）':'横ばい（0）',s.mom>th?1:s.mom<-th?-1:0);
   }else{setReason('reasonSma','H1待ち',0);setReason('reasonMom','H1待ち',0)}
-  if(s.ready&&s.hi&&s.lo)setReason('reasonRange',s.price>=s.mid?'上半分（+1）':'下半分（−1）',s.price>=s.mid?1:-1);  // 大結論・待ち条件と同じ評価結果
+  if(s.ready&&s.p3)setReason('reasonRange',s.p3.d?s.p3.pt.name+'を'+(s.p3.d>0?'上抜け（+1）':'下抜け（−1）'):'ブレイク待ち（0）',s.p3.d);  // オイル：③＝パターンのブレイク
+  else if(s.ready&&s.hi&&s.lo)setReason('reasonRange',s.price>=s.mid?'上半分（+1）':'下半分（−1）',s.price>=s.mid?1:-1);  // 大結論・待ち条件と同じ評価結果
   else if(d.hi&&d.lo){const mid=(d.hi+d.lo)/2;setReason('reasonRange',state.spot.price>=mid?'上半分（+1）':'下半分（−1）',state.spot.price>=mid?1:-1)}
   else setReason('reasonRange','取得中',0);
   // 各条件の「現在値・基準・あとどれだけ」（B4）。大結論と同じ評価結果 s から
@@ -2975,7 +3096,11 @@ function renderSnapshot(){
     det('detSma','SMA '+fmt(s.sma)+'・現在 '+fmt(s.price)+'｜あと '+dx(Math.abs(s.price-s.sma))+' で'+(up?'下抜け（売り向きに変わる）':'上抜け（買い向きに変わる）'));
     det('detMom','基準：1時間足3本で +'+dx(th)+' より上がれば上昇、−'+dx(th)+' より下がれば下降、その間は横ばい｜今 '+(m>=0?'+':'−')+dx(Math.abs(m))+
       (m>th?'（横ばいまで あと '+dx(m-th)+'）':m<-th?'（横ばいまで あと '+dx(-th-m)+'）':'（上昇まで あと '+dx(th-m)+'・下降まで あと '+dx(m+th)+'）'));
-    det('detRange',s.hi&&s.lo?'今日 高 '+fmt(s.hi)+'・安 '+fmt(s.lo)+'・中値 '+fmt(s.mid)+'・現在 '+fmt(s.price)+'｜中値まで '+dx(Math.abs(s.price-s.mid))+'（'+(s.price>=s.mid?'下回ると下半分':'上回ると上半分')+'）':'');
+    if(s.p3){const fm=(s.pats||[]).filter(p=>p.judge&&p.state==='forming');
+      det('detRange',(s.p3.pt?s.p3.pt.label+'：ネックライン '+fmt(s.p3.pt.neck)+' をブレイク｜'+s.p3.pt.stat:fm.length?fm.slice(0,2).map(p=>p.label+' 形成中：'+(p.dir?'ネックライン '+fmt(p.neck)+' まで あと '+dx(Math.abs(s.price-p.neck)):'上の境界 '+fmt(p.up)+'・下の境界 '+fmt(p.lo))).join('／'):
+        '判定に使う型（1時間足のダブルボトム・逆三尊・対称三角・上昇三角）がまだ見つかっていません。形ができ、ネックライン（三角は境界）を抜けると成立')+
+        (s.hi&&s.lo?'｜参考：今日の中値 '+fmt(s.mid)+'・現在は'+(s.price>=s.mid?'上半分':'下半分'):''));
+    }else det('detRange',s.hi&&s.lo?'今日 高 '+fmt(s.hi)+'・安 '+fmt(s.lo)+'・中値 '+fmt(s.mid)+'・現在 '+fmt(s.price)+'｜中値まで '+dx(Math.abs(s.price-s.mid))+'（'+(s.price>=s.mid?'下回ると下半分':'上回ると上半分')+'）':'');
     det('detTp',s.plan?'基準：'+pipsTxt(MIN_TP_PIPS)+'以上｜'+INSTR.pipNote+(tpPipsBy(s.plan)>=MIN_TP_PIPS?'':'｜あと '+pipsTxt(MIN_TP_PIPS-tpPipsBy(s.plan))+' 足りない')+
       (s.plan.near&&state.tpBasis==='h1'?'｜すぐ手前の線 '+fmt(s.plan.near.price)+'（'+s.plan.near.pips.toFixed(1)+'pips先）は近すぎるため目標にせず、越える前提で計算':''):
       '買いか売りの向きが決まると、その向きの目標（水平線）までの距離で計算します。いまは向きが決まっていません｜基準：'+pipsTxt(MIN_TP_PIPS)+'以上');
@@ -2996,7 +3121,8 @@ function renderSnapshot(){
   const td=s.plan&&s.plan.tpDay;
   setReason('reasonTpDay',!s.plan?(s.ready?'方向が決まれば計算します':'取得中'):td?Math.round(td.pips)+'pips（'+TF_JA[td.tf]+' '+fmt(td.price)+'）'+(td.pips>=MIN_TP_PIPS?' OK':' 不足'):'4時間足・日足の線なし',0);
   $('reasonTpDay').classList.add('tfday');
-  if(INSTR.patterns){
+  if(INSTR.patterns&&IS_OIL){$('cupRow').hidden=true;renderPatList(s)}  // オイルはパターンを③で見る（⑤の行は重ねて出さない）。一覧は出す
+  else if(INSTR.patterns){
     $('cupRow').hidden=false;
     const ps=s.pats||[],br=ps.filter(p=>p.state==='breakout'),fm=ps.filter(p=>p.state==='forming');
     const side=p=>p.dir>0?'買い':'売り';
@@ -3294,7 +3420,14 @@ function drawChart(){
   // チャートパターン：表示中の時間足の形について、形の始まりから今までネックライン（点線）と名前・価格。カップは底に印。
   // 形が否定された（買いの形なら底・右肩の安値を割った、売りの形なら高値を超えた）ものは検出されなくなり、線も消える
   chartPatterns().filter(p=>p.tf===state.tf&&p.id!=='cup').forEach(pt=>{
-    const i0=source.findIndex(b=>b.t===pt.t0);if(i0<0||pt.neck<min||pt.neck>max)return;
+    if(pt.upAt){  // 第4部：三角保ち合いは上下の境界線（形の始まりから右端まで）と名前
+      const i0=source.findIndex(b=>b.t===pt.t0);if(i0<0)return;const g1=endIdx-1+blank,col=pt.dir>0?'66,213,156':pt.dir<0?'255,105,105':'232,195,90';
+      ctx.strokeStyle=`rgba(${col},.85)`;ctx.lineWidth=1.1;ctx.setLineDash([6,4]);
+      [pt.upAt,pt.loAt].forEach(f=>{ctx.beginPath();ctx.moveTo(x(i0-startIdx),y(f(i0)));ctx.lineTo(x(g1-startIdx),y(f(g1)));ctx.stroke()});ctx.setLineDash([]);
+      const yy=y(pt.up);if(yy>P.t&&yy<H-P.b)lowLabels.push({x0:x(i0-startIdx),yy,col,dir:-1,txt:pt.name+(pt.state==='breakout'?(pt.dir>0?' 上抜け':' 下抜け'):' 形成中｜上 '+pxt(pt.up)+'・下 '+pxt(pt.lo))});
+      return;
+    }
+    const i0=source.findIndex(b=>b.t===pt.t0);if(i0<0||pt.neck==null||pt.neck<min||pt.neck>max)return;
     const col=pt.dir>0?'66,213,156':'255,105,105',yy=y(pt.neck),x0=x(i0-startIdx),xe=x(bars.length-1+blank);
     ctx.strokeStyle=`rgba(${col},.9)`;ctx.lineWidth=1.1;ctx.setLineDash([6,4]);
     ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(xe,yy);ctx.stroke();ctx.setLineDash([]);
