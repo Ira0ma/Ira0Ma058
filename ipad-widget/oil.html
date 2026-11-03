@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="3f229bd49f">
+<meta name="build" content="387fa0b80f">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -264,6 +264,7 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .chartwrap{position:relative}
 /* タスク6：急変の帯（チャートの上）。点滅は緊急で未確認のときだけ・省電力では点滅しない。タップで確認すると止まる */
 .surgeflag{display:block;width:100%;margin:6px 0 4px;text-align:left;font:inherit;font-size:12px;font-weight:700;color:#f5c04a;background:rgba(245,192,74,.10);border:1px solid rgba(245,192,74,.55);border-radius:8px;padding:5px 10px;cursor:pointer}
+.surgeflag[hidden]{display:none}  /* 上の display が hidden 属性より強いので、隠すときを明示 */
 .surgeflag.emg{color:#ff8a7e;background:rgba(255,105,105,.10);border-color:rgba(255,105,105,.7)}
 .surgeflag small{font-weight:500;color:var(--muted);margin-left:6px}
 .surgeflag.blink{animation:sgBlink 1s steps(2,start) infinite}
