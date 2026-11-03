@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="9749653635">
+<meta name="build" content="a3836c3c9e">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1496,7 +1496,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var at = this.asOf ? this.asOf * 1000 : NaN, m = market && (market.instruments || market)[this.key];
     var an = m && m.updated ? Date.parse(m.updated) : NaN, ser = this.series && this.series[TFKEY[this.tf]];
     var bar = ser && ser.length ? ser[ser.length - 1][0] * 1000 : NaN;
-    return { key: this.key, name: INST[this.key].name, at: at, an: an, bar: bar, tf: TF[this.tf].k, noData: !!this.noData, live: !!this.live,
+    return { key: this.key, name: INST[this.key].name, value: this.live ? this.price : null, dp: INST[this.key].dp, at: at, an: an, bar: bar, tf: TF[this.tf].k, noData: !!this.noData, live: !!this.live,
       price: TDCore.freshness("price", at, now, { closed: closed }), analysis: TDCore.freshness("analysis", an, now),
       candle: TDCore.freshness("candle", bar, now, { tfMs: TFSEC[this.tf] * 1000, closed: closed }),
       market: ms, prov: this.prov || { src: "—", type: "—" }, held: this.held || null };

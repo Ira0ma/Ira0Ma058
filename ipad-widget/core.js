@@ -263,6 +263,23 @@
       remaining: fin(lim) && lim > 0 ? Math.max(0, lim - loss) : NaN, exceeded: fin(lim) && lim > 0 && loss >= lim,
       near: fin(lim) && lim > 0 && loss >= lim * 0.8 && loss < lim };
   }
+  /* Journal days, counted by calendar day (Japan date). A day with at least one record is a recorded day;
+     a 見送り (kind "skip") record counts too. days: { "YYYY-MM-DD": "trade" | "skip" } ("trade" if any trade that day).
+     streak: consecutive recorded days up to today, or up to yesterday while today has none yet (today is not over).
+     week: recorded days in this week, Monday to Sunday (Japan). */
+  function journalDays(rows, now) {
+    var days = {};
+    (rows || []).forEach(function (r) {
+      if (!r) return; var k = r.day || (fin(Date.parse(r.time)) ? dayKey(Date.parse(r.time)) : "");
+      if (!k) return; if (r.kind === "skip") { if (!days[k]) days[k] = "skip"; } else days[k] = "trade";
+    });
+    var key = function (t) { return dayKey(t); }, today = key(now), streak = 0, t = now;
+    if (!days[today]) t -= DAY;
+    while (days[key(t)]) { streak++; t -= DAY; }
+    var p = partsIn("Asia/Tokyo", now), dow = (p.dow + 6) % 7, week = 0;  // Monday = 0
+    for (var i = 0; i <= dow; i++) if (days[key(now - i * DAY)]) week++;
+    return { days: days, streak: streak, week: week, today: !!days[today] };
+  }
   // the trading day key (Japan date) a time belongs to
   function dayKey(t) { var p = partsIn("Asia/Tokyo", t); return p.y + "-" + String(p.mo).padStart(2, "0") + "-" + String(p.d).padStart(2, "0"); }
 
@@ -440,7 +457,7 @@
   return { MIN: MIN, HOUR: HOUR, DAY: DAY, partsIn: partsIn, zoneOffset: zoneOffset, zoneTime: zoneTime, isDst: isDst,
     KIND: KIND, marketState: marketState, hoursNote: hoursNote, nextOpen: nextOpen, sessions: sessions, RULES: RULES, freshness: freshness, ago: ago, jst: jst,
     checkMarket: checkMarket, realCandles: realCandles, sequencer: sequencer,
-    positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey,
+    positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey, journalDays: journalDays,
     newStore: newStore, updateSignal: updateSignal, expireSignals: expireSignals, loadStore: loadStore, COOLDOWN: COOLDOWN,
     toCSV: toCSV, parseCSV: parseCSV, importCSV: importCSV,
     GROUPS: GROUPS, groupOf: groupOf, exportSettings: exportSettings, importSettings: importSettings, resetGroup: resetGroup, safeSet: safeSet };

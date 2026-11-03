@@ -280,3 +280,25 @@ test("settings: export by group without caches, import validated, reset by group
   const full = { setItem() { throw new Error("QuotaExceeded"); }, getItem() { return null; } };
   assert.equal(C.safeSet(full, "k", "v"), false);
 });
+
+test("journalDays: calendar-day streak and week, skips counted, today still open", () => {
+  // Wed 2026-11-04 12:00 JST
+  const now = Date.parse("2026-11-04T03:00:00Z");
+  const rows = [
+    { day: "2026-11-04", pnl: 100 },                // today: trade
+    { day: "2026-11-03", kind: "skip" },             // yesterday: skip only
+    { day: "2026-11-02", pnl: -50 }, { day: "2026-11-02", kind: "skip" },  // Monday: trade wins
+    { day: "2026-10-30", pnl: 10 }                   // Friday before: the weekend breaks the run
+  ];
+  let r = C.journalDays(rows, now);
+  assert.equal(r.streak, 3);
+  assert.equal(r.week, 3);  // Mon, Tue, Wed
+  assert.equal(r.days["2026-11-03"], "skip");
+  assert.equal(r.days["2026-11-02"], "trade");
+  assert.equal(r.today, true);
+  // nothing yet today: the run up to yesterday still counts
+  r = C.journalDays(rows.slice(1), now);
+  assert.equal(r.streak, 2);
+  assert.equal(r.today, false);
+  assert.equal(C.journalDays([], now).streak, 0);
+});
