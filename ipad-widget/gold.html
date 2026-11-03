@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="92402cb73e">
+<meta name="build" content="d01983be90">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -132,6 +132,7 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .kl.s{background:rgba(66,213,156,.07);border-color:rgba(66,213,156,.35)}.kl.s b{color:#5fe0ad}
 .kl b .kl-none{font-size:11px;font-weight:500;color:var(--muted)}
 .kl.now{background:rgba(80,140,255,.1);border-color:rgba(80,140,255,.45)}.kl.now b{color:#9cc0ff}
+.ms-hold{color:#f0c36a;margin-top:4px}
 .mtfscore{border-radius:14px;padding:12px 14px;border:1px solid #2a3440;background:#0f141a}
 .mtfscore.up{border-color:rgba(66,213,156,.5);background:linear-gradient(180deg,rgba(66,213,156,.08),rgba(66,213,156,.02))}
 .mtfscore.down{border-color:rgba(255,105,105,.5);background:linear-gradient(180deg,rgba(255,105,105,.09),rgba(255,105,105,.02))}
@@ -2515,7 +2516,21 @@ function mtfRow(tf){
   }
   mtfCache[tf]={k,v};return v;
 }
+/* 総合判定の結論の切り替え（A4）：計算した結論（買い優勢／売り優勢／様子見）が、いま表示中の結論と違っても
+   すぐには切り替えない。違う結論が2回続けて出たら切り替える。「1回」は30秒ごとの見直し（価格は数秒ごとに動くので、
+   数秒おきの計算を2回と数えると効き目がない）。間で元の結論に戻れば数え直し。最初の表示はそのまま。
+   切り替わるまでは前の結論を出し、一致度・内訳はいまの計算の値で、境目で揺れていることを注記する */
+const MTF_CONFIRM={n:2,gap:30000};let mtfHeld=null;
 function mtfScore(){
+  const m=mtfScore0();if(!m)return m;
+  const now=Date.now(),H=mtfHeld;
+  if(!H||m.dir===H.dir){mtfHeld={dir:m.dir,label:m.label,cand:null,n:0,at:0};return {...m,held:false}}
+  if(H.cand!==m.dir){H.cand=m.dir;H.n=1;H.at=now}
+  else if(now-H.at>=MTF_CONFIRM.gap){H.n++;H.at=now}
+  if(H.n>=MTF_CONFIRM.n){mtfHeld={dir:m.dir,label:m.label,cand:null,n:0,at:0};return {...m,held:false}}
+  return {...m,dir:H.dir,label:H.label,held:true,raw:{dir:m.dir,label:m.label,score:m.score}};
+}
+function mtfScore0(){
   const rows=MTF_TFS.map(mtfRow);let sw=0,sv=0;
   rows.forEach((r,i)=>{if(r){sw+=MTF_W[MTF_TFS[i]];sv+=MTF_W[MTF_TFS[i]]*r.s}});
   if(!sw)return null;
@@ -2527,6 +2542,7 @@ function renderMtf(){
   if(!m){el.className='mtfscore';el.innerHTML='<div class="sub">データ取得中...</div>';$('mtfTable').innerHTML='';return null}
   el.className='mtfscore '+(m.dir>0?'up':m.dir<0?'down':'flat');
   el.innerHTML=`<div class="ms-main"><div><small>総合判定 <i>ルールベース</i></small><b>${m.dir>0?'↗':m.dir<0?'↘':'→'} ${m.label}</b></div><div class="ms-num">${m.score}<small>一致度 /100</small></div></div>`+
+    (m.held?`<div class="sub ms-hold">判定が境目付近で揺れています（いまの計算は「${esc(m.raw.label)}・一致度${m.raw.score}」。2回続けば切り替えます）</div>`:'')+
     `<div class="ms-tfs">${m.rows.map((r,i)=>`<button type="button" data-tf="${MTF_TFS[i]}" class="${r?r.cls:''}"><span>${MTF_TFS[i].toUpperCase()}</span><b>${r?r.arrow:'—'}</b><small>${r?r.judge:'—'}</small></button>`).join('')}</div>`+
     `<div class="sub ms-at">計算 ${LT_FMT.format(new Date())}（価格 ${state.spot?LT_FMT.format(new Date(state.spot.asof)):'--'}時点・15分足は ${state.m15.length?HM_FMT.format(new Date(state.m15.at(-1).t)):'--'} の足まで）</div>`;
   const gdir=g=>!g?'—':g.sd>0?'<span class="up">上向き</span>':g.sd<0?'<span class="down">下向き</span>':'横ばい';
