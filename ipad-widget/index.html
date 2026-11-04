@@ -201,7 +201,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 #ind .card-title { gap: 8px; }
 .card-title .ico { width: 26px; height: 26px; flex: none; }
 .card-title .aside { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--ink-2); }
-.ind-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; min-height: 0; overflow: hidden; flex: 0 1 auto; }  /* 3行が入りきらない高さでは、下の注記と「経済カレンダー」を押し出さない */
+.ind-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; flex: 0 1 auto; }  /* 3行が入りきらない高さでは、下の注記と「経済カレンダー」を押し出さない */
 .ind-list li { display: grid; grid-template-columns: 1fr auto; gap: 0 4px; align-items: start; padding: 9px 0; border-bottom: 1px solid var(--glass-line); }
 .ind-list .t { font-size: 14px; font-weight: 600; white-space: nowrap; }
 .ind-list .t .date { font-weight: 600; color: var(--gold); }
@@ -213,6 +213,18 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .ind-list .stars { color: var(--star); font-size: 13px; letter-spacing: 1px; padding-top: 2px; }
 .ind-list .stars span { color: rgba(255,255,255,.18); }
 .ind-list li.past { opacity: .45; }
+/* 追加D：今週（月〜金）の★3の帯・今日のマス・今週の山。材料ピル・影響タグ・過去の反応 */
+.ind-week { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; margin-top: 8px; flex: none; }
+.ind-week > div { min-width: 0; max-height: 48px; overflow: hidden; padding: 2px 4px 3px; border-radius: 7px; background: rgba(255,255,255,.04); font-size: 9.5px; line-height: 1.3; color: var(--ink-2); }
+.ind-week > div b { display: block; font-size: 10px; font-weight: 600; color: var(--ink-3); white-space: nowrap; }
+.ind-list li.ind-disc { display: block; padding: 5px 0 2px; border-bottom: 0; font-size: 9.5px; line-height: 1.4; color: var(--ink-3); }
+.ind-week > div.today { background: rgba(227,184,103,.12); box-shadow: inset 0 0 0 1px rgba(227,184,103,.55); } .ind-week > div.today b { color: var(--gold); }
+.ind-week > div span { display: block; font-size: 9px; line-height: 1.2; overflow-wrap: anywhere; } .ind-week > div span.s2 { color: var(--ink-3); } .ind-week > div span.mt { color: var(--gold); font-weight: 600; }
+.ind-week > div i { font-style: normal; color: var(--ink-3); }
+.ind-list .s.x { white-space: normal; overflow: visible; line-height: 1.45; }
+.ind-list .pill { display: inline-block; font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 0 7px; margin-right: 5px; }
+.ind-list .pill.strong { color: #14100a; background: #5fd99a; } .ind-list .pill.weak { color: #14100a; background: #ff9d90; } .ind-list .pill.same { color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--ink-3); }
+.ind-list .itag { display: inline-block; font-size: 10px; color: var(--ink-2); margin-right: 5px; }
 .ind-list .s.warn { color: #f0c36a; font-size: 10.5px; margin-top: 1px; }
 .ind-note { margin: 4px 0 0; font-size: 9.5px; line-height: 1.4; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: none; }
 .ind-list li.empty { display: block; color: var(--ink-2); font-size: 13px; line-height: 1.7; border-bottom: 0; }
@@ -872,6 +884,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <svg class="ico" viewBox="0 0 26 26" fill="none" stroke="#f4f1ea" stroke-width="1.6"><rect x="3.5" y="5" width="19" height="17" rx="3"/><path d="M3.5 10h19M8.5 2.8v4M17.5 2.8v4"/><path d="M8 14.5h2M12 14.5h2M16 14.5h2M8 18h2M12 18h2" stroke-linecap="round"/></svg>
       今日の重要指標<span class="aside num" id="ind-day"></span>
     </div>
+    <div class="ind-week" id="ind-week" aria-label="今週の重要指標（★3）"></div>
     <ul class="ind-list" id="ind-list">
       <li class="empty">今日の経済指標を読み込んでいます…</li>
     </ul>
@@ -2932,6 +2945,57 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   var IND_KEEP = 2 * 3600000, indSig = "", indShownAt = 0;
   // 数値の発表がない大きな予定（選挙・会議など）は「イベント」と書く（指標の発表と区別する）
   function isEventOnly(e) { return !e.forecast && !e.previous && !e.actual && !/ Speaks$/.test(e.title); }
+  /* 追加D：過去の反応（サイトの reactions.json。発表の直前の価格と、発表後1時間の高値・安値の幅）。記録が始まってからの分だけ */
+  var RX = null;
+  function loadReactions() {
+    if (!window.fetch) return;
+    fetch("reactions.json?t=" + Math.floor(Date.now() / 300000), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j && j.events) { RX = j; renderIndicators(); } }).catch(function () {});
+  }
+  // 帯の中は狭いので、主な指標は短い名前で（ない指標は日本語名からかっこ書きを外したもの）
+  var SHORT = [[/Non-Farm Employment/i, "雇用統計"], [/ADP/i, "ADP"], [/Unemployment Rate/i, "失業率"], [/Unemployment Claims|Jobless Claims/i, "失業保険"], [/Average Hourly Earnings/i, "時給"],
+    [/Tokyo Core CPI/i, "東京CPI"], [/National Core CPI/i, "全国CPI"], [/Core CPI/i, "コアCPI"], [/\bCPI\b/i, "CPI"], [/Core PPI/i, "コアPPI"], [/\bPPI\b/i, "PPI"], [/PCE/i, "PCE"], [/GDP/i, "GDP"],
+    [/Retail Sales/i, "小売"], [/ISM Manufacturing/i, "ISM製造業"], [/ISM Services/i, "ISM非製造業"], [/JOLTS/i, "JOLTS"], [/Consumer Confidence/i, "消費者信頼感"], [/Consumer Sentiment/i, "ミシガン"],
+    [/Federal Funds Rate|FOMC Statement/i, "FOMC"], [/FOMC Press/i, "FOMC会見"], [/BOJ Policy Rate|Monetary Policy Statement/i, "日銀"], [/BOJ Press/i, "日銀会見"], [/Durable Goods/i, "耐久財"], [/Tankan/i, "短観"], [/Crude Oil/i, "原油在庫"], [/Speaks|Testifies/i, "発言"]];
+  function shortTitle(e) { for (var i = 0; i < SHORT.length; i++) if (SHORT[i][0].test(e.title)) return (e.country === "JPY" && !/日銀|東京|全国|短観/.test(SHORT[i][1]) ? "日" : "") + SHORT[i][1]; return jaTitle(e).replace(/・/, "").replace(/\s*[（(][^）)]*[）)]/g, ""); }
+  function rxLine(e) {  // 影響タグ・前回の反応・平均（ダッシュボードの「次の重要指標」と同じ計算）
+    var aff = TDCore.indAffects(e.country, e.title); if (!aff.length) return "";
+    var st = TDCore.reactionStats(RX, e.country, e.title, +e.t), parts = [];
+    if (st) {
+      var p = new Date(st.last.t * 1000);
+      parts.push("前回の反応 " + aff.filter(function (k) { return st.last.move[k]; }).map(function (k) { return TDCore.INST_JA[k] + " " + TDCore.moveText(k, st.last.move[k].size); }).join("・") + "（" + (p.getMonth() + 1) + "/" + p.getDate() + "）");
+      var av = aff.filter(function (k) { return st.avg[k]; }); if (av.length) parts.push("過去" + st.avg[av[0]].n + "回の平均 " + av.map(function (k) { return TDCore.INST_JA[k] + " " + TDCore.moveText(k, st.avg[k].v); }).join("・"));
+    }
+    return '<span class="itag">影響：' + aff.map(function (k) { return TDCore.INST_JA[k]; }).join("・") + "</span>" + esc(parts.join("／"));
+  }
+  // 今週の山：今週の★3のうち、過去の反応（ドル円の平均、1回だけならその値）がいちばん大きいもの。反応のデータがなければ付けない
+  function weekPeak(evs) {
+    var best = null;
+    evs.forEach(function (e) {
+      var st = TDCore.reactionStats(RX, e.country, e.title, +e.t); if (!st) return;
+      var v = st.avg.usdjpy ? st.avg.usdjpy.v : st.last.move.usdjpy ? st.last.move.usdjpy.size : null; if (v == null) return;
+      if (!best || v > best.v) best = { e: e, v: v };
+    });
+    return best;
+  }
+  function renderWeek() {
+    var el = document.getElementById("ind-week"); if (!el || !calEvents) return;
+    var now = new Date(), dow = (now.getDay() + 6) % 7, mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dow), html = "";
+    var wk = calEvents.filter(function (e) { var d = new Date(e.t); return d >= mon && d < new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + 5); });
+    var peak = weekPeak(wk.filter(function (e) { return e.stars === 3; }));
+    for (var i = 0; i < 5; i++) {
+      var d0 = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i), d1 = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i + 1), isT = sameDay(d0, now);
+      var evs = wk.filter(function (e) { return e.t >= d0 && e.t < d1 && (e.stars === 3 || (isT && e.stars === 2)); }).sort(function (a, b) { return b.stars - a.stars || a.t - b.t; });
+      var seen = {}; evs = evs.filter(function (e) { var k = shortTitle(e); if (seen[k]) return false; seen[k] = 1; return true; });  // 同じ名前は1つに
+      var max = 2, shown = evs.slice(0, max).sort(function (a, b) { return a.t - b.t; });
+      if (peak && evs.indexOf(peak.e) >= max) shown[shown.length - 1] = peak.e;  // 山は必ず見える所に
+      html += '<div class="' + (isT ? "today" : "") + '"><b>' + d0.getDate() + "(" + WD[d0.getDay()] + ")" + (isT ? "今日" : "") + "</b>" +
+        (shown.length ? shown.map(function (e) { var mt = peak && peak.e === e; return '<span class="' + (mt ? "mt" : e.stars === 2 ? "s2" : "") + '">' + (mt ? "⛰" : "") + esc(shortTitle(e)) + "</span>"; }).join("") + (evs.length > max ? "<i>ほか" + (evs.length - max) + "</i>" : "") : "<i>★3なし</i>") + "</div>";
+    }
+    if (peak) html += "";
+    el.innerHTML = html;
+    el.title = peak ? "⛰ 今週の山：" + shortTitle(peak.e) + "（過去の反応 ドル円 " + TDCore.moveText("usdjpy", peak.v) + "）" : "今週の山は、過去の反応の記録がたまると付きます";
+  }
   function renderIndicators() {
     if (!calEvents) return;
     var ulF = document.getElementById("ind-list");
@@ -2946,6 +3010,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       ulF.querySelectorAll(".stars").forEach(paintStars);
       return;
     }
+    renderWeek();
     var now = new Date(), day = tradingDay(now);
     document.getElementById("ind-day").textContent = "";  // 今日の日付は時計のカードに（重ねて出さない）
     var today = calEvents.filter(function (e) {
@@ -2995,9 +3060,14 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       if (e.stars === 3 && mins > -30 && mins <= 60) {  // ★3：発表の前後（1時間前〜30分後）に注意を添える（ふだんは行を増やさない）
         var w = document.createElement("div"); w.className = "s warn"; w.textContent = "発表前後は値動きとスプレッドに注意"; li.querySelector(".b").appendChild(w);
       }
+      // 追加D：発表済みの数値指標には材料ピル（向きを決められない・単位がそろわないときは付けない）、各行に影響と過去の反応
+      var sp = mins <= 0 ? TDCore.surpriseOf(e) : null, rl = rxLine(e);
+      if (sp || rl) { var x = document.createElement("div"); x.className = "s x"; x.innerHTML = (sp ? '<span class="pill ' + sp.kind + '">' + esc(sp.text) + "</span>" : "") + rl; li.querySelector(".b").appendChild(x); }
       var st = li.querySelector(".stars"); st.setAttribute("data-v", e.stars); paintStars(st);
       ul.appendChild(li);
     });
+    // 材料ピルを出したときだけ、その意味（目安であること）を一覧の最後に1行
+    if (ul.querySelector(".pill")) { var dl = document.createElement("li"); dl.className = "ind-disc"; dl.textContent = "材料ピルは結果と予想の差からの目安で、実際の値動きを保証するものではありません。過去の反応＝発表直前の価格と発表後1時間の高値・安値の幅。"; ul.appendChild(dl); }
     // 表示の中身が変わったら、更新の時刻もその時刻にする（第2部 B4）
     var sig = ul.textContent; if (sig !== indSig) { indSig = sig; indShownAt = Date.now(); paintUpdated(); }
   }
@@ -4619,7 +4689,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   liveWatch(); setInterval(liveWatch, 5000);
   setInterval(applyBtcDash, 5000);  // BTC card follows the background dashboard's cached price
   checkUpdate(); setInterval(checkUpdate, 10 * 60000);
-  loadCalendar();
+  loadCalendar(); loadReactions(); setInterval(loadReactions, 15 * 60000);  // 追加D：過去の反応（サイトの定期取得と同じ周期）
   loadMarket(); setInterval(loadMarket, 5 * 60000);
   loadReport(); setInterval(loadReport, 10 * 60000);
   loadHolidays(); setInterval(function () { renderIndicators(); renderNext(); paintUpdated(); if (calendarHot()) scheduleSoon(); }, 30000);
