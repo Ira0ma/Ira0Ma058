@@ -579,7 +579,8 @@
      "rel": [
       "eco:申告分離課税",
       "eco:投資の税金",
-      "first:first-25"
+      "first:first-25",
+      "tax:tax-06"
      ]
     },
     {
@@ -613,7 +614,9 @@
      "rel": [
       "eco:総合課税",
       "eco:申告分離課税",
-      "fx:BTC"
+      "fx:BTC",
+      "tax:tax-07",
+      "tax:tax-09"
      ]
     },
     {
