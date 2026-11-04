@@ -346,3 +346,29 @@ test("gotobi: 5/10/15/20/25/30 and month end; a weekend or holiday one moves to 
   assert.deepEqual(C.gotobi("2026-02-27", H), { kind: "moved", moved: ["2026-02-28"] }, "February ends on the 28th (Sat)");
   assert.deepEqual(C.gotobi("2026-01-30", H), { kind: "real", moved: ["2026-01-31"] }, "30th Fri real + 31st Sat moved onto it");
 });
+
+test("surpriseOf: direction table, same units only, currency named", () => {
+  const S = (title, country, actual, forecast, previous) => C.surpriseOf({ title, country, actual, forecast, previous });
+  assert.equal(S("Non-Farm Employment Change", "USD", "180K", "150K", "120K").text, "予想より強い → ドル買い材料");
+  assert.equal(S("Unemployment Rate", "USD", "4.3%", "4.1%", "4.1%").text, "予想より弱い → ドル売り材料", "higher unemployment is weaker");
+  assert.equal(S("Unemployment Claims", "USD", "210K", "225K", "231K").text, "予想より強い → ドル買い材料");
+  assert.equal(S("CPI m/m", "USD", "0.3%", "0.3%", "0.4%").text, "予想どおり");
+  assert.equal(S("Tokyo Core CPI y/y", "JPY", "2.1%", "1.9%", "2.0%").text, "予想より強い → 円買い材料");
+  assert.equal(S("CPI m/m", "USD", "0.3%", "0.3K", ""), null, "units differ: no pill");
+  assert.equal(S("CPI m/m", "USD", "0.5%", "0.3%", "120K"), null, "previous in another unit: no pill");
+  assert.equal(S("Crude Oil Inventories", "USD", "-1.2M", "0.5M", "1.0M"), null, "no currency direction");
+  assert.equal(S("Trade Balance", "USD", "-70.1B", "-68.0B", "-67.9B"), null);
+  assert.equal(S("FOMC Statement", "USD", "", "", ""), null);
+  assert.equal(S("Non-Farm Employment Change", "USD", "180K", "", "120K"), null, "no forecast: no pill");
+  assert.deepEqual(C.indAffects("USD", "CPI m/m"), ["usdjpy", "gold"]); assert.deepEqual(C.indAffects("USD", "Crude Oil Inventories"), ["usoil"]); assert.deepEqual(C.indAffects("JPY", "BOJ Policy Rate"), ["usdjpy"]);
+});
+test("reactionStats: last one and the average of up to six earlier ones", () => {
+  const ev = {}; for (let i = 0; i < 8; i++) ev["k" + i] = { title: "CPI m/m", country: "USD", t: 1000 + i * 100, move: { usdjpy: { size: 10 * (i + 1) }, gold: { size: i + 1 } } };
+  ev.x = { title: "PPI m/m", country: "USD", t: 1500, move: { usdjpy: { size: 999 } } };
+  const r = C.reactionStats({ events: ev }, "USD", "CPI m/m", 1650 * 1000);
+  assert.equal(r.last.t, 1600); assert.equal(r.n, 7);
+  assert.deepEqual(r.avg.usdjpy, { v: (70 + 60 + 50 + 40 + 30 + 20) / 6, n: 6 });
+  assert.equal(C.reactionStats({ events: ev }, "USD", "CPI m/m", 1050 * 1000).avg.usdjpy, undefined, "one record: no average");
+  assert.equal(C.reactionStats({ events: ev }, "JPY", "CPI m/m", 9e12), null);
+  assert.equal(C.moveText("usdjpy", 41.4), "41pips"); assert.equal(C.moveText("gold", 12.34), "$12"); assert.equal(C.moveText("usoil", 0.537), "$0.54");
+});

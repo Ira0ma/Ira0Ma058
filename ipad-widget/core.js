@@ -356,6 +356,42 @@
     });
     return real || moved.length ? { kind: real ? "real" : "moved", moved: moved } : null;
   }
+  /* 重要指標（追加D）：サプライズの向き・影響銘柄・過去の反応。向きを決められない指標・単位がそろわない数字には何も付けない */
+  // 「予想より小さい＝強い」（失業率・失業保険など）を先に見る。次が「予想より大きい＝強い」（雇用・景気・インフレ・金利）
+  var IND_LOW = /Unemployment Rate|Unemployment Claims|Jobless Claims|Claimant Count/i;
+  var IND_HIGH = /Non-Farm Employment Change|ADP|Employment Change|Average Hourly Earnings|Average Cash Earnings|Wage|Employment Cost Index|JOLTS|\bCPI\b|\bPPI\b|\bPCE\b|Price Index|GDP|Retail Sales|\bPMI\b|Durable Goods|Factory Orders|Industrial Production|Personal Spending|Personal Income|Household Spending|Consumer Confidence|Consumer Sentiment|Inflation Expectations|Building Permits|Housing Starts|Home Sales|Philly Fed|Empire State|Tankan|Federal Funds Rate|Policy Rate/i;
+  var IND_NONE = /Crude Oil|Natural Gas|Trade Balance|Speaks|Testifies|Minutes|Statement|Press Conference|Outlook|Treasury|Auction|Budget|Bank Holiday/i;
+  var CCY_JA = { USD: "ドル", JPY: "円" };
+  function indDirection(title) { if (IND_NONE.test(title)) return 0; return IND_LOW.test(title) ? -1 : IND_HIGH.test(title) ? 1 : 0; }
+  function indUnit(v) { var s = String(v == null ? "" : v).trim(); var m = s.replace(/,/g, "").match(/^[<>~≈+]?(-|−)?\d+(\.\d+)?(.*)$/); return m ? m[3].trim() : null; }
+  function indNum(v) { var m = String(v == null ? "" : v).replace(/,/g, "").replace("−", "-").match(/-?\d+(\.\d+)?/); return m ? parseFloat(m[0]) : null; }
+  // 結果と予想の比較（前回があれば前回も同じ単位であること）。返すのは null か { kind: "strong"|"weak"|"same", text }
+  function surpriseOf(e) {
+    if (!e || !e.actual || !e.forecast) return null;
+    var dir = indDirection(e.title || ""), ccy = CCY_JA[e.country]; if (!dir || !ccy) return null;
+    var ua = indUnit(e.actual), uf = indUnit(e.forecast), up = e.previous ? indUnit(e.previous) : ua;
+    if (ua === null || uf === null || up === null || ua !== uf || ua !== up) return null;
+    var a = indNum(e.actual), f = indNum(e.forecast); if (a === null || f === null) return null;
+    if (a === f) return { kind: "same", text: "予想どおり" };
+    var strong = (a > f) === (dir > 0);
+    return { kind: strong ? "strong" : "weak", text: strong ? "予想より強い → " + ccy + "買い材料" : "予想より弱い → " + ccy + "売り材料" };
+  }
+  // 影響銘柄（サイトの reactions.py と同じ表）
+  function indAffects(country, title) {
+    if (/Crude Oil Inventories/i.test(title || "")) return ["usoil"];
+    return country === "USD" ? ["usdjpy", "gold"] : country === "JPY" ? ["usdjpy"] : [];
+  }
+  // 過去の反応：同じ国・同じ指標の、before より前の記録。last（前回）と、2回以上あれば最大6回の平均
+  function reactionStats(rx, country, title, before) {
+    var ev = rx && rx.events; if (!ev) return null;
+    var list = Object.keys(ev).map(function (k) { return ev[k]; }).filter(function (r) { return r.country === country && r.title === title && r.t * 1000 < before; }).sort(function (a, b) { return b.t - a.t; });
+    if (!list.length) return null;
+    var six = list.slice(0, 6), avg = {};
+    Object.keys(list[0].move).forEach(function (k) { var v = six.filter(function (r) { return r.move[k]; }).map(function (r) { return r.move[k].size; }); if (v.length >= 2) avg[k] = { v: v.reduce(function (s, x) { return s + x; }, 0) / v.length, n: v.length }; });
+    return { last: list[0], avg: avg, n: list.length };
+  }
+  function moveText(k, v) { return k === "usdjpy" ? Math.round(v) + "pips" : "$" + (v >= 10 ? Math.round(v) : v.toFixed(2)); }
+  var INST_JA = { usdjpy: "ドル円", gold: "ゴールド", usoil: "オイル" };
   // the trading day key (Japan date) a time belongs to
   function dayKey(t) { var p = partsIn("Asia/Tokyo", t); return p.y + "-" + String(p.mo).padStart(2, "0") + "-" + String(p.d).padStart(2, "0"); }
 
@@ -619,7 +655,7 @@
     KIND: KIND, marketState: marketState, hoursNote: hoursNote, nextOpen: nextOpen, sessions: sessions, RULES: RULES, freshness: freshness, ago: ago, jst: jst,
     checkMarket: checkMarket, realCandles: realCandles, sequencer: sequencer,
     weeklyHours: weeklyHours, REOPEN_NOTE: REOPEN_NOTE, LEVEL_JA: LEVEL_JA,
-    positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey, journalDays: journalDays, dailyBook: dailyBook, periodSummary: periodSummary, weekOf: weekOf, gotobi: gotobi,
+    positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey, journalDays: journalDays, dailyBook: dailyBook, periodSummary: periodSummary, weekOf: weekOf, gotobi: gotobi, surpriseOf: surpriseOf, indDirection: indDirection, indUnit: indUnit, indAffects: indAffects, reactionStats: reactionStats, moveText: moveText, INST_JA: INST_JA,
     SURGE: SURGE, SURGE_GAP: SURGE_GAP, SURGE_COOL: SURGE_COOL, SURGE_SHOW: SURGE_SHOW, surgeAdd: surgeAdd, surgeCheck: surgeCheck, surgeGate: surgeGate, surgeText: surgeText, interventionPick: interventionPick,
     newStore: newStore, updateSignal: updateSignal, expireSignals: expireSignals, loadStore: loadStore, COOLDOWN: COOLDOWN,
     toCSV: toCSV, parseCSV: parseCSV, importCSV: importCSV,
