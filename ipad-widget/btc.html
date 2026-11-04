@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="2b03ed9730">
+<meta name="build" content="1f846b4d4c">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -480,6 +480,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
 }
 /* ステータスバーの分：ホーム画面から開いたときは最低24px。デスクの中（iframe）では端末の値が届かないので、デスクが --safe-top を渡す */
 @media (display-mode: standalone){:root{--safe-top:max(env(safe-area-inset-top,0px),24px)}}
+@media (display-mode: standalone) and (max-width:600px) and (orientation:portrait){:root{--safe-top:max(env(safe-area-inset-top,0px),44px)}}
 </style>
 </head>
 <body>

@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="ba10cf2c95">
+<meta name="build" content="b63cdf9f7e">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -783,6 +783,7 @@ button.retry:disabled { opacity: .6; cursor: default; }
 html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: none !important; transition: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 .flow #flow { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 52px); }
 @media (display-mode: standalone) { :root { --safe-top: max(env(safe-area-inset-top, 0px), 24px); } }
+@media (display-mode: standalone) and (max-width: 600px) and (orientation: portrait) { :root { --safe-top: max(env(safe-area-inset-top, 0px), 44px); } }  /* 縦のスマホはステータスバーが高い */
 </style>
 </head>
 <body>
@@ -1183,10 +1184,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=164f8d942d", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=6dd9127713", title: "ドル円分析" },
-    btc: { src: "btc.html?v=2b03ed9730", title: "BTC分析" },
-    oil: { src: "oil.html?v=1d4ba38021", title: "オイル分析" }
+    gold: { src: "gold.html?v=b264603193", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=0b6eb389c0", title: "ドル円分析" },
+    btc: { src: "btc.html?v=1f846b4d4c", title: "BTC分析" },
+    oil: { src: "oil.html?v=8a5838e5d3", title: "オイル分析" }
   };
   var openSheet = null, sheetOpener = null;
   /* ステータスバーの分：iframe の中では端末の値（safe-area）が届かないので、デスクで測った --safe-top を各ダッシュボードに渡す */
