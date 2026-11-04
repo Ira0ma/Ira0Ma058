@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="0d4453a9b0">
+<meta name="build" content="aa3bca4262">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -781,6 +781,10 @@ html:not(.flow) #flow { display: none; }
   color: var(--ink); font-size: 11px; font-weight: 600; white-space: nowrap; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,.45); }
 .step-tag b { background: var(--gold); color: #14100a; border-radius: 999px; padding: 2px 8px; font-size: 10.5px; font-weight: 800; letter-spacing: .02em; }
 html:not(.beginner) .step-tag { display: none; }
+/* 番号札の表示中だけ：左下のボタンのすぐ上に1行の注記（狭い画面で通知の段があるときは、その上） */
+.step-note { position: fixed; z-index: 30; left: calc(env(safe-area-inset-left, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 40px + var(--tbar, 0px)); max-width: calc(100vw - 20px); margin: 0; padding: 3px 10px; border-radius: 8px; background: rgba(14,16,22,.9); border: 1px solid rgba(227,184,103,.35); color: var(--ink-2); font-size: 11px; line-height: 1.45; pointer-events: none; }
+html:not(.beginner) .step-note { display: none; }
+@media (pointer: coarse) { .step-note { bottom: calc(env(safe-area-inset-bottom, 0px) + 48px + var(--tbar, 0px)); } }
 .flow .step-tag, .phone .step-tag { position: relative; align-self: flex-start; flex: none; margin: 0 0 -25px 16px; }
 #layout-toggle { position: fixed; z-index: 30; left: calc(env(safe-area-inset-left, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
   font: inherit; font-size: 12px; font-weight: 700; color: var(--gold); background: rgba(14,16,22,.85); border: 1px solid rgba(227,184,103,.5); border-radius: 999px; padding: 3px 11px; line-height: 1.4; cursor: pointer;
@@ -1074,21 +1078,37 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   var isPhone = Math.min(screen.width, screen.height) < 600, mode = "", pages = [], pageIdx = 0;
   var cards = Array.prototype.slice.call(stage.querySelectorAll(":scope > .card"));
 
-  /* ---------- 見る順番の札：左下の🔰ボタンで、各パネルに STEP 1〜6 の番号と見ることを重ねて出す（配置はいつもどおり） ---------- */
+  /* ---------- 見る順番の札：左下の🔰ボタンで、各パネルに STEP 1〜7 の番号と見ることを重ねて出す（配置はいつもどおり）。
+     番号は重ならない連番で、いまの画面の並び（目が上から進む順）に合わせて付ける。朝のひと回り用の順番で、1回の取引の流れ（ツールの「使い方」）とは別 ---------- */
   var beginner = false;
   try { beginner = localStorage.getItem("desk-layout") === "beginner"; } catch (e) {}
   var paintRoot = function () { document.documentElement.classList.toggle("beginner", beginner); };
   paintRoot();
-  var STEPS = { clock: [1, "今日の日付と時間を確認"], cal: [1, "休みの日・ゴトー日をチェック"], ind: [2, "荒れやすい発表の時間を知る"],
-    markets: [3, "今の値段と向きを見る（タップで詳しい分析）"], points: [4, "今日の作戦を読む"], weather: [5, "地震・台風など安全の確認"], xfeed: [6, "用語集・図鑑・入門で学ぶ"] };
+  var STEPS = { clock: [0, "今日の日付と時間を確認"], cal: [0, "休みの日・ゴトー日をチェック"], ind: [0, "荒れやすい発表の時間を知る"],
+    markets: [0, "今の値段と向きを見る（タップで詳しい分析）"], points: [0, "今日の作戦を読む"], weather: [0, "地震・台風など安全の確認"], xfeed: [0, "用語集・図鑑・入門で学ぶ"] };  // 番号は placeSteps で画面の並びから付ける
   var cardOf = function (id) { for (var i = 0; i < cards.length; i++) if (cards[i].id === id) return cards[i]; };
   var stepTags = {};
   Object.keys(STEPS).forEach(function (id) {
     var t = document.createElement("div"); t.className = "step-tag"; t.setAttribute("aria-hidden", "true");
-    t.innerHTML = "<b>STEP " + STEPS[id][0] + "</b>" + STEPS[id][1]; stepTags[id] = t;
+    stepTags[id] = t;
   });
+  // 表示中だけ出す注記（番号札は朝のひと回り用。取引の流れはツールの「使い方」）
+  var stepNote = document.createElement("p"); stepNote.className = "step-note";
+  stepNote.textContent = "🔰 これは朝、デスクを開いたときにひと回り見る順番です。1回の取引の流れは、ツールの「使い方」にあります";
+  document.body.appendChild(stepNote);
+  // 番号：横画面（stage）はカードの位置（上から、同じ段は左から）、縦並び・ページ送りは並んでいる順（列ごとに上から）
+  function stepOrder() {
+    var ids = Object.keys(stepTags);
+    if (mode === "stage") {
+      var pos = function (id) { var cs = getComputedStyle(cardOf(id)); return { t: parseFloat(cs.top) || 0, l: parseFloat(cs.left) || 0 }; };
+      return ids.sort(function (a, b) { var A = pos(a), B = pos(b); return Math.abs(A.t - B.t) > 40 ? A.t - B.t : A.l - B.l; });
+    }
+    var all = Array.prototype.slice.call(document.querySelectorAll(".card")).map(function (c) { return c.id; });
+    return ids.sort(function (a, b) { return all.indexOf(a) - all.indexOf(b); });
+  }
   // 札はカードのすぐ前に置く（横画面はカードの左上の縁に重ねる、縦画面・スマホは列の中でカードの上に重ねる）
   function placeSteps() {
+    stepOrder().forEach(function (id, i) { var t = stepTags[id], h = "<b>STEP " + (i + 1) + "</b>" + STEPS[id][1]; if (t.innerHTML !== h) t.innerHTML = h; });
     Object.keys(stepTags).forEach(function (id) {
       var t = stepTags[id], card = cardOf(id);
       if (t.nextSibling !== card) card.parentNode.insertBefore(t, card);
@@ -1101,7 +1121,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   var paintLayoutBtn = function () {
     layoutBtn.innerHTML = beginner ? "🔰 番号札を隠す" : "🔰 見る順番を表示";
     layoutBtn.setAttribute("aria-pressed", beginner ? "true" : "false");
-    layoutBtn.title = beginner ? "STEP の番号札を隠します" : "各パネルに STEP 1〜6 の見る順番と、そこで見ることを表示します";
+    layoutBtn.title = beginner ? "STEP の番号札を隠します" : "各パネルに STEP 1〜7 の見る順番と、そこで見ることを表示します";
   };
   var dock = document.createElement("div"); dock.className = "dk-dock";
   var toolsBtn = document.createElement("button"); toolsBtn.type = "button"; toolsBtn.id = "tools-toggle"; toolsBtn.innerHTML = "🧰 ツール";
