@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="cb4ad313b5">
+<meta name="build" content="4944dfb803">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1197,10 +1197,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=a3132fc89f", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=cdae27305f", title: "ドル円分析" },
-    btc: { src: "btc.html?v=e3ce3678bb", title: "BTC分析" },
-    oil: { src: "oil.html?v=7ce89fb317", title: "オイル分析" }
+    gold: { src: "gold.html?v=cda0543f16", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=c34ebfff33", title: "ドル円分析" },
+    btc: { src: "btc.html?v=526ccec07b", title: "BTC分析" },
+    oil: { src: "oil.html?v=15d9c34621", title: "オイル分析" }
   };
   var openSheet = null, sheetOpener = null;
   /* ステータスバーの分：iframe の中では端末の値（safe-area）が届かないので、デスクで測った --safe-top を各ダッシュボードに渡す */
@@ -3600,9 +3600,9 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       ["サマータイム", "夏時間", "アメリカやヨーロッパで、夏の間だけ時計を1時間進める制度（アメリカは3月〜11月、ヨーロッパは3月末〜10月末）。その間は、日本時間で指標の発表や市場の開く時間が1時間早くなる。", { fig: "dst" }]
     ]},
     { t: "トレードスタイル", s: "スキャルピング・デイトレード・スイング", terms: [
-      ["スキャルピング", "", "数秒〜数分で、小さな値幅（数pips）を何度も取る、いちばん短い取引。このアプリでは5分足の横線で利益確定を判断する。", { fig: "styles" }],
-      ["デイトレード", "", "その日のうちに取引を終わらせるやり方。夜は持ち越さない。このアプリでは4時間足・日足の横線を利益確定の目安にする。"],
-      ["スイングトレード", "", "数日〜数週間、取引を続けるやり方。日足や週足の大きな流れを大事にする。"],
+      ["スキャルピング", "", "数秒〜数分で、小さな値幅（数pips）を何度も取る、いちばん短い取引。このアプリの利確判定の型「短期（5分足・15分足）」は、5分足と15分足の横線のうち手前の線で利確の余地を判断する。", { fig: "styles" }],
+      ["デイトレード", "", "その日のうちに取引を終わらせるやり方。夜は持ち越さない。このアプリの利確判定の型「デイ（1時間足）」は、1時間足の横線で利確の余地を判断する（ダッシュボードの既定）。"],
+      ["スイングトレード", "", "数日〜数週間、取引を続けるやり方。日足や週足の大きな流れを大事にする。このアプリの利確判定の型「スイング（4時間足・日足）」は、4時間足と日足の横線のうち手前の線で利確の余地を判断する。"],
       ["ポジショントレード", "", "数週間〜数か月の、長い取引。国どうしの金利の差やスワップも大事になる。"],
       ["順張り", "", "流れと同じ向きに乗る取引。上がっているときに買い、下がっているときに売る。押し目買い・戻り売りもこれに入る。初心者向き。", { fig: "trendcounter" }],
       ["逆張り", "", "流れと反対向きに入る取引。「上がりすぎたから下がるはず」と売るなど。当たると大きいが、流れが続くと損が大きくなりやすく、難しい。"],
