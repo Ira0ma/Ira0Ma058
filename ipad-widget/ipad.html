@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="afa74d3205">
+<meta name="build" content="b26912a977">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -479,10 +479,17 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gl-tile[data-book="usdjpy"] { --gl-acc: #a9bdf0; --gl-rgb: 169,189,240; }
 .gl-tile[data-book="fvg"] { --gl-acc: #c8b6ec; --gl-rgb: 200,182,236; }
 .gl-tile[data-book="first"] { --gl-acc: #8fd8a8; --gl-rgb: 143,216,168; }
+.gl-tile[data-book="tax"] { --gl-acc: #e7a98c; --gl-rgb: 231,169,140; }
 .gl-tile { --gl-acc: var(--gold); --gl-rgb: 227,184,103; }
-.gl-tabs { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; padding: 2px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--glass-line); flex: none; }
+.gl-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; padding: 2px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--glass-line); flex: none; }
 .gl-tabs button { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: inherit; font-size: 10.5px; font-weight: 700; color: var(--ink-3); background: none; border: 0; border-radius: 999px; padding: 4px 0; cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
 .gl-tabs button.on { color: #14100a; background: var(--gl-acc); }
+/* 学ぶ：読む順の番号（1〜6）と、用語集の「辞書」印 */
+.gl-tabs i { font-style: normal; display: inline-block; vertical-align: 1px; margin-right: 4px; font-size: 9px; font-weight: 800; line-height: 13px; border-radius: 999px; }
+.gl-tabs .gl-no { width: 13px; text-align: center; color: #14100a; background: rgba(255,255,255,.45); }
+.gl-tabs .gl-dic { padding: 0 4px; color: var(--ink-2, #cfd6dc); border: 1px solid rgba(255,255,255,.3); line-height: 11px; }
+.gl-tabs button.on .gl-no { background: rgba(20,16,10,.18); }
+.gl-tabs button.on .gl-dic { color: #14100a; border-color: rgba(20,16,10,.35); }
 .gl-title { font-size: 14px; font-weight: 700; color: var(--ink); letter-spacing: .04em; }
 .gl-wait { grid-column: 1 / -1; margin: 0; font-size: 11.5px; color: var(--ink-3); align-self: center; }
 .gl-head span { font-size: 11px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
@@ -565,7 +572,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gbook.eco .gb-figbox { border-color: #cfe0dc; }
 .gbook.eco .gb-resume { background: #dcecea; border-color: #bcd6d2; color: #175e63; }
 /* 学習の本（パターン図鑑・ドル円入門・FVG詳説）：用語集と同じ紙面に、ひと言→図→見る所→待つこと→例→勘違い→詳しく の順 */
-.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; } .gbook.bk-first { --bk: #8fd8a8; --bk-ink: #2f7a4c; }
+.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; } .gbook.bk-first { --bk: #8fd8a8; --bk-ink: #2f7a4c; } .gbook.bk-tax { --bk: #e7a98c; --bk-ink: #9a4f2e; }
 .gbook.bk-learn .gb-bar .gb-title { color: var(--bk); } .gbook.bk-learn .gb-prog i { background: var(--bk); } .gbook.bk-learn .gb-btn.gb-x { background: var(--bk); border-color: var(--bk); }
 .gbook.bk-learn .gb-cover small, .gbook.bk-learn .gb-chhead small, .gbook.bk-learn .gb-toc i, .gbook.bk-learn .gb-idx button em, .gbook.bk-learn .gb-cover .gb-hint::before, .gbook.bk-learn .gb-pts li::marker { color: var(--bk-ink); }
 .gbook.bk-learn .gb-idx h4, .gbook.bk-learn .gb-table th { background: var(--bk-ink); }
@@ -754,7 +761,8 @@ html:not(.flow) #flow { display: none; }
 .flow #markets .sep { margin: 0 22px; }
 .flow #cal { height: auto; grid-template-columns: 1fr; grid-template-rows: none; }
 .flow #xfeed { height: auto; min-height: 202px; }
-.flow #xfeed .gl-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); border-radius: 14px; }
+.flow #xfeed .gl-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); border-radius: 12px; }
+.flow #xfeed .gl-tabs .gl-x { display: none; }  /* 幅の狭い縦並びでは本の名前を短く（正式名はタブの title に） */
 
 @media (prefers-reduced-motion: reduce) { .mkt .price { transition: none; } }
 
@@ -956,7 +964,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <div class="gl-head">
         <b class="gl-title">学ぶ</b><span id="gl-count"></span><button type="button" class="gl-open" data-gl="toc">目次を開く ›</button>
       </div>
-      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ"><button type="button" role="tab" data-glbook="first" title="はじめての投資とトレード（最初に読む本）">最初の1冊</button><button type="button" role="tab" data-glbook="fx">FX用語集</button><button type="button" role="tab" data-glbook="eco">経済用語集</button><button type="button" role="tab" data-glbook="gold">ゴールド入門</button><button type="button" role="tab" data-glbook="pattern">パターン図鑑</button><button type="button" role="tab" data-glbook="usdjpy">ドル円入門</button><button type="button" role="tab" data-glbook="fvg">FVG詳説</button></div>
+      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（1〜6の順に読む本と、2冊の辞書）"><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
       <div class="gl-grid" id="gl-grid"></div>
       <p class="gl-hint">本を開いたら、左右にスワイプか「次のページ ›」でめくれます</p>
     </div>
@@ -3744,9 +3752,11 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       gold: { id: "gold", src: "learn/gold.json", title: "ゴールド入門", en: "GOLD TRADING BASICS", icon: "🪙", bm: "learn-gold-page", learn: true },
       pattern: { id: "pattern", src: "learn/pattern.json", title: "パターン図鑑", en: "CHART PATTERNS", icon: "📗", bm: "learn-pattern-page", learn: true },
       usdjpy: { id: "usdjpy", src: "learn/usdjpy.json", title: "ドル円入門", en: "USD/JPY BASICS", icon: "💴", bm: "learn-usdjpy-page", learn: true },
-      fvg: { id: "fvg", src: "learn/fvg.json", title: "FVG詳説", en: "FAIR VALUE GAP", icon: "📐", bm: "learn-fvg-page", learn: true }
+      fvg: { id: "fvg", src: "learn/fvg.json", title: "FVG詳説", en: "FAIR VALUE GAP", icon: "📐", bm: "learn-fvg-page", learn: true },
+      tax: { id: "tax", src: "learn/tax.json", title: "確定申告ガイド", en: "TAX RETURN GUIDE", icon: "🧾", bm: "learn-tax-page", learn: true }
     };
-    var ORDER = ["fx", "eco", "first", "gold", "pattern", "usdjpy", "fvg"], LEARN = ["first", "gold", "pattern", "usdjpy", "fvg"];
+    // ORDER は名前で関連リンクを探す順（用語集が先）。タブの並び（読む順）は HTML の .gl-tabs 側
+    var ORDER = ["fx", "eco", "first", "gold", "pattern", "usdjpy", "fvg", "tax"], LEARN = ["first", "gold", "pattern", "usdjpy", "fvg", "tax"];
     // learn/*.json の1項目を、用語集と同じ [名前, 読み, 説明, 付録] の形にする（付録の L に元の項目を持つ）
     function learnBook(b, j) {
       b.version = j.version; b.lead = j.lead; b.short = j.chapters.map(function (c) { return c.short || c.t; });
