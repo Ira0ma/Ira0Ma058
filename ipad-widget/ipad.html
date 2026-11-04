@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="6f880a1bae">
+<meta name="build" content="bab251e2e7">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1022,6 +1022,9 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   var sameDay = function (a, b) { return a.toDateString() === b.toDateString(); };
   var stampAt = function (d) { return sameDay(d, new Date()) ? HHMM(d) : MDHM(d); };
   var updAt = function (d) { return stampAt(d) + " 更新"; };
+  // 軽量化：中身が同じなら書き直さない（数秒ごとの描き直しで、同じ表示を何度も組み直さないように）
+  function setHTML(el, h) { if (el && el.innerHTML !== h) el.innerHTML = h; }
+  function setText(el, t) { t = String(t); if (el && el.textContent !== t) el.textContent = t; }
   /* Outside the real site (e.g. a design preview with no network) the built-in sample content stays, labelled as such.
      On the real site nothing made-up is shown: until data arrives the widgets say they are loading. */
   var PREVIEW = !/(github\.io|localhost|127\.0\.0\.1)$/.test(location.hostname);
@@ -1038,8 +1041,18 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var r = cv.getBoundingClientRect();
     var w = cv.offsetWidth, h = cv.offsetHeight;
     var k = (window.devicePixelRatio || 1) * Math.max(scale, r.width / Math.max(w, 1));
-    cv.width = Math.round(w * k); cv.height = Math.round(h * k);
-    var c = cv.getContext("2d"); c.setTransform(k, 0, 0, k, 0, 0);
+    var cw = Math.round(w * k), ch = Math.round(h * k), c = cv.getContext("2d");
+    // 軽量化：大きさが同じなら描画面を作り直さず、消して描き直す（値が動くたびの作り直しはiPadの負担が大きい）
+    if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+    else if (c.reset) c.reset();
+    else {
+      c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cw, ch);
+      c.globalAlpha = 1; c.globalCompositeOperation = "source-over"; c.fillStyle = "#000"; c.strokeStyle = "#000";
+      c.lineWidth = 1; c.lineCap = "butt"; c.lineJoin = "miter"; c.miterLimit = 10; if (c.setLineDash) c.setLineDash([]); c.lineDashOffset = 0;
+      c.shadowBlur = 0; c.shadowColor = "rgba(0,0,0,0)"; c.shadowOffsetX = 0; c.shadowOffsetY = 0;
+      c.font = "10px sans-serif"; c.textAlign = "start"; c.textBaseline = "alphabetic";
+    }
+    c.setTransform(k, 0, 0, k, 0, 0);
     return { c: c, w: w, h: h };
   }
 
@@ -1326,14 +1339,14 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       if (shut) {  // closed: say so instead of a call made on the last prices before the close
         var ms = TDCore.marketState(mk.key, Date.now()), re = TDCore.nextOpen(mk.key, Date.now());
         el.hidden = false; mk.el.classList.add("has-score"); el.removeAttribute("title");
-        el.innerHTML = '<b class="closed">' + (ms.state === "break" ? "休止中" : "休場中") + "</b>" + (re ? '<span class="reopen" title="' + TDCore.REOPEN_NOTE + '">再開 ' + re + "</span>" : "");
+        setHTML(el, '<b class="closed">' + (ms.state === "break" ? "休止中" : "休場中") + "</b>" + (re ? '<span class="reopen" title="' + TDCore.REOPEN_NOTE + '">再開 ' + re + "</span>" : ""));
         return;
       }
       el.hidden = !d; mk.el.classList.toggle("has-score", !!d);
       if (d) el.setAttribute("title", "時間足ごとの一致度（0〜100）：H4・H1・M15・M5でダウ理論・スーパートレンド・GMMA・RSIの向きを±1で数え、重み付き平均の大きさを100倍した値です。勝率や確率ではありません。" +
         (mk.el.classList.contains("an-stale") ? "（自動分析が古いため参考外）" : ""));
-      if (d) el.innerHTML = '<b class="' + cls + '">' + d.label + "<span>" + d.score + "</span></b>" +
-        '<span class="mt">' + d.tfs.map(function (t) { return '<i class="' + t.cls + '">' + t.tf + "<em>" + t.arrow + "</em></i>"; }).join("") + "</span>";
+      if (d) setHTML(el, '<b class="' + cls + '">' + d.label + "<span>" + d.score + "</span></b>" +
+        '<span class="mt">' + d.tfs.map(function (t) { return '<i class="' + t.cls + '">' + t.tf + "<em>" + t.arrow + "</em></i>"; }).join("") + "</span>");
     });
   }
   setInterval(paintScore, 2000);
@@ -1390,7 +1403,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       var k = keyLv[mk.key], el = mk.el.querySelector('[data-f="klv"]'), on = !!(k && (k.r.length || k.s.length));
       var tag = function (cls, name, v) { return v == null ? "" : '<span class="' + cls + '"><i>' + name + "</i>" + (mk.key === "btc" ? Math.round(v).toLocaleString("en-US") : mk.o.fmt(v)) + "</span>"; };  // BTC without cents so all four fit
       el.hidden = !on;
-      if (on) el.innerHTML = tag("s", "S2", k.s[1]) + tag("s", "S1", k.s[0]) + tag("r", "R1", k.r[0]) + tag("r", "R2", k.r[1]);
+      if (on) setHTML(el, tag("s", "S2", k.s[1]) + tag("s", "S1", k.s[0]) + tag("r", "R1", k.r[0]) + tag("r", "R2", k.r[1]));
       if (mk.el.classList.contains("has-klv") !== on) { mk.el.classList.toggle("has-klv", on); mk.draw(); }
     });
   }
@@ -1508,7 +1521,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     document.querySelectorAll("[data-clock]").forEach(function (el) {
       var k = el.getAttribute("data-clock");
       if (k === "md") { if (el.firstChild && el.firstChild.nodeValue === md) return; el.innerHTML = md + '<small class="tz">JST</small>'; return; }  // 画面の時刻はすべて日本時間（時計の日付の行に明記）
-      el.textContent = k === "hm" ? hm : k === "wd" ? WD[d.getDay()] : d.getDate();
+      var v = String(k === "hm" ? hm : k === "wd" ? WD[d.getDay()] : d.getDate());
+      if (el.textContent !== v) el.textContent = v;  // 軽量化：同じ時刻なら書き直さない
     });
   }
 
@@ -1854,7 +1868,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       var first0 = !this.live, dir0 = Math.sign(p - this.price);
       this.live = true; this.o.prev = this.prevClose; this.price = p;
       if (first0) { this.gen(); } else this.placePrice(p, this.asOf);
-      this.render(dir0); this.draw(); return;
+      this.render(dir0); this.drawSoon(); return;
     }
     var k = "quote-" + this.el.id, today = new Date().toDateString(), st = null;
     try { st = JSON.parse(localStorage.getItem(k)); } catch (e) {}
@@ -1864,7 +1878,14 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var first = !this.live, dir = Math.sign(p - this.price);
     this.live = true; this.o.prev = st.prev; this.price = p;
     if (first) { this.gen(); } else this.placePrice(p, this.asOf);
-    this.render(dir); this.draw();
+    this.render(dir); this.drawSoon();
+  };
+  // 軽量化：配信の値が続けて届いても、チャートの描き直しは画面の1コマに1回まで
+  Market.prototype.drawSoon = function () {
+    var self = this;
+    if (!window.requestAnimationFrame) return self.draw();
+    if (self.drawReq) return;
+    self.drawReq = requestAnimationFrame(function () { self.drawReq = 0; self.draw(); });
   };
   /* Gold/silver candles in market.json are futures moved onto the spot price. If a file ever arrives
      unmoved (spotAdjusted false), shift its candles by the gap to the live spot price once. */
@@ -2454,9 +2475,9 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       if (!sg) { sg = document.createElement("span"); sg.className = "sg"; names.appendChild(sg); }
       var e = surgeActive(mk.key);
       mk.el.classList.toggle("surging", !!e);
-      if (!e) { sg.textContent = ""; sg.className = "sg"; mk.surgeId = ""; return; }
+      if (!e) { setText(sg, ""); if (sg.className !== "sg") sg.className = "sg"; mk.surgeId = ""; return; }
       var tx = TDCore.surgeText(e);
-      sg.textContent = "⚡ " + tx.level + "・" + tx.size + "（" + HHMM(new Date(e.t)) + "）";
+      setText(sg, "⚡ " + tx.level + "・" + tx.size + "（" + HHMM(new Date(e.t)) + "）");
       sg.className = "sg" + (e.level === "emergency" ? " emg" : "") + (e.level === "emergency" && !e.ack && !low ? " blink" : "");
       mk.surgeId = e.level === "emergency" && !e.ack ? e.id : "";
     });
@@ -3214,7 +3235,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   /* ---------- automatic analysis (market.json, refreshed hourly by the Pages workflow) ---------- */
   function setPoint(i, title, body, html) {
-    document.querySelector('[data-pt="' + i + 'h"]').textContent = title;
+    setText(document.querySelector('[data-pt="' + i + 'h"]'), title);
     var pe = document.querySelector('[data-pt="' + i + 'p"]');
     if (html) { if (pe.__h !== html) { pe.innerHTML = html; pe.__h = html; } } else { pe.textContent = body; pe.__h = null; }
     document.querySelector('[data-pt="' + i + 'h"]').closest("li").hidden = !title;  // empty slot: hide the row
@@ -3309,8 +3330,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var foot = document.getElementById("pt-foot"); if (!foot || foot.querySelector(".retry")) return;
     var u = market ? new Date(market.updated) : null, stale = u && Date.now() - u > 3 * 3600000;
     // 更新スタンプは中身（水準・目線・接近・答え合わせ）が変わった時刻。距離は価格に合わせて動くので数えない
-    foot.textContent = "水準＝ダッシュボードの水平線・目線＝H1の120SMAの上下・接近＝ゴールド" + PT_NEAR_TXT.gold + "・ドル円" + PT_NEAR_TXT.usdjpy + "・BTC" + PT_NEAR_TXT.btc + "・オイル" + PT_NEAR_TXT.usoil + "以内・" + updAt(new Date(ptShownAt)) +
-      (u ? "／戦略文：自動分析 " + (stale ? MDHM(u) + "（更新が止まっています）" : stampAt(u) + "（約15分ごと）") : "");
+    setText(foot, "水準＝ダッシュボードの水平線・目線＝H1の120SMAの上下・接近＝ゴールド" + PT_NEAR_TXT.gold + "・ドル円" + PT_NEAR_TXT.usdjpy + "・BTC" + PT_NEAR_TXT.btc + "・オイル" + PT_NEAR_TXT.usoil + "以内・" + updAt(new Date(ptShownAt)) +
+      (u ? "／戦略文：自動分析 " + (stale ? MDHM(u) + "（更新が止まっています）" : stampAt(u) + "（約15分ごと）") : ""));
     foot.style.color = stale ? "var(--up-red)" : "";
     if (market) renderStrategy();  // 戦略文も同じ材料（目線・値幅・答え合わせ）に追随
   }
