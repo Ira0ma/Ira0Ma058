@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="fe483bb2db">
+<meta name="build" content="e327ee9a85">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -170,6 +170,7 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .tl .up,.tl i.up{color:#42d59c}.tl .down,.tl i.down{color:#ff6969}.tl i{font-style:normal;font-weight:700}
 i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,156,.12);border-radius:6px;padding:1px 6px;margin-left:4px}
 .gq{display:inline-grid;place-items:center;width:18px;height:18px;margin-left:6px;vertical-align:2px;border-radius:50%;border:1px solid rgba(232,195,90,.55);background:rgba(232,195,90,.12);color:#e8c35a;font:700 11px/1 -apple-system,sans-serif;cursor:pointer;padding:0}.gq:hover{background:rgba(232,195,90,.3)}
+.al-ntf{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;border:1px solid #232d36;border-radius:10px;background:#0f1419}.al-ntf b{font-size:12.5px}.al-ntf b .ok{color:var(--green)}.al-ntf b .ng{color:#f0c36a}.al-ntf b .na{color:var(--muted)}.al-ntf small{display:block;color:var(--muted);font-size:11px;margin-top:2px}.al-ntf .seg{flex:none}
 .alertgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .al-all{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#101820;border:1px solid #2c3a47;border-radius:11px;padding:10px 12px}
 .al-all b{display:block;font-size:13px}.al-all small{display:block;font-size:10.5px;color:var(--muted);margin-top:3px}.al-allbtn{display:flex;gap:6px}.al-allbtn .seg{padding:7px 14px}
@@ -721,6 +722,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
     <div class="cardhead"><div><div class="title">アラート・通知設定</div><div class="sub">オンにした条件がそろうと、画面の下に通知を出して音で知らせます（この端末に銘柄ごとに保存）</div></div><span class="tag">ALERT</span></div>
     <div id="alertList" class="alertgrid"></div>
     <div class="alerthist"><b>最近の通知</b><div id="alertHist" class="sub">まだありません</div></div>
+    <p class="sub" id="alSoundNote" style="margin:8px 2px 0">音のつながり：ホーム（デスク）の中で開いているときは、このページのアラートもエントリー・急変・地震も、ホームの音量（大・中・小・オフ）の1つの設定で鳴ります（ここの「通知音」の切替は効きません）。このページを単体で開いたときは、ここの「通知音」の切替だけで鳴り（音量は固定）、ホームの音量とは別々です。急変と地震の音はホームだけが鳴らします。</p>
   </section>
 
   <!-- ===== OILCash（補正表示）：USオイル版だけ表示 ===== -->
@@ -2862,28 +2864,64 @@ function renderTech(){
 /* ---------- アラート・通知設定（この端末に銘柄ごとに保存） ----------
    条件がそろった瞬間に、画面の下に通知を出して音を鳴らす（トレードデスクの中ではデスク側に通知を出す）。
    ページを開いた時点ですでにそろっている条件は鳴らさない（価格到達と指標30分前は除く） */
+// 急変のしきい値は core.js（TDCore.SURGE）の定数から文にする（二重に持たない）
+function surgeRule(){
+  const c=CORE&&CORE.SURGE&&CORE.SURGE[INSTR.key];if(!c)return '（しきい値を読み込めませんでした）';
+  const one=([m,v])=>m+'分で'+(c.unit==='yen'?v.toFixed(2)+'円以上':'±'+v.toFixed(1)+'%');
+  return '注意＝'+c.caution.map(one).join('、または')+'／緊急＝'+c.emergency.map(one).join('、または');
+}
+const FIB_REPEAT=30*60000;  // フィボナッチ：同じ時間足・同じ水準は30分は再通知しない（A3）
 const ALERT_DEF=[
-  {k:'price',name:'価格到達',desc:'指定した価格に届いたら（届いた価格は自動で消えます）'},
-  {k:'gmma',name:'GMMAクロス',desc:'どれかの時間足でゴールデン／デッドクロスが始まったら',def:true},
-  {k:'sma',name:'120SMA接近',desc:'H1の120SMAまでH1 ATRの0.3倍以内に近づいたら',def:true},
-  {k:'choch',name:'CHOCH（流れの転換）',desc:'M15で、今の流れと逆向きに直近の山・谷を終値で抜けたら',def:true},
-  {k:'bos',name:'BOS（流れの継続）',desc:'M15で、今の流れの向きに高値・安値を終値で更新したら'},
-  {k:'ev30',name:'重要経済指標30分前',desc:'★★★の関連指標の30分前',def:true},
-  {k:'score',name:'条件一致度のしきい値',desc:'総合判定の一致度がしきい値以上になったら'},
-  {k:'talk',name:'要人発言・関連報道',desc:'タカ派・ハト派・介入警戒の見出しが新しく出たら'},
-  {k:'fib',name:'フィボナッチが効いている',desc:'「今は○○のフィボナッチが効いています」が新しく出たら（時間足や水準が変わったときも）',def:true},
-  {k:'sound',name:'通知音',desc:'通知のときに音を鳴らす（ページを1回タップした後から鳴ります）',def:true}];
+  {k:'price',name:'価格到達',desc:'指定した価格に届いたら｜届いた価格は自動で消えるので1回だけ'},
+  {k:'surge',name:'急変アラート',desc:()=>'短い時間の大きな値動き：'+surgeRule()+(IS_OIL?'（判定は補正前の値＝OKXのWTI連動、読めないときはCL=Fで行い、OILCashの補正後の表示価格では判定しません）':'')+'｜判定と音・端末の通知はホーム（デスク）が行います。同じ向き・同じ段階は30分再通知しない（注意→緊急は上がった時点で出す）。オフにすると、この銘柄の急変はバナー・チャートの⚡・音・端末の通知を出しません（介入警戒のバナーは別で、止まりません）',def:true},
+  {k:'gmma',name:'GMMAクロス',desc:'どれかの時間足でゴールデン／デッドクロスが始まったら｜クロスが始まったときに1回',def:true},
+  {k:'sma',name:'120SMA接近',desc:'H1の120SMAまでH1 ATRの0.3倍以内に近づいたら｜ATRの1倍以上離れるまで再通知しない',def:true},
+  {k:'choch',name:'CHOCH（流れの転換）',desc:'M15で、今の流れと逆向きに直近の山・谷を終値で抜けたら｜新しいCHOCHが出るたびに1回',def:true},
+  {k:'bos',name:'BOS（流れの継続）',desc:'M15で、今の流れの向きに高値・安値を終値で更新したら｜新しいBOSが出るたびに1回'},
+  {k:'ev30',name:'重要経済指標30分前',desc:'★★★の関連指標の30分前｜指標ごとに1回',def:true},
+  {k:'score',name:'条件一致度のしきい値',desc:'総合判定の一致度がしきい値以上になったら｜しきい値より10下がるまで再通知しない（向きが変わったときは出す）'},
+  {k:'talk',name:'要人発言・関連報道',desc:'タカ派・ハト派・介入警戒の見出しが新しく出たら｜見出しごとに1回',def:IS_FX},  // B3：初期値はドル円だけオン（保存済みの端末はその設定のまま）
+  {k:'fib',name:'フィボナッチが効いている',desc:'「今は○○のフィボナッチが効いています」が新しく出たら（時間足や水準が変わったときも）｜同じ時間足・同じ水準は30分は再通知しない',def:true},
+  {k:'sound',name:'通知音',desc:'通知のときに音を鳴らす（ページを1回タップした後から鳴ります）｜ホーム（デスク）の中で開いているときは、ホームの音量（大・中・小・オフ）で鳴り、この切替は効きません',def:true}];
 let alertCfg={};try{alertCfg=JSON.parse(lsGet(LSP+'alerts','{}'))||{}}catch{}
 ALERT_DEF.forEach(d=>{if(!(d.k in alertCfg))alertCfg[d.k]=!!d.def});
 if(alertCfg.above==null)alertCfg.above='';if(alertCfg.below==null)alertCfg.below='';if(!alertCfg.thr)alertCfg.thr=70;
 function saveAlerts(){lsSet(LSP+'alerts',JSON.stringify(alertCfg))}
 function renderAlerts(){
   const on=ALERT_DEF.filter(d=>alertCfg[d.k]).length;
-  $('alertList').innerHTML=`<div class="al-all"><div><b>すべての通知</b><small>今 ${on}／${ALERT_DEF.length} 件がオン（価格到達は価格を入れたときだけ鳴ります）</small></div><div class="al-allbtn"><button type="button" class="seg${on===ALERT_DEF.length?' active':''}" data-alall="1">すべてオン</button><button type="button" class="seg${on===0?' active':''}" data-alall="0">すべてオフ</button></div></div>`+ALERT_DEF.map(d=>{
+  $('alertList').innerHTML=notifyLine()+`<div class="al-all"><div><b>すべての通知</b><small>今 ${on}／${ALERT_DEF.length} 件がオン（価格到達は価格を入れたときだけ鳴ります）</small></div><div class="al-allbtn"><button type="button" class="seg${on===ALERT_DEF.length?' active':''}" data-alall="1">すべてオン</button><button type="button" class="seg${on===0?' active':''}" data-alall="0">すべてオフ</button></div></div>`+ALERT_DEF.map(d=>{
     const extra=d.k==='price'?`<div class="al-in"><label>上 <input type="number" inputmode="decimal" step="any" data-al="above" value="${esc(alertCfg.above)}" placeholder="${state.spot?fmt(state.spot.price).replace(/,/g,''):''}"></label><label>下 <input type="number" inputmode="decimal" step="any" data-al="below" value="${esc(alertCfg.below)}"></label></div>`:
       d.k==='score'?`<div class="al-in"><label>一致度 <input type="number" inputmode="numeric" min="10" max="100" step="5" data-al="thr" value="${esc(alertCfg.thr)}"> 以上</label></div>`:'';
-    return `<div class="al-row"><div><b>${d.name}</b><small>${d.desc}</small>${extra}</div><button type="button" class="al-sw" data-alk="${d.k}" aria-pressed="${!!alertCfg[d.k]}" aria-label="${d.name}"><i></i></button></div>`;
+    return `<div class="al-row"><div><b>${d.name}</b><small>${esc(typeof d.desc==='function'?d.desc():d.desc)}</small>${extra}</div><button type="button" class="al-sw" data-alk="${d.k}" aria-pressed="${!!alertCfg[d.k]}" aria-label="${d.name}"><i></i></button></div>`;
   }).join('');
+}
+/* 端末の通知の状態（ホームと同じ条件：ホームの「通知」がオン＋ブラウザの許可）。確かめられない環境では「確認できません」 */
+function notifyState(){
+  if(!('Notification' in window))return ['確認できません','na'];
+  let on='';try{on=lsGet('desk_notify','')}catch{}
+  const p=Notification.permission;
+  return p==='denied'?['許可されていません','ng']:p==='granted'&&on==='1'?['許可済み','ok']:['未設定','ng'];
+}
+const SOUND_JA={high:'大',mid:'中',low:'小',off:'オフ'};
+function deskSoundJa(){let v='';try{v=localStorage.getItem('desk_sound')||''}catch{}return SOUND_JA[v]||'中'}  // ホームの既定は「中」
+function notifyLine(){
+  const [st,k]=notifyState();
+  return `<div class="al-ntf"><div><b>端末の通知：<span class="${k}">${st}</span></b>${k==='ok'?'':'<small>端末にも出したい場合は、ホーム（デスク）の右上の「通知」ボタンを押して許可してください。iPhone・iPadは、ホーム画面に追加したアプリから開いた場合に限り使えます</small>'}`+
+    `<small id="alTestMsg" aria-live="polite"></small></div><button type="button" class="seg" data-altest>テスト（音と通知）</button></div>`;
+}
+// B1：テスト。デスクの中では本物の通知と同じ道（デスクの音・通知・お知らせ）を通す。単体ではこのページの音と端末の通知。履歴には「テスト」と残す
+function alertTest(){
+  const msg=[],[st,k]=notifyState(),inDesk=window.parent!==window,text='テスト：音と通知の確認（実際の通知ではありません）';
+  alertHist.unshift({kind:'test',text:text+'（'+hhmm(Date.now())+'）',t:Date.now()});if(alertHist.length>10)alertHist.length=10;renderAlertHist();
+  if(inDesk){
+    try{window.parent.postMessage({type:'dash-alert',key:INSTR.key,kind:'test',text},'*')}catch{}
+    const v=deskSoundJa();msg.push(v==='オフ'?'音：ホームの音量が「オフ」のため鳴りません':'音：ホームの音量「'+v+'」で鳴らしました');
+  }else{
+    if(!alertCfg.sound)msg.push('音：「通知音」がオフのため鳴りません');else if(!alCtx)msg.push('音：ページを1回タップしてから、もう一度押してください');else{alertBeep();msg.push('音：鳴らしました')}
+    if(k==='ok')sysNotify(text);
+  }
+  msg.push(k==='ok'?'端末の通知：送りました（届かないときは端末の設定を確認）':'端末の通知：'+st+'のため出ません');
+  const el=$('alTestMsg');if(el)el.textContent=msg.join('／');
 }
 const alertHist=[],ALERT_KEEP=6*3600000;setInterval(()=>{if(alertHist.length)renderAlertHist()},60000);
 function renderAlertHist(){
@@ -2921,7 +2959,7 @@ function pushAlert(kind,text,tf){
   $('gxToasts').appendChild(t);setTimeout(()=>t.remove(),12000);
   alertBeep();
 }
-const AL={init:false,smaNear:false,choch:null,bos:null,ev:new Set(),scoreDir:0,talk:null,fib:null};
+const AL={init:false,smaNear:false,choch:null,bos:null,ev:new Set(),scoreDir:0,talk:null,fib:null,fibAt:{}};
 function checkAlerts(m){
   const px=state.spot?.price;if(!px)return;
   const first=!AL.init;AL.init=true;
@@ -2963,7 +3001,8 @@ function checkAlerts(m){
   AL.talk=new Set([...(AL.talk||[]),...keys]);
   // フィボナッチが効いている：一番効いている時間足・水準が新しく出たら（消えたら次に備える）
   const fb=bestFib(),fk=fb?fb.tf+':'+fb.lv.r:'';
-  if(fk!==AL.fib){AL.fib=fk;if(fb)fire('fib',`★ ${TF_NAME[fb.tf]}のフィボナッチが効いています：${fb.why}`,fb.tf)}
+  if(fk!==AL.fib){AL.fib=fk;  // A3：同じ時間足・同じ水準は FIB_REPEAT（30分）のあいだ、表示・音・通知・履歴のどれにも重ねて出さない
+    if(fb&&!first&&alertCfg.fib&&!mktClosed&&now-(AL.fibAt[fk]||0)>=FIB_REPEAT){AL.fibAt[fk]=now;pushAlert('fib',`★ ${TF_NAME[fb.tf]}のフィボナッチが効いています：${fb.why}`,fb.tf)}}
 }
 
 /* ---------- render ---------- */
@@ -4208,7 +4247,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-tip]');if(
   const t=document.createElement('span');t.className='gtip';t.textContent=b.dataset.tip;host.appendChild(t)},true);
 document.addEventListener('click',e=>{const g=e.target.closest('[data-gloss]');if(!g)return;e.preventDefault();e.stopPropagation();const term=g.dataset.gloss;
   if(window.parent!==window){try{window.parent.postMessage({type:'dash-gloss',key:INSTR.key,term},'*')}catch{}}else location.href='./#gloss='+encodeURIComponent(term)},true);
-$('alertList').onclick=e=>{const all=e.target.closest('[data-alall]');if(all){const v=all.dataset.alall==='1';ALERT_DEF.forEach(d=>alertCfg[d.k]=v);saveAlerts();renderAlerts();return}
+$('alertList').onclick=e=>{if(e.target.closest('[data-altest]')){alertTest();return}const all=e.target.closest('[data-alall]');if(all){const v=all.dataset.alall==='1';ALERT_DEF.forEach(d=>alertCfg[d.k]=v);saveAlerts();renderAlerts();return}
   const b=e.target.closest('.al-sw');if(!b)return;const k=b.dataset.alk;alertCfg[k]=!alertCfg[k];saveAlerts();renderAlerts()};
 $('alertList').onchange=e=>{const f=e.target.dataset.al;if(!f||!e.target.isConnected)return;  // 通知のあと作り直した欄から遅れて来る変更は無視
  alertCfg[f]=e.target.value.trim();
