@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="e7260b6340">
+<meta name="build" content="a83986fde8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -330,6 +330,9 @@ canvas.dragging{cursor:grabbing}
 /* 強い水平線（3回以上止まった線）だけを重ねたキャンバスで点滅させる */
 /* 目にやさしく：3.2秒でゆっくり、明るさの幅は小さく（消えずに半分ほど暗くなるだけ） */
 #chartBlink{position:absolute;inset:0;width:100%;height:100%;background:none;border:0;pointer-events:none}
+/* 反応を速く：ダブルタップ拡大の判定待ちをなくし（スクロール・拡大はそのまま）、押している間はすぐ薄くして押せたことを見せる */
+html{touch-action:manipulation}
+button:active:not(:disabled),[role="tab"]:active,select:active,label:active{opacity:.72}
 #chartBlink.on{animation:srblink 2.4s ease-in-out infinite}  /* 点滅させる線があるときだけ動かす */
 /* 目にやさしく、でも分かりやすく：2.4秒でゆっくり光が強まって弱まる（チカチカしない。消えても本体の線は残る） */
 @keyframes srblink{0%,100%{opacity:1}50%{opacity:0}}
@@ -4516,6 +4519,7 @@ $('fvgBtn').classList.toggle('on',state.showFvg);$('fvgBtn').setAttribute('aria-
 })();
 loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(scheduler,1000);
 checkClosed();setInterval(checkClosed,60000);paintGoto();setInterval(paintGoto,60000);
+document.addEventListener('touchstart',()=>{},{passive:true});  // iPhone・iPad で押している間の見た目（:active）を出すため
 refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(releaseHot())refreshLiveTalk()},5000);startLive();setTimeout(fillRecentGold,20000);setInterval(fillRecentGold,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
 // ===== B：ゴトー日のタグ（ドル円だけ）。決め方は core.js（TDCore.gotobi）、日本の祝日はサイトの holidays.json（デスクと同じ） =====
 function paintGoto(){  // 祝日の一覧は関数に持たせる（読み込みの早い段階＝定期の呼び出しの登録時から呼ばれるため）

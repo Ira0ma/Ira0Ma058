@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="1ec6b44881">
+<meta name="build" content="bb2e4e1987">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -743,6 +743,13 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 @keyframes btnPulse { 50% { box-shadow: 0 0 0 4px rgba(227,184,103,.45), 0 0 18px rgba(227,184,103,.8); transform: scale(1.04); } }
 @media (prefers-reduced-motion: reduce) { .mkt.entry-buy::after, .mkt.entry-sell::after { animation: none; opacity: .6; } .gold-open.entry-on { animation: none; box-shadow: 0 0 0 3px rgba(227,184,103,.6); } }
 .dash-sheet { position: fixed; inset: 0; z-index: 30; background: var(--night); }
+/* 反応を速く：ダッシュボードや本が画面全体を覆っている間は、裏のデスク（ぼかしのカード・背景）を描かない。
+   中身と配置はそのまま（visibility だけ）なので、閉じればすぐ元どおり。値の更新や通知は今までどおり動く */
+html:has(.dash-sheet:not([hidden])) #fit, html:has(.dash-sheet:not([hidden])) #bg,
+html:has(#gbook:not([hidden]):not(.gb-pre)) #fit, html:has(#gbook:not([hidden]):not(.gb-pre)) #bg { visibility: hidden; }
+/* 反応を速く：ダブルタップ拡大の判定待ちをなくし（指でのスクロール・拡大はそのまま）、押している間はすぐ薄くして押せたことを見せる */
+html { touch-action: manipulation; }
+button:active:not(:disabled), [role="tab"]:active, select:active { opacity: .72; }
 .dash-sheet iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
 .dash-close[hidden] { display: none; }
 .dash-close { position: absolute; z-index: 1; top: calc(var(--safe-top) + 10px); right: calc(env(safe-area-inset-right, 0px) + 10px);
@@ -1221,10 +1228,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=8136427011", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=e7260b6340", title: "ドル円分析" },
-    btc: { src: "btc.html?v=93891097a4", title: "BTC分析" },
-    oil: { src: "oil.html?v=a4cd66ff26", title: "オイル分析" }
+    gold: { src: "gold.html?v=4680178e4d", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=a83986fde8", title: "ドル円分析" },
+    btc: { src: "btc.html?v=83c6832bb8", title: "BTC分析" },
+    oil: { src: "oil.html?v=6d4df54d98", title: "オイル分析" }
   };
   var openSheet = null, sheetOpener = null;
   /* ステータスバーの分：iframe の中では端末の値（safe-area）が届かないので、デスクで測った --safe-top を各ダッシュボードに渡す */
@@ -3846,6 +3853,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       document.getElementById("gl-grid").innerHTML = b.data.map(function (c, i) {
         return '<button type="button" data-gl="ch" data-ch="' + i + '" title="' + esc(c.t) + '"><b><i>' + (i + 1) + '</i>' + esc(b.short[i] || c.t) + '</b><small>' + (c.t === "資料" ? "変動率の表" : c.terms.length + (b.learn ? '項目' : '語')) + '</small></button>';
       }).join("") + '<button type="button" data-gl="idx"><b><i>索</i>索引</b><small>あいうえお順</small></button>';
+      if (typeof prebuild === "function") prebuild();
     }
     renderTile();
 
@@ -4478,7 +4486,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       var ROWS = ["あ", "か", "さ", "た", "な", "は", "ま", "や", "ら", "わ"], ROWEND = "かさたなはまやらわん";
       var group = function (n) { var k = kana(n).replace(/^[ー・]/, ""), c = k.charAt(0); if (/[A-Za-z]/.test(c)) return "英字";
         var base = c.normalize("NFD").charAt(0); for (var r = 0; r < ROWS.length; r++) if (base < ROWEND.charAt(r)) return ROWS[r] + "行"; return "わ行"; };
-      all.sort(function (a, b) { var ga = /[A-Za-z]/.test(a.charAt(0)), gb = /[A-Za-z]/.test(b.charAt(0)); if (ga !== gb) return ga ? -1 : 1; return kana(a).localeCompare(kana(b), "ja"); });
+      var JA = window.Intl && Intl.Collator ? new Intl.Collator("ja") : null;  // 反応を速く：比べるたびに日本語の並べ方を用意し直さない（並び順は同じ）
+      all.sort(function (a, b) { var ga = /[A-Za-z]/.test(a.charAt(0)), gb = /[A-Za-z]/.test(b.charAt(0)); if (ga !== gb) return ga ? -1 : 1; return JA ? JA.compare(kana(a), kana(b)) : kana(a).localeCompare(kana(b), "ja"); });
       var ip = { kind: "idx", run: "索引", items: [] };
       body.innerHTML = '<div class="gb-chhead"><small>INDEX</small><h2>索引</h2><p>用語をタップするとそのページへ</p></div><div class="gb-idx"></div>';
       var list = body.querySelector(".gb-idx");
@@ -4545,6 +4554,22 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       var b = backStack.pop(); if (!b) return;
       setBook(b.id); closeSearch(); paginate(); show(b.p, -1);
     }
+    // 反応を速く：カードで選んでいる本のページ割りを、操作していないときに先に作っておく（最初に開くときの待ちをなくす）。
+    // 本は見えないまま（visibility:hidden）。触っている最中なら後回しにする
+    var preT = 0, lastInput = 0;
+    document.addEventListener("pointerdown", function () { lastInput = Date.now(); }, true);
+    function prebuild(wait) {
+      clearTimeout(preT);
+      preT = setTimeout(function () {
+        if (!book.hidden || !BOOKS[tileBook] || !BOOKS[tileBook].data) return;
+        if (Date.now() - lastInput < 1500) { prebuild(1500); return; }
+        book.classList.add("gb-pre"); book.style.visibility = "hidden"; book.hidden = false;
+        try { setBook(tileBook); paginate(); } catch (e) {}
+        book.hidden = true; book.style.visibility = ""; book.classList.remove("gb-pre");
+      }, wait || 1200);
+    }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { prebuild(); });
+    window.addEventListener("resize", function () { prebuild(2000); });
     function open(i, from) {
       opener = from || document.activeElement; backStack = [];
       book.hidden = false; show(i || 0);
@@ -4777,6 +4802,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   // start both dashboards in the background so their entry calls reach the desk
   // BTC only while a market panel shows it (three dashboards at once weigh on an iPad)
   // all four run in the background so their entry calls, levels, scores and alerts reach the desk
+  document.addEventListener("touchstart", function () {}, { passive: true });  // iPhone・iPad で押している間の見た目（:active）を出すため
   var preload = function () { setTimeout(function () { ensureSheet("gold"); ensureSheet("usdjpy"); ensureSheet("btc"); ensureSheet("oil"); }, 1500); };  // oil too: its calls and levels reach the OILCash card like the others'
   if (document.readyState === "complete") preload(); else window.addEventListener("load", preload);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) { checkUpdate(); loadPrices(); loadCalendar(); loadMarket(); loadReport(); eqHistory(); } });
