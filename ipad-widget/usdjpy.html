@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="692de9e66c">
+<meta name="build" content="a48d09f300">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4139,9 +4139,11 @@ function renderNext(){
 function rxNextLine(e){
   if(!window.TDCore||!TDCore.reactionStats||e.speech)return '';
   if(!rxNextLine.j&&!rxNextLine.loading){rxNextLine.loading=true;fetch('reactions.json?t='+Math.floor(Date.now()/300000),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{rxNextLine.loading=false;if(j&&j.events){rxNextLine.j=j;renderNext()}}).catch(()=>{rxNextLine.loading=false});setTimeout(()=>{rxNextLine.j=null},15*60000)}
-  const st=TDCore.reactionStats(rxNextLine.j,e.currency,e.title,e.ts),aff=TDCore.indAffects(e.currency,e.title);if(!st||!aff.length)return '';
-  const p=new Date(st.last.t*1000),av=aff.filter(k=>st.avg[k]);
-  return `<div class="sub" style="margin-top:4px">前回の反応 ${aff.filter(k=>st.last.move[k]).map(k=>TDCore.INST_JA[k]+' '+TDCore.moveText(k,st.last.move[k].size)).join('・')}（${p.getMonth()+1}/${p.getDate()}・発表後1時間の値幅）${av.length?'／過去'+st.avg[av[0]].n+'回の平均 '+av.map(k=>TDCore.INST_JA[k]+' '+TDCore.moveText(k,st.avg[k].v)).join('・'):''}</div>`;
+  // デスクの重要指標パネルと同じ集計（TDCore.reactionStats）を使い、このダッシュボードの銘柄の動きだけを出す
+  const k=INSTR.key,st=TDCore.reactionStats(rxNextLine.j,e.currency,e.title,e.ts);
+  if(!st||TDCore.indAffects(e.currency,e.title).indexOf(k)<0||!st.last.move[k])return '';
+  const p=new Date(st.last.t*1000),av=st.avg[k];
+  return `<div class="sub" style="margin-top:4px">前回（${p.getMonth()+1}/${p.getDate()}発表）：発表後1時間で ${TDCore.moveText(k,st.last.move[k].size)} の動き${av?`<small style="opacity:.75">（過去${av.n}回の平均 ${TDCore.moveText(k,av.v)}）</small>`:''}</div>`;
 }
 // 結果の表示：発表前は何も出さず、発表後は結果か「結果待ち」を出す
 function num(v){const m=String(v??'').replace(/,/g,'').match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):null}
