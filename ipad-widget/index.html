@@ -5,6 +5,8 @@
 <style>
 /* Layout: one fixed 1210×841 iPad-landscape stage, scaled to fit the viewport; widgets placed on the image's grid. */
 :root {
+  /* 上のステータスバーの分（電波・電池の表示）。ホーム画面から開いたとき（standalone）は、端末が値を返さない場合でも最低24px空ける */
+  --safe-top: env(safe-area-inset-top, 0px);
   --night: #06070b;
   --glass: rgba(16, 18, 24, 0.74);
   --glass-line: rgba(255, 236, 200, 0.10);
@@ -39,7 +41,7 @@ body {
   position: fixed; inset: 0;
   padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
   padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
-  padding-block: max(calc(var(--gutter) / 2), env(safe-area-inset-top, 0px)) max(calc(var(--gutter) / 2), env(safe-area-inset-bottom, 0px));
+  padding-block: max(calc(var(--gutter) / 2), var(--safe-top)) max(calc(var(--gutter) / 2), env(safe-area-inset-bottom, 0px));
   display: flex; align-items: center; justify-content: center;
 }
 #stage {
@@ -153,7 +155,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .mkt .mscore .mt i.up em { color: #5fd99a; } .mkt .mscore .mt i.down em { color: #ff8a7e; }
 .mkt.has-score .sym small, .mkt.has-score .head .chev { display: none; } .mkt.has-score .jp { max-width: 110px; }
 /* タスク6：為替介入への警戒（黄・音なし）と急変（黄＝注意／赤＝緊急）。画面の上に重ね、地震のバナーとは別に閉じる */
-.dk-alerts { position: fixed; left: 0; right: 0; top: calc(8px + env(safe-area-inset-top, 0px)); z-index: 190; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0 16px; pointer-events: none; }
+.dk-alerts { position: fixed; left: 0; right: 0; top: calc(8px + var(--safe-top)); z-index: 190; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0 16px; pointer-events: none; }
 .dk-al { position: relative; pointer-events: auto; width: min(560px, 100%); box-sizing: border-box; border-radius: 12px; padding: 8px 34px 8px 12px; background: rgba(42,28,8,.97); border: 1px solid rgba(245,192,74,.75); box-shadow: 0 4px 18px rgba(0,0,0,.55); display: flex; flex-direction: column; gap: 2px; cursor: pointer; text-align: left; }
 .dk-al.emg { background: rgba(70,10,10,.97); border-color: var(--up-red); }
 .dk-al b { font-size: 13px; color: #f5c04a; }
@@ -352,7 +354,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 #weather { padding-top: 34px; }
 #weather .wx-hours { margin-top: 6px; }
 .hz { position: fixed; inset: 0; z-index: 41; display: flex; flex-direction: column; background: radial-gradient(120% 90% at 50% 0%, #121a24 0%, #07090d 70%); color: var(--ink);
-  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+  padding: var(--safe-top) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
 .hz[hidden] { display: none; }
 .hz-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; }
 .hz-tabs { display: flex; gap: 6px; }
@@ -473,7 +475,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .flow #xfeed .gl-grid button { padding: 6px 9px; }
 
 .gbook { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; background: radial-gradient(120% 90% at 50% 0%, #1a1712 0%, #08090c 70%); color: #2b241a;
-  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+  padding: var(--safe-top) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
 .gbook[hidden] { display: none; }
 .gb-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; color: var(--ink); }
 .gb-bar .gb-title { font-size: 15px; font-weight: 700; color: var(--gold); white-space: nowrap; }
@@ -588,7 +590,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gb-rel > span { font-size: 10.5px; font-weight: 700; color: #8d7d61; margin-right: 2px; }
 .gb-rel button { font: inherit; font-size: 11.5px; color: #2b241a; background: #fffaf0; border: 1px solid #e3d6b8; border-radius: 999px; padding: 3px 9px; cursor: pointer; }
 .gb-rel button:hover, .gb-rel button:focus-visible { border-color: #a37a2c; outline: none; }
-.gb-search { position: absolute; z-index: 3; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 52px); width: min(640px, calc(100% - 24px)); max-height: calc(100% - 120px); display: flex; flex-direction: column;
+.gb-search { position: absolute; z-index: 3; left: 50%; transform: translateX(-50%); top: calc(var(--safe-top) + 52px); width: min(640px, calc(100% - 24px)); max-height: calc(100% - 120px); display: flex; flex-direction: column;
   background: #fbf6ea; border-radius: 12px; box-shadow: 0 18px 50px rgba(0,0,0,.6); overflow: hidden; }
 .gb-search[hidden] { display: none; }
 .gb-search input { font: inherit; font-size: 16px; margin: 10px; padding: 9px 12px; border: 1px solid #d9c89f; border-radius: 9px; background: #fff; color: #2b241a; }
@@ -603,7 +605,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gb-zwrap { width: 100%; max-height: calc(100% - 60px); overflow: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y pinch-zoom; display: flex; }
 .gb-zwrap img { display: block; width: min(100%, 1400px); height: auto; margin: auto; background: #f4f7f8; border-radius: 10px; cursor: zoom-in; }
 .gb-zoom.big .gb-zwrap img { width: 200%; max-width: none; cursor: zoom-out; }
-.gb-zx { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 10px); right: 12px; }
+.gb-zx { position: absolute; top: calc(var(--safe-top) + 10px); right: 12px; }
 .gb-zcap { margin: 0; font-size: 12.5px; color: var(--ink-2); } .gb-zhint { margin: 0; font-size: 11px; color: var(--ink-3); }
 @media (max-width: 600px) { .gb-bl { display: none; } }
 
@@ -678,7 +680,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 #pager { position: fixed; inset: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; overscroll-behavior: contain; }
 #pager::-webkit-scrollbar { display: none; }
 .page { flex: 0 0 100%; height: 100%; scroll-snap-align: start; display: flex; align-items: center; justify-content: center; overflow: hidden;
-  padding: max(8px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 40px) max(12px, env(safe-area-inset-left, 0px)); }  /* room for the page names */
+  padding: max(8px, var(--safe-top)) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 40px) max(12px, env(safe-area-inset-left, 0px)); }  /* room for the page names */
 .pstage { display: flex; gap: 14px; align-items: flex-start; flex: none; transform-origin: center center; }
 .pcol { display: flex; flex-direction: column; gap: 14px; }
 .phone .card { position: relative !important; left: auto !important; top: auto !important; flex: none; }  /* beats the per-card #id positions */
@@ -707,7 +709,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .dash-sheet { position: fixed; inset: 0; z-index: 30; background: var(--night); }
 .dash-sheet iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
 .dash-close[hidden] { display: none; }
-.dash-close { position: absolute; z-index: 1; top: calc(env(safe-area-inset-top, 0px) + 10px); right: calc(env(safe-area-inset-right, 0px) + 10px);
+.dash-close { position: absolute; z-index: 1; top: calc(var(--safe-top) + 10px); right: calc(env(safe-area-inset-right, 0px) + 10px);
   display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px; font-weight: 700; color: var(--ink); background: rgba(16,18,24,.9); border: 1px solid var(--glass-line); border-radius: 999px; padding: 8px 14px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.5); }
 .gold-open:focus-visible, .dash-close:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
@@ -718,7 +720,7 @@ html:not(.phone) #pager, html:not(.phone) #pdots { display: none; }
 .flow #fit { display: none; }
 html:not(.flow) #flow { display: none; }
 #flow { position: fixed; inset: 0; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
-  padding: max(10px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 16px) max(12px, env(safe-area-inset-left, 0px)); }
+  padding: max(10px, var(--safe-top)) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 16px) max(12px, env(safe-area-inset-left, 0px)); }
 .fsizer { position: relative; margin: 0 auto; }
 .fstage { position: absolute; left: 0; top: 0; display: flex; gap: 14px; align-items: flex-start; transform-origin: 0 0; }
 .flow .card { position: relative !important; left: auto !important; top: auto !important; width: 340px !important; flex: none; }
@@ -760,12 +762,13 @@ button.retry:disabled { opacity: .6; cursor: default; }
 .mkt .mscore .reopen { font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
 .mkt.mk-closed .price { opacity: .7; }
 .mkt.an-stale .mscore b { opacity: .5; text-decoration: line-through; }
-.dk-update { position: fixed; z-index: 60; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 8px); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center;
+.dk-update { position: fixed; z-index: 60; left: 50%; transform: translateX(-50%); top: calc(var(--safe-top) + 8px); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center;
   max-width: calc(100vw - 32px); padding: 8px 12px; border-radius: 14px; background: rgba(14,16,22,.96); border: 1px solid rgba(227,184,103,.6); color: var(--ink); font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
 .dk-update button { font: inherit; font-weight: 700; min-height: 36px; padding: 4px 14px; border-radius: 999px; border: 1px solid rgba(227,184,103,.6); background: none; color: var(--gold); cursor: pointer; }
 .dk-update button[data-u="now"] { background: var(--gold); color: #14100a; }
 html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: none !important; transition: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 .flow #flow { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 52px); }
+@media (display-mode: standalone) { :root { --safe-top: max(env(safe-area-inset-top, 0px), 24px); } }
 </style>
 
 <canvas id="bg" aria-hidden="true"></canvas>
@@ -1171,6 +1174,17 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     oil: { src: "oil.html", title: "オイル分析" }
   };
   var openSheet = null, sheetOpener = null;
+  /* ステータスバーの分：iframe の中では端末の値（safe-area）が届かないので、デスクで測った --safe-top を各ダッシュボードに渡す */
+  var safeProbe = null;
+  function safeTopPx() {
+    if (!safeProbe) { safeProbe = document.createElement("div"); safeProbe.style.cssText = "position:fixed;top:0;left:0;width:0;height:var(--safe-top);visibility:hidden;pointer-events:none"; document.body.appendChild(safeProbe); }
+    return safeProbe.getBoundingClientRect().height;
+  }
+  function passSafeTop() {
+    var px = safeTopPx() + "px";
+    Object.keys(SHEETS).forEach(function (k) { var el = SHEETS[k].el, f = el && el.querySelector("iframe"); try { if (f && f.contentDocument) f.contentDocument.documentElement.style.setProperty("--safe-top", px); } catch (e) {} });
+  }
+  window.addEventListener("resize", function () { setTimeout(passSafeTop, 200); });
   function ensureSheet(key) {
     var sh = SHEETS[key];
     if (!sh.el) {
@@ -1178,6 +1192,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       sh.el.setAttribute("role", "dialog"); sh.el.setAttribute("aria-label", sh.title);
       sh.el.innerHTML = '<iframe title=""></iframe><button class="dash-close" type="button">✕ 閉じる</button>';
       sh.el.querySelector("iframe").src = sh.src; sh.el.querySelector("iframe").title = sh.title;
+      sh.el.querySelector("iframe").addEventListener("load", passSafeTop);
       sh.el.querySelector(".dash-close").addEventListener("click", closeDash);
       sh.el.hidden = true;
       document.body.appendChild(sh.el);
