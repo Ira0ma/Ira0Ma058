@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="512b68e53d">
+<meta name="build" content="fe483bb2db">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -347,6 +347,12 @@ body.mkt-closed #chartBlink,body.mkt-closed .fibnow::after,body.mkt-closed .gmma
 .chartinfo b{color:var(--text);font-weight:700}
 .levelinfo{margin-top:4px}
 .matoggles{display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 8px}
+/* 組み合わせ：インジケーターのチップ群を一括で切り替える行（約40px・チップ28px・選択中は金） */
+.combo{display:flex;align-items:center;gap:6px;min-height:40px;max-height:40px;margin:0 0 4px;overflow-x:auto;scrollbar-width:none}.combo::-webkit-scrollbar{display:none}
+.combo .cl{flex:none;font-size:11px;font-weight:700;color:var(--muted);line-height:1.25}.combo .cb{display:flex;gap:5px;flex:none}
+.combo .cb button{flex:none;height:28px;padding:0 11px;border-radius:999px;border:1px solid #2c3742;background:#121820;color:#d5dde5;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.combo .cb button.on{background:var(--gold2);border-color:var(--gold2);color:#14100a}
+.combo .cn{display:block;font-size:10px;font-weight:400;color:var(--muted);white-space:nowrap}.combo .cn b{color:var(--text)}
 .tfcap{font-size:10px;color:var(--muted);margin:0 2px 4px}
 .tfgrid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px;margin:0 0 8px}
 .tfgrid button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 2px;border-radius:10px;border:1px solid #34404c;background:#121820;color:#d5dde5;cursor:pointer;font:inherit;min-width:0}
@@ -581,6 +587,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div><div class="title" id="chartTitle">GOLDチャート</div><div id="chartMeta" class="sub">取得中...</div></div>
       <div class="charttools"><a id="tvPartner" class="tvopen" href="https://www.tradingview.com/chart/?aff_id=1173877" target="_blank" rel="noopener sponsored">TradingViewで開く ↗</a><button type="button" id="fullBtn" class="fullbtn" aria-pressed="false">⤢ 大きく表示</button></div>
     </div>
+    <div class="combo" id="comboRow" role="group" aria-label="組み合わせ（インジケーターのチップを一括で切り替える）"><span class="cl">組み合わせ<small id="comboNow" class="cn" aria-live="polite"></small></span><span id="comboBtns" class="cb"></span></div>
     <div class="tfcap">時間足｜下段＝ダウ理論のトレンドとST（スーパートレンド）の向き（別の見方なので、逆を向くことがあります）</div>
     <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
     <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button><button type="button" id="fvgBtn" class="seg on" aria-pressed="true" title="FVG（3本の足で、1本目と3本目の値幅が重ならない帯）を表示"><i style="height:8px;background:linear-gradient(90deg,rgba(66,213,156,.55) 50%,rgba(255,105,105,.55) 50%)"></i>FVG</button><button type="button" class="gq" data-gloss="fvg:fvg-01" aria-label="FVG詳説：FVGとは">?</button></div>
@@ -2068,7 +2075,30 @@ function loadMaOn(){let o={};try{o=JSON.parse(lsGet(LSP+'ma','{}'))||{}}catch{}
   if('swing' in o){o.swingN??=o.swing;o.swingP??=o.swing}  // 以前の「高値・安値」ボタン（1つ）の設定を直近・前回の両方に引き継ぐ
   if('gmma' in o){o.gmmaS??=o.gmma;o.gmmaL??=o.gmma}  // 以前のGMMAボタン（1つ）の設定を短期・長期の両方に引き継ぐ
   state.maOn=Object.fromEntries(MA_BTNS.map(b=>[b.key,b.key in o?o[b.key]!==false:!b.off]))}  // offの線は最初は非表示
+/* 組み合わせ（オーナー承認の「チップ群をワンボタンで切り替える行」）。押したときだけ、インジケーターのチップ（全18種：20SMA・各EMA・
+   スーパートレンド・RSI・ATR・フィボナッチ・チャネル・直近／前回の高値安値・GMMA短期／長期・大口（ゴールド）と、水平線・トレンドライン・FVG）を
+   含むものはON・含まないものはOFFにする。開いた直後は何も適用しない。保存はチップの今の保存（_ma・_levels・_trend・_fvg）のまま */
+const COMBOS=[['基本',['sma','e200','st','rsi'],{lv:1}],['流れ',['sma','e80','e200','st','ch','atr'],{lv:1,tl:1}],['GMMA',['gmmaS','gmmaL','sma','rsi'],{lv:1}],
+  ['節目',['sma','fib','swingN','swingP','rsi'],{lv:1,fvg:1}],['シンプル',['sma'],{lv:1}]];
+function comboNow(){  // いまのチップが、どの組み合わせとちょうど同じか（どれでもなければ null＝カスタム）
+  const c=COMBOS.find(([,ma,ex])=>MA_BTNS.every(b=>!!state.maOn[b.key]===ma.includes(b.key))&&state.showLevels===!!ex.lv&&state.showTrend===!!ex.tl&&state.showFvg===!!ex.fvg);
+  return c?c[0]:null;
+}
+function renderCombo(){
+  const now=comboNow(),el=$('comboBtns');if(!el)return;
+  const h=COMBOS.map(([n])=>`<button type="button" data-combo="${n}" class="${n===now?'on':''}" aria-pressed="${n===now}">${n}</button>`).join('');
+  if(el.__h!==h){el.innerHTML=h;el.__h=h}
+  $('comboNow').innerHTML='いま：<b>'+(now||'カスタム')+'</b>';
+}
+function applyCombo(name){
+  const c=COMBOS.find(x=>x[0]===name);if(!c)return;const [,ma,ex]=c;
+  MA_BTNS.forEach(b=>state.maOn[b.key]=ma.includes(b.key));lsSet(LSP+'ma',JSON.stringify(state.maOn));
+  state.showLevels=!!ex.lv;state.showTrend=!!ex.tl;state.showFvg=!!ex.fvg;
+  [['lvBtn',state.showLevels],['tlBtn',state.showTrend],['fvgBtn',state.showFvg]].forEach(([id,on])=>{$(id).classList.toggle('on',on);$(id).setAttribute('aria-pressed',on)});
+  savePrefs();renderMaToggles();renderTfGrid();renderFibNow();renderGmmaNow();drawChart();
+}
 function renderMaToggles(){
+  renderCombo();
   $('maToggles').innerHTML=MA_BTNS.map(b=>`<button type="button" class="seg${state.maOn[b.key]?' on':''}" data-ma="${b.key}" aria-pressed="${state.maOn[b.key]}"><i style="background:${b.color}"></i>${b.label()}</button>`).join('');
 }
 function smaSeries(bars,len){
@@ -4168,7 +4198,8 @@ $('maToggles').addEventListener('click',e=>{
   const btn=e.target.closest('[data-ma]');if(!btn)return;
   const k=btn.dataset.ma;state.maOn[k]=!state.maOn[k];lsSet(LSP+'ma',JSON.stringify(state.maOn));renderMaToggles();renderTfGrid();renderFibNow();renderGmmaNow();drawChart();
 });
-$('tlBtn').onclick=()=>{state.showTrend=!state.showTrend;$('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);savePrefs();drawChart()};
+$('tlBtn').onclick=()=>{state.showTrend=!state.showTrend;$('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);savePrefs();drawChart();renderCombo()};
+$('comboBtns').onclick=e=>{const b=e.target.closest('[data-combo]');if(b)applyCombo(b.dataset.combo)};
 $('chNow').onclick=e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)};
 $('mtfScore').onclick=e=>{const b=e.target.closest('[data-tf]');if(!b)return;setTf(b.dataset.tf);$('secChart').scrollIntoView({behavior:'smooth',block:'start'})};
 // 「?」：用語集のその用語を開く（トレードデスクの中ならデスクの用語集、単体ならデスクを開いて表示）
@@ -4184,8 +4215,8 @@ $('alertList').onchange=e=>{const f=e.target.dataset.al;if(!f||!e.target.isConne
   if((f==='above'||f==='below')&&alertCfg[f]){alertCfg.price=true;const sw=document.querySelector('[data-alk="price"]');if(sw)sw.setAttribute('aria-pressed','true')}saveAlerts()};
 renderAlerts();
 $('lvList').onclick=e=>{const b=e.target.closest('.lvchip');if(!b)return;if(b.dataset.lv==='all'){hiddenLv=[];lsSet(LSP+'hidden_lv','[]');drawChart()}else toggleLv(+b.dataset.lv)};
-$('fvgBtn').onclick=()=>{state.showFvg=!state.showFvg;$('fvgBtn').classList.toggle('on',state.showFvg);$('fvgBtn').setAttribute('aria-pressed',state.showFvg);savePrefs();drawChart()};
-$('lvBtn').onclick=()=>{state.showLevels=!state.showLevels;$('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);savePrefs();drawChart()};
+$('fvgBtn').onclick=()=>{state.showFvg=!state.showFvg;$('fvgBtn').classList.toggle('on',state.showFvg);$('fvgBtn').setAttribute('aria-pressed',state.showFvg);savePrefs();drawChart();renderCombo()};
+$('lvBtn').onclick=()=>{state.showLevels=!state.showLevels;$('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);savePrefs();drawChart();renderCombo()};
 document.querySelectorAll('#dirSeg .seg').forEach(b=>b.onclick=()=>{
   state.dir=b.dataset.dir;setSegActive('#dirSeg .seg','dir',state.dir);savePrefs();renderAll();
 });
