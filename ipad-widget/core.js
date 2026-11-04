@@ -381,6 +381,11 @@
     if (/Crude Oil Inventories/i.test(title || "")) return ["usoil"];
     return country === "USD" ? ["usdjpy", "gold"] : country === "JPY" ? ["usdjpy"] : [];
   }
+  // 反応を記録する銘柄（reactions.py の measured() と同じ表）：影響の銘柄に、米国の指標ではオイル（原油先物 CL=F）を足す
+  function rxInsts(country, title) {
+    var a = indAffects(country, title);
+    return country === "USD" && a.indexOf("usoil") < 0 ? a.concat(["usoil"]) : a;
+  }
   // 過去の反応：同じ国・同じ指標の、before より前の記録。last（前回）と、2回以上あれば最大6回の平均
   function reactionStats(rx, country, title, before) {
     var ev = rx && rx.events; if (!ev) return null;
@@ -392,6 +397,8 @@
   }
   function moveText(k, v) { return k === "usdjpy" ? Math.round(v) + "pips" : "$" + (v >= 10 ? Math.round(v) : v.toFixed(2)); }
   var INST_JA = { usdjpy: "ドル円", gold: "ゴールド", usoil: "オイル" };
+  // 反応の数字につける名前：オイルの反応は原油先物（CL=F）のローソク足で測っているので、そう書く（OILCash の値動きではない）
+  var RX_JA = { usdjpy: "ドル円", gold: "ゴールド", usoil: "原油先物(CL=F)" };
   // the trading day key (Japan date) a time belongs to
   function dayKey(t) { var p = partsIn("Asia/Tokyo", t); return p.y + "-" + String(p.mo).padStart(2, "0") + "-" + String(p.d).padStart(2, "0"); }
 
@@ -655,7 +662,7 @@
     KIND: KIND, marketState: marketState, hoursNote: hoursNote, nextOpen: nextOpen, sessions: sessions, RULES: RULES, freshness: freshness, ago: ago, jst: jst,
     checkMarket: checkMarket, realCandles: realCandles, sequencer: sequencer,
     weeklyHours: weeklyHours, REOPEN_NOTE: REOPEN_NOTE, LEVEL_JA: LEVEL_JA,
-    positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey, journalDays: journalDays, dailyBook: dailyBook, periodSummary: periodSummary, weekOf: weekOf, gotobi: gotobi, surpriseOf: surpriseOf, indDirection: indDirection, indUnit: indUnit, indAffects: indAffects, reactionStats: reactionStats, moveText: moveText, INST_JA: INST_JA,
+    positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey, journalDays: journalDays, dailyBook: dailyBook, periodSummary: periodSummary, weekOf: weekOf, gotobi: gotobi, surpriseOf: surpriseOf, indDirection: indDirection, indUnit: indUnit, indAffects: indAffects, rxInsts: rxInsts, RX_JA: RX_JA, reactionStats: reactionStats, moveText: moveText, INST_JA: INST_JA,
     SURGE: SURGE, SURGE_GAP: SURGE_GAP, SURGE_COOL: SURGE_COOL, SURGE_SHOW: SURGE_SHOW, surgeAdd: surgeAdd, surgeCheck: surgeCheck, surgeGate: surgeGate, surgeText: surgeText, interventionPick: interventionPick,
     newStore: newStore, updateSignal: updateSignal, expireSignals: expireSignals, loadStore: loadStore, COOLDOWN: COOLDOWN,
     toCSV: toCSV, parseCSV: parseCSV, importCSV: importCSV,

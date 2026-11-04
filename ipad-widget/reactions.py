@@ -9,6 +9,9 @@ copy, so the history only starts from when this began; nothing before that is ma
     python3 reactions.py _site/reactions.json _site/market.json _site/calendar.json [--prev=prev/reactions.json]
 
 Units: USD/JPY in pips (0.01 yen), gold and oil in US dollars.
+Oil is measured on the site's US oil candles, which are the WTI futures (CL=F): the published OILCash quote has no
+public price history, so these are not OILCash moves. The US indicators are measured on oil too (measured()), with
+the same hour and the same method; the 影響 tags (affected()) stay as they are.
 """
 import json
 import re
@@ -30,6 +33,14 @@ def affected(country, title):
     if country == "JPY":
         return ["usdjpy"]
     return []
+
+
+def measured(country, title):
+    """The instruments whose reaction is recorded: the affected ones, plus oil (CL=F) for the other US indicators."""
+    insts = affected(country, title)
+    if country == "USD" and "usoil" not in insts:
+        insts = insts + ["usoil"]
+    return insts
 
 
 def measure(rows, step, t):
@@ -67,7 +78,7 @@ def main():
             t = int(datetime.fromisoformat(r["date"]).timestamp())
         except Exception:
             continue
-        insts = affected(r["country"], r.get("title", ""))
+        insts = measured(r["country"], r.get("title", ""))
         key = f'{r["country"]}|{r["title"]}|{t}'
         if not insts or now < t + 3600 + 300 or (key in events and len(events[key]["move"]) == len(insts)):
             continue
