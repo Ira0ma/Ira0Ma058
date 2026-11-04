@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="52b27ab664">
+<meta name="build" content="93891097a4">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1007,12 +1007,22 @@ async function firstSuccess(tasks){
 }
 
 // market.json は1分間だけ使い回す（価格・チャート・為替で共有）
-let siteCache={t:0,d:null};
+// 軽量化：同じ1分の中は、ブラウザの保存分を使い回す（4つのダッシュボードで1回のダウンロード。分が変わればURLも変わるので新しさは今までどおり）。
+// 中身が前回と同じ（ETag・更新日時が同じ）なら、約1MBの読み直し（JSON解析）もしない
+let siteCache={t:0,d:null,tag:''};
 async function getSite(){
   if(siteCache.d&&Date.now()-siteCache.t<60000)return siteCache.d;
-  const d=await getJSON(URLS.siteMarket+'?t='+Math.floor(Date.now()/60000));
-  if(!d?.instruments?.[INSTR.site])throw new Error(INSTR.site+' missing');
-  siteCache={t:Date.now(),d};return d;
+  const c=new AbortController(),timer=setTimeout(()=>c.abort(),12000);
+  try{
+    const r=await fetch(URLS.siteMarket+'?t='+Math.floor(Date.now()/60000),{cache:'default',signal:c.signal,headers:{'Accept':'application/json'}});
+    const tag=(r.headers.get('etag')||'')+'|'+(r.headers.get('last-modified')||'');
+    if(r.ok&&siteCache.d&&tag!=='|'&&tag===siteCache.tag){try{r.body&&r.body.cancel()}catch{}siteCache.t=Date.now();return siteCache.d}
+    const text=await r.text();
+    let d;try{d=JSON.parse(text)}catch{throw new Error('JSON解析エラー')}
+    if(!r.ok)throw new Error(d?.message||d?.error||('HTTP '+r.status));
+    if(!d?.instruments?.[INSTR.site])throw new Error(INSTR.site+' missing');
+    siteCache={t:Date.now(),d,tag};return d;
+  }finally{clearTimeout(timer)}
 }
 function siteBars(rows){return (rows||[]).map(r=>({t:toMs(r[0]),o:n(r[1]),h:n(r[2]),l:n(r[3]),c:n(r[4])})).filter(b=>b.t&&b.c)}
 // 最後の足が区切り（5分・15分・30分・1時間）からずれていたら（データ元の最新値が「今の分」の足として付いてくる）、
@@ -4021,13 +4031,15 @@ function renderEvents(){
 function renderNext(){
   const e=upcomingEvent(),box=$('nextEv'),now=Date.now();
   let miniTxt='次の指標 --';
+  // 軽量化：毎秒呼ばれるので、中身が変わったときだけ書き直す
+  let cls,html;
   if(!e){
-    box.className='nextev';
-    box.innerHTML='<div class="sub">'+(state.events.length?'今週これからの'+INSTR.name+'関連指標はありません。':'取得中...')+'</div>';
+    cls='nextev';
+    html='<div class="sub">'+(state.events.length?'今週これからの'+INSTR.name+'関連指標はありません。':'取得中...')+'</div>';
   }else{
     const caution=isCautionActive(),diff=e.ts-now;
-    box.className='nextev'+(caution?' alert':'');
-    box.innerHTML=`<div class="sub">${esc(new Date(e.ts).toLocaleString('ja-JP',{month:'numeric',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'}))}　<span class="star ${e.impact==='High'?'high':'medium'}">${stars(e)}</span></div>`+
+    cls='nextev'+(caution?' alert':'');
+    html=`<div class="sub">${esc(new Date(e.ts).toLocaleString('ja-JP',{month:'numeric',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'}))}　<span class="star ${e.impact==='High'?'high':'medium'}">${stars(e)}</span></div>`+
       `<div class="count ${caution?'warn':''}">${diff>=0?'あと '+esc(dur(diff)):'発表後 '+esc(dur(-diff))}</div>`+
       `<div class="evtitle">${esc(e.currency)}｜${esc(evTitle(e))}</div>`+
       `<div class="sub" style="margin-top:4px">${e.speech?'要人発言：話している間も値動きが荒くなりやすい':`予想 ${esc(e.forecast||'--')} / 前回 ${esc(e.previous||'--')}`}</div>`+
@@ -4035,7 +4047,9 @@ function renderNext(){
       `<div class="sub" style="margin-top:6px"><span class="livedot"></span>指標データ ${state.calendarAt?esc(new Date(state.calendarAt).toLocaleTimeString('ja-JP'))+' 更新':'取得中'}｜${calendarHot()?'1分ごと':'5分ごと'}に自動更新</div>`;
     miniTxt=(caution?'⚠ ':'')+e.currency+' '+(diff>=0?'あと'+dur(diff):'発表後');
   }
-  $('miniNext').textContent=miniTxt;
+  if(box.className!==cls)box.className=cls;
+  if(box.__h!==html){box.innerHTML=html;box.__h=html}
+  const mn=$('miniNext');if(mn.textContent!==miniTxt)mn.textContent=miniTxt;
 }
 // 追加D：前回の反応1行（デスクの重要指標パネルと同じ reactions.json・同じ計算＝TDCore.reactionStats）。記録がない指標は出さない
 function rxNextLine(e){
