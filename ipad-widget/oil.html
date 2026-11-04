@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="7ce89fb317">
+<meta name="build" content="15d9c34621">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -244,7 +244,7 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .plrow span{font-size:11px;color:var(--muted)}
 .plrow b{font-size:15px;text-align:right}
 .plrow em{grid-column:1/-1;font-style:normal;font-size:10px;color:var(--muted);text-align:right}
-.plrow.tp b{color:var(--green)}
+.plrow.tp b{color:var(--green)}.plrow.none b{color:var(--muted)!important;font-weight:400}.plrow.none{opacity:.75}.plrow em b.tpuse{color:var(--gold2);font-weight:700;font-size:inherit}
 /* 利確の時間足：15分足＝水色（早めの利確）、1時間足＝緑（本命の利確） */
 .tf5{color:#c792ff}.reason .tf5{font-weight:700}.plrow.tp5 b{color:#c792ff}
 .tf15{color:#5cc8ff}.tf60{color:var(--green)}.tfday{color:#ffa94d}.reason .tf15,.reason .tf60,.reason .tfday{font-weight:700}.plrow.tpday b{color:#ffa94d}
@@ -551,8 +551,8 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div id="waitFor" class="waitfor" hidden></div>
       <div class="meter"><i id="meter"></i></div>
       <div class="sub">条件のそろい具合<button type="button" class="gq" data-tip="そろい具合：3つの条件（120SMA・モメンタム・レンジ位置）がどれだけ同じ向きを向いているか。100%でも、利確余地が足りないなど他の理由で見送ることがあります。エントリーしてよいかどうかの数字ではありません。" aria-label="説明">?</button> <b id="confidence">--</b></div>
-      <div class="tpbasis"><span>利確判定の基準<button type="button" class="gq" data-gloss="ch:トレードスタイル" aria-label="用語集：トレードスタイル">?</button></span><div class="segmented" id="tpBasisSeg">
-        <button class="seg" data-tpb="h1">1時間足</button><button class="seg" data-tpb="m15">15分足</button><button class="seg" data-tpb="m5" title="5分足の水平線で利確を判定">スキャルピング</button><button class="seg" data-tpb="day" title="4時間足・日足の水平線で利確を判定">デイトレード</button><button class="seg" data-tpb="all">すべて</button></div></div>
+      <div class="tpbasis"><span>利確判定の型<button type="button" class="gq" data-gloss="ch:トレードスタイル" aria-label="用語集：トレードスタイル">?</button></span><div class="segmented" id="tpBasisSeg">
+        <button class="seg" data-tpb="short" title="5分足と15分足の水平線（手前の線）で利確余地を判定">短期（5分足・15分足）</button><button class="seg" data-tpb="day" title="1時間足の水平線で利確余地を判定">デイ（1時間足）</button><button class="seg" data-tpb="swing" title="4時間足と日足の水平線（手前の線）で利確余地を判定">スイング（4時間足・日足）</button></div></div>
       <div class="reasons">
         <div class="reason"><span>① H1 120SMA<button type="button" class="gq" data-gloss="SMA" aria-label="用語集：SMA">?</button></span><b id="reasonSma">--</b><small class="rdet" id="detSma"></small></div>
         <div class="reason"><span>② H1モメンタム(3本)<button type="button" class="gq" data-tip="モメンタム：値動きの勢い。ここでは1時間足の終値が3本前からどれだけ動いたか。上がっていれば上昇、下がっていれば下降。" aria-label="説明">?</button></span><b id="reasonMom">--</b><small class="rdet" id="detMom"></small></div>
@@ -1098,7 +1098,10 @@ function loadPrefs(){
   state.showFvg=lsGet(LSP+'fvg','1')==='1';
   loadMaOn();
   state.broker=BROKERS[lsGet(LSP+'broker','xm')]?lsGet(LSP+'broker','xm'):'xm';
-  {const b=lsGet(LSP+'tp_basis','h1');state.tpBasis=b==='both'?'all':['h1','m15','m5','day','all'].includes(b)?b:'h1'}  // 以前の「両方」は「すべて」に引き継ぐ
+  // 利確判定の型：短期・デイ・スイング（既定はデイ）。以前の保存は近い型へ：1時間足・すべて・両方→デイ、15分足・5分足→短期、デイトレード（4時間足・日足）→スイング
+  {const b=lsGet(LSP+'tp_basis',''),v2=lsGet(LSP+'tp_basis_v','')==='2',OLD={h1:'day',all:'day',both:'day',m15:'short',m5:'short',day:'swing'};
+   state.tpBasis=!b?'day':v2&&['short','day','swing'].includes(b)?b:OLD[b]||(['short','swing'].includes(b)?b:'day');
+   if(b){lsSet(LSP+'tp_basis',state.tpBasis);lsSet(LSP+'tp_basis_v','2')}}  // 保存のない端末は書き込まない（既定のデイのまま）
    // 利確判定の基準（端末に保存）
   loadBroker();
 }
@@ -2463,14 +2466,19 @@ function calcSignal0(){
 }
 // ゴールドの1pips＝0.1ドル（XMなど国内向け業者の一般的な表記。1lot＝100ozで1pips＝10ドル）
 const PIP=INSTR.pip, MIN_TP_PIPS=INSTR.minTp;
-// エントリー判定に使う利確余地：1時間足（本命の利確。パターンはその形の利確）、15分足、5分足（スキャルピング）、
-// 4時間足・日足（デイトレード）、すべて（1時間足と15分足の両方が基準以上。スキャルピング・デイトレードは含めない）
-const TP_BASIS_NAME={h1:'1時間足',m15:'15分足',m5:'5分足（スキャルピング）',day:'4時間足・日足（デイトレード）',all:'1時間足・15分足'};
-function tpPipsBy(pl){
-  if(!pl)return 0;
-  const a=pl.tpPips,b=pl.tp15?pl.tp15.pips:0,c=pl.tp5?pl.tp5.pips:0,d=pl.tpDay?pl.tpDay.pips:0;
-  return state.tpBasis==='m15'?b:state.tpBasis==='m5'?c:state.tpBasis==='day'?d:state.tpBasis==='all'?Math.min(a,b):a;
+// 利確判定の型（計算のルールは以前と同じ。並べ方と名前だけを型にまとめた）：
+//  短期＝5分足と15分足の水平線（手前の線。片方しかなければその線、どちらもなければ0）、
+//  デイ＝1時間足の水平線（なければ利確目安＝損切り幅×目標RR。パターンはその形の利確）＝以前の「1時間足」と同じ、
+//  スイング＝4時間足と日足の水平線（手前の線＝以前の「デイトレード」と同じ）
+const TP_BASIS_NAME={short:'短期（5分足・15分足）',day:'デイ（1時間足）',swing:'スイング（4時間足・日足）'};
+// 選んだ型で判定に使う利確：{pips, price, name（由来）}。プランの RR とロット計算の RR は両方ともこれから出す
+function tpUsed(pl){
+  if(!pl)return null;
+  if(state.tpBasis==='short'){const c=[pl.tp5&&{...pl.tp5,name:'5分足の水平線'},pl.tp15&&{...pl.tp15,name:'15分足の水平線'}].filter(Boolean).sort((a,b)=>a.pips-b.pips)[0];return c||null}
+  if(state.tpBasis==='swing')return pl.tpDay?{...pl.tpDay,name:TF_JA[pl.tpDay.tf]+'の水平線'}:null;
+  return {pips:pl.tpPips,price:pl.tp,name:pl.tpSrc==='H1水平線'?'1時間足の水平線':'利確目安（'+pl.tpSrc+'）'};
 }
+function tpPipsBy(pl){const u=tpUsed(pl);return u?u.pips:0}
 const tpOkBy=pl=>!!pl&&tpPipsBy(pl)>=MIN_TP_PIPS;
 // 判定欄の pips には値段の換算を添える（銘柄ごとに1pipsの大きさが違う：ゴールド$0.10・ドル円0.01円・BTC$1・オイル$0.01）
 const pipConv=p=>IS_FX?fmt(p*PIP,3)+'円':'$'+fmt(p*PIP,PIP>=1?0:2);
@@ -2558,7 +2566,8 @@ function autoRisk(){
   $('entry').value=plan.entry.toFixed(INSTR.dp);
   $('stop').value=plan.sl.toFixed(INSTR.dp);
   // 利確判定を15分足（5分足）にしているときは、利確の入力もその時間足の線にする
-  const tpBy=state.tpBasis==='m15'&&plan.tp15?['15分足',plan.tp15]:state.tpBasis==='m5'&&plan.tp5?['5分足',plan.tp5]:state.tpBasis==='day'&&plan.tpDay?['日足',plan.tpDay]:null;
+  // 利確の入力も、選んだ型で判定に使う線（デイは以前どおりプランの利確。線の由来の名前をそのまま脚注に出す）
+  const tu=state.tpBasis!=='day'?tpUsed(plan):null,tpBy=tu?[tu.name.replace('の水平線',''),tu]:null;
   $('target').value=(tpBy?tpBy[1].price:plan.tp).toFixed(INSTR.dp);state.riskTpBy=tpBy?tpBy[0]:'';
   {const tpx=tpBy?tpBy[1].price:plan.tp,sd=Math.abs(plan.entry-plan.sl);state.riskRR=sd?Math.abs(tpx-plan.entry)/sd:null}  // 参考プランと同じ（丸める前の値で計算）
   // 脚注に出すTPの決め方（実際に入れた値の出どころ）
@@ -3261,10 +3270,10 @@ function renderSnapshot(){
         (s.hi&&s.lo?'｜参考：今日の中値 '+fmt(s.mid)+'・現在は'+(s.price>=s.mid?'上半分':'下半分'):''));
     }else det('detRange',s.hi&&s.lo?'今日 高 '+fmt(s.hi)+'・安 '+fmt(s.lo)+'・中値 '+fmt(s.mid)+'・現在 '+fmt(s.price)+'｜中値まで '+dx(Math.abs(s.price-s.mid))+'（'+(s.price>=s.mid?'下回ると下半分':'上回ると上半分')+'）':'');
     det('detTp',s.plan?'基準：'+pipsTxt(MIN_TP_PIPS)+'以上｜'+INSTR.pipNote+(tpPipsBy(s.plan)>=MIN_TP_PIPS?'':'｜あと '+pipsTxt(MIN_TP_PIPS-tpPipsBy(s.plan))+' 足りない')+
-      (s.plan.near&&state.tpBasis==='h1'?'｜すぐ手前の線 '+fmt(s.plan.near.price)+'（'+s.plan.near.pips.toFixed(1)+'pips先）は近すぎるため目標にせず、越える前提で計算':''):
+      (s.plan.near&&state.tpBasis==='day'?'｜すぐ手前の線 '+fmt(s.plan.near.price)+'（'+s.plan.near.pips.toFixed(1)+'pips先）は近すぎるため目標にせず、越える前提で計算':''):
       '買いか売りの向きが決まると、その向きの目標（水平線）までの距離で計算します。いまは向きが決まっていません｜基準：'+pipsTxt(MIN_TP_PIPS)+'以上');
   }else['detSma','detMom','detRange','detTp'].forEach(id=>det(id,''));
-  const all=state.tpBasis==='all',use60=all||state.tpBasis==='h1',use15=all||state.tpBasis==='m15',use5=state.tpBasis==='m5',useDay=state.tpBasis==='day';
+  const use60=state.tpBasis==='day',use15=state.tpBasis==='short',use5=state.tpBasis==='short',useDay=state.tpBasis==='swing';
   [['tp60Use','reasonTp',use60],['tp15Use','reasonTp15',use15],['tp5Use','reasonTp5',use5],['tpDayUse','reasonTpDay',useDay]].forEach(([u,r,on])=>{
     $(u).textContent=on?'判定':'参考';$(u).className=on?'tpuse':'';$(r).closest('.reason').classList.toggle('unused',!on)});
   setSegActive('#tpBasisSeg .seg','tpb',state.tpBasis);
@@ -3312,18 +3321,21 @@ function renderPlan(s){
   const row=(k,v,sub,cls='')=>`<div class="plrow ${cls}"><span>${k}</span><b>${v}</b><em>${sub}</em></div>`;
   box.innerHTML=`<div class="plhead">${s.entry?(pl.dir>0?'買い':'売り')+'エントリー プラン':'参考プラン（エントリー条件未達）'}</div>`+
     row('エントリーポイント',fmt(pl.entry),'現在値（成行）')+
-    // 利確は近い順に並べる。5分足・15分足は、本命より手前にあるとき、または利確判定に使っているときに出す
-    [pl.tp5&&(pl.tp5.pips<Math.min(pl.tpPips,pl.tp15?pl.tp15.pips:Infinity)-1||state.tpBasis==='m5')&&
-       [pl.tp5.pips,row('利確 <b class="tf5">5分足</b>',fmt(pl.tp5.price),'+'+Math.round(pl.tp5.pips)+'pips｜5分足の水平線（スキャルピングの利確）'+(state.tpBasis==='m5'?'｜判定に使用':''),'tp5')],
-     pl.tp15&&(pl.tp15.pips<pl.tpPips-1||state.tpBasis==='m15'||state.tpBasis==='all')&&
-       [pl.tp15.pips,row('利確 <b class="tf15">15分足</b>',fmt(pl.tp15.price),'+'+Math.round(pl.tp15.pips)+'pips｜15分足の水平線（早めの利確・一部決済の目安）'+(state.tpBasis==='m15'||state.tpBasis==='all'?'｜判定に使用':''),'tp15')],
-     pl.tpDay&&[pl.tpDay.pips,row('利確 <b class="tfday">'+TF_JA[pl.tpDay.tf]+'</b>',fmt(pl.tpDay.price),'+'+Math.round(pl.tpDay.pips)+'pips｜'+TF_JA[pl.tpDay.tf]+'の水平線（デイトレードの利確）'+(state.tpBasis==='day'?'｜判定に使用':''),'tpday')],
-     [pl.tpPips,row(pl.tpSrc==='H1水平線'?'利確 <b class="tf60">1時間足</b>':'利確目安',fmt(pl.tp),'+'+Math.round(pl.tpPips)+'pips｜'+(pl.tpSrc==='H1水平線'?'1時間足の水平線（本命の利確）':pl.tpSrc)+(state.tpBasis==='h1'||state.tpBasis==='all'?'｜判定に使用':''),'tp')]]
-      .filter(Boolean).sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join('')+
+    // 利確の候補は型を変えても全部出し（近い順）、選んだ型で判定に使う線に「判定に使用」、ほかは「参考」。線がない時間足は「線なし」
+    (()=>{const u=tpUsed(pl),mk=on=>on?'｜<b class="tpuse">判定に使用</b>':'｜参考';
+      const has=[pl.tp5&&[pl.tp5.pips,row('利確 <b class="tf5">5分足</b>',fmt(pl.tp5.price),'+'+Math.round(pl.tp5.pips)+'pips｜5分足の水平線'+mk(u&&state.tpBasis==='short'&&u.price===pl.tp5.price),'tp5')],
+        pl.tp15&&[pl.tp15.pips,row('利確 <b class="tf15">15分足</b>',fmt(pl.tp15.price),'+'+Math.round(pl.tp15.pips)+'pips｜15分足の水平線'+mk(u&&state.tpBasis==='short'&&u.price===pl.tp15.price),'tp15')],
+        [pl.tpPips,row(pl.tpSrc==='H1水平線'?'利確 <b class="tf60">1時間足</b>':'利確目安',fmt(pl.tp),'+'+Math.round(pl.tpPips)+'pips｜'+(pl.tpSrc==='H1水平線'?'1時間足の水平線':pl.tpSrc+'（1時間足に線がないときの目安）')+mk(state.tpBasis==='day'),'tp')],
+        pl.tpDay&&[pl.tpDay.pips,row('利確 <b class="tfday">'+TF_JA[pl.tpDay.tf]+'</b>',fmt(pl.tpDay.price),'+'+Math.round(pl.tpDay.pips)+'pips｜'+TF_JA[pl.tpDay.tf]+'の水平線'+mk(state.tpBasis==='swing'),'tpday')]].filter(Boolean).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
+      const none=[!pl.tp5&&row('利確 <b class="tf5">5分足</b>','線なし','5分足に水平線がありません'+mk(false).replace('参考',state.tpBasis==='short'?'短期の判定に使う線なし':'参考'),'tp5 none'),
+        !pl.tp15&&row('利確 <b class="tf15">15分足</b>','線なし','15分足に水平線がありません'+mk(false).replace('参考',state.tpBasis==='short'?'短期の判定に使う線なし':'参考'),'tp15 none'),
+        !pl.tpDay&&row('利確 <b class="tfday">4時間足・日足</b>','線なし','4時間足・日足に水平線がありません'+mk(false).replace('参考',state.tpBasis==='swing'?'スイングの判定に使う線なし':'参考'),'tpday none')].filter(Boolean);
+      return has.join('')+none.join('')})()+
     (pl.tpSrc!=='H1水平線'&&pl.tp60?row('参考 <b class="tf60">1時間足</b>',fmt(pl.tp60.price),'+'+Math.round(pl.tp60.pips)+'pips｜1時間足の水平線','tp'):'')+
     row('損切り目安',fmt(pl.sl),'−'+Math.round(pl.slPips)+'pips｜'+(pl.slSrc||'M15 ATR×'+(n($('slMult').value)||1.2)),'sl')+
     (pl.near?row('手前の線（1時間足）',fmt(pl.near.price),(pl.dir>0?'+':'−')+pl.near.pips.toFixed(1)+'pips｜5pips以内で近すぎるため利確目標にしません。この線を'+(pl.dir>0?'上':'下')+'に越える前提のプランです','near'):'')+
-    `<div class="plfoot${pl.rr<1?' warn':''}">${pl.rr<1?'⚠ ':''}RR ${pl.rr.toFixed(2)}${pl.rr<1?'（1未満：損切りの幅の方が利確の幅より大きい）':''}｜${INSTR.pipNote}｜利確が複数あるときは「判定に使用」の付いたものでエントリー可否（利確余地）を判定し、ほかは手前・先の目安です</div>`;
+    (()=>{const u=tpUsed(pl),rr=u&&pl.slPips?u.pips/pl.slPips:null;  // RR は選んだ型で判定に使う利確から（ロット計算の RR と同じもと）
+      return `<div class="plfoot${rr!=null&&rr<1?' warn':''}">${rr!=null&&rr<1?'⚠ ':''}RR ${rr==null?'--（'+esc(TP_BASIS_NAME[state.tpBasis])+'の線なし）':rr.toFixed(2)}${rr!=null&&rr<1?'（1未満：損切りの幅の方が利確の幅より大きい）':''}｜${u?esc(TP_BASIS_NAME[state.tpBasis])+'：'+esc(u.name)+'までで計算':''}｜${INSTR.pipNote}｜「判定に使用」の線でエントリー可否（利確余地）を判定し、ほかは手前・先の目安です</div>`})();
 }
 function renderRebound(){
   const r=rebound();
@@ -4146,7 +4158,7 @@ document.querySelectorAll('#dirSeg .seg').forEach(b=>b.onclick=()=>{
 document.querySelectorAll('[data-ev]').forEach(b=>b.onclick=()=>{
   state.evFilter=b.dataset.ev;setSegActive('[data-ev]','ev',state.evFilter);savePrefs();renderEvents();renderNext();
 });
-document.querySelectorAll('#tpBasisSeg .seg').forEach(b=>b.onclick=()=>{state.tpBasis=b.dataset.tpb;lsSet(LSP+'tp_basis',state.tpBasis);renderAll()});
+document.querySelectorAll('#tpBasisSeg .seg').forEach(b=>b.onclick=()=>{state.tpBasis=b.dataset.tpb;lsSet(LSP+'tp_basis',state.tpBasis);lsSet(LSP+'tp_basis_v','2');renderAll()});
 document.querySelectorAll('#brokerSeg .seg').forEach(b=>b.onclick=()=>{
   savePrefs();state.broker=b.dataset.broker;loadBroker();savePrefs();renderAll();
 });
