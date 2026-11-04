@@ -713,7 +713,7 @@
       var nt = D.notify(), low = document.documentElement.classList.contains("lowpower");
       body.innerHTML = '<h3>省電力</h3><label class="chk"><input type="checkbox" id="st-low"' + (low ? " checked" : "") + '><span>省電力モード（背景の動き・光・ぼかし・点滅を止めます。iPadの発熱や電池の消費を抑えたいときに）</span></label>' +
         '<h3>通知について</h3><div class="out">' + esc("端末の通知：" + ({ granted: "許可済み", denied: "拒否（端末の設定から変更）", default: "未設定（通知のボタンを押したときに確認します）", unsupported: "この環境では使えません" }[nt.permission] || nt.permission) +
-          "\n音：" + (nt.sound || "既定") + "（右上のスピーカーのボタンで切り替え）" +
+          "\n通知音：" + ({ high: "大", mid: "中", low: "小", off: "オフ" }[nt.sound] || "中") + "（ホームの右上のスピーカーのボタンと同じ。エントリー・ダッシュボードのアラート・急変・地震の音量）" +
           "\n・音と通知は、このページを開いている間だけ届きます。ブラウザやアプリを閉じている間のプッシュ通知には対応していません。" +
           "\n・iPhone・iPadは、ホーム画面に追加したアプリから開いた場合に限り端末の通知が使えます。" +
           "\n・価格アラートの条件（価格到達など）は各ダッシュボードの「アラート」で設定します。同じエントリー判定は30分以内に重ねて鳴らしません。") + "</div>" +

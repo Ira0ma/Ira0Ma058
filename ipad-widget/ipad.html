@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="67cdffae57">
+<meta name="build" content="afa74d3205">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1197,10 +1197,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=315a232101", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=24493b63f9", title: "ドル円分析" },
-    btc: { src: "btc.html?v=af45c73fbe", title: "BTC分析" },
-    oil: { src: "oil.html?v=fe483bb2db", title: "オイル分析" }
+    gold: { src: "gold.html?v=ca8bb8187b", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=6e96399d99", title: "ドル円分析" },
+    btc: { src: "btc.html?v=52b27ab664", title: "BTC分析" },
+    oil: { src: "oil.html?v=e327ee9a85", title: "オイル分析" }
   };
   var openSheet = null, sheetOpener = null;
   /* ステータスバーの分：iframe の中では端末の値（safe-area）が届かないので、デスクで測った --safe-top を各ダッシュボードに渡す */
@@ -1479,7 +1479,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var o = SOUND[soundIdx];
     soundBtn.setAttribute("data-level", o.k);
     soundBtn.querySelector("span").textContent = "通知音：" + o.label;  // 「中」だけでは何のことか分からないので
-    soundBtn.setAttribute("aria-label", "エントリー通知音：" + o.label);
+    soundBtn.setAttribute("aria-label", "通知音：" + o.label + "（エントリー・ダッシュボードのアラート・急変・地震の音量）");
   }
   soundBtn.addEventListener("click", function (e) {
     e.stopPropagation();
@@ -2412,9 +2412,11 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var now = Date.now(), res = TDCore.surgeCheck(key, surgeBuf[key], now);
     surgeLast[key] = now;
     if (!res) return;
+    if (surgeOff(key)) return;  // その銘柄のダッシュボードで「急変アラート」をオフにした：バナー・⚡・音・端末の通知のどれも出さない
     var g = TDCore.surgeGate(surgeGateSt[key], res, now); surgeGateSt[key] = g.state;
     if (g.alert) surgeFire(res, now);
   }
+  function surgeOff(key) { try { var c = JSON.parse(localStorage.getItem(key + "_alerts") || "{}"); return !!c && c.surge === false; } catch (e) { return false; } }  // 保存がなければオン（初期値）
   function surgeFire(res, now) {
     var st = surgeStore(), ev = { id: res.key + "-" + res.t, key: res.key, level: res.level, dir: res.dir, win: res.win, delta: res.delta, pct: res.pct,
       unit: res.unit, t0: res.t0, t: res.t, at: now, ack: false };
