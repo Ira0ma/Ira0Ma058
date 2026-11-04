@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="b77366430c">
+<meta name="build" content="1ec6b44881">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -512,6 +512,9 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gbook[hidden] { display: none; }
 .gb-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; color: var(--ink); }
 .gb-bar .gb-title { font-size: 15px; font-weight: 700; color: var(--gold); white-space: nowrap; }
+/* 狭い画面でも右端の「閉じる」まで必ず収まるように：ボタンは縮めず、題名のほうを省略表示にする（iPhoneで「閉じる」が画面の外に出ていた） */
+.gb-bar .gb-btn { flex: none; }
+.gb-bar .gb-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .gb-bar .gb-chap { font-size: 12px; color: var(--ink-3); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 .gb-btn { font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); background: rgba(255,255,255,.07); border: 1px solid var(--glass-line); border-radius: 999px; padding: 7px 13px; cursor: pointer; white-space: nowrap; }
 .gb-btn:hover { background: rgba(255,255,255,.13); }
@@ -529,7 +532,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gb-in { flex: 1; min-height: 0; padding: 26px 28px 10px; overflow: hidden; }
 .gb-page .gb-in { overflow-y: auto; }
 #gb-pno { white-space: nowrap; }
-@media (max-width: 600px) { .gb-bar .gb-chap { display: none; } .gb-bar { gap: 6px; padding: 10px; } .gb-btn { padding: 7px 11px; } .gb-nav { gap: 8px; } .gb-nav .gb-btn { min-width: 0; } .gb-in { padding: 20px 20px 8px; } .gb-idx { column-gap: 12px; } .gbook .gb-cover { padding: 0 0 8px; margin-bottom: 6px; } .gbook .gb-cover h1 { font-size: 22px; } .gbook .gb-toc small { display: none; } .gbook .gb-toc button { padding: 8px 2px; } .gbook .gb-toc i { width: 3.4em; } .gbook .gb-in { padding: 20px 20px 8px; } .gbook .gb-idx { column-gap: 12px; } }
+@media (max-width: 600px) { .gb-bar .gb-chap { display: none; } .gb-bar { gap: 6px; padding: 10px; } .gb-btn { padding: 7px 11px; } .gb-bar .gb-title { flex: 1 1 auto; font-size: 14px; } .gb-bar .gb-btn { padding: 7px 10px; } .gb-nav { gap: 8px; } .gb-nav .gb-btn { min-width: 0; } .gb-in { padding: 20px 20px 8px; } .gb-idx { column-gap: 12px; } .gbook .gb-cover { padding: 0 0 8px; margin-bottom: 6px; } .gbook .gb-cover h1 { font-size: 22px; } .gbook .gb-toc small { display: none; } .gbook .gb-toc button { padding: 8px 2px; } .gbook .gb-toc i { width: 3.4em; } .gbook .gb-in { padding: 20px 20px 8px; } .gbook .gb-idx { column-gap: 12px; } }
 .gb-foot { display: flex; justify-content: space-between; padding: 6px 22px 12px; font-size: 11px; color: #9a8a6c; }
 .gb-run { font-size: 10.5px; color: #9a8a6c; letter-spacing: .04em; margin-bottom: 10px; border-bottom: 1px solid #e3d6b8; padding-bottom: 6px; }
 .gb-chhead { margin: 2px 0 14px; }
