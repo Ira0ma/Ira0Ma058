@@ -3295,10 +3295,9 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   }
   function renderStrategy() {
     var li3 = document.getElementById("pt-strat"), useReport = reportIsCurrent(new Date());
-    li3.classList.toggle("has-report", useReport);
-    if (useReport) { setPoint(5, report.title || "本日のトレード戦略", report.headline); return; }
-    document.getElementById("rep").hidden = true;
-    if (!market) return;
+    li3.classList.toggle("has-report", useReport);  // レポートがある日も3部構成の文を出し、レポートは「前日の振り返りと今日の予想」から開く
+    if (!useReport) document.getElementById("rep").hidden = true;
+    if (!market) { if (useReport) setPoint(5, "本日のトレード戦略", report.headline); return; }
     setPoint(5, "本日のトレード戦略", "", stratHtml(new Date()));
   }
   var marketSeq = TDCore.sequencer(), marketCheck = null;
