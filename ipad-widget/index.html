@@ -2199,6 +2199,9 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     return r && Date.now() - r.t <= OIL_MAX && (isFinite(r.diff) || isFinite(r.diffPerp)) ? r : null;
   }
   function oilDash() {  // the oil dashboard's live price (OKX perpetual), if fresh
+    // まず配信の値（ダッシュボードが1秒ごとに保存する小さな値。15秒以内）、なければ定期取得の値（3分以内）
+    try { var l = JSON.parse(localStorage.getItem("usoil_live_spot") || "null");
+      if (l && l.live && +l.price && Date.now() - (+l.asof) <= 15000) return l; } catch (e) {}
     try { var c = JSON.parse(localStorage.getItem("usoil_auto_cache_final") || "null"), sp = c && c.spot;
       return sp && sp.live && +sp.price && Date.now() - (+sp.asof) <= 3 * 60000 ? sp : null; } catch (e) { return null; }
   }
@@ -2237,13 +2240,17 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   oilMk.feed(null);
   oilMk.el.querySelector(".head").addEventListener("click", function () { openDash("oil", this); });
   oilMk.el.addEventListener("click", function (e) { var b = e.target.closest("[data-oil-open]"); if (b) { e.stopPropagation(); openDash("oil", b); } });
-  var oilFedFor = "";
+  var oilFedFor = "", oilBase = "";
   var oilRefeed = function () {  // only when the price or the correction changed (moving every candle costs)
     var m = market && (market.instruments || market).usoil; if (!m) return;
     var a = oilAdj(), dd = oilDash(), key = [m.asOf, m.price, m.spotAdjusted, a ? a.t : "-", dd ? dd.price + "@" + dd.asof + "@" + dd.oilDiff : "-"].join("|");
-    if (key === oilFedFor) return; oilFedFor = key; oilMk.feed(m);
+    if (key === oilFedFor) return; oilFedFor = key;
+    // 配信の値だけが動いたとき（同じ足・同じ差）は、全部の足を動かし直さず、いまの価格だけを進める（ほかの銘柄の配信と同じ扱い）
+    var base = [m.asOf, m.price, m.spotAdjusted, a ? a.t : "-", dd ? "dash@" + dd.oilDiff : "-"].join("|");
+    if (dd && base === oilBase && oilMk.live && oilMk.oilShown) { oilMk.asOf = +dd.asof / 1000; oilMk.applyLive(+dd.price + oilMk.oilShown.d); return; }
+    oilBase = base; oilMk.feed(m);
   };
-  window.addEventListener("storage", function (e) { if (e.key === OIL_KEY || e.key === "usoil_auto_cache_final") oilRefeed(); });  // saved by the oil dashboard
+  window.addEventListener("storage", function (e) { if (e.key === OIL_KEY || e.key === "usoil_auto_cache_final" || e.key === "usoil_live_spot") oilRefeed(); });  // saved by the oil dashboard
   setInterval(oilRefeed, 30000);  // freshness and the 35 days
   markets.push(oilMk);
   window.__mkts = markets;  // 時間足の連動（setSharedTf）用
