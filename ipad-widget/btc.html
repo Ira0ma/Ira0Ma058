@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="9faa5776b4">
+<meta name="build" content="42299a0c7f">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -430,6 +430,16 @@ details[open] summary::after{content:"▴"}
 details[open]{padding-bottom:10px}
 details .form{margin-top:0}
 .autonote{color:var(--muted);font-size:11px;margin-top:9px;line-height:1.5}
+.autonote .rnote{display:block;margin-top:4px}
+.riskpick{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px}
+.riskpick .segmented{flex:0 0 auto}
+.riskshare{margin-top:10px;padding:9px 11px;border:1px solid var(--line,#2a3340);border-radius:12px;background:rgba(255,255,255,.03);font-size:12px;line-height:1.55}
+.riskshare b{font-size:13px}
+.riskshare.over{border-color:#ff6969;background:rgba(255,105,105,.08)}
+.riskshare .rs-warn{color:#ff8a8a;font-weight:700}
+.riskshare ul{margin:4px 0 0;padding:0;list-style:none;color:var(--muted);font-size:11px}
+.riskshare li.old{opacity:.6}
+.riskshare .rs-note{color:var(--muted);font-size:10.5px;margin-top:4px}
 
 /* ===== events ===== */
 .events{display:grid;gap:6px}
@@ -663,19 +673,26 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
       <div class="result"><span>必要証拠金</span><strong id="marginYen">--</strong><em id="marginSub">--</em></div>
       <div class="result"><span>証拠金維持率</span><strong id="marginLevel">--</strong><em id="marginWord">口座資金 ÷ 必要証拠金</em></div>
     </div>
+    <div id="riskShare" class="riskshare" hidden></div>
+    <div id="riskStreak" class="autonote" hidden></div>
     <details id="settings">
       <summary id="settingsSum">口座設定</summary>
       <div class="results"><div class="result"><span>口座での最大（上限・推奨ではありません）</span><strong id="maxLot">--</strong><em id="maxLotSub">--</em></div></div>
       <div class="form two">
         <label>口座資金（円）<input id="capital" type="number" inputmode="numeric" value="100000"></label>
-        <label>許容リスク（%）<input id="riskPct" type="number" step="0.1" inputmode="decimal" value="1.0"></label>
+        <label id="riskPctLbl">許容リスク（%）<input id="riskPct" type="number" step="0.1" inputmode="decimal" value="1.0"></label>
+        <label id="riskYenLbl" hidden>許容損失（円）<input id="riskYenIn" type="number" step="100" min="0" inputmode="numeric" placeholder="例 5000"></label>
         <label><span id="contractLabel">1lot契約量(oz)</span><input id="contract" type="number" inputmode="numeric" value="100"></label>
         <label>レバレッジ（倍）<input id="leverage" type="number" inputmode="numeric" value="1000"></label>
         <label>SL = ATR ×<input id="slMult" type="number" step="0.1" inputmode="decimal" value="1.2"></label>
         <label>目標RR<input id="rrTarget" type="number" step="0.1" inputmode="decimal" value="2.0"></label>
         <label class="wide">スプレッド（pips・<span id="sprPipNote">1pips＝$0.10</span>）<input id="spread" type="number" step="0.1" min="0" inputmode="decimal"></label>
       </div>
-      <div class="autonote">契約量・レバレッジ・スプレッドは、選んだ口座（XM／XS）ごとに保存されます。<span id="sprNote"></span><span id="brokerNote">XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。</span>口座残高が増えると上限レバレッジが下がる業者もあるため、その場合はレバレッジ欄を変更してください。</div>
+      <div class="riskpick"><span class="sub">リスクの指定</span>
+        <div class="segmented" id="riskModeSeg"><button type="button" class="seg" data-rmode="pct">%で指定</button><button type="button" class="seg" data-rmode="yen">円で指定</button></div>
+        <div class="segmented" id="riskChips" aria-label="許容リスクのクイック選択"><button type="button" class="seg" data-rp="0.5">0.5%</button><button type="button" class="seg" data-rp="1">1%</button><button type="button" class="seg" data-rp="2">2%</button></div>
+      </div>
+      <div class="autonote">契約量・レバレッジ・スプレッドは、選んだ口座（XM／XS）ごとに保存されます。<span id="sprNote"></span><span id="brokerNote">XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。</span>口座残高が増えると上限レバレッジが下がる業者もあるため、その場合はレバレッジ欄を変更してください。<span class="rnote">リスクの指定は2通りあります。%は資金に対する割合で、資金が増減すると1回の損失額も変わります。円は1回で失ってよい上限を金額で決める方法で、資金が変わっても額は固定です。</span></div>
     </details>
     <div id="atrNote" class="autonote">--</div>
   </section>
@@ -1081,7 +1098,7 @@ function loadCache(){
     if(c){Object.assign(state,c);renderAll()}
   }catch{}
 }
-const PREFS={capital:[LSP+'capital','100000'],riskPct:[LSP+'risk_pct','1.0'],lotManual:[LSP+'lot_manual',''],
+const PREFS={capital:[LSP+'capital','100000'],riskPct:[LSP+'risk_pct','1.0'],riskYenIn:[LSP+'risk_yen',''],lotManual:[LSP+'lot_manual',''],
   slMult:[LSP+'sl_mult','1.2'],rrTarget:[LSP+'rr','2.0']};
 // 口座ごとの初期値（契約量oz・レバレッジ）。変更した値は口座ごとに保存
 // スプレッドの初期値：MT5の気配値で見た値（2026/10/23 20:23）。XM KIWAMI極 GOLD# 26・USDJPY# 14・BTCUSD# 1500ポイント、XS プロ XAUUSDp 14・USDJPYp 9・BTCUSDp 2360ポイント
@@ -1112,6 +1129,7 @@ function savedSpread(k){  // 口座ごとに保存したスプレッド（以前
 function loadPrefs(){
   Object.entries(PREFS).forEach(([id,[k,d]])=>$(id).value=lsGet(k,d));
   $('autoRisk').checked=lsGet(LSP+'auto_risk','1')==='1';
+  state.riskMode=lsGet(LSP+'risk_mode','pct')==='yen'?'yen':'pct';  // リスクの指定：%（既定）か円
   state.dir=lsGet(LSP+'dir','auto');
   state.evFilter=lsGet(LSP+'ev_filter','all');
   state.tf=TFS[lsGet(LSP+'tf','h1')]?lsGet(LSP+'tf','h1'):'h1';
@@ -1129,7 +1147,7 @@ function loadPrefs(){
 }
 function savePrefs(){
   Object.entries(PREFS).forEach(([id,[k]])=>lsSet(k,$(id).value));
-  lsSet(LSP+'auto_risk',$('autoRisk').checked?'1':'0');
+  lsSet(LSP+'auto_risk',$('autoRisk').checked?'1':'0');lsSet(LSP+'risk_mode',state.riskMode||'pct');
   lsSet(LSP+'dir',state.dir);lsSet(LSP+'ev_filter',state.evFilter);lsSet(LSP+'tf',state.tf);lsSet(LSP+'levels',state.showLevels?'1':'0');lsSet(LSP+'trend',state.showTrend?'1':'0');lsSet(LSP+'fvg',state.showFvg?'1':'0');
   lsSet(LSP+'broker',state.broker);lsSet(brokerKey('contract'),$('contract').value);lsSet(brokerKey('lev'),$('leverage').value);lsSet(brokerKey('spread'),$('spread').value);
   updateBrokerLabels();
@@ -2627,7 +2645,10 @@ function calcRisk(){
   const capital=n($('capital').value),rp=n($('riskPct').value),entry=n($('entry').value),stop=n($('stop').value),target=n($('target').value);
   // fx＝値動き1あたりの円換算（ゴールドはドル建てなのでドル円、ドル円は円建てなので1）
   const contract=n($('contract').value)||n(INSTR.contract), fx=IS_FX?1:(state.fx||0);
-  const maxLoss=capital*rp/100,sl=Math.abs(entry-stop),tp=Math.abs(target-entry);
+  // 最大損失を決めるのはここだけ：%で指定なら「資金×%÷100」、円で指定なら入力した円。以後は maxLoss と実効の%（rpE）で従来どおり
+  const yenMode=state.riskMode==='yen',ryIn=Math.max(n($('riskYenIn').value),0);
+  const maxLoss=yenMode?ryIn:capital*rp/100,rpE=yenMode?(capital?ryIn/capital*100:0):rp,rpTxt=yenMode?rpE.toFixed(2):String(rp);
+  const sl=Math.abs(entry-stop),tp=Math.abs(target-entry);
   // スプレッド：チャートの価格から約定するので、損切りまでの損失は SL幅＋スプレッド、利確の利益は TP幅−スプレッド
   const sprPips=Math.max(n($('spread').value),0),spr=sprPips*INSTR.pip;
   const slEff=sl?sl+spr:0,tpEff=Math.max(tp-spr,0);
@@ -2649,7 +2670,7 @@ function calcRisk(){
     const loss=fx?slEff*contract*manual*fx:0;profit=fx?tpEff*contract*manual*fx:0;
     $('riskYen').textContent=loss?yen(loss):'--';
     $('riskSub').textContent=loss&&capital?'資金の'+(loss/capital*100).toFixed(2)+'%（SL到達時）':'SL到達時';
-    $('riskSub').className=capital&&loss/capital*100>rp?'warn':'';
+    $('riskSub').className=capital&&loss/capital*100>rpE?'warn':'';
     $('lotSize').textContent=manual.toFixed(2);
     $('lotRound').textContent=marginPerLot&&manual>maxLot?'証拠金が不足します（最大'+maxLot.toFixed(2)+' lot）':'手入力｜自動なら '+(lot?Math.max(lotStep,0.01).toFixed(2):'--')+' lot';
     $('lotRound').className=marginPerLot&&manual>maxLot?'warn':'';
@@ -2661,10 +2682,10 @@ function calcRisk(){
     // 最小ロット（0.01）でも上限を超えるときは、上限の表示をそのまま残し、超えることをはっきり出す（1%以内に見せない）
     const over=lot&&lotStep<0.01;
     $('riskYen').textContent=yen(maxLoss);
-    $('riskSub').textContent=over?'上限：資金の'+rp+'%（最小ロットでも超えます）':'資金の'+rp+'%'+(spr?'（スプレッド込み）':'');$('riskSub').className=over?'warn':'';
+    $('riskSub').textContent=over?'上限：資金の'+rpTxt+'%（最小ロットでも超えます）':'資金の'+rpTxt+'%'+(spr?'（スプレッド込み）':'');$('riskSub').className=over?'warn':'';
     $('lotSize').textContent=lot?useLot.toFixed(2):'--';
     $('lotRound').textContent=!lot?'--':limited?'証拠金の上限に合わせた値':lotStep>=0.01?'0.01刻み・リスク'+yen(maxLoss)+'以内':
-      '最小ロット（0.01）でも上限の'+rp+'%を超えます：損失'+yen(minLoss)+'（資金の'+(capital?(minLoss/capital*100).toFixed(2):'--')+'%）';
+      '最小ロット（0.01）でも上限の'+rpTxt+'%を超えます：損失'+yen(minLoss)+'（資金の'+(capital?(minLoss/capital*100).toFixed(2):'--')+'%）';
     $('lotRound').className=lot&&(lotStep<0.01||limited)?'warn':'';
     $('lotLabel').textContent=over?'⚠ 最小ロットでも上限超え':'目安ロット';$('lossLabel').textContent='最大損失';
     $('lotLabel').closest('.result').classList.toggle('overwarn',!!over);  // D2：推奨ではなく警告の見た目に
@@ -2698,11 +2719,62 @@ function calcRisk(){
     $('riskHeadSub').textContent=(!sp?'価格の取得待ち':mktClosed?'休場前の最終値（'+at+'）':lvp==='live'?'ライブ価格':lvp==='stale'||lvp==='unknown'?'停止中の価格（'+at+'時点）':lvp==='delayed'?'遅延の価格（'+at+'時点）':'最新の価格（'+at+'時点）')+'とM15 ATRからSL/TPを算出';
   }
   $('dirLabel').innerHTML='想定方向：'+dirTxt+' <span class="sub">｜'+why+'</span>';
-  $('settingsSum').textContent='口座設定（'+BROKERS[state.broker].name+' '+lev+'倍・'+yen(capital)+'・リスク'+rp+'%・'+contract.toLocaleString('ja-JP')+INSTR.unit+'/lot・スプレッド'+sprPips.toFixed(1)+'pips）';
+  $('settingsSum').textContent='口座設定（'+BROKERS[state.broker].name+' '+lev+'倍・'+yen(capital)+'・リスク'+(yenMode?Math.round(ryIn).toLocaleString('ja-JP')+'円':rp+'%')+'・'+contract.toLocaleString('ja-JP')+INSTR.unit+'/lot・スプレッド'+sprPips.toFixed(1)+'pips）';
   $('atrNote').textContent=(state.m15.length?'M15 ATR14 '+INSTR.dist(currentAtr())+'｜':'')+($('autoRisk').checked
     ?'自動SL = ATR×'+(n($('slMult').value)||1.2)+'（最低'+INSTR.dist(INSTR.slMin)+'）／TP = '+(state.riskTpDesc||'直近のH1水平線まで（なければSL×'+(n($('rrTarget').value)||2)+'）')+(state.m15.length?'':'｜M15データ待ちのため価格の0.12%で代用')
     :'手入力モード：エントリー・SL・TPを自由に入力できます。')+(spr?'｜ロット・損失・利益はスプレッド'+sprPips.toFixed(1)+'pips込み｜実質RR＝スプレッドを差し引いた後の比率（利確幅−スプレッド）÷（損切り幅＋スプレッド）':'');
+  // 表示中のロットで SL に達したときの損失（自動のときも、許容上限の額ではなく切り捨て後のロットで計算した実額）
+  const lossAct=fx&&slEff&&(manual>0||lot)?slEff*contract*useLot*fx:0;
+  if(lossAct>0)riskShareWrite({loss:lossAct,margin:marginPerLot*useLot,lot:useLot,dir:isBuy?'buy':'sell'});
+  renderRiskShare(capital,rpE,lossAct);
+  renderRiskStreak(capital,lossAct);
+  paintRiskPick();
   return manual>0?{lot:manual,lotStep:manual,sl}:{lot,lotStep,sl};
+}
+// ---- 銘柄をまたいだ合計リスク：計算が成り立つたびに、自分の銘柄の結果を端末に書き出す（同じ端末・同じブラウザのダッシュボード同士で共有）
+const RISK_SHARE_KEY='td_risk_share_v1',RISK_SHARE_FRESH=15*60000;
+function riskShareRead(){try{const o=JSON.parse(localStorage.getItem(RISK_SHARE_KEY)||'{}');return o&&typeof o==='object'?o:{}}catch{return {}}}
+let riskShareLast='',riskShareAt=0;
+function riskShareWrite(v){
+  const sig=[Math.round(v.loss),Math.round(v.margin),v.lot.toFixed(2),v.dir].join('|'),now=Date.now();
+  if(sig===riskShareLast&&now-riskShareAt<60000)return;  // 同じ結果なら1分に1回だけ時刻を進める
+  riskShareLast=sig;riskShareAt=now;
+  const all=riskShareRead();all[INSTR.key]={name:INSTR.name,loss:Math.round(v.loss),margin:Math.round(v.margin),lot:+v.lot.toFixed(2),dir:v.dir,t:now};
+  lsSet(RISK_SHARE_KEY,JSON.stringify(all));
+}
+function renderRiskShare(capital,rpE,ownLoss){
+  const el=$('riskShare');if(!el)return;
+  const all=riskShareRead(),now=Date.now(),others=Object.keys(all).filter(k=>k!==INSTR.key&&all[k]&&+all[k].t);
+  const freshOthers=others.filter(k=>now-all[k].t<=RISK_SHARE_FRESH);
+  if(!freshOthers.length){el.hidden=true;el.innerHTML='';return}  // 自分以外に新しい計算がなければ出さない
+  const me=all[INSTR.key],rows=[];let tl=0,tm=0;
+  const keys=[INSTR.key,...others.sort((a,b)=>all[b].t-all[a].t)];
+  keys.forEach(k=>{const r=all[k];if(!r)return;const fresh=now-r.t<=RISK_SHARE_FRESH&&(k!==INSTR.key||ownLoss>0);
+    if(fresh){tl+=+r.loss||0;tm+=+r.margin||0}
+    rows.push('<li class="'+(fresh?'':'old')+'">'+esc(r.name||k)+'：'+(+r.lot).toFixed(2)+' lot・想定損失 '+yen(+r.loss||0)+(r.dir==='buy'?'（買い）':r.dir==='sell'?'（売り）':'')+(fresh?'':'（古い計算・合計に入れていません）')+'</li>')});
+  const pct=capital?tl/capital*100:0,over=capital&&pct>rpE;
+  el.hidden=false;el.className='riskshare'+(over?' over':'');
+  el.innerHTML='<b>全銘柄の合計　想定損失 '+yen(tl)+'（資金の'+(capital?pct.toFixed(2):'--')+'%）｜合計 必要証拠金 '+yen(tm)+'</b>'+
+    (over?'<div class="rs-warn">⚠ 合計で上限を超えています（このダッシュボードの許容リスク '+rpE.toFixed(2)+'%）</div>':'')+
+    '<ul>'+rows.join('')+'</ul>'+
+    '<div class="rs-note">合計は、いま持っている（持つつもりの）ポジションが全部そろって損切りに達した場合の目安です。同じ端末・同じブラウザで開いているダッシュボードの、15分以内の計算だけが合算されます。資金の%は、このダッシュボードの口座資金で割っています。</div>';
+}
+window.addEventListener('storage',e=>{if(e.key===RISK_SHARE_KEY){try{const r=calcRisk();renderChecks(r)}catch{}}});  // ほかの銘柄の計算が変わったら合計を出し直す
+// ---- 連敗の見通し：毎回その時点の資金に対して同じ割合を失う（複利）前提で 1−(1−r)^n
+function renderRiskStreak(capital,loss){
+  const el=$('riskStreak');if(!el)return;
+  if(!(loss>0&&capital>0)){el.hidden=true;return}
+  const r=Math.min(loss/capital,1),f=k=>((1-Math.pow(1-r,k))*100).toFixed(1);
+  el.hidden=false;
+  el.textContent='このロットで連敗したら：3連敗で資金 −'+f(3)+'%／5連敗で −'+f(5)+'%／10連敗で −'+f(10)+'%（毎回、残った資金に対して同じ割合を失う計算です。ロットを大きくする前に、連敗したときの減り方の目安として見ます）';
+}
+// ---- リスクの指定：%／円の切替と、0.5%・1%・2% のチップ
+function paintRiskPick(){
+  const yenMode=state.riskMode==='yen';
+  setSegActive('#riskModeSeg .seg','rmode',yenMode?'yen':'pct');
+  $('riskPctLbl').hidden=yenMode;$('riskYenLbl').hidden=!yenMode;$('riskChips').hidden=yenMode;
+  const rp=n($('riskPct').value);
+  document.querySelectorAll('#riskChips .seg').forEach(b=>b.classList.toggle('active',Math.abs(+b.dataset.rp-rp)<1e-9));
 }
 
 /* ---------- caution / events ---------- */
@@ -4294,7 +4366,11 @@ document.querySelectorAll('#brokerSeg .seg').forEach(b=>b.onclick=()=>{
   savePrefs();state.broker=b.dataset.broker;loadBroker();savePrefs();renderAll();
 });
 $('lotClear').onclick=()=>{$('lotManual').value='';savePrefs();const r=calcRisk();renderChecks(r)};
-['capital','riskPct','lotManual','contract','leverage','spread','slMult','rrTarget','entry','stop','target'].forEach(id=>$(id).addEventListener('input',()=>{savePrefs();const r=calcRisk();renderChecks(r)}));
+['capital','riskPct','riskYenIn','lotManual','contract','leverage','spread','slMult','rrTarget','entry','stop','target'].forEach(id=>$(id).addEventListener('input',()=>{savePrefs();const r=calcRisk();renderChecks(r)}));
+$('riskChips').addEventListener('click',e=>{const b=e.target.closest('[data-rp]');if(!b)return;$('riskPct').value=b.dataset.rp;savePrefs();const r=calcRisk();renderChecks(r)});
+$('riskModeSeg').addEventListener('click',e=>{const b=e.target.closest('[data-rmode]');if(!b)return;state.riskMode=b.dataset.rmode==='yen'?'yen':'pct';
+  if(state.riskMode==='yen'&&!n($('riskYenIn').value)){const c=n($('capital').value),rp=n($('riskPct').value);if(c&&rp)$('riskYenIn').value=String(Math.round(c*rp/100))}  // 初めて円にしたときは、いまの%と同じ額から始める
+  savePrefs();const r=calcRisk();renderChecks(r)});
 $('autoRisk').addEventListener('change',()=>{savePrefs();const r=calcRisk();renderChecks(r)});
 $('checks').addEventListener('change',e=>{
   const id=e.target.dataset.check;if(!id)return;
