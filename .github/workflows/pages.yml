@@ -39,7 +39,7 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p prev
-          for f in market.json calendar.json holidays.json market_holidays.json spothist.json news.json typhoon.json pollen.json; do
+          for f in market.json calendar.json holidays.json market_holidays.json spothist.json news.json typhoon.json pollen.json reactions.json; do
             curl -fsSL --retry 2 "${{ steps.pages.outputs.base_url }}/$f" -o "prev/$f" || rm -f "prev/$f"
           done
           ls -la prev
@@ -104,6 +104,11 @@ jobs:
         run: |
           python3 ipad-widget/analyze.py _site/market.json --prev=prev/market.json \
             || { cp prev/market.json _site/market.json; cp prev/spothist.json _site/spothist.json || true; }
+      - name: Measure the reactions to past releases (from the site's own candles; history kept from the published copy)
+        continue-on-error: true
+        run: |
+          python3 ipad-widget/reactions.py _site/reactions.json _site/market.json _site/calendar.json --prev=prev/reactions.json \
+            || cp prev/reactions.json _site/reactions.json || true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
