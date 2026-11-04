@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="83c6832bb8">
+<meta name="build" content="0ee977cf1e">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2810,13 +2810,17 @@ function mtfExplain(m){
 }
 function renderMtf(){
   const m=mtfScore(),el=$('mtfScore');
-  if(!m){el.className='mtfscore';el.innerHTML='<div class="sub">データ取得中...</div>';$('mtfTable').innerHTML='';return null}
+  if(!m){el.className='mtfscore';el.innerHTML='<div class="sub">データ取得中...</div>';el.__h=null;$('mtfTable').innerHTML='';return null}
   el.className='mtfscore '+(m.dir>0?'up':m.dir<0?'down':'flat');
-  el.innerHTML=`<div class="ms-main"><div><small>総合判定 <i>ルールベース</i></small><b>${m.dir>0?'↗':m.dir<0?'↘':'→'} ${m.label}</b></div><div class="ms-num">${m.score}<small>一致度 /100<button type="button" class="gq" data-tip="一致度：4つの時間足（4時間・1時間・15分・5分）の判定が、どれだけ同じ向きにそろっているか（0〜100）。買い点と売り点の差で、25以上で買い優勢・売り優勢、25未満は様子見。" aria-label="説明">?</button></small></div></div>`+
+  // タップの空振りを防ぐ：3秒ごとの描き直しでボタンを作り直さない。中身（判定・時間足のボタン）が同じなら、計算時刻の行の文字だけ更新する
+  const msAt='計算 '+LT_FMT.format(new Date())+'（価格 '+(state.spot?LT_FMT.format(new Date(state.spot.asof)):'--')+'時点・15分足は '+(state.m15.length?HM_FMT.format(new Date(state.m15.at(-1).t)):'--')+' の足まで）';
+  const msHtml=`<div class="ms-main"><div><small>総合判定 <i>ルールベース</i></small><b>${m.dir>0?'↗':m.dir<0?'↘':'→'} ${m.label}</b></div><div class="ms-num">${m.score}<small>一致度 /100<button type="button" class="gq" data-tip="一致度：4つの時間足（4時間・1時間・15分・5分）の判定が、どれだけ同じ向きにそろっているか（0〜100）。買い点と売り点の差で、25以上で買い優勢・売り優勢、25未満は様子見。" aria-label="説明">?</button></small></div></div>`+
     mtfExplain(m)+
     (m.held?`<div class="sub ms-hold">判定が境目付近で揺れています（いまの計算は「${esc(m.raw.label)}・一致度${m.raw.score}」。2回続けば切り替えます）</div>`:'')+
     `<div class="ms-tfs">${m.rows.map((r,i)=>`<button type="button" data-tf="${MTF_TFS[i]}" class="${r?r.cls:''}"><span>${MTF_TFS[i].toUpperCase()}</span><b>${r?r.arrow:'—'}</b><small>${r?r.judge:'—'}</small></button>`).join('')}</div>`+
-    `<div class="sub ms-at">計算 ${LT_FMT.format(new Date())}（価格 ${state.spot?LT_FMT.format(new Date(state.spot.asof)):'--'}時点・15分足は ${state.m15.length?HM_FMT.format(new Date(state.m15.at(-1).t)):'--'} の足まで）</div>`;
+    '<div class="sub ms-at"></div>';
+  if(el.__h!==msHtml){el.innerHTML=msHtml;el.__h=msHtml}
+  const atEl=el.querySelector('.ms-at');if(atEl&&atEl.textContent!==msAt)atEl.textContent=msAt;
   const gdir=g=>!g?'—':g.sd>0?'<span class="up">上向き</span>':g.sd<0?'<span class="down">下向き</span>':'横ばい';
   // 第2部 A5：判定は同じ行の4つ（トレンド・ST・GMMA・RSI）の向きの平均。各欄に「判定への寄与（+1／−1／0）」を出し、判定がどこから来たか読めるようにする
   const pt=v=>'<small class="mt-p">（'+(v>0?'+1':v<0?'−1':'0')+'）</small>';
@@ -3844,9 +3848,10 @@ function drawChart(){
   // 水平線を1本ずつ消す・戻すボタン（表示範囲の線、上から価格順）
   const inView=allLv.filter(l=>l.price>=min&&l.price<=max).sort((a,b)=>b.price-a.price);
   $('lvList').hidden=!inView.length;
-  $('lvList').innerHTML=inView.length?'<span>水平線</span>'+inView.map(l=>{const off=lvHidden(l);
+  {const lvEl=$('lvList'),lvHtml=inView.length?'<span>水平線</span>'+inView.map(l=>{const off=lvHidden(l);
     return `<button type="button" class="lvchip${off?' off':''}" data-lv="${l.price}" aria-pressed="${!off}" style="--c:${l.kind==='r'?'#ff6969':'#42d59c'}" title="${off?'タップで戻す':'タップで消す'}"><i></i>${fmt(l.price)}${l.touches>=3?'★':''}${l.big?' '+TF_JA[l.big]:l.tf!=='h1'?' '+l.tf.toUpperCase():''}</button>`}).join('')+
     (inView.some(lvHidden)?'<button type="button" class="lvchip all" data-lv="all" style="--c:rgba(232,195,90,.7)">すべて戻す</button>':''):'';
+  if(lvEl.__h!==lvHtml){lvEl.innerHTML=lvHtml;lvEl.__h=lvHtml}}  // タップの空振りを防ぐ：毎秒の描き直しで水平線のボタンを作り直さない
   $('chartInfo').innerHTML=`<span>${hi==null?'最新足':'選択足'} <b>${esc(barLabel(b.t,isH1))}</b></span>`+
     `<span>始 <b>${fmt(b.o)}</b></span><span>高 <b>${fmt(b.h)}</b></span><span>安 <b>${fmt(b.l)}</b></span><span>終 <b class="${b.c>=b.o?'up':'down'}">${fmt(b.c)}</b></span>`+
     (state.maOn.sma?`<span class="legend"><i style="background:${SMA_COLOR}"></i>${len}SMA <b>${sv==null?'--':fmt(sv)}</b></span>`:'')+
@@ -4166,11 +4171,12 @@ function renderChecks(risk,reb){
     lot:risk.lot?[risk.lotStep>=0.01?'ok':'wn',risk.lotStep>=0.01?risk.lotStep.toFixed(2)+' lot':'最小ロットでも上限超え',risk.lotStep>=0.01?`最大損失 ${$('riskYen').textContent}／0.01lot刻み`:`0.01lotでも ${$('lotRound').textContent.match(/損失(¥[\d,]+)/)?.[1]||''}（上限 ${$('riskYen').textContent}）`]:['na','待機','価格・為替の取得待ち'],
     rebound:reb.touch?['ok','反発',`上 ${INSTR.dist(Math.max(0,reb.up))} / 下 ${INSTR.dist(Math.max(0,reb.down))}（${hhmm(reb.touch.t)}タッチ）`]:['na','なし','直近の120SMAタッチなし']
   };
-  $('checks').innerHTML=CHECKS.map((c,i)=>{
+  {const ckEl=$('checks'),ckHtml=CHECKS.map((c,i)=>{
     const [k,label,desc]=live[c.id],done=!!ticks[c.id];
     return `<label class="check ${done?'done':''}"><input type="checkbox" data-check="${c.id}" ${done?'checked':''}>`+
       `<div><b>${i+1}. ${esc(c.t)}</b><span>${esc(desc)}</span></div><span class="badge ${k}">${esc(label)}</span></label>`;
   }).join('');
+  if(ckEl.__h!==ckHtml){ckEl.innerHTML=ckHtml;ckEl.__h=ckHtml}}  // タップの空振りを防ぐ：中身が同じならチェック欄を作り直さない
   const cnt=CHECKS.filter(c=>ticks[c.id]).length;
   $('checkProgress').textContent=cnt===CHECKS.length?'✓ 準備OK':cnt+'/'+CHECKS.length+' 確認';
 }

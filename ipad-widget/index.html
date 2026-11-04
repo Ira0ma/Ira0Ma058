@@ -1835,18 +1835,26 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     } else { this.priceEl.textContent = s; }
     if (!this.live) {
       if (!PREVIEW) this.priceEl.textContent = "—";  // never show a made-up price on the real site
+      this.chgEl.__live = false;
       this.chgEl.textContent = this.held ? "データ確認中（" + this.held.join("・") + "）" : this.failed ? "価格を取得できませんでした " : PREVIEW ? "サンプル表示" : "読み込み中…";
       if (this.failed && !this.held) this.chgEl.insertAdjacentHTML("beforeend", '<button type="button" class="retry" data-retry="market">再読み込み</button>');
       this.chgEl.style.color = "var(--ink-3)"; return;
     }
     var d = this.price - o.prev, pct = d / o.prev * 100, sign = d >= 0 ? "+" : "−";
-    this.chgEl.textContent = sign + o.chgFmt(Math.abs(d)) + " (" + sign + Math.abs(pct).toFixed(2) + "%)";
+    // タップの空振りを防ぐ：値が動くたびに中身を消して作り直さず、数字の文字だけ書き換える（状態の札は見た目が変わったときだけ差し替える）
+    var chgTxt = sign + o.chgFmt(Math.abs(d)) + " (" + sign + Math.abs(pct).toFixed(2) + "%)", tn = this.chgEl.firstChild;
+    if (this.chgEl.__live && tn && tn.nodeType === 3) { if (tn.nodeValue !== chgTxt) tn.nodeValue = chgTxt; }
+    else { this.chgEl.textContent = chgTxt; this.chgEl.__live = true; }
     var pv = this.prov || {}, ty = String(pv.type || ""), tag = /推定/.test(ty) ? "推定値" : /補正/.test(ty) ? "補正値" : /換算/.test(ty) ? "換算値" : /仲値/.test(ty) ? "仲値" : /売値/.test(ty) ? "売値" : /終値/.test(ty) ? "足の終値" : "";
     var srcTxt = pv.src ? "出典：" + pv.src + (tag ? "・" + tag : "") : "";
     var srcTip = pv.src ? pv.src + "・" + ty : "";  // 説明文（title）も毎回そろえる：短い表示が同じでも、差など説明の中身は変わる
     if (this.srcEl.textContent !== srcTxt) this.srcEl.textContent = srcTxt;
     if (this.srcEl.title !== srcTip) this.srcEl.title = srcTip;
-    this.chgEl.appendChild(this.statusChip());
+    var chip = this.statusChip(), oldChip = this.chgEl.querySelector(".mst");
+    if (oldChip !== chip) {
+      if (oldChip && oldChip.outerHTML === chip.outerHTML) this.chip = oldChip;  // 見た目も説明も同じ：今の札をそのまま使う
+      else if (oldChip) oldChip.replaceWith(chip); else this.chgEl.appendChild(chip);
+    }
     this.chgEl.style.color = d >= 0 ? o.upColor : o.downColor;
     if (dir && !reduce) {
       var pe = this.priceEl; pe.classList.add(dir > 0 ? "flash-up" : "flash-down");
