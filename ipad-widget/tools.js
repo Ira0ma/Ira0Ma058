@@ -21,7 +21,7 @@
   var TABS = [["guide", "使い方"], ["money", "資金管理"], ["check", "取引前チェック"], ["journal", "日誌"], ["pnl", "収支"], ["signals", "シグナル履歴"], ["hours", "市場時間"], ["status", "データ状態"], ["settings", "設定"]];
   var css = document.createElement("style");
   css.textContent = [
-    ".tdt{position:fixed;inset:0;z-index:45;background:rgba(4,5,8,.72);display:flex;align-items:stretch;justify-content:center;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}",
+    ".tdt{position:fixed;inset:0;z-index:45;background:rgba(4,5,8,.72);display:flex;align-items:stretch;justify-content:center;padding:max(10px,var(--safe-top,env(safe-area-inset-top,0px))) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}",
     ".tdt[hidden]{display:none}",
     ".tdt-box{width:min(980px,100%);display:flex;flex-direction:column;background:#101219;border:1px solid rgba(227,184,103,.35);border-radius:18px;color:#f4f1ea;overflow:hidden;font-size:14px;line-height:1.6}",
     ".tdt-top{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08)}",
@@ -89,7 +89,7 @@
     ".tdt .pl-bar{position:relative;display:block;height:10px;background:linear-gradient(90deg,transparent calc(50% - .5px),rgba(255,255,255,.25) calc(50% - .5px),rgba(255,255,255,.25) calc(50% + .5px),transparent calc(50% + .5px))}.tdt .pl-bar i{position:absolute;top:0;bottom:0;border-radius:2px}.tdt .pl-bar i.up{background:#5fd99a}.tdt .pl-bar i.dn{background:#ff9d90}",
     "@media (max-width:520px){.tdt .pl-cal button{min-height:54px;padding:3px}.tdt .pl-cal em{font-size:11px}.tdt .pl-cal small{font-size:9px}.tdt .pl-big b{font-size:28px}.tdt .pl-head{grid-template-columns:1fr}}",
     ".tdt .skiprow{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.tdt .skiprow label.f{flex:1;min-width:200px}",
-    "@media (max-width:600px){.tdt{padding:0}.tdt-box{border-radius:0}.tdt-body{padding:12px}}"
+    "@media (max-width:600px){.tdt{padding:var(--safe-top,env(safe-area-inset-top,0px)) 0 0}.tdt-box{border-radius:0}.tdt-body{padding:12px}}"  /* スマホは全画面。上だけステータスバーの分を空ける */
   ].join("\n");
   document.head.appendChild(css);
   var box = document.createElement("div");
