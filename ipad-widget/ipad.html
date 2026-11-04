@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="5a79fa2209">
+<meta name="build" content="cb4ad313b5">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3299,7 +3299,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     var foot = document.getElementById("pt-foot"); if (!foot || foot.querySelector(".retry")) return;
     var u = market ? new Date(market.updated) : null, stale = u && Date.now() - u > 3 * 3600000;
     // 更新スタンプは中身（水準・目線・接近・答え合わせ）が変わった時刻。距離は価格に合わせて動くので数えない
-    foot.textContent = "水準＝ダッシュボードの水平線・目線＝H1の120SMAの上下・接近＝" + PT_NEAR_TXT[ptTab] + "以内・" + updAt(new Date(ptShownAt)) +
+    foot.textContent = "水準＝ダッシュボードの水平線・目線＝H1の120SMAの上下・接近＝ゴールド" + PT_NEAR_TXT.gold + "・ドル円" + PT_NEAR_TXT.usdjpy + "・BTC" + PT_NEAR_TXT.btc + "・オイル" + PT_NEAR_TXT.usoil + "以内・" + updAt(new Date(ptShownAt)) +
       (u ? "／戦略文：自動分析 " + (stale ? MDHM(u) + "（更新が止まっています）" : stampAt(u) + "（約15分ごと）") : "");
     foot.style.color = stale ? "var(--up-red)" : "";
     if (market) renderStrategy();  // 戦略文も同じ材料（目線・値幅・答え合わせ）に追随
