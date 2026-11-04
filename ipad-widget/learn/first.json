@@ -544,7 +544,8 @@
       ]
      ],
      "rel": [
-      "first:first-22"
+      "first:first-22",
+      "tax:tax-start"
      ]
     },
     {
@@ -633,7 +634,9 @@
      "rel": [
       "usdjpy:usdjpy-37",
       "gold:gold-intro-59",
-      "eco:確定申告"
+      "eco:確定申告",
+      "tax:tax-17",
+      "tax:tax-20"
      ]
     }
    ]
