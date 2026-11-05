@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="139bb51dc6">
+<meta name="build" content="63add40daa">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -707,8 +707,21 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gl-tile[data-book="parental"] { --gl-acc: #9b5fa6; --gl-rgb: 155,95,166; }
 .gl-tile[data-book="taxes"] { --gl-acc: #7f9233; --gl-rgb: 127,146,51; }
 .gl-tile[data-book="labor"] { --gl-acc: #6d7f8f; --gl-rgb: 109,127,143; }
+.gl-tile[data-book="social"] { --gl-acc: #2e6b4f; --gl-rgb: 46,107,79; }
+.gl-tile[data-book="company"] { --gl-acc: #8a6d3b; --gl-rgb: 138,109,59; }
+.gl-tile[data-book="bookkeeping"] { --gl-acc: #5a4a7a; --gl-rgb: 90,74,122; }
+.gl-tile[data-book="inheritance"] { --gl-acc: #6e5a4e; --gl-rgb: 110,90,78; }
+.gl-tile[data-book="insurance"] { --gl-acc: #4f7d8a; --gl-rgb: 79,125,138; }
+.gl-tile[data-book="housing"] { --gl-acc: #a8643c; --gl-rgb: 168,100,60; }
+.gl-tile[data-book="childcare"] { --gl-acc: #c98aa6; --gl-rgb: 201,138,166; }
+.gl-tile[data-book="credit"] { --gl-acc: #707a8c; --gl-rgb: 112,122,140; }
+.gl-tile[data-book="nursing"] { --gl-acc: #7a9b6d; --gl-rgb: 122,155,109; }
+.gl-tile[data-book="marriage"] { --gl-acc: #b45a68; --gl-rgb: 180,90,104; }
 .gl-tile { --gl-acc: var(--gold); --gl-rgb: 227,184,103; }
-.gl-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 2px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--glass-line); flex: none; }
+.gl-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 2px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--glass-line); flex: 0 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+/* 学ぶ：カテゴリ見出し（書斎の棚と同じ4分類）。タブ列の幅いっぱいに引く */
+.gl-cat { grid-column: 1 / -1; font-size: 10px; font-weight: 800; letter-spacing: .1em; color: var(--gold); padding: 5px 2px 2px; border-bottom: 1px solid rgba(var(--gold-rgb), .25); }
+.gl-cat:first-child { padding-top: 1px; }
 .gl-tabs button { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: inherit; font-size: 10.5px; font-weight: 700; color: var(--ink-3); background: none; border: 0; border-radius: 999px; padding: 4px 0; cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
 .gl-tabs button.on { color: var(--on-accent); background: var(--gl-acc); }
 /* 学ぶ：読む順の番号（1〜6）と、用語集の「辞書」印 */
@@ -804,7 +817,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gbook.eco .gb-figbox { border-color: #cfe0dc; }
 .gbook.eco .gb-resume { background: #dcecea; border-color: #bcd6d2; color: #175e63; }
 /* 学習の本（パターン図鑑・ドル円入門・FVG詳説）：用語集と同じ紙面に、ひと言→図→見る所→待つこと→例→勘違い→詳しく の順 */
-.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; } .gbook.bk-first { --bk: #8fd8a8; --bk-ink: #2f7a4c; } .gbook.bk-tax { --bk: #e7a98c; --bk-ink: #9a4f2e; } .gbook.bk-retire { --bk: #e9a9c4; --bk-ink: #8f3d63; } .gbook.bk-walls { --bk: #64c2a3; --bk-ink: #226b52; } .gbook.bk-fire { --bk: #e2703a; --bk-ink: #93400f; } .gbook.bk-safetynet { --bk: #5cb87a; --bk-ink: #2c6e44; } .gbook.bk-loan { --bk: #c07f3e; --bk-ink: #7e4f1c; } .gbook.bk-aiside { --bk: #7d7bf0; --bk-ink: #4a3ec2; } .gbook.bk-med { --bk: #4f96b4; --bk-ink: #2c5d72; } .gbook.bk-safety { --bk: #c9971c; --bk-ink: #7d5c0d; } .gbook.bk-disaster { --bk: #2f5aa8; --bk-ink: #1e3c74; } .gbook.bk-indicators { --bk: #c0455a; --bk-ink: #822637; } .gbook.bk-regime { --bk: #1f7a6d; --bk-ink: #14524a; } .gbook.bk-parental { --bk: #9b5fa6; --bk-ink: #6d3a75; } .gbook.bk-taxes { --bk: #7f9233; --bk-ink: #55631f; } .gbook.bk-labor { --bk: #6d7f8f; --bk-ink: #3f4f5c; }
+.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; } .gbook.bk-first { --bk: #8fd8a8; --bk-ink: #2f7a4c; } .gbook.bk-tax { --bk: #e7a98c; --bk-ink: #9a4f2e; } .gbook.bk-retire { --bk: #e9a9c4; --bk-ink: #8f3d63; } .gbook.bk-walls { --bk: #64c2a3; --bk-ink: #226b52; } .gbook.bk-fire { --bk: #e2703a; --bk-ink: #93400f; } .gbook.bk-safetynet { --bk: #5cb87a; --bk-ink: #2c6e44; } .gbook.bk-loan { --bk: #c07f3e; --bk-ink: #7e4f1c; } .gbook.bk-aiside { --bk: #7d7bf0; --bk-ink: #4a3ec2; } .gbook.bk-med { --bk: #4f96b4; --bk-ink: #2c5d72; } .gbook.bk-safety { --bk: #c9971c; --bk-ink: #7d5c0d; } .gbook.bk-disaster { --bk: #2f5aa8; --bk-ink: #1e3c74; } .gbook.bk-indicators { --bk: #c0455a; --bk-ink: #822637; } .gbook.bk-regime { --bk: #1f7a6d; --bk-ink: #14524a; } .gbook.bk-parental { --bk: #9b5fa6; --bk-ink: #6d3a75; } .gbook.bk-taxes { --bk: #7f9233; --bk-ink: #55631f; } .gbook.bk-labor { --bk: #6d7f8f; --bk-ink: #3f4f5c; } .gbook.bk-social { --bk: #2e6b4f; --bk-ink: #1c4630; } .gbook.bk-company { --bk: #8a6d3b; --bk-ink: #634b1e; } .gbook.bk-bookkeeping { --bk: #5a4a7a; --bk-ink: #3e3254; } .gbook.bk-inheritance { --bk: #6e5a4e; --bk-ink: #453730; } .gbook.bk-insurance { --bk: #4f7d8a; --bk-ink: #2f4e58; } .gbook.bk-housing { --bk: #a8643c; --bk-ink: #7a4525; } .gbook.bk-childcare { --bk: #c98aa6; --bk-ink: #8f5273; } .gbook.bk-credit { --bk: #707a8c; --bk-ink: #454f5e; } .gbook.bk-nursing { --bk: #7a9b6d; --bk-ink: #47663c; } .gbook.bk-marriage { --bk: #b45a68; --bk-ink: #7e3542; }
 .gbook.bk-learn .gb-bar .gb-title { color: var(--bk); } .gbook.bk-learn .gb-prog i { background: var(--bk); } .gbook.bk-learn .gb-btn.gb-x { background: var(--bk); border-color: var(--bk); }
 .gbook.bk-learn .gb-cover small, .gbook.bk-learn .gb-chhead small, .gbook.bk-learn .gb-toc i, .gbook.bk-learn .gb-idx button em, .gbook.bk-learn .gb-cover .gb-hint::before, .gbook.bk-learn .gb-pts li::marker { color: var(--bk-ink); }
 .gbook.bk-learn .gb-idx h4, .gbook.bk-learn .gb-table th { background: var(--bk-ink); }
@@ -943,9 +956,11 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .shf-title { font-size: 17px; font-weight: 800; letter-spacing: .05em; color: var(--gold); white-space: nowrap; }
 .shf-sub { font-size: 11.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .shf-x { margin-left: auto; align-self: center; }
-.shf-body { position: relative; flex: 1; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
-  display: flex; flex-direction: column; justify-content: center; gap: 40px; padding: 16px 20px 30px; }
+.shf-body { position: relative; flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 40px; padding: 16px 20px 30px; }
 .shf-unit { width: min(1120px, 100%); margin: 0 auto; flex: none; }
+.shf-unit:first-child { margin-top: auto; }  /* 棚が画面より低いときは上下中央、高いときは頭からスクロール（auto マージンで両立） */
+.shf-unit:last-child { margin-bottom: auto; }
 .shf-row { position: relative; z-index: 1; display: flex; align-items: flex-end; gap: 10px; padding: 0 16px; }
 .shf-board { position: relative; height: 26px; border-radius: 4px;
   background: linear-gradient(180deg, #9a6c3c 0%, #7c5228 32%, #5e3b1b 74%, #482b10 100%);
@@ -956,13 +971,15 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
   font-size: 11px; font-weight: 800; letter-spacing: .1em; color: #38220c; white-space: nowrap;
   background: linear-gradient(180deg, #dcb87e, #bd9250); border: 1px solid rgba(70, 44, 14, .6); border-radius: 3px; padding: 2px 10px;
   box-shadow: inset 0 1px 0 rgba(255, 246, 220, .75), 0 1px 2px rgba(0, 0, 0, .4); }
-/* 棚に並ぶ1冊（表紙）。色は本ごとのアクセントから作る */
+/* 棚に並ぶ1冊（背表紙）。幅は項目数に比例する flex-grow（JSが style で指定）で棚幅を分け合い、横スクロールはしない。色は本ごとのアクセントから作る */
 .shf-book { --acc: var(--gold); --rgb: 227, 184, 103; --deep: #3a2c10; --mid: #6b551f;
-  position: relative; flex: none; font: inherit; text-align: left; cursor: pointer; color: #f5ecd9; padding: 0;
-  border: 1px solid rgba(0, 0, 0, .55); border-radius: 4px 7px 7px 4px;
-  background: linear-gradient(150deg, var(--mid) 0%, var(--deep) 78%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), inset 0 -12px 18px rgba(0, 0, 0, .35), 0 6px 10px rgba(0, 0, 0, .35);
-  transition: transform .2s ease, box-shadow .2s ease; }
+  position: relative; flex: 1 1 0; min-width: 34px; max-width: 200px; overflow: hidden;
+  font: inherit; cursor: pointer; color: #f5ecd9; padding: 30px 2px 12px;
+  border: 1px solid rgba(0, 0, 0, .55); border-radius: 3px 5px 5px 3px;
+  border-top: 3px solid var(--acc); border-bottom: 3px solid var(--acc);
+  background: linear-gradient(90deg, var(--deep), var(--mid) 55%, var(--deep));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .13), 0 6px 10px rgba(0, 0, 0, .35);
+  display: flex; flex-direction: column; align-items: center; transition: transform .2s ease, box-shadow .2s ease; }
 .shf-book[data-book="first"] { --acc: #8fd8a8; --rgb: 143, 216, 168; --deep: #13351f; --mid: #1e5631; }
 .shf-book[data-book="gold"] { --acc: #e6c27a; --rgb: 230, 194, 122; --deep: #42320e; --mid: #7a5f1e; }
 .shf-book[data-book="usdjpy"] { --acc: #a9bdf0; --rgb: 169, 189, 240; --deep: #1a2950; --mid: #2e4a86; }
@@ -983,48 +1000,38 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .shf-book[data-book="parental"] { --acc: #9b5fa6; --rgb: 155, 95, 166; --deep: #33193a; --mid: #5f3168; }
 .shf-book[data-book="taxes"] { --acc: #7f9233; --rgb: 127, 146, 51; --deep: #2e3312; --mid: #4d5a1e; }
 .shf-book[data-book="labor"] { --acc: #6d7f8f; --rgb: 109, 127, 143; --deep: #232d34; --mid: #45545f; }
+.shf-book[data-book="social"] { --acc: #2e6b4f; --rgb: 46, 107, 79; --deep: #0f241a; --mid: #24513a; }
+.shf-book[data-book="company"] { --acc: #8a6d3b; --rgb: 138, 109, 59; --deep: #2a2110; --mid: #54421f; }
+.shf-book[data-book="bookkeeping"] { --acc: #5a4a7a; --rgb: 90, 74, 122; --deep: #1e1930; --mid: #463a5f; }
+.shf-book[data-book="inheritance"] { --acc: #6e5a4e; --rgb: 110, 90, 78; --deep: #2a211c; --mid: #4f4138; }
+.shf-book[data-book="insurance"] { --acc: #4f7d8a; --rgb: 79, 125, 138; --deep: #152329; --mid: #36525c; }
+.shf-book[data-book="housing"] { --acc: #a8643c; --rgb: 168, 100, 60; --deep: #2e1c10; --mid: #6e4527; }
+.shf-book[data-book="childcare"] { --acc: #c98aa6; --rgb: 201, 138, 166; --deep: #33202b; --mid: #7d5069; }
+.shf-book[data-book="credit"] { --acc: #707a8c; --rgb: 112, 122, 140; --deep: #20242b; --mid: #47505d; }
+.shf-book[data-book="nursing"] { --acc: #7a9b6d; --rgb: 122, 155, 109; --deep: #222c1d; --mid: #4d6542; }
+.shf-book[data-book="marriage"] { --acc: #b45a68; --rgb: 180, 90, 104; --deep: #2c191d; --mid: #6f3d46; }
 .shf-spine[data-book="fx"] { --acc: #e3b867; --rgb: 227, 184, 103; --deep: #3d2f0e; --mid: #6f5518; }
 .shf-spine[data-book="eco"] { --acc: #6fd0d4; --rgb: 111, 208, 212; --deep: #123a3d; --mid: #1f5f63; }
-.shf-book::before { content: ""; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: rgba(0, 0, 0, .42); box-shadow: 1px 0 0 rgba(255, 255, 255, .13); }
-.shf-book::after { content: ""; position: absolute; right: 2px; top: 5px; bottom: 5px; width: 4px; border-radius: 1px; opacity: .85;
-  background: repeating-linear-gradient(180deg, #eadfc9 0 2px, #c9ba98 2px 3px); }
-.shf-book.out { transform: translateY(-16px); z-index: 3; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), inset 0 -12px 18px rgba(0, 0, 0, .3), 0 18px 22px rgba(0, 0, 0, .5); }
+.shf-book::before { content: ""; position: absolute; inset: 5px 4px; border: 1px solid rgba(var(--rgb), .45); border-radius: 2px; pointer-events: none; }
+.shf-book.out { transform: translateY(-16px); z-index: 3; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 18px 22px rgba(0, 0, 0, .5); }
 .shf-book:focus-visible, .shf-spine:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-.shf-in { position: relative; display: flex; flex-direction: column; height: 100%; padding: 11px 9px 26px 15px; }
-.shf-book.has-ribbon .shf-in { padding-left: 27px; }
-.shf-icon { font-size: 15px; line-height: 1; }
-.shf-name { margin-top: 5px; font-size: 14.5px; font-weight: 800; line-height: 1.32; letter-spacing: .02em;
+.shf-name { writing-mode: vertical-rl; font-size: 13.5px; font-weight: 800; line-height: 1.5; letter-spacing: .08em;
   background: linear-gradient(180deg, #fff6d8 0%, #f0d089 38%, #c49b45 56%, #f6e2a0 80%, #a37c2c 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent; }
 .shf-book[data-book="gold"] .shf-name { background: linear-gradient(180deg, #fffbe9 0%, #ffe9a8 35%, #e9bc58 55%, #fff0b8 78%, #c99b35 100%);
   -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 0 5px rgba(240, 208, 137, .35)); }
-.shf-badge { position: absolute; top: 7px; right: 9px; width: 19px; height: 19px; border-radius: 50%; z-index: 1;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 800; color: #221806; background: var(--acc); box-shadow: 0 1px 3px rgba(0, 0, 0, .45); }
-.shf-obi { position: absolute; left: 0; right: 0; bottom: 13px; z-index: 1; padding: 4px 7px 5px 15px;
-  font-size: 9.5px; font-weight: 700; line-height: 1.3; color: #43351c;
-  background: linear-gradient(180deg, #f7edd6, #eadbb9); border-top: 2px solid var(--acc); box-shadow: 0 1px 2px rgba(0, 0, 0, .25); }
-.shf-brand { position: absolute; left: 0; right: 0; bottom: 2px; text-align: center; font-size: 7.5px; letter-spacing: .3em; color: rgba(245, 236, 217, .55); }
-.shf-ribbon { position: absolute; top: -2px; left: 13px; width: 13px; height: 60px; z-index: 2; pointer-events: none;
+.shf-badge { position: absolute; top: 7px; left: 50%; transform: translateX(-50%); z-index: 1;
+  font-size: 13px; font-weight: 800; color: var(--acc); text-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
+.shf-new { position: absolute; left: 0; right: 0; bottom: 16%; z-index: 1; text-align: center;
+  font-size: 10.5px; font-weight: 800; letter-spacing: .3em; padding: 3px 0 3px .3em; color: #2a1a05;
+  background: linear-gradient(180deg, #ffe9a8, #d9a83f); box-shadow: 0 1px 3px rgba(0, 0, 0, .4); }
+.shf-ribbon { position: absolute; top: -2px; left: 5px; width: 11px; height: 54px; z-index: 2; pointer-events: none;
   background: linear-gradient(90deg, #a31226, #d8263f 45%, #a31226); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%); filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .35)); }
-.shf-tag { position: absolute; top: 52%; left: 7px; z-index: 2; pointer-events: none; transform: rotate(-4deg);
+.shf-tag { position: absolute; top: 52%; left: 50%; z-index: 2; pointer-events: none; transform: translateX(-50%) rotate(-4deg);
   font-size: 8.5px; font-weight: 800; color: #fff; background: #c21730; border-radius: 999px; padding: 2px 6px; box-shadow: 0 2px 5px rgba(0, 0, 0, .4); white-space: nowrap; }
-/* 面陳（表紙を正面に向けて立てかける展示）と立て札 */
-.shf-face { position: relative; flex: none; width: 174px; margin-right: 2px; }
-.shf-face .shf-book { width: 100%; height: 218px; transform: perspective(720px) rotateY(-7deg) rotateX(1.5deg); transform-origin: left center; }
-.shf-face .shf-book.out { transform: perspective(720px) rotateY(-7deg) rotateX(1.5deg) translateY(-10px); }
-.shf-face .shf-icon { font-size: 22px; }
-.shf-face .shf-name { font-size: 18px; }
-.shf-face .shf-en { margin-top: 6px; font-size: 8.5px; font-weight: 700; letter-spacing: .22em; color: rgba(245, 236, 217, .75); }
-.shf-face::after { content: ""; position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); width: 128px; height: 8px; border-radius: 4px;
-  background: linear-gradient(180deg, #8a5a2e, #5d3a1a); box-shadow: 0 4px 8px rgba(0, 0, 0, .5); }
-.shf-sign { flex: none; align-self: flex-end; margin: 0 4px 3px -2px; transform: rotate(-2deg);
-  background: linear-gradient(180deg, #fbf5e4, #eee1bd); color: #43351c; font-size: 10.5px; font-weight: 800; letter-spacing: .06em;
-  padding: 4px 12px 5px; border-radius: 3px; box-shadow: 0 3px 7px rgba(0, 0, 0, .45); white-space: nowrap; text-align: center; }
-.shf-sign small { display: block; font-size: 8.5px; font-weight: 700; color: #8a6f3c; margin-top: 1px; }
-/* 辞書は背表紙だけの細い本 */
+/* 辞書は専用の棚に2冊で並ぶ。見た目は従来どおり（縦書き題字＋「辞書」札＋上下の色帯）で、幅だけ棚に合わせて広がる */
 .shf-spine { --acc: var(--gold); --rgb: 227, 184, 103; --deep: #3a2c10; --mid: #6b551f;
-  position: relative; flex: none; width: 46px; height: 184px; font: inherit; cursor: pointer; color: #f0e7d3; padding: 12px 0 10px;
+  position: relative; flex: 1 1 0; min-width: 46px; height: 184px; font: inherit; cursor: pointer; color: #f0e7d3; padding: 12px 0 10px;
   border: 1px solid rgba(0, 0, 0, .55); border-radius: 3px 5px 5px 3px;
   border-top: 3px solid var(--acc); border-bottom: 3px solid var(--acc);
   background: linear-gradient(90deg, var(--deep), var(--mid) 55%, var(--deep));
@@ -1033,17 +1040,19 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .shf-spine.out { transform: translateY(-16px); z-index: 3; }
 .shf-spine .shf-st { writing-mode: vertical-rl; font-size: 13.5px; font-weight: 800; letter-spacing: .14em; }
 .shf-spine .shf-dic { margin-top: auto; font-size: 8.5px; font-weight: 800; color: #221806; background: var(--acc); border-radius: 2px; padding: 1px 4px; }
-/* ブックエンドと観葉植物（CSSだけの飾り） */
-.shf-end { position: relative; flex: none; width: 11px; height: 116px; margin-left: 4px;
-  background: linear-gradient(90deg, #65676d, #abaeb6 45%, #585a60); border-radius: 3px 3px 0 0; box-shadow: 0 4px 7px rgba(0, 0, 0, .4); }
-.shf-end::after { content: ""; position: absolute; bottom: 0; left: -17px; width: 28px; height: 7px; border-radius: 2px 0 0 2px;
-  background: linear-gradient(180deg, #9a9ea6, #62646a); }
-.shf-plant { position: relative; flex: none; width: 54px; height: 76px; margin-left: 10px; }
-.shf-plant i { position: absolute; bottom: 24px; left: 50%; width: 12px; height: 24px; margin-left: -6px;
-  border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%; background: linear-gradient(180deg, #63ad6c, #2f6b3a);
-  transform-origin: 50% 100%; transform: translateX(var(--x, 0)) rotate(var(--r, 0deg)); }
-.shf-plant .pot { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 34px; height: 27px;
-  background: linear-gradient(180deg, #bc6a3d, #8a4525); clip-path: polygon(0 0, 100% 0, 83% 100%, 17% 100%); }
+/* スマホ表示（縦＝flow／横＝pager）だけ：学ぶのタップ対象を44px以上にし、書斎は背表紙を大きめに縦積みする。
+   既存のモードクラス（html.flow / html.phone）を hook に使う。stage（iPad・PC）には効かせない */
+html.flow .gl-tabs button, html.phone .gl-tabs button { min-height: 44px; }
+html.flow .gl-grid button, html.phone .gl-grid button { min-height: 44px; }
+html.flow .gl-shelf, html.phone .gl-shelf { min-height: 44px; }
+html.flow .gb-btn, html.phone .gb-btn { min-height: 44px; }
+html.flow .gb-toc button, html.phone .gb-toc button { min-height: 44px; }
+html.flow .gb-idx button, html.phone .gb-idx button { min-height: 44px; }
+html.phone .gl-tabs, html.phone .gl-grid { overflow-y: auto; -webkit-overflow-scrolling: touch; }  /* 横向きはカードの高さが固定なので、広げた分は枠の中のスクロールで逃がす */
+html.flow .shf-body, html.phone .shf-body { gap: 26px; padding: 12px 12px 24px; }
+html.flow .shf-row, html.phone .shf-row { flex-wrap: wrap; row-gap: 14px; padding: 0 8px; }
+html.flow .shf-book, html.phone .shf-book { flex: 0 0 68px !important; height: 198px !important; }
+html.flow .shf-spine, html.phone .shf-spine { flex: 1 1 140px; height: 198px; }
 .gbook { position: fixed; }
 .gb-zoom { position: absolute; inset: 0; z-index: 4; background: rgba(8,9,12,.94); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 50px 10px 16px; }
 .gb-zoom[hidden] { display: none; }
@@ -1407,7 +1416,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <div class="gl-head">
         <b class="gl-title">学ぶ</b><span id="gl-count"></span><button type="button" class="gl-open" data-gl="toc">目次を開く ›</button><button type="button" class="gl-shelf" data-shf="open">📚 小さな書斎</button>
       </div>
-      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（1〜20の順に読む本と、2冊の辞書）"><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="walls" title="8冊目：年収の壁と扶養のしくみ（パートの税金・社会保険・配偶者控除の壁）"><i class="gl-no" aria-hidden="true">8</i>年収の壁</button><button type="button" role="tab" data-glbook="fire" title="9冊目：FIREの設計図 ― 投資の組み合わせの作り方（自分の条件で設計するFIREと、設計ワーク）"><i class="gl-no" aria-hidden="true">9</i>FIRE<span class="gl-x">の設計図</span></button><button type="button" role="tab" data-glbook="safetynet" title="10冊目：困ったときに読む本 ― 生活のセーフティーネット（困ったときに開く本）"><i class="gl-no" aria-hidden="true">10</i>困ったときの<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="loan" title="11冊目：お金を借りる前に読む本 ― 上手な借り入れ、悪い借り入れ（借りる前に読む本）"><i class="gl-no" aria-hidden="true">11</i>借りる前の<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="aiside" title="12冊目：AIと始める副業の教科書 ― クラウドワークス・アフィリエイト・コンテンツ販売（AIと始める副業の教科書）"><i class="gl-no" aria-hidden="true">12</i>AI副業の<span class="gl-x">教科書</span></button><button type="button" role="tab" data-glbook="med" title="13冊目：家庭の医学 ― 体調を崩したときに開く本（体調を崩したときに開く本）"><i class="gl-no" aria-hidden="true">13</i>家庭の<span class="gl-x">医学</span></button><button type="button" role="tab" data-glbook="safety" title="14冊目：巻き込まれたときに開く本 ― 犯罪・トラブルの安全マニュアル（巻き込まれたときに開く本）"><i class="gl-no" aria-hidden="true">14</i>巻き込まれた<span class="gl-x">ときの本</span></button><button type="button" role="tab" data-glbook="disaster" title="15冊目：災害のときに開く本 ― 避難と備えのマニュアル（災害のときに開く本）"><i class="gl-no" aria-hidden="true">15</i>災害の<span class="gl-x">ときの本</span></button><button type="button" role="tab" data-glbook="indicators" title="16冊目：インジケーターの教科書 ― 使い方とトレードへの活かし方（インジケーターの教科書）"><i class="gl-no" aria-hidden="true">16</i>インジケーターの<span class="gl-x">教科書</span></button><button type="button" role="tab" data-glbook="regime" title="17冊目：相場の読み方 ― テクニカルとファンダメンタル（相場の読み方）"><i class="gl-no" aria-hidden="true">17</i>相場の<span class="gl-x">読み方</span></button><button type="button" role="tab" data-glbook="parental" title="18冊目：産休・育休の本 ― 休み方と手当の徹底まとめ（産休・育休の本）"><i class="gl-no" aria-hidden="true">18</i>産休・育休<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="taxes" title="19冊目：税金一覧の本 ― 日本の税金を表で整理（税金一覧の本）"><i class="gl-no" aria-hidden="true">19</i>税金一覧<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="labor" title="20冊目：職場のルールの本 ― 労働基準法と懲戒・残業・解雇（職場のルールの本）"><i class="gl-no" aria-hidden="true">20</i>職場の<span class="gl-x">ルール</span></button><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
+      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（カテゴリ別の30冊の本と、2冊の辞書）"><div class="gl-cat">投資とトレード</div><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="indicators" title="16冊目：インジケーターの教科書 ― 使い方とトレードへの活かし方（インジケーターの教科書）"><i class="gl-no" aria-hidden="true">16</i>インジケーターの<span class="gl-x">教科書</span></button><button type="button" role="tab" data-glbook="regime" title="17冊目：相場の読み方 ― テクニカルとファンダメンタル（相場の読み方）"><i class="gl-no" aria-hidden="true">17</i>相場の<span class="gl-x">読み方</span></button><div class="gl-cat">暮らしと制度</div><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="walls" title="8冊目：年収の壁と扶養のしくみ（パートの税金・社会保険・配偶者控除の壁）"><i class="gl-no" aria-hidden="true">8</i>年収の壁</button><button type="button" role="tab" data-glbook="fire" title="9冊目：FIREの設計図 ― 投資の組み合わせの作り方（自分の条件で設計するFIREと、設計ワーク）"><i class="gl-no" aria-hidden="true">9</i>FIRE<span class="gl-x">の設計図</span></button><button type="button" role="tab" data-glbook="safetynet" title="10冊目：困ったときに読む本 ― 生活のセーフティーネット（困ったときに開く本）"><i class="gl-no" aria-hidden="true">10</i>困ったときの<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="loan" title="11冊目：お金を借りる前に読む本 ― 上手な借り入れ、悪い借り入れ（借りる前に読む本）"><i class="gl-no" aria-hidden="true">11</i>借りる前の<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="med" title="13冊目：家庭の医学 ― 体調を崩したときに開く本（体調を崩したときに開く本）"><i class="gl-no" aria-hidden="true">13</i>家庭の<span class="gl-x">医学</span></button><button type="button" role="tab" data-glbook="safety" title="14冊目：巻き込まれたときに開く本 ― 犯罪・トラブルの安全マニュアル（巻き込まれたときに開く本）"><i class="gl-no" aria-hidden="true">14</i>巻き込まれた<span class="gl-x">ときの本</span></button><button type="button" role="tab" data-glbook="disaster" title="15冊目：災害のときに開く本 ― 避難と備えのマニュアル（災害のときに開く本）"><i class="gl-no" aria-hidden="true">15</i>災害の<span class="gl-x">ときの本</span></button><button type="button" role="tab" data-glbook="parental" title="18冊目：産休・育休の本 ― 休み方と手当の徹底まとめ（産休・育休の本）"><i class="gl-no" aria-hidden="true">18</i>産休・育休<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="taxes" title="19冊目：税金一覧の本 ― 日本の税金を表で整理（税金一覧の本）"><i class="gl-no" aria-hidden="true">19</i>税金一覧<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="inheritance" title="24冊目：相続と遺言、終活の本 ― 受け継ぐ仕組みと、自分の意思の残し方（相続と遺言、終活の本）"><i class="gl-no" aria-hidden="true">24</i>相続・遺言<span class="gl-x">終活の本</span></button><button type="button" role="tab" data-glbook="insurance" title="25冊目：民間の保険の見方 ― 公的保険との切り分けと入り方（民間の保険の見方）"><i class="gl-no" aria-hidden="true">25</i>民間の保険<span class="gl-x">の見方</span></button><button type="button" role="tab" data-glbook="housing" title="26冊目：家と住宅ローンの本 ― 賃貸と購入、ローンの仕組みと付き合い方（家と住宅ローンの本）"><i class="gl-no" aria-hidden="true">26</i>家と<span class="gl-x">住宅ローン</span></button><button type="button" role="tab" data-glbook="childcare" title="27冊目：子育てと教育費の本 ― 誕生から自立まで、お金と制度の地図（子育てと教育費の本）"><i class="gl-no" aria-hidden="true">27</i>子育てと<span class="gl-x">教育費</span></button><button type="button" role="tab" data-glbook="credit" title="28冊目：信用情報とカードの本 ― 記録の仕組みと、カードとの付き合い方（信用情報とカードの本）"><i class="gl-no" aria-hidden="true">28</i>信用情報と<span class="gl-x">カード</span></button><button type="button" role="tab" data-glbook="nursing" title="29冊目：介護の実務の本 ― 認定・サービス・費用と、家族を支える制度（介護の実務の本）"><i class="gl-no" aria-hidden="true">29</i>介護の<span class="gl-x">実務</span></button><button type="button" role="tab" data-glbook="marriage" title="30冊目：結婚と離婚のお金と手続き ― 婚姻で変わる制度と、離婚の進め方・分け方（結婚と離婚のお金と手続き）"><i class="gl-no" aria-hidden="true">30</i>結婚と離婚<span class="gl-x">の手続き</span></button><div class="gl-cat">仕事と経営</div><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="aiside" title="12冊目：AIと始める副業の教科書 ― クラウドワークス・アフィリエイト・コンテンツ販売（AIと始める副業の教科書）"><i class="gl-no" aria-hidden="true">12</i>AI副業の<span class="gl-x">教科書</span></button><button type="button" role="tab" data-glbook="labor" title="20冊目：職場のルールの本 ― 労働基準法と懲戒・残業・解雇（職場のルールの本）"><i class="gl-no" aria-hidden="true">20</i>職場の<span class="gl-x">ルール</span></button><button type="button" role="tab" data-glbook="social" title="21冊目：社会保険・年金と福利厚生の本 ― 5つの保険と年金の地図（社会保険・年金と福利厚生の本）"><i class="gl-no" aria-hidden="true">21</i>社会保険・<span class="gl-x">年金と福利厚生</span></button><button type="button" role="tab" data-glbook="company" title="22冊目：法人化の本 ― 個人事業主と法人の徹底まとめ（法人化の本）"><i class="gl-no" aria-hidden="true">22</i>法人化<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="bookkeeping" title="23冊目：簿記・会計の本 ― 帳簿と決算書が読めるようになる本（簿記・会計の本）"><i class="gl-no" aria-hidden="true">23</i>簿記・会計<span class="gl-x">の本</span></button><div class="gl-cat">辞書</div><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
       <div class="gl-grid" id="gl-grid"></div>
       <p class="gl-hint">本を開いたら、左右にスワイプか「次のページ ›」でめくれます</p>
     </div>
@@ -4982,10 +4991,20 @@ window.TD_THEME = (function () {
       regime: { id: "regime", src: "learn/regime.json", title: "相場の読み方 ― テクニカルとファンダメンタル", en: "READING THE MARKET", icon: "🌤️", bm: "learn-regime-page", learn: true },
       parental: { id: "parental", src: "learn/parental.json", title: "産休・育休の本 ― 休み方と手当の徹底まとめ", en: "MATERNITY & CHILDCARE LEAVE", icon: "👶", bm: "learn-parental-page", learn: true },
       taxes: { id: "taxes", src: "learn/taxes.json", title: "税金一覧の本 ― 日本の税金を表で整理", en: "JAPAN TAX OVERVIEW", icon: "🧾", bm: "learn-taxes-page", learn: true },
-      labor: { id: "labor", src: "learn/labor.json", title: "職場のルールの本 ― 労働基準法と懲戒・残業・解雇", en: "WORKPLACE RULES", icon: "⚖️", bm: "learn-labor-page", learn: true }
+      labor: { id: "labor", src: "learn/labor.json", title: "職場のルールの本 ― 労働基準法と懲戒・残業・解雇", en: "WORKPLACE RULES", icon: "⚖️", bm: "learn-labor-page", learn: true },
+      social: { id: "social", src: "learn/social.json", title: "社会保険・年金と福利厚生の本", en: "SOCIAL INSURANCE & PENSIONS", icon: "🏛️", bm: "learn-social-page", learn: true },
+      company: { id: "company", src: "learn/company.json", title: "法人化の本 ― 個人事業主と法人の徹底まとめ", en: "INCORPORATION & COMPANIES", icon: "🏢", bm: "learn-company-page", learn: true },
+      bookkeeping: { id: "bookkeeping", src: "learn/bookkeeping.json", title: "簿記・会計の本 ― 帳簿と決算書が読めるようになる本", en: "BOOKKEEPING & ACCOUNTING", icon: "📒", bm: "learn-bookkeeping-page", learn: true },
+      inheritance: { id: "inheritance", src: "learn/inheritance.json", title: "相続と遺言、終活の本 ― 受け継ぐ仕組みと、自分の意思の残し方", en: "INHERITANCE & WILLS", icon: "🌿", bm: "learn-inheritance-page", learn: true },
+      insurance: { id: "insurance", src: "learn/insurance.json", title: "民間の保険の見方 ― 公的保険との切り分けと入り方", en: "PRIVATE INSURANCE GUIDE", icon: "☂️", bm: "learn-insurance-page", learn: true },
+      housing: { id: "housing", src: "learn/housing.json", title: "家と住宅ローンの本 ― 賃貸と購入、ローンの仕組みと付き合い方", en: "HOME & MORTGAGE GUIDE", icon: "🏠", bm: "learn-housing-page", learn: true },
+      childcare: { id: "childcare", src: "learn/childcare.json", title: "子育てと教育費の本 ― 誕生から自立までのお金と制度の地図", en: "CHILD-REARING & EDUCATION COSTS", icon: "🎒", bm: "learn-childcare-page", learn: true },
+      credit: { id: "credit", src: "learn/credit.json", title: "信用情報とカードの本 ― 記録の仕組みと、カードとの付き合い方", en: "CREDIT RECORDS & CARDS", icon: "💳", bm: "learn-credit-page", learn: true },
+      nursing: { id: "nursing", src: "learn/nursing.json", title: "介護の実務の本 ― 認定・サービス・費用と、家族を支える制度", en: "NURSING CARE IN PRACTICE", icon: "🌿", bm: "learn-nursing-page", learn: true },
+      marriage: { id: "marriage", src: "learn/marriage.json", title: "結婚と離婚のお金と手続き ― 婚姻で変わる制度と、離婚の進め方・分け方", en: "MARRIAGE, DIVORCE & MONEY", icon: "💍", bm: "learn-marriage-page", learn: true }
     };
     // ORDER は名前で関連リンクを探す順（用語集が先）。タブの並び（読む順）は HTML の .gl-tabs 側
-    var ORDER = ["fx", "eco", "first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire", "safetynet", "loan", "aiside", "med", "safety", "disaster", "indicators", "regime", "parental", "taxes", "labor"], LEARN = ["first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire", "safetynet", "loan", "aiside", "med", "safety", "disaster", "indicators", "regime", "parental", "taxes", "labor"];
+    var ORDER = ["fx", "eco", "first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire", "safetynet", "loan", "aiside", "med", "safety", "disaster", "indicators", "regime", "parental", "taxes", "labor", "social", "company", "bookkeeping", "inheritance", "insurance", "housing", "childcare", "credit", "nursing", "marriage"], LEARN = ["first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire", "safetynet", "loan", "aiside", "med", "safety", "disaster", "indicators", "regime", "parental", "taxes", "labor", "social", "company", "bookkeeping", "inheritance", "insurance", "housing", "childcare", "credit", "nursing", "marriage"];
     // learn/*.json の1項目を、用語集と同じ [名前, 読み, 説明, 付録] の形にする（付録の L に元の項目を持つ）
     function learnBook(b, j) {
       b.version = j.version; b.lead = j.lead; b.short = j.chapters.map(function (c) { return c.short || c.t; });
@@ -6242,7 +6261,9 @@ window.TD_THEME = (function () {
     window.addEventListener("resize", function () { if (book.hidden) return; var top = pages[cur]; built = ""; paginate(); show(Math.min(cur, pages.length - 1)); });
 
     /* ---------- 小さな書斎（学ぶの本棚） ----------
-       棚の並びは読む順（タブの番号どおり）。厚みは項目数に比例（読み込み前は SHELF の n で代用）。
+       棚はカテゴリ別の4段（投資とトレード／暮らしと制度／仕事と経営／辞書）。背表紙だけを並べ、横スクロールはしない。
+       背表紙の幅は、項目数に比例する flex-grow（shelfW）で棚幅を分け合う（読み込み前は SHELF の n で代用）。高さも項目数で微差をつける。
+       いちばん新しい本には金の「新刊」帯、最後に読んだ本には赤いリボン（しおり）。
        本を選ぶとタイルと同じ流れ（tileBook を切り替えて setBook → open）でリーダーを開く。
        書斎はリーダーの下の層に残るので、本を閉じると棚に戻る。 */
     var SHELF = {
@@ -6265,58 +6286,55 @@ window.TD_THEME = (function () {
       regime: { no: 17, lines: ["相場の", "読み方"], obi: "テクニカルとファンダメンタル", n: 32 },
       parental: { no: 18, lines: ["産休・", "育休の本"], obi: "休み方と手当の徹底まとめ", n: 54 },
       taxes: { no: 19, lines: ["税金一覧の", "本"], obi: "日本の税金を表で整理", n: 44 },
-      labor: { no: 20, lines: ["職場の", "ルールの本"], obi: "労働基準法と懲戒・残業・解雇", n: 53 }
+      labor: { no: 20, lines: ["職場の", "ルールの本"], obi: "労働基準法と懲戒・残業・解雇", n: 53 },
+      social: { no: 21, lines: ["社会保険・", "年金と福利厚生"], obi: "5つの保険と年金の入口", n: 47 },
+      company: { no: 22, lines: ["法人化の", "本"], obi: "個人事業主と法人の徹底まとめ", n: 45 },
+      bookkeeping: { no: 23, lines: ["簿記・", "会計の本"], obi: "帳簿と決算書が読めるようになる本", n: 49 },
+      inheritance: { no: 24, lines: ["相続と", "遺言、終活"], obi: "受け継ぐ仕組みと意思の残し方", n: 46 },
+      insurance: { no: 25, lines: ["民間の保険の", "見方"], obi: "公的保険との切り分けと入り方", n: 42 },
+      housing: { no: 26, lines: ["家と", "住宅ローンの本"], obi: "賃貸と購入、返済の仕組み", n: 39 },
+      childcare: { no: 27, lines: ["子育てと", "教育費の本"], obi: "誕生から自立までのお金と制度", n: 41 },
+      credit: { no: 28, lines: ["信用情報と", "カードの本"], obi: "記録の仕組みと回復の考え方", n: 49 },
+      nursing: { no: 29, lines: ["介護の", "実務の本"], obi: "認定・サービス・費用の実務", n: 44 },
+      marriage: { no: 30, lines: ["結婚と離婚の", "お金と手続き"], obi: "婚姻で変わる制度と離婚の進め方", n: 44 }
     };
-    var SHELF_TOP = ["first", "gold", "usdjpy", "pattern", "fvg", "tax"];
-    var SHELF_LOW = ["retire", "walls", "fire", "safetynet", "loan", "aiside", "med", "safety", "disaster", "indicators", "regime", "parental", "taxes", "labor"];
-    var SHELF_DIC = ["fx", "eco"];
+    var SHELF_CATS = [  // 棚のカテゴリと並び（カテゴリ内は読む順＝番号順）。学ぶタブの見出しと揃える
+      { name: "投資とトレード", books: ["first", "gold", "usdjpy", "pattern", "fvg", "indicators", "regime"] },
+      { name: "暮らしと制度", books: ["retire", "walls", "fire", "safetynet", "loan", "med", "safety", "disaster", "parental", "taxes", "inheritance", "insurance", "housing", "childcare", "credit", "nursing", "marriage"] },
+      { name: "仕事と経営", books: ["tax", "aiside", "labor", "social", "company", "bookkeeping"] },
+      { name: "辞書", dic: ["fx", "eco"] }
+    ];
     var shelfEl = document.getElementById("shelf"), shelfBody = document.getElementById("shf-body"), shelfOpener = null;
     function shelfLast() { try { return localStorage.getItem("shelf-last") || ""; } catch (e) { return ""; } }
     function shelfCount(id) { var b = BOOKS[id]; return (b && b.data) ? count(b) : (SHELF[id] ? SHELF[id].n : 20); }
     function shelfW(n) { return Math.max(58, Math.min(142, Math.round(46 + n * 1.25))); }
     function shelfH(n) { return 170 + ((n * 7) % 4) * 5; }
-    function shelfBookHtml(id) {
+    function shelfBookHtml(id, isNew) {  // 背表紙：上に番号、下に縦書きの題字。幅は flex-grow（shelfW）で棚幅を分け合う
       var m = SHELF[id], b = BOOKS[id], n = shelfCount(id), last = shelfLast() === id;
-      return '<button type="button" class="shf-book' + (last ? " has-ribbon" : "") + '" data-book="' + id + '" data-shf-book="' + id + '" style="width:' + shelfW(n) + 'px;height:' + shelfH(n) + 'px" aria-label="' + esc(b.title) + 'を開く">' +
+      return '<button type="button" class="shf-book' + (last ? " has-ribbon" : "") + (isNew ? " is-new" : "") + '" data-book="' + id + '" data-shf-book="' + id + '" style="flex-grow:' + shelfW(n) + ';height:' + shelfH(n) + 'px" aria-label="' + esc(b.title) + 'を開く">' +
         (last ? '<i class="shf-ribbon" aria-hidden="true"></i><span class="shf-tag">つづきから</span>' : "") +
-        '<span class="shf-in"><span class="shf-icon" aria-hidden="true">' + b.icon + '</span>' +
-        '<span class="shf-name">' + m.lines.map(function (s) { return esc(s); }).join("<br>") + '</span></span>' +
         '<span class="shf-badge" aria-hidden="true">' + m.no + '</span>' +
-        '<span class="shf-obi">' + esc(m.obi) + '</span>' +
-        '<span class="shf-brand" aria-hidden="true">DESK ONE</span></button>';
-    }
-    function shelfFaceHtml(id) {  // 面陳：いちばん新しい本を表紙正面で立てかける（棚の並びにも同じ本が並ぶ）
-      var m = SHELF[id], b = BOOKS[id];
-      return '<div class="shf-face"><button type="button" class="shf-book face" data-book="' + id + '" data-shf-book="' + id + '" aria-label="' + esc(b.title) + 'を開く">' +
-        '<span class="shf-in"><span class="shf-icon" aria-hidden="true">' + b.icon + '</span>' +
         '<span class="shf-name">' + m.lines.map(function (s) { return esc(s); }).join("<br>") + '</span>' +
-        '<span class="shf-en">' + esc(b.en) + '</span></span>' +
-        '<span class="shf-obi">' + esc(m.obi) + '</span>' +
-        '<span class="shf-brand" aria-hidden="true">DESK ONE</span></button></div>' +
-        '<span class="shf-sign">いちばん新しい本<small>' + esc(b.title.split(" ― ")[0]) + '</small></span>';
+        (isNew ? '<span class="shf-new" aria-hidden="true">新刊</span>' : "") + '</button>';
     }
-    function shelfSpineHtml(id) {  // 辞書は背表紙だけの細い本
+    function shelfSpineHtml(id) {  // 辞書は専用デザインの背表紙（縦書き題字＋「辞書」札）
       var b = BOOKS[id];
       return '<button type="button" class="shf-spine" data-book="' + id + '" data-shf-book="' + id + '" aria-label="' + esc(b.title) + 'を開く">' +
         '<span class="shf-st">' + esc(b.title) + '</span><span class="shf-dic">辞書</span></button>';
     }
-    var SHELF_PLANT = '<span class="shf-plant" aria-hidden="true">' +
-      '<i style="--r:-46deg;--x:-12px"></i><i style="--r:-22deg;--x:-6px"></i><i style="--r:0deg;--x:0px"></i><i style="--r:24deg;--x:6px"></i><i style="--r:46deg;--x:12px"></i>' +
-      '<span class="pot"></span></span>';
     function paintLamp() {  // 読書灯の明かり：朝・昼は弱く、夕方から夜に強く
       var h = new Date().getHours();
       var o = (h >= 5 && h < 10) ? .22 : (h >= 10 && h < 16) ? .1 : (h >= 16 && h < 19) ? .42 : .68;
       shelfEl.style.setProperty("--lamp-o", String(o));
     }
     function renderShelf() {
-      var latest = LEARN[LEARN.length - 1];
-      shelfBody.innerHTML =
-        '<div class="shf-unit"><div class="shf-row">' + SHELF_TOP.map(shelfBookHtml).join("") +
-        '<span class="shf-end" aria-hidden="true"></span>' + SHELF_PLANT + '</div>' +
-        '<div class="shf-board"><span class="shf-plate">投資とトレードの棚</span></div></div>' +
-        '<div class="shf-unit"><div class="shf-row">' + shelfFaceHtml(latest) + SHELF_LOW.map(shelfBookHtml).join("") +
-        SHELF_DIC.map(shelfSpineHtml).join("") + '<span class="shf-end" aria-hidden="true"></span></div>' +
-        '<div class="shf-board"><span class="shf-plate">暮らしとお金の棚</span></div></div>';
+      var latest = LEARN[LEARN.length - 1];  // いちばん新しい本（背表紙に金の「新刊」帯）
+      shelfBody.innerHTML = SHELF_CATS.map(function (cat) {
+        var row = cat.dic ? cat.dic.map(shelfSpineHtml).join("") :
+          cat.books.map(function (id) { return shelfBookHtml(id, id === latest); }).join("");
+        return '<div class="shf-unit"><div class="shf-row">' + row + '</div>' +
+          '<div class="shf-board"><span class="shf-plate">' + cat.name + '</span></div></div>';
+      }).join("");
       paintLamp();
     }
     function openShelf(from) {
