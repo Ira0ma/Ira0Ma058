@@ -560,6 +560,8 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gl-head span { font-size: 11px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .gl-open { margin-left: auto; font: inherit; font-size: 11.5px; font-weight: 700; color: var(--gl-acc); background: rgba(var(--gl-rgb),.1); border: 1px solid rgba(var(--gl-rgb),.45); border-radius: 999px; padding: 3px 10px; white-space: nowrap; cursor: pointer; }
 .gl-open:hover { background: rgba(var(--gl-rgb),.2); }
+.gl-shelf { font: inherit; font-size: 11.5px; font-weight: 700; color: var(--gold); background: rgba(var(--gold-rgb),.12); border: 1px solid rgba(var(--gold-rgb),.5); border-radius: 999px; padding: 3px 10px; white-space: nowrap; cursor: pointer; }
+.gl-shelf:hover { background: rgba(var(--gold-rgb),.22); }
 .gl-hint { margin: 0; font-size: 10.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gl-hint::before { content: "↔ "; color: var(--gl-acc); font-weight: 700; }
 .gl-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 5px; flex: 1; min-height: 0; }
@@ -709,6 +711,112 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gb-search li button:hover, .gb-search li button:focus-visible { background: rgba(163,122,44,.1); outline: none; }
 .gb-search small { font-size: 10.5px; color: #8d7d61; } .gb-search b { font-size: 14px; } .gb-search span { font-size: 11.5px; color: #6b5d45; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gb-sempty { padding: 12px 6px; font-size: 12.5px; color: #7b6b52; }
+
+/* 小さな書斎（学ぶの本棚）：木の棚に表紙を並べる全画面表示。リーダー（.gbook z-index 40）より下の層 */
+.shelf { position: fixed; inset: 0; z-index: 39; display: flex; flex-direction: column; color: var(--ink);
+  background: radial-gradient(120% 90% at 50% 0%, rgba(var(--panel-rgb), .97) 0%, var(--night) 78%);
+  padding: var(--safe-top) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+.shelf[hidden] { display: none; }
+.shf-glow { position: absolute; left: 50%; top: -150px; width: 760px; height: 400px; transform: translateX(-50%); pointer-events: none;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(255, 190, 96, .8), rgba(255, 156, 64, .26) 46%, rgba(255, 156, 64, 0) 70%); opacity: var(--lamp-o, .5); }
+.shf-lamp { position: absolute; left: 50%; top: 0; transform: translateX(-50%); pointer-events: none; z-index: 1; }
+.shf-lamp .cord { display: block; width: 2px; height: 26px; margin: 0 auto; background: #453217; }
+.shf-lamp .shade { display: block; width: 66px; height: 30px; margin: 0 auto; background: linear-gradient(180deg, #6b4e27, #38260e); clip-path: polygon(37% 0, 63% 0, 94% 100%, 6% 100%); }
+.shf-lamp .bulb { display: block; width: 13px; height: 13px; margin: -3px auto 0; border-radius: 50%; background: radial-gradient(circle at 50% 38%, #fff3cf, #ffb84f 72%, #dd8a1d); box-shadow: 0 0 16px 5px rgba(255, 182, 82, .5); }
+.shf-bar { position: relative; display: flex; align-items: baseline; gap: 10px; padding: 14px 20px 2px; }
+.shf-title { font-size: 17px; font-weight: 800; letter-spacing: .05em; color: var(--gold); white-space: nowrap; }
+.shf-sub { font-size: 11.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shf-x { margin-left: auto; align-self: center; }
+.shf-body { position: relative; flex: 1; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  display: flex; flex-direction: column; justify-content: center; gap: 40px; padding: 16px 20px 30px; }
+.shf-unit { width: min(1120px, 100%); margin: 0 auto; flex: none; }
+.shf-row { position: relative; z-index: 1; display: flex; align-items: flex-end; gap: 10px; padding: 0 16px; }
+.shf-board { position: relative; height: 26px; border-radius: 4px;
+  background: linear-gradient(180deg, #9a6c3c 0%, #7c5228 32%, #5e3b1b 74%, #482b10 100%);
+  box-shadow: 0 14px 22px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 226, 175, .45), inset 0 -6px 10px rgba(0, 0, 0, .35); }
+.shf-board::before { content: ""; position: absolute; inset: 0; border-radius: 4px; opacity: .4;
+  background: repeating-linear-gradient(93deg, rgba(58, 32, 8, .28) 0 3px, rgba(0, 0, 0, 0) 3px 11px, rgba(255, 216, 160, .12) 11px 13px, rgba(0, 0, 0, 0) 13px 27px); }
+.shf-plate { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); z-index: 1;
+  font-size: 11px; font-weight: 800; letter-spacing: .1em; color: #38220c; white-space: nowrap;
+  background: linear-gradient(180deg, #dcb87e, #bd9250); border: 1px solid rgba(70, 44, 14, .6); border-radius: 3px; padding: 2px 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 246, 220, .75), 0 1px 2px rgba(0, 0, 0, .4); }
+/* 棚に並ぶ1冊（表紙）。色は本ごとのアクセントから作る */
+.shf-book { --acc: var(--gold); --rgb: 227, 184, 103; --deep: #3a2c10; --mid: #6b551f;
+  position: relative; flex: none; font: inherit; text-align: left; cursor: pointer; color: #f5ecd9; padding: 0;
+  border: 1px solid rgba(0, 0, 0, .55); border-radius: 4px 7px 7px 4px;
+  background: linear-gradient(150deg, var(--mid) 0%, var(--deep) 78%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), inset 0 -12px 18px rgba(0, 0, 0, .35), 0 6px 10px rgba(0, 0, 0, .35);
+  transition: transform .2s ease, box-shadow .2s ease; }
+.shf-book[data-book="first"] { --acc: #8fd8a8; --rgb: 143, 216, 168; --deep: #13351f; --mid: #1e5631; }
+.shf-book[data-book="gold"] { --acc: #e6c27a; --rgb: 230, 194, 122; --deep: #42320e; --mid: #7a5f1e; }
+.shf-book[data-book="usdjpy"] { --acc: #a9bdf0; --rgb: 169, 189, 240; --deep: #1a2950; --mid: #2e4a86; }
+.shf-book[data-book="pattern"] { --acc: #9cc996; --rgb: 156, 201, 150; --deep: #203d1e; --mid: #3a6b34; }
+.shf-book[data-book="fvg"] { --acc: #c8b6ec; --rgb: 200, 182, 236; --deep: #2e2154; --mid: #4e3a8c; }
+.shf-book[data-book="tax"] { --acc: #e7a98c; --rgb: 231, 169, 140; --deep: #4e2712; --mid: #84462a; }
+.shf-book[data-book="retire"] { --acc: #e9a9c4; --rgb: 233, 169, 196; --deep: #4c1d33; --mid: #84355a; }
+.shf-book[data-book="walls"] { --acc: #64c2a3; --rgb: 100, 194, 163; --deep: #123a2e; --mid: #226b52; }
+.shf-book[data-book="fire"] { --acc: #e2703a; --rgb: 226, 112, 58; --deep: #4d1f05; --mid: #93400f; }
+.shf-spine[data-book="fx"] { --acc: #e3b867; --rgb: 227, 184, 103; --deep: #3d2f0e; --mid: #6f5518; }
+.shf-spine[data-book="eco"] { --acc: #6fd0d4; --rgb: 111, 208, 212; --deep: #123a3d; --mid: #1f5f63; }
+.shf-book::before { content: ""; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: rgba(0, 0, 0, .42); box-shadow: 1px 0 0 rgba(255, 255, 255, .13); }
+.shf-book::after { content: ""; position: absolute; right: 2px; top: 5px; bottom: 5px; width: 4px; border-radius: 1px; opacity: .85;
+  background: repeating-linear-gradient(180deg, #eadfc9 0 2px, #c9ba98 2px 3px); }
+.shf-book.out { transform: translateY(-16px); z-index: 3; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), inset 0 -12px 18px rgba(0, 0, 0, .3), 0 18px 22px rgba(0, 0, 0, .5); }
+.shf-book:focus-visible, .shf-spine:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.shf-in { position: relative; display: flex; flex-direction: column; height: 100%; padding: 11px 9px 26px 15px; }
+.shf-book.has-ribbon .shf-in { padding-left: 27px; }
+.shf-icon { font-size: 15px; line-height: 1; }
+.shf-name { margin-top: 5px; font-size: 14.5px; font-weight: 800; line-height: 1.32; letter-spacing: .02em;
+  background: linear-gradient(180deg, #fff6d8 0%, #f0d089 38%, #c49b45 56%, #f6e2a0 80%, #a37c2c 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent; }
+.shf-book[data-book="gold"] .shf-name { background: linear-gradient(180deg, #fffbe9 0%, #ffe9a8 35%, #e9bc58 55%, #fff0b8 78%, #c99b35 100%);
+  -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 0 5px rgba(240, 208, 137, .35)); }
+.shf-badge { position: absolute; top: 7px; right: 9px; width: 19px; height: 19px; border-radius: 50%; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: #221806; background: var(--acc); box-shadow: 0 1px 3px rgba(0, 0, 0, .45); }
+.shf-obi { position: absolute; left: 0; right: 0; bottom: 13px; z-index: 1; padding: 4px 7px 5px 15px;
+  font-size: 9.5px; font-weight: 700; line-height: 1.3; color: #43351c;
+  background: linear-gradient(180deg, #f7edd6, #eadbb9); border-top: 2px solid var(--acc); box-shadow: 0 1px 2px rgba(0, 0, 0, .25); }
+.shf-brand { position: absolute; left: 0; right: 0; bottom: 2px; text-align: center; font-size: 7.5px; letter-spacing: .3em; color: rgba(245, 236, 217, .55); }
+.shf-ribbon { position: absolute; top: -2px; left: 13px; width: 13px; height: 60px; z-index: 2; pointer-events: none;
+  background: linear-gradient(90deg, #a31226, #d8263f 45%, #a31226); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%); filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .35)); }
+.shf-tag { position: absolute; top: 52%; left: 7px; z-index: 2; pointer-events: none; transform: rotate(-4deg);
+  font-size: 8.5px; font-weight: 800; color: #fff; background: #c21730; border-radius: 999px; padding: 2px 6px; box-shadow: 0 2px 5px rgba(0, 0, 0, .4); white-space: nowrap; }
+/* 面陳（表紙を正面に向けて立てかける展示）と立て札 */
+.shf-face { position: relative; flex: none; width: 174px; margin-right: 2px; }
+.shf-face .shf-book { width: 100%; height: 218px; transform: perspective(720px) rotateY(-7deg) rotateX(1.5deg); transform-origin: left center; }
+.shf-face .shf-book.out { transform: perspective(720px) rotateY(-7deg) rotateX(1.5deg) translateY(-10px); }
+.shf-face .shf-icon { font-size: 22px; }
+.shf-face .shf-name { font-size: 18px; }
+.shf-face .shf-en { margin-top: 6px; font-size: 8.5px; font-weight: 700; letter-spacing: .22em; color: rgba(245, 236, 217, .75); }
+.shf-face::after { content: ""; position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); width: 128px; height: 8px; border-radius: 4px;
+  background: linear-gradient(180deg, #8a5a2e, #5d3a1a); box-shadow: 0 4px 8px rgba(0, 0, 0, .5); }
+.shf-sign { flex: none; align-self: flex-end; margin: 0 4px 3px -2px; transform: rotate(-2deg);
+  background: linear-gradient(180deg, #fbf5e4, #eee1bd); color: #43351c; font-size: 10.5px; font-weight: 800; letter-spacing: .06em;
+  padding: 4px 12px 5px; border-radius: 3px; box-shadow: 0 3px 7px rgba(0, 0, 0, .45); white-space: nowrap; text-align: center; }
+.shf-sign small { display: block; font-size: 8.5px; font-weight: 700; color: #8a6f3c; margin-top: 1px; }
+/* 辞書は背表紙だけの細い本 */
+.shf-spine { --acc: var(--gold); --rgb: 227, 184, 103; --deep: #3a2c10; --mid: #6b551f;
+  position: relative; flex: none; width: 46px; height: 184px; font: inherit; cursor: pointer; color: #f0e7d3; padding: 12px 0 10px;
+  border: 1px solid rgba(0, 0, 0, .55); border-radius: 3px 5px 5px 3px;
+  border-top: 3px solid var(--acc); border-bottom: 3px solid var(--acc);
+  background: linear-gradient(90deg, var(--deep), var(--mid) 55%, var(--deep));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .13), 0 6px 10px rgba(0, 0, 0, .35);
+  display: flex; flex-direction: column; align-items: center; gap: 8px; transition: transform .2s ease; }
+.shf-spine.out { transform: translateY(-16px); z-index: 3; }
+.shf-spine .shf-st { writing-mode: vertical-rl; font-size: 13.5px; font-weight: 800; letter-spacing: .14em; }
+.shf-spine .shf-dic { margin-top: auto; font-size: 8.5px; font-weight: 800; color: #221806; background: var(--acc); border-radius: 2px; padding: 1px 4px; }
+/* ブックエンドと観葉植物（CSSだけの飾り） */
+.shf-end { position: relative; flex: none; width: 11px; height: 116px; margin-left: 4px;
+  background: linear-gradient(90deg, #65676d, #abaeb6 45%, #585a60); border-radius: 3px 3px 0 0; box-shadow: 0 4px 7px rgba(0, 0, 0, .4); }
+.shf-end::after { content: ""; position: absolute; bottom: 0; left: -17px; width: 28px; height: 7px; border-radius: 2px 0 0 2px;
+  background: linear-gradient(180deg, #9a9ea6, #62646a); }
+.shf-plant { position: relative; flex: none; width: 54px; height: 76px; margin-left: 10px; }
+.shf-plant i { position: absolute; bottom: 24px; left: 50%; width: 12px; height: 24px; margin-left: -6px;
+  border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%; background: linear-gradient(180deg, #63ad6c, #2f6b3a);
+  transform-origin: 50% 100%; transform: translateX(var(--x, 0)) rotate(var(--r, 0deg)); }
+.shf-plant .pot { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 34px; height: 27px;
+  background: linear-gradient(180deg, #bc6a3d, #8a4525); clip-path: polygon(0 0, 100% 0, 83% 100%, 17% 100%); }
 .gbook { position: fixed; }
 .gb-zoom { position: absolute; inset: 0; z-index: 4; background: rgba(8,9,12,.94); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 50px 10px 16px; }
 .gb-zoom[hidden] { display: none; }
@@ -1060,7 +1168,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   <section class="card" id="xfeed" aria-label="学習：用語集・図鑑・入門">
     <div class="gl-tile">
       <div class="gl-head">
-        <b class="gl-title">学ぶ</b><span id="gl-count"></span><button type="button" class="gl-open" data-gl="toc">目次を開く ›</button>
+        <b class="gl-title">学ぶ</b><span id="gl-count"></span><button type="button" class="gl-open" data-gl="toc">目次を開く ›</button><button type="button" class="gl-shelf" data-shf="open">📚 小さな書斎</button>
       </div>
       <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（1〜9の順に読む本と、2冊の辞書）"><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="walls" title="8冊目：年収の壁と扶養のしくみ（パートの税金・社会保険・配偶者控除の壁）"><i class="gl-no" aria-hidden="true">8</i>年収の壁</button><button type="button" role="tab" data-glbook="fire" title="9冊目：FIREの設計図 ― 投資の組み合わせの作り方（自分の条件で設計するFIREと、設計ワーク）"><i class="gl-no" aria-hidden="true">9</i>FIRE<span class="gl-x">の設計図</span></button><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
       <div class="gl-grid" id="gl-grid"></div>
@@ -1101,6 +1209,18 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <span id="gb-pno"></span><div class="gb-prog"><i id="gb-prog"></i></div>
     <button type="button" class="gb-btn" data-gl="next">次のページ ›</button>
   </div>
+</div>
+
+<!-- 小さな書斎（学ぶの本棚）：棚の描画は JS（renderShelf）が #shf-body に作る -->
+<div class="shelf" id="shelf" hidden role="dialog" aria-modal="true" aria-label="小さな書斎（学ぶの本棚）">
+  <div class="shf-glow" aria-hidden="true"></div>
+  <div class="shf-lamp" aria-hidden="true"><i class="cord"></i><i class="shade"></i><i class="bulb"></i></div>
+  <div class="shf-bar">
+    <span class="shf-title">📚 小さな書斎</span>
+    <span class="shf-sub">読みたい本を、棚から取ってください</span>
+    <button type="button" class="gb-btn gb-x shf-x" data-shf="close">閉じる</button>
+  </div>
+  <div class="shf-body" id="shf-body"></div>
 </div>
 
 <script>
@@ -4945,6 +5065,7 @@ window.TD_THEME = (function () {
       book.querySelector('[data-gl="prev"]').disabled = i === 0;
       book.querySelector('[data-gl="next"]').disabled = i + step >= pages.length;
       if (i > 0) try { localStorage.setItem(BK.bm, String(i)); } catch (e) {}
+      if (BK.learn) try { localStorage.setItem("shelf-last", BK.id); } catch (e) {}  // 小さな書斎のしおり用：最後に読んだ学習の本
       book.querySelector('[data-gl="back"]').disabled = !backStack.length;
     }
     // 戻る：関連・目次・索引・検索で移動したとき、移動する前の本とページを覚えておく（ページめくり・スワイプは覚えない）
@@ -5091,6 +5212,104 @@ window.TD_THEME = (function () {
       if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3) show(cur + (dx < 0 ? 1 : -1) * (two ? 2 : 1), dx < 0 ? 1 : -1);
     });
     window.addEventListener("resize", function () { if (book.hidden) return; var top = pages[cur]; built = ""; paginate(); show(Math.min(cur, pages.length - 1)); });
+
+    /* ---------- 小さな書斎（学ぶの本棚） ----------
+       棚の並びは読む順（タブの番号どおり）。厚みは項目数に比例（読み込み前は SHELF の n で代用）。
+       本を選ぶとタイルと同じ流れ（tileBook を切り替えて setBook → open）でリーダーを開く。
+       書斎はリーダーの下の層に残るので、本を閉じると棚に戻る。 */
+    var SHELF = {
+      first: { no: 1, lines: ["はじめての", "投資と", "トレード"], obi: "最初に読む1冊", n: 37 },
+      gold: { no: 2, lines: ["ゴールド", "入門"], obi: "金（ゴールド）の基礎から", n: 85 },
+      usdjpy: { no: 3, lines: ["ドル円", "入門"], obi: "ドル円の見方", n: 47 },
+      pattern: { no: 4, lines: ["パターン", "図鑑"], obi: "形で覚える", n: 80 },
+      fvg: { no: 5, lines: ["FVG", "詳説"], obi: "すき間を読む", n: 17 },
+      tax: { no: 6, lines: ["確定申告", "ガイド"], obi: "令和7年分の制度で確認", n: 49 },
+      retire: { no: 7, lines: ["退職と", "給付金の", "手続き"], obi: "手続きを順番に", n: 46 },
+      walls: { no: 8, lines: ["年収の壁と", "扶養の", "しくみ"], obi: "令和8年分の最新版", n: 32 },
+      fire: { no: 9, lines: ["FIREの", "設計図"], obi: "設計ワーク付き", n: 31 }
+    };
+    var SHELF_TOP = ["first", "gold", "usdjpy", "pattern", "fvg", "tax"];
+    var SHELF_LOW = ["retire", "walls", "fire"];
+    var SHELF_DIC = ["fx", "eco"];
+    var shelfEl = document.getElementById("shelf"), shelfBody = document.getElementById("shf-body"), shelfOpener = null;
+    function shelfLast() { try { return localStorage.getItem("shelf-last") || ""; } catch (e) { return ""; } }
+    function shelfCount(id) { var b = BOOKS[id]; return (b && b.data) ? count(b) : (SHELF[id] ? SHELF[id].n : 20); }
+    function shelfW(n) { return Math.max(58, Math.min(142, Math.round(46 + n * 1.25))); }
+    function shelfH(n) { return 170 + ((n * 7) % 4) * 5; }
+    function shelfBookHtml(id) {
+      var m = SHELF[id], b = BOOKS[id], n = shelfCount(id), last = shelfLast() === id;
+      return '<button type="button" class="shf-book' + (last ? " has-ribbon" : "") + '" data-book="' + id + '" data-shf-book="' + id + '" style="width:' + shelfW(n) + 'px;height:' + shelfH(n) + 'px" aria-label="' + esc(b.title) + 'を開く">' +
+        (last ? '<i class="shf-ribbon" aria-hidden="true"></i><span class="shf-tag">つづきから</span>' : "") +
+        '<span class="shf-in"><span class="shf-icon" aria-hidden="true">' + b.icon + '</span>' +
+        '<span class="shf-name">' + m.lines.map(function (s) { return esc(s); }).join("<br>") + '</span></span>' +
+        '<span class="shf-badge" aria-hidden="true">' + m.no + '</span>' +
+        '<span class="shf-obi">' + esc(m.obi) + '</span>' +
+        '<span class="shf-brand" aria-hidden="true">TRADE DESK</span></button>';
+    }
+    function shelfFaceHtml(id) {  // 面陳：いちばん新しい本を表紙正面で立てかける（棚の並びにも同じ本が並ぶ）
+      var m = SHELF[id], b = BOOKS[id];
+      return '<div class="shf-face"><button type="button" class="shf-book face" data-book="' + id + '" data-shf-book="' + id + '" aria-label="' + esc(b.title) + 'を開く">' +
+        '<span class="shf-in"><span class="shf-icon" aria-hidden="true">' + b.icon + '</span>' +
+        '<span class="shf-name">' + m.lines.map(function (s) { return esc(s); }).join("<br>") + '</span>' +
+        '<span class="shf-en">' + esc(b.en) + '</span></span>' +
+        '<span class="shf-obi">' + esc(m.obi) + '</span>' +
+        '<span class="shf-brand" aria-hidden="true">TRADE DESK</span></button></div>' +
+        '<span class="shf-sign">いちばん新しい本<small>' + esc(b.title.split(" ― ")[0]) + '</small></span>';
+    }
+    function shelfSpineHtml(id) {  // 辞書は背表紙だけの細い本
+      var b = BOOKS[id];
+      return '<button type="button" class="shf-spine" data-book="' + id + '" data-shf-book="' + id + '" aria-label="' + esc(b.title) + 'を開く">' +
+        '<span class="shf-st">' + esc(b.title) + '</span><span class="shf-dic">辞書</span></button>';
+    }
+    var SHELF_PLANT = '<span class="shf-plant" aria-hidden="true">' +
+      '<i style="--r:-46deg;--x:-12px"></i><i style="--r:-22deg;--x:-6px"></i><i style="--r:0deg;--x:0px"></i><i style="--r:24deg;--x:6px"></i><i style="--r:46deg;--x:12px"></i>' +
+      '<span class="pot"></span></span>';
+    function paintLamp() {  // 読書灯の明かり：朝・昼は弱く、夕方から夜に強く
+      var h = new Date().getHours();
+      var o = (h >= 5 && h < 10) ? .22 : (h >= 10 && h < 16) ? .1 : (h >= 16 && h < 19) ? .42 : .68;
+      shelfEl.style.setProperty("--lamp-o", String(o));
+    }
+    function renderShelf() {
+      var latest = LEARN[LEARN.length - 1];
+      shelfBody.innerHTML =
+        '<div class="shf-unit"><div class="shf-row">' + SHELF_TOP.map(shelfBookHtml).join("") +
+        '<span class="shf-end" aria-hidden="true"></span>' + SHELF_PLANT + '</div>' +
+        '<div class="shf-board"><span class="shf-plate">投資とトレードの棚</span></div></div>' +
+        '<div class="shf-unit"><div class="shf-row">' + shelfFaceHtml(latest) + SHELF_LOW.map(shelfBookHtml).join("") +
+        SHELF_DIC.map(shelfSpineHtml).join("") + '<span class="shf-end" aria-hidden="true"></span></div>' +
+        '<div class="shf-board"><span class="shf-plate">暮らしとお金の棚</span></div></div>';
+      paintLamp();
+    }
+    function openShelf(from) {
+      shelfOpener = from || document.activeElement;
+      renderShelf();
+      shelfEl.hidden = false;
+      var x = shelfEl.querySelector(".shf-x"); if (x) x.focus();
+      ensureAll().then(function () { if (!shelfEl.hidden) renderShelf(); }, function () {});  // 項目数が確定したら厚みを正す
+    }
+    function closeShelf() { shelfEl.hidden = true; if (shelfOpener && shelfOpener.focus) shelfOpener.focus(); }
+    function openFromShelf(id, el) {
+      tileBook = id;
+      try { localStorage.setItem("gloss-book", id); } catch (e) {}
+      renderTile();
+      var go = function () { setBook(id); open(0, el); };
+      ensureAll(); if (BOOKS[id].data) go(); else ensureBook(id).then(go, function () {});
+    }
+    document.addEventListener("click", function (e) {
+      var o = e.target.closest('[data-shf="open"]'); if (o) { openShelf(o); return; }
+      var c = e.target.closest('[data-shf="close"]'); if (c) { closeShelf(); return; }
+      if (e.target === shelfEl) closeShelf();  // 棚の外側（余白）をタップでも閉じる
+    });
+    shelfBody.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-shf-book]"); if (!b) return;
+      var id = b.getAttribute("data-shf-book");
+      b.classList.add("out");  // 手前にせり出してから開く（省電力モードでは CSS 側で動きが止まる）
+      var low = document.documentElement.classList.contains("lowpower");
+      setTimeout(function () { b.classList.remove("out"); openFromShelf(id, b); }, low ? 0 : 210);
+    });
+    document.addEventListener("keydown", function (e) {  // リーダーが開いている間はそちらの Esc を優先
+      if (e.key === "Escape" && !shelfEl.hidden && book.hidden) closeShelf();
+    }, true);
   })();
 
   /* ---------- 今日の言葉: each device keeps its own text ---------- */
