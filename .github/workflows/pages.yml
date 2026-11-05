@@ -108,6 +108,7 @@ jobs:
         continue-on-error: true
         run: |
           python3 ipad-widget/reactions.py _site/reactions.json _site/market.json _site/calendar.json --prev=prev/reactions.json \
+            --backfill=ipad-widget/reaction_backfill.json \
             || cp prev/reactions.json _site/reactions.json || true
       - uses: actions/upload-pages-artifact@v3
         with:
