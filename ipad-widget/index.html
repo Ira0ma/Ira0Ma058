@@ -99,6 +99,18 @@ html[data-theme="shippu"] {
   --head-points: #e3b867; --head-weather: #ff6a4d; --head-ind: #e3b867; --head-cal: #ff6a4d; --head-x: #ff6a4d; --head-books: #e3b867;
   --strip-bg: linear-gradient(90deg, #ff4640, #ff8a3c, #ffc400); --strip-size: 100% 8px;
 }
+html[data-theme="aurora"] {
+  /* 安らぎのオーロラ：北の夜空に多色のオーロラが流れ、足元は夏の草原とホタル、フチだけの線画のロッジ村。
+     手動でのみ選べるテーマ（季節の自動切替には入らない）。背景は THEME_BG.aurora の auroraScene（静止画）に、
+     位相のずれた同じ絵を描いた #bg3 を重ねてカーテンだけをゆっくり揺らす。判定色は :root と同じ値 */
+  --night: #05070f; --glass: rgba(9, 13, 22, 0.84); --glass-line: rgba(150, 230, 190, 0.45);
+  --ink: #f2f6f2; --ink-2: rgba(242, 246, 242, 0.72); --ink-3: rgba(242, 246, 242, 0.48);
+  --gold: #8fe6b8; --gold-rgb: 143, 230, 184; --gold-soft: rgba(143, 230, 184, 0.22); --gold-deep: #4da876;
+  --on-accent: #0a1a10; --panel-rgb: 10, 16, 24;
+  --up-red: #ff6a5c; --up-green: #43d27f; --star: #f0573f;
+  --head-points: #a9f2c6; --head-weather: #cdb2ff; --head-ind: #a9f2c6; --head-cal: #cdb2ff; --head-x: #cdb2ff; --head-books: #a9f2c6;
+  --strip-bg: linear-gradient(90deg, #5cffab, #3fd2e6, #7d9bff, #c07dff, #ff82aa); --strip-size: 100% 100%;
+}
 /* カード上端の装飾（帯・点の並び）。current では出さない */
 .card::before { content: ""; position: absolute; left: 16px; right: 16px; top: 4px; height: 8px; z-index: 3; pointer-events: none; background-repeat: repeat-x; background-position: 0 center; display: none; }
 html[data-theme]:not([data-theme="current"]) .card::before { display: block; background-image: var(--strip-bg); background-size: var(--strip-size); }
@@ -187,11 +199,22 @@ html[data-theme="neon"][data-club-light="b"] .td-top-glow.tg-r { background: rad
 html[data-theme="shippu"] #bg2 { display: block; animation: td-flame-flicker 5s ease-in-out infinite alternate; }
 @keyframes td-flame-flicker { from { opacity: 0; } to { opacity: 0.55; } }
 html.lowpower #bg2 { animation: none; opacity: 0.30; }
+/* 安らぎのオーロラ：ゆらぎ層。#bg の静止画の上に、位相のずれたカーテンを描いた #bg3 を重ね、
+   透明度だけをゆっくり往復させる。星空・草原・ロッジは同じ絵なので二重には見えず、カーテンだけが揺れて見える。
+   再描画はリサイズ時だけで、毎フレームの描き直しはしない（省電力では止めて薄く固定） */
+#bg3 { position: fixed; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; z-index: 0; }
+html[data-theme="aurora"] #bg3 { display: block; animation: td-aurora-sway 11s ease-in-out infinite alternate; }
+@keyframes td-aurora-sway { from { opacity: 0; } to { opacity: 0.5; } }
+html.lowpower #bg3 { animation: none; opacity: 0.25; }
 /* 利確の炎：カードの炎仕様。炎に照らされたような枠のグロー（判断・判定の色には使わない）。
    土台の影と上端のハイライトは基本デザインの値をそのまま残す */
 html[data-theme="shippu"] .card {
   border-color: rgba(255, 110, 40, 0.55);
   box-shadow: 0 0 18px rgba(255, 90, 20, 0.18), 0 18px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 0 24px rgba(255, 140, 40, 0.10);
+}
+/* 安らぎのオーロラ：カードの影は控えめに、オーロラの緑の淡いグローだけを足す（判断・判定の色には使わない） */
+html[data-theme="aurora"] .card {
+  box-shadow: 0 0 14px rgba(120, 255, 180, 0.07), 0 18px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 /* 背景の動く部分だけを別の層に：金色の光の筋は透明度のアニメーション（描き直しなし）、きらめく点は軽い低解像度の層 */
 #fit {
@@ -1096,6 +1119,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
 <canvas id="bg" aria-hidden="true"></canvas>
 <canvas id="bg2" aria-hidden="true"></canvas>
+<canvas id="bg3" aria-hidden="true"></canvas>
 <div class="td-floor-glow fg-l" aria-hidden="true"></div>
 <div class="td-floor-glow fg-r" aria-hidden="true"></div>
 <div class="td-top-glow tg-l" aria-hidden="true"></div>
@@ -1310,10 +1334,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 </div>
 
 <script>
-/* テーマ判定：保存した設定 td_theme（auto/current/neon/spring/summer/autumn/xmas/newyear/winter/shippu）と日付から決める。
-   ?theme= は確認用の一時上書き（保存しない）。current = 基本デザイン。shippu = 疾風怒濤（手動のみ、季節の自動切替には入らない）。 */
+/* テーマ判定：保存した設定 td_theme（auto/current/neon/spring/summer/autumn/xmas/newyear/winter/shippu/aurora）と日付から決める。
+   ?theme= は確認用の一時上書き（保存しない）。current = 基本デザイン。shippu = 利確の炎、aurora = 安らぎのオーロラ（どちらも手動のみ、季節の自動切替には入らない）。 */
 window.TD_THEME = (function () {
-  var NAMES = ["current", "neon", "spring", "autumn", "xmas", "newyear", "winter", "shippu"];
+  var NAMES = ["current", "neon", "spring", "autumn", "xmas", "newyear", "winter", "shippu", "aurora"];
   function byDate(d) {
     var m = d.getMonth() + 1, day = d.getDate();
     if ((m === 12 && day >= 29) || (m === 1 && day <= 3)) return "newyear";
@@ -1496,8 +1520,8 @@ window.TD_THEME = (function () {
   var jnBtn = dockBtn("journal-toggle", "📝 日誌", "取引の記録を入れる・一覧", "journal"), plBtn = dockBtn("pnl-toggle", "📅 収支", "日ごとの確定損益・入出金のカレンダーと、週・月・年のまとめ", "pnl");
   paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn); dock.appendChild(jnBtn); dock.appendChild(plBtn); document.body.appendChild(dock);
   /* theme switch (plan A: a button at the bottom-right with a list). The dock stays at four buttons by design, so the theme lives on its own at the right. Same setting as the tools screen (td_theme). */
-  var THEME_LABELS = [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"], ["shippu", "利確の炎🔥"]];
-  var THEME_NAMES = { current: "基本デザイン", neon: "アゲアゲ⭐︎ネオン", spring: "春", summer: "夏", autumn: "秋", xmas: "クリスマス", newyear: "正月", winter: "冬", shippu: "利確の炎🔥" };
+  var THEME_LABELS = [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"], ["shippu", "利確の炎🔥"], ["aurora", "🌌 安らぎのオーロラ"]];
+  var THEME_NAMES = { current: "基本デザイン", neon: "アゲアゲ⭐︎ネオン", spring: "春", summer: "夏", autumn: "秋", xmas: "クリスマス", newyear: "正月", winter: "冬", shippu: "利確の炎🔥", aurora: "安らぎのオーロラ" };
   var themeModeNow = function () { try { return localStorage.getItem("td_theme") || "auto"; } catch (e) { return "auto"; } };
   var themeBtn = document.createElement("button"); themeBtn.type = "button"; themeBtn.className = "dk-theme-btn"; themeBtn.id = "theme-toggle";
   themeBtn.title = "ホーム画面のテーマを切り替えます（ツール画面の設定と同じ）";
@@ -2270,9 +2294,16 @@ window.TD_THEME = (function () {
       cs.forEach(function (k, i) { c.lineTo(X(i), Y(k.c)); });
       c.lineTo(X(cs.length - 1), bot); c.closePath(); c.fillStyle = fg; c.fill();
     }
+    if (window.TD_THEME && TD_THEME.id === "aurora") {  // 安らぎのオーロラ：折れ線の下にオーロラの緑の明かりを敷く（線と下地の色＝判定は変えない）
+      var ag = c.createLinearGradient(0, top, 0, bot); ag.addColorStop(0, "rgba(92,255,171,.16)"); ag.addColorStop(1, "rgba(92,255,171,0)");
+      c.beginPath(); c.moveTo(X(0), bot);
+      cs.forEach(function (k, i) { c.lineTo(X(i), Y(k.c)); });
+      c.lineTo(X(cs.length - 1), bot); c.closePath(); c.fillStyle = ag; c.fill();
+    }
     c.beginPath(); cs.forEach(function (k, i) { if (i) c.lineTo(X(i), Y(k.c)); else c.moveTo(X(i), Y(k.c)); });
     var neonHK = window.TD_THEME && TD_THEME.id === "neon";
     var shippuFlame = window.TD_THEME && TD_THEME.id === "shippu";
+    var auroraGlow = window.TD_THEME && TD_THEME.id === "aurora";
     if (window.TD_THEME && TD_THEME.id !== "current") {
       var lg = c.createLinearGradient(0, 0, cw, 0);
       lg.addColorStop(0, rgb(1));
@@ -2293,6 +2324,7 @@ window.TD_THEME = (function () {
     var xe = X(cs.length - 1), ye = Y(last);
     if (neonHK) dot(xe, ye, 9, rgb(.14));
     if (shippuFlame) dot(xe, ye, 9, "rgba(255,110,30,.14)");
+    if (auroraGlow) dot(xe, ye, 9, "rgba(140,255,190,.5)");
     dot(xe, ye, 5, rgb(.25)); dot(xe, ye, 3, rgb(1));
     c.restore();
   };
@@ -3317,7 +3349,7 @@ window.TD_THEME = (function () {
      golden streaks and soft dots. Nothing in it moves: a moving or blended layer behind the blurred glass cards made
      the iPad re-blur them on every frame. */
   var bg = (function () {
-    var cv = document.getElementById("bg"), cv2 = document.getElementById("bg2"), c, w, h, k = 1, parts = [], dot = null;
+    var cv = document.getElementById("bg"), cv2 = document.getElementById("bg2"), cv3 = document.getElementById("bg3"), c, w, h, k = 1, parts = [], dot = null;
     function layer(el) { el.width = Math.round(w * k); el.height = Math.round(h * k); var x = el.getContext("2d"); x.setTransform(k, 0, 0, k, 0, 0); return { cv: el, c: x }; }
     var THEME_BG = {
       neon: { base: "#070312", dot: "200,190,255", grid: 1, glows: [["rgba(255,45,150,.26)", 0.12, 0.02, 0.55], ["rgba(130,70,255,.27)", 0.9, 0.03, 0.55], ["rgba(20,180,255,.17)", 0.5, 1.02, 0.5]] },
@@ -3326,7 +3358,8 @@ window.TD_THEME = (function () {
       xmas: { base: "#050907", dot: "255,240,210", glows: [["rgba(240,200,90,.12)", 0.5, 0, 0.55], ["rgba(255,90,90,.10)", 0.92, 0.05, 0.5], ["rgba(80,240,130,.10)", 0.08, 0.95, 0.5]] },
       newyear: { base: "#090606", dot: "255,220,150", glows: [["rgba(245,200,95,.14)", 0.15, 0.05, 0.55], ["rgba(255,100,95,.10)", 0.9, 0.08, 0.5], ["rgba(255,170,90,.08)", 0.85, 0.95, 0.5]] },
       winter: { base: "#06090e", dot: "205,232,255", glows: [["rgba(140,200,255,.13)", 0.15, 0.05, 0.55], ["rgba(90,130,255,.12)", 0.9, 0.05, 0.5], ["rgba(120,220,255,.08)", 0.85, 0.95, 0.5]] },
-      shippu: { inferno: 1, base: "#0a0202", dot: "255,176,58", glows: [] }
+      shippu: { inferno: 1, base: "#0a0202", dot: "255,176,58", glows: [] },
+      aurora: { auroraScene: 1, base: "#05070f", dot: "190,214,255", glows: [] }
     };
     function resize() {
       k = Math.min(window.devicePixelRatio || 1, 2);
@@ -3408,6 +3441,211 @@ window.TD_THEME = (function () {
           // ゆらめき層（#bg2）：別シードで輪郭の違う炎だけを描く。本体と交互に透けることで炎が揺らめく。
           // 座標の拡縮計算（IX/IY）は本体と共用し、描き直しはこのリサイズ時だけ
           flameField(layer(cv2).c, 5000, -47);
+        }
+        if (TB.auroraScene) {
+          // 安らぎのオーロラ：北の夜空の静止画。満天の星と多色のオーロラカーテン、夏の草原とホタル、
+          // フチだけの線画のロッジ村を、ステージ座標（1210x841）でリサイズ時に1回だけ描く。
+          // paintAuroraScene は位相（phase）を変えて2回呼び、本体（#bg）とゆらぎ層（#bg3）に同じ絵を描く。
+          // カーテン以外は種が固定で寸分違わず重なるため、#bg3 の透明度の往復ではカーテンだけが揺れて見える
+          var asc = Math.min(w / 1210, h / 841), aox = (w - 1210 * asc) / 2, aoy = (h - 841 * asc) / 2;
+          function AX(sx) { return aox + sx * asc; }
+          function AY(sy) { return aoy + sy * asc; }
+          var AUR_STOPS = [[0, [190, 255, 214]], [0.18, [96, 255, 176]], [0.42, [64, 224, 208]], [0.62, [96, 150, 255]], [0.80, [168, 104, 255]], [0.92, [255, 110, 200]], [1, [255, 130, 170]]];
+          function auroraColor(f) {
+            if (f <= 0) return AUR_STOPS[0][1];
+            for (var si = 0; si < AUR_STOPS.length - 1; si++) {
+              if (f <= AUR_STOPS[si + 1][0]) {
+                var sg = (f - AUR_STOPS[si][0]) / (AUR_STOPS[si + 1][0] - AUR_STOPS[si][0]), sc0 = AUR_STOPS[si][1], sc1 = AUR_STOPS[si + 1][1];
+                return [Math.round(sc0[0] + (sc1[0] - sc0[0]) * sg), Math.round(sc0[1] + (sc1[1] - sc0[1]) * sg), Math.round(sc0[2] + (sc1[2] - sc0[2]) * sg)];
+              }
+            }
+            return AUR_STOPS[AUR_STOPS.length - 1][1];
+          }
+          function paintAuroraScene(tc, phase) {
+            var ph = phase || 0, i2, xx, yy, f;
+            // 空の階調
+            var sky = tc.createLinearGradient(0, AY(0), 0, AY(841));
+            sky.addColorStop(0, "#03050d"); sky.addColorStop(0.66, "#0b1122"); sky.addColorStop(1, "#0a0f1c");
+            tc.fillStyle = sky; tc.fillRect(0, 0, w, h);
+            // 天の川：斜めの帯に微光の点を集める（中心線 y = 20 + (x/1210)*330 + 24*sin(x/190)）
+            var mw = rng(20240);
+            for (i2 = 0; i2 < 700; i2++) {
+              var mx = 60 + mw() * 1090;
+              var my = 20 + (mx / 1210) * 330 + 24 * Math.sin(mx / 190) + (mw() + mw() + mw() - 1.5) * 26;
+              var ms = Math.max(0.6, (0.5 + mw() * 0.9) * asc);
+              tc.fillStyle = "rgba(210,218,244," + (0.05 + mw() * 0.11).toFixed(3) + ")";
+              tc.fillRect(AX(mx), AY(my), ms, ms);
+            }
+            // 星：白を基調に、温色と寒色を混ぜる
+            var sr = rng(70707), SCOLS = ["255,255,255", "255,255,255", "255,255,255", "255,244,224", "206,224,255"];
+            for (i2 = 0; i2 < 480; i2++) {
+              tc.fillStyle = "rgba(" + SCOLS[(sr() * SCOLS.length) | 0] + "," + (0.15 + sr() * 0.8).toFixed(3) + ")";
+              tc.beginPath(); tc.arc(AX(sr() * 1210), AY(sr() * 680), Math.max(0.5, (0.6 + sr() * 1.0) * asc), 0, 7); tc.fill();
+            }
+            // 瞬き：小さな十字
+            var twk = rng(70708);
+            tc.strokeStyle = "rgba(255,255,255,.5)"; tc.lineWidth = 1;
+            for (i2 = 0; i2 < 10; i2++) {
+              var tx = 20 + twk() * 1170, ty = 10 + twk() * 350, tl = 7 * asc;
+              tc.beginPath();
+              tc.moveTo(AX(tx) - tl, AY(ty)); tc.lineTo(AX(tx) + tl, AY(ty));
+              tc.moveTo(AX(tx), AY(ty) - tl); tc.lineTo(AX(tx), AY(ty) + tl);
+              tc.stroke();
+            }
+            // オーロラカーテン：絹のような多段グラデーションの面＋細い光条＋上端の輝く縁
+            function curtain(yBase, amp, seedOff, height, faceAlpha, rayAlpha, shift) {
+              function yc(x2) { return yBase + amp * Math.sin(x2 / 250 + seedOff) + amp * 0.45 * Math.sin(x2 / 90 + seedOff * 2); }
+              for (xx = -20; xx < 1250; xx += 8) {  // 面
+                var hh = height * (0.82 + 0.3 * Math.sin(xx / 340 + seedOff * 3)), yb = yc(xx);
+                for (yy = 0; yy < hh; yy += 4) {
+                  f = yy / hh;
+                  var cc = auroraColor(Math.min(1, f + shift));
+                  tc.fillStyle = "rgba(" + cc[0] + "," + cc[1] + "," + cc[2] + "," + (faceAlpha * Math.pow(1 - f, 1.4)).toFixed(3) + ")";
+                  tc.fillRect(AX(xx), AY(yb + yy), Math.max(1, 8 * asc), Math.max(1, 4 * asc));
+                }
+              }
+              var rr = rng(9000 + seedOff);  // 光条：縦の筋を細かく重ねる
+              for (var ri = 0; ri < 170; ri++) {
+                var rx = -20 + ri * (1270 / 170) + (rr() - 0.5) * 8, ryb = yc(rx);
+                var ln = height * (0.5 + rr() * 0.6), ra = rayAlpha * (0.3 + rr() * 0.7), rw = Math.max(0.6, (1 + rr() * 2) * asc);
+                for (yy = 0; yy < ln; yy += 4) {
+                  f = yy / ln;
+                  var rc = auroraColor(Math.min(1, f + shift));
+                  tc.fillStyle = "rgba(" + rc[0] + "," + rc[1] + "," + rc[2] + "," + (ra * (1 - f * 0.75)).toFixed(3) + ")";
+                  tc.fillRect(AX(rx + Math.sin(yy / 70 + seedOff) * 10), AY(ryb + yy), rw, Math.max(1, 4 * asc));
+                }
+              }
+              tc.strokeStyle = "rgba(214,255,226,.55)"; tc.lineWidth = 2;  // 上端の輝く縁
+              tc.beginPath();
+              for (xx = -20; xx <= 1250; xx += 14) { if (xx === -20) tc.moveTo(AX(xx), AY(yc(xx))); else tc.lineTo(AX(xx), AY(yc(xx))); }
+              tc.stroke();
+            }
+            curtain(64 + ph * 6, 42, 300 + ph * 77, 350, 0.30, 0.85, 0);
+            curtain(150 - ph * 8, 58, 377 + ph * 77, 300, 0.22, 0.68, 0.10);
+            curtain(24 + ph * 4, 26, 454 + ph * 77, 230, 0.18, 0.55, 0.18);
+            // 遠景の色ベール：大きな放射グラデーションで空に色の気配を敷く
+            [[0.20, 0.08, "92,255,171", 0.10], [0.75, 0.12, "168,104,255", 0.10], [0.55, 0.0, "96,150,255", 0.08]].forEach(function (v) {
+              var vg = tc.createRadialGradient(AX(1210 * v[0]), AY(841 * v[1]), 0, AX(1210 * v[0]), AY(841 * v[1]), Math.max(w, h) * 0.55);
+              vg.addColorStop(0, "rgba(" + v[2] + "," + v[3] + ")"); vg.addColorStop(1, "rgba(" + v[2] + ",0)");
+              tc.fillStyle = vg; tc.fillRect(0, 0, w, h);
+            });
+            // 地平の残照：夏の夕映えが山の際でほのかに残る
+            var twg = tc.createLinearGradient(0, AY(520), 0, AY(690));
+            twg.addColorStop(0, "rgba(255,166,104,0)"); twg.addColorStop(0.7, "rgba(255,166,104,.16)"); twg.addColorStop(1, "rgba(255,166,104,0)");
+            tc.fillStyle = twg; tc.fillRect(0, AY(520), w, AY(690) - AY(520));
+            // 山並み（遠・近）と森の丘
+            function ridge(base, amp, s1, s2, col) {
+              tc.fillStyle = col; tc.beginPath(); tc.moveTo(AX(-10), AY(841));
+              for (var px = -10; px <= 1230; px += 14) tc.lineTo(AX(px), AY(base - amp * (0.5 + 0.5 * Math.sin(px / 300 + s1)) - amp * 0.45 * Math.sin(px / 110 + s2)));
+              tc.lineTo(AX(1230), AY(841)); tc.closePath(); tc.fill();
+            }
+            ridge(620, 70, 5, 10, "#1c2a44");
+            ridge(664, 52, 9, 18, "#121e30");
+            ridge(700, 30, 1, 2.6, "#08120d");
+            // 草原：深い緑の階調に、草と野花の点を散らす
+            var mg = tc.createLinearGradient(0, AY(700), 0, AY(841));
+            mg.addColorStop(0, "#10200f"); mg.addColorStop(1, "#060a06");
+            tc.fillStyle = mg; tc.fillRect(0, AY(700), w, h - AY(700));
+            var gr = rng(30307), FL = ["255,214,120", "255,160,190", "220,226,255"];
+            for (i2 = 0; i2 < 200; i2++) {
+              if (gr() < 0.25) tc.fillStyle = "rgba(" + FL[(gr() * 3) | 0] + ",.25)"; else tc.fillStyle = "rgba(70,110,58,.25)";
+              var gs2 = Math.max(0.6, 1.6 * asc);
+              tc.fillRect(AX(gr() * 1210), AY(706 + gr() * 132), gs2, gs2);
+            }
+            // 針葉樹のシルエット
+            var pr2 = rng(40404);
+            function pine(px2, pbase, ps) {
+              tc.fillStyle = "#040805";
+              for (var pk = 0; pk < 3; pk++) {
+                var pw = (17 - pk * 4) * ps, pyb = pbase - pk * 10 * ps;
+                tc.beginPath();
+                tc.moveTo(AX(px2 - pw), AY(pyb)); tc.lineTo(AX(px2 + pw), AY(pyb)); tc.lineTo(AX(px2), AY(pyb - 15 * ps));
+                tc.closePath(); tc.fill();
+              }
+            }
+            for (i2 = 0; i2 < 34; i2++) pine(pr2() * 1210, 706 + pr2() * 54, 0.5 + pr2() * 0.5);
+            // ホタル：淡い暈と芯
+            var fr2 = rng(50505);
+            for (i2 = 0; i2 < 40; i2++) {
+              var fx2 = 10 + fr2() * 1190, fy2 = 650 + fr2() * 176, hr = Math.max(2, 6 * asc);
+              var hg = tc.createRadialGradient(AX(fx2), AY(fy2), 0, AX(fx2), AY(fy2), hr);
+              hg.addColorStop(0, "rgba(214,255,150,.10)"); hg.addColorStop(1, "rgba(214,255,150,0)");
+              tc.fillStyle = hg; tc.beginPath(); tc.arc(AX(fx2), AY(fy2), hr, 0, 7); tc.fill();
+              tc.fillStyle = "rgba(228,255,168,.85)";
+              tc.beginPath(); tc.arc(AX(fx2), AY(fy2), Math.max(0.6, 1.6 * asc), 0, 7); tc.fill();
+            }
+            // ロッジ村：フチだけの線画（塗りなし）。窓だけが小さな温かい明かり
+            function lodge(cx, base, s, main) {
+              var w2 = 76 * s, hh = 46 * s, li;
+              tc.lineWidth = 1; tc.strokeStyle = "rgba(240,232,208,.50)";
+              tc.strokeRect(AX(cx - w2), AY(base - hh), 2 * w2 * asc, hh * asc);
+              tc.strokeStyle = "rgba(240,232,208,.18)";
+              for (li = 1; li < 6; li++) { var ly = base - hh + li * hh / 6; tc.beginPath(); tc.moveTo(AX(cx - w2), AY(ly)); tc.lineTo(AX(cx + w2), AY(ly)); tc.stroke(); }
+              tc.strokeStyle = "rgba(240,232,208,.50)";
+              tc.beginPath();
+              tc.moveTo(AX(cx - w2 - 9 * s), AY(base - hh)); tc.lineTo(AX(cx), AY(base - hh - 30 * s)); tc.lineTo(AX(cx + w2 + 9 * s), AY(base - hh));
+              tc.stroke();
+              tc.strokeRect(AX(cx + w2 * 0.48), AY(base - hh - 22 * s), 9 * s * asc, 18 * s * asc);
+              tc.strokeStyle = "rgba(216,220,228,.25)";
+              for (li = 0; li < 3; li++) {
+                tc.beginPath();
+                tc.ellipse(AX(cx + w2 * 0.48 + 5 * s + li * 6), AY(base - hh - 28 * s - li * 10), Math.max(1, (5 + li * 2.4) * s * asc), Math.max(1, 4 * s * asc), 0, 0, 7);
+                tc.stroke();
+              }
+              var cols = main ? 4 : 2;
+              for (li = 0; li < cols; li++) {
+                var wx = cx - w2 + (li + 0.5) * (2 * w2 / cols) - 6.5 * s, wy = base - hh + 13 * s;
+                tc.strokeStyle = "rgba(255,214,140,.62)";
+                tc.strokeRect(AX(wx), AY(wy), 13 * s * asc, 15 * s * asc);
+                tc.strokeStyle = "rgba(255,214,140,.35)";
+                tc.beginPath();
+                tc.moveTo(AX(wx + 6.5 * s), AY(wy)); tc.lineTo(AX(wx + 6.5 * s), AY(wy + 15 * s));
+                tc.moveTo(AX(wx), AY(wy + 7.5 * s)); tc.lineTo(AX(wx + 13 * s), AY(wy + 7.5 * s));
+                tc.stroke();
+                tc.fillStyle = "rgba(255,200,110,.45)";
+                tc.beginPath(); tc.arc(AX(wx + 6.5 * s), AY(wy + 7.5 * s), Math.max(0.6, 1.5 * asc), 0, 7); tc.fill();
+              }
+              tc.strokeStyle = "rgba(240,232,208,.50)";
+              tc.strokeRect(AX(cx - 7.5 * s), AY(base - 21 * s), 15 * s * asc, 21 * s * asc);
+            }
+            lodge(168, 806, 1.05, false); lodge(428, 820, 0.90, false); lodge(884, 818, 0.95, false); lodge(1110, 802, 1.0, false); lodge(642, 830, 1.35, true);
+            // ガーランド：ロッジの間に垂れる電飾
+            function garland(x1, y1, x2, y2) {
+              var GC = ["255,198,100", "255,128,164", "126,222,255", "146,255,176"], pts = [], gi3;
+              for (gi3 = 0; gi3 <= 40; gi3++) { var gf = gi3 / 40; pts.push([x1 + (x2 - x1) * gf, y1 + (y2 - y1) * gf + 15 * Math.sin(gf * Math.PI)]); }
+              tc.strokeStyle = "rgba(200,208,220,.35)"; tc.lineWidth = 1;
+              tc.beginPath();
+              pts.forEach(function (p, pi2) { if (pi2) tc.lineTo(AX(p[0]), AY(p[1])); else tc.moveTo(AX(p[0]), AY(p[1])); });
+              tc.stroke();
+              for (gi3 = 0; gi3 <= 40; gi3 += 3) {
+                tc.fillStyle = "rgba(" + GC[((gi3 / 3) | 0) % 4] + ",.8)";
+                tc.beginPath(); tc.arc(AX(pts[gi3][0]), AY(pts[gi3][1]), Math.max(0.8, 2 * asc), 0, 7); tc.fill();
+              }
+            }
+            garland(244, 748, 354, 762); garland(504, 764, 574, 766); garland(716, 768, 810, 760); garland(960, 758, 1036, 746);
+            // 街灯：ポールと光の暈
+            [58, 302, 542, 772, 992, 1172].forEach(function (lx) {
+              var ly2 = 818 + 7 * Math.sin(lx / 190), lr = Math.max(3, 18 * asc);
+              tc.strokeStyle = "#101216"; tc.lineWidth = 2;
+              tc.beginPath(); tc.moveTo(AX(lx), AY(ly2)); tc.lineTo(AX(lx), AY(ly2 - 36)); tc.stroke();
+              var lh = tc.createRadialGradient(AX(lx), AY(ly2 - 36), 0, AX(lx), AY(ly2 - 36), lr);
+              lh.addColorStop(0, "rgba(255,200,104,.20)"); lh.addColorStop(1, "rgba(255,200,104,0)");
+              tc.fillStyle = lh; tc.beginPath(); tc.arc(AX(lx), AY(ly2 - 36), lr, 0, 7); tc.fill();
+              tc.fillStyle = "rgba(255,218,128,1)";
+              tc.beginPath(); tc.arc(AX(lx), AY(ly2 - 36), Math.max(1, 3 * asc), 0, 7); tc.fill();
+            });
+            // 足元のきらめき：湖面の映り込みの気配
+            var shr = rng(60606), SHC = ["92,255,171", "64,224,208", "96,150,255", "168,104,255", "255,190,96"];
+            tc.lineWidth = 1;
+            for (i2 = 0; i2 < 90; i2++) {
+              var shx = shr() * 1210, shy = 812 + shr() * 28;
+              tc.strokeStyle = "rgba(" + SHC[(shr() * SHC.length) | 0] + "," + (0.10 + shr() * 0.12).toFixed(3) + ")";
+              tc.beginPath(); tc.moveTo(AX(shx), AY(shy)); tc.lineTo(AX(shx), AY(shy + 2 + shr() * 5)); tc.stroke();
+            }
+          }
+          paintAuroraScene(x, 0);
+          // ゆらぎ層（#bg3）：カーテンの種と位置だけをずらした同じ絵。本体と交互に透けてカーテンがゆっくり揺れる
+          paintAuroraScene(layer(cv3).c, 1);
         }
         if (TB.grid) {
           // 香港ネオンの床：画面下部の透視グリッド（サイバーグリッド）。静止画の一部としてリサイズ時に1回だけ描く
