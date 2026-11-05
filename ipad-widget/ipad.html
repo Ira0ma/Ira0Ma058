@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="2e87ed978d">
+<meta name="build" content="70e2e0d051">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -871,6 +871,17 @@ html:not(.beginner) .step-note { display: none; }
 #tools-toggle, .dk-dock .dk-btn { font: inherit; font-size: 12px; font-weight: 700; color: var(--gold); background: rgba(var(--panel-rgb),.85); border: 1px solid rgba(var(--gold-rgb),.5); border-radius: 999px; padding: 3px 11px; line-height: 1.4; cursor: pointer; }
 #tools-toggle:hover, #tools-toggle:focus-visible, .dk-dock .dk-btn:hover, .dk-dock .dk-btn:focus-visible { background: var(--gold); color: var(--on-accent); outline: none; }
 @media (pointer: coarse) { .dk-dock #layout-toggle, #tools-toggle, .dk-dock .dk-btn { min-height: 36px; padding: 6px 14px; } }
+.dk-theme-btn { position: fixed; z-index: 30; right: calc(env(safe-area-inset-right, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 4px); font: inherit; font-size: 12px; font-weight: 700; color: var(--gold); background: rgba(var(--panel-rgb),.85); border: 1px solid rgba(var(--gold-rgb),.5); border-radius: 999px; padding: 3px 11px; line-height: 1.4; cursor: pointer; }
+.dk-theme-btn:hover, .dk-theme-btn:focus-visible { background: var(--gold); color: var(--on-accent); outline: none; }
+@media (pointer: coarse) { .dk-theme-btn { min-height: 36px; padding: 6px 14px; } }
+.dk-theme-pop { position: fixed; z-index: 60; right: calc(env(safe-area-inset-right, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 48px); width: 228px; background: rgba(var(--panel-rgb),.97); border: 1px solid rgba(var(--gold-rgb),.55); border-radius: 14px; padding: 8px; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
+.dk-theme-pop h4 { margin: 2px 6px 6px; font-size: 11px; color: var(--ink-3); font-weight: 700; letter-spacing: .04em; }
+.dk-theme-pop button { display: flex; width: 100%; align-items: center; gap: 8px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); background: none; border: 0; border-radius: 9px; padding: 7px 8px; cursor: pointer; text-align: left; }
+.dk-theme-pop button:hover, .dk-theme-pop button:focus-visible { background: rgba(var(--gold-rgb),.16); outline: none; }
+.dk-theme-pop button .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gold); opacity: 0; flex: none; }
+.dk-theme-pop button.on { color: var(--gold-soft); }
+.dk-theme-pop button.on .dot { opacity: 1; }
+.dk-theme-pop .eff { margin: 6px 6px 2px; font-size: 11px; color: var(--ink-3); }
 .mkt .chg .mst { font: inherit; font-size: 11px; font-weight: 600; color: var(--ink-3); margin-left: 8px; padding: 1px 7px; border-radius: 999px; border: 1px solid transparent; background: none; cursor: pointer; white-space: nowrap; vertical-align: 1px; }
 .mkt .chg .mst:hover, .mkt .chg .mst:focus-visible { border-color: var(--glass-line); outline: none; }
 .mst i { font-style: normal; margin-right: 3px; }
@@ -1275,6 +1286,53 @@ window.TD_THEME = (function () {
   var dockBtn = function (id, html, title, tab) { var b = document.createElement("button"); b.type = "button"; b.id = id; b.className = "dk-btn"; b.innerHTML = html; b.title = title; b.addEventListener("click", function () { openTools(tab, b); }); return b; };
   var jnBtn = dockBtn("journal-toggle", "📝 日誌", "取引の記録を入れる・一覧", "journal"), plBtn = dockBtn("pnl-toggle", "📅 収支", "日ごとの確定損益・入出金のカレンダーと、週・月・年のまとめ", "pnl");
   paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn); dock.appendChild(jnBtn); dock.appendChild(plBtn); document.body.appendChild(dock);
+  /* theme switch (plan A: a button at the bottom-right with a list). The dock stays at four buttons by design, so the theme lives on its own at the right. Same setting as the tools screen (td_theme). */
+  var THEME_LABELS = [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["neon", "ネオンプラス"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"]];
+  var THEME_NAMES = { current: "基本デザイン", neon: "ネオンプラス", spring: "春", summer: "夏", autumn: "秋", xmas: "クリスマス", newyear: "正月", winter: "冬" };
+  var themeModeNow = function () { try { return localStorage.getItem("td_theme") || "auto"; } catch (e) { return "auto"; } };
+  var themeBtn = document.createElement("button"); themeBtn.type = "button"; themeBtn.className = "dk-theme-btn"; themeBtn.id = "theme-toggle";
+  themeBtn.title = "ホーム画面のテーマを切り替えます（ツール画面の設定と同じ）";
+  var themePop = null;
+  var closeThemePop = function () { if (themePop) { themePop.remove(); themePop = null; document.removeEventListener("pointerdown", themePopOutside, true); } };
+  var themePopOutside = function (e) { if (themePop && !themePop.contains(e.target) && e.target !== themeBtn) closeThemePop(); };
+  var paintThemePop = function () {
+    if (!themePop) return;
+    var mode = themeModeNow();
+    themePop.querySelectorAll("button[data-mode]").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-mode") === mode); });
+    var T = window.TD_THEME, eff = themePop.querySelector(".eff");
+    if (eff) eff.textContent = (mode === "auto" && T && T.id) ? "いま表示中：" + (THEME_NAMES[T.id] || T.id) : "";
+  };
+  var paintThemeBtn = function () {
+    var T = window.TD_THEME, mode = themeModeNow();
+    var label = "";
+    if (mode === "auto") { var eff = T && T.id ? (THEME_NAMES[T.id] || T.id) : ""; label = eff ? eff + "（自動）" : "自動"; }
+    else { for (var i = 0; i < THEME_LABELS.length; i++) if (THEME_LABELS[i][0] === mode) label = THEME_LABELS[i][1]; }
+    themeBtn.textContent = "🎨 テーマ：" + label;
+    paintThemePop();
+  };
+  var openThemePop = function () {
+    themePop = document.createElement("div"); themePop.className = "dk-theme-pop"; themePop.setAttribute("role", "menu");
+    themePop.innerHTML = "<h4>テーマを選ぶ</h4>";
+    THEME_LABELS.forEach(function (p) {
+      var b = document.createElement("button"); b.type = "button"; b.setAttribute("data-mode", p[0]);
+      b.innerHTML = '<span class="dot"></span>' + p[1];
+      b.addEventListener("click", function () {
+        try { localStorage.setItem("td_theme", p[0]); } catch (e) {}
+        if (window.TDThemeApply) window.TDThemeApply();
+        paintThemeBtn(); closeThemePop(); themeBtn.focus();
+      });
+      themePop.appendChild(b);
+    });
+    var eff = document.createElement("p"); eff.className = "eff"; themePop.appendChild(eff);
+    document.body.appendChild(themePop);
+    paintThemePop();
+    document.addEventListener("pointerdown", themePopOutside, true);
+  };
+  themeBtn.addEventListener("click", function () { if (themePop) closeThemePop(); else openThemePop(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeThemePop(); });
+  document.body.appendChild(themeBtn);
+  window.TDThemeBtnPaint = paintThemeBtn;
+  paintThemeBtn();
   layoutBtn.addEventListener("click", function () {
     beginner = !beginner;
     try { localStorage.setItem("desk-layout", beginner ? "beginner" : "normal"); } catch (e) {}
@@ -1393,10 +1451,10 @@ window.TD_THEME = (function () {
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=371e5280e2", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=3c98ce1ef4", title: "ドル円分析" },
-    btc: { src: "btc.html?v=b4912709b2", title: "BTC分析" },
-    oil: { src: "oil.html?v=3916229ffb", title: "オイル分析" }
+    gold: { src: "gold.html?v=36687a3d2e", title: "GOLD分析" },
+    usdjpy: { src: "usdjpy.html?v=ef062db748", title: "ドル円分析" },
+    btc: { src: "btc.html?v=6184ef2b82", title: "BTC分析" },
+    oil: { src: "oil.html?v=99d8ed7037", title: "オイル分析" }
   };
   var openSheet = null, sheetOpener = null;
   /* ステータスバーの分：iframe の中では端末の値（safe-area）が届かないので、デスクで測った --safe-top を各ダッシュボードに渡す */
@@ -1506,7 +1564,7 @@ window.TD_THEME = (function () {
      for H4, H1, M15 and M5; the price panel showing that market shows them at its top right. */
   var scoreOf = {};
   function paintScore() {
-    if (!markets) return;
+    if (document.hidden || !markets) return;
     markets.forEach(function (mk) {
       var d = scoreOf[mk.key], el = mk.el.querySelector('[data-f="score"]'), cls = d ? (d.dir > 0 ? "up" : d.dir < 0 ? "down" : "") : "";
       var shut = marketClosed(mk.key);
@@ -1572,7 +1630,7 @@ window.TD_THEME = (function () {
   }
   var keyLv = {};
   function paintKeyLv() {
-    if (!markets) return;
+    if (document.hidden || !markets) return;
     markets.forEach(function (mk) {
       if (mk.oil) return;  // OILCash は補正後の価格なので、ダッシュボードの水準（補正前）は並べない（これまでどおり）
       var k = keyLv[mk.key], el = mk.el.querySelector('[data-f="klv"]'), on = !!(k && (k.r.length || k.s.length));
@@ -1584,7 +1642,7 @@ window.TD_THEME = (function () {
   }
   setInterval(paintKeyLv, 2000);  // follows a panel switched to another market
   function paintEntries() {
-    if (!markets) return;
+    if (document.hidden || !markets) return;
     markets.forEach(function (mk) {
       var st = entryState[mk.key], on = !!(st && st.entry && !marketClosed(mk.key)), buy = on && st.sig === "BUY";
       mk.el.classList.toggle("entry-buy", on && buy);
@@ -2250,6 +2308,7 @@ window.TD_THEME = (function () {
   function btcRef() { var m = market && (market.instruments || market).btc; return m && +m.price && Date.now() - (m.asOf || 0) * 1000 < 90 * 60000 ? +m.price : 0; }
   function btcAgree(px, ref) { return !ref || !px || Math.abs(px / ref - 1) <= BTC_TOL; }
   function applyBtcDash() {  // between market.json reloads: follow the dashboard's price as it lands in the cache
+    if (document.hidden) return;
     var dash = btcDashPrice(market && (market.instruments || market).btc);
     if (!dash) return;
     markets.forEach(function (mk) {
@@ -3536,6 +3595,7 @@ window.TD_THEME = (function () {
   }
   var ptSig = "", ptShownAt = 0;
   function ptRows() {
+    if (document.hidden) return;
     var tabs = document.querySelector("#pt-map .pm-tabs"), bodyEl = document.querySelector("#pt-map .pm-body"); if (!tabs) return;
     var nears = {};
     PT_TABS.forEach(function (key) { var k = keyLv[key]; if (k && k.px) { var n = ptNear(key, k); if (n) nears[key] = n; } });
@@ -4956,11 +5016,15 @@ window.TD_THEME = (function () {
   var buildMeta = document.querySelector('meta[name="build"]');
   function checkUpdate() {
     if (!buildMeta || !window.fetch) return;
-    fetch(location.pathname + "?v=" + Date.now(), { cache: "no-store" })
+    var updUrl = location.pathname + "?v=" + Date.now(), BUILD_RE = /<meta name="build" content="([^"]+)"/;
+    fetch(updUrl, { cache: "no-store", headers: { Range: "bytes=0-4095" } })
       .then(function (r) { return r.ok ? r.text() : Promise.reject(); })
       .then(function (t) {
-        var m = t.match(/<meta name="build" content="([^"]+)"/);
-        if (m && m[1] !== buildMeta.content) offerUpdate(m[1]);
+        var m = t.match(BUILD_RE);
+        if (m) { if (m[1] !== buildMeta.content) offerUpdate(m[1]); return; }
+        return fetch(updUrl, { cache: "no-store" }).then(function (r) { return r.ok ? r.text() : ""; }).then(function (t2) {
+          var m2 = t2.match(BUILD_RE); if (m2 && m2[1] !== buildMeta.content) offerUpdate(m2[1]);
+        }).catch(function () {});
       })
       .catch(function () {});
   }
@@ -5013,7 +5077,7 @@ window.TD_THEME = (function () {
     refresh: function (what) { ({ market: loadMarket, prices: loadPrices, calendar: loadCalendar, weather: loadWeather, report: loadReport })[what](); }
   };
   try { if (localStorage.getItem("td-power") === "low") document.documentElement.classList.add("lowpower"); } catch (e) {}
-  setInterval(function () { markets.forEach(function (mk) { if (mk.live) mk.render(); }); }, 15000);  // keep the age on each card current
+  setInterval(function () { if (document.hidden) return; markets.forEach(function (mk) { if (mk.live) mk.render(); }); }, 15000);  // keep the age on each card current
 
   /* ---------- boot ---------- */
   if (!PREVIEW) {
@@ -5038,6 +5102,7 @@ window.TD_THEME = (function () {
     var pl = document.querySelector(".td-particles"); if (pl) pl.remove();  // 舞う飾りは開き直したときに切り替わる
     bg.resize();
     (window.__mkts || []).forEach(function (mk) { if (mk.draw) mk.draw(); });
+    if (window.TDThemeBtnPaint) window.TDThemeBtnPaint();
   };
   tickClock(); renderCal(); bg.start(); layout(); loadWeather(); loadPrices();
   eqHistory(); eqConnect(); setInterval(eqHistory, 2 * 60000); setInterval(eqPaint, 30000);
@@ -5049,7 +5114,7 @@ window.TD_THEME = (function () {
   loadCalendar(); loadReactions(); setInterval(loadReactions, 15 * 60000);  // 追加D：過去の反応（サイトの定期取得と同じ周期）
   loadMarket(); setInterval(loadMarket, 5 * 60000);
   loadReport(); setInterval(loadReport, 10 * 60000);
-  loadHolidays(); setInterval(function () { renderIndicators(); renderNext(); paintUpdated(); if (calendarHot()) scheduleSoon(); }, 30000);
+  loadHolidays(); setInterval(function () { if (!document.hidden) { renderIndicators(); renderNext(); paintUpdated(); } if (calendarHot()) scheduleSoon(); }, 30000);
   // X's script is slow and third-party: start it only after the page itself has finished loading
   // start both dashboards in the background so their entry calls reach the desk
   // BTC only while a market panel shows it (three dashboards at once weigh on an iPad)
