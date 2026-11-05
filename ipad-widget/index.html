@@ -3037,11 +3037,11 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   function shortTitle(e) { for (var i = 0; i < SHORT.length; i++) if (SHORT[i][0].test(e.title)) return (e.country === "JPY" && !/日銀|東京|全国|短観/.test(SHORT[i][1]) ? "日" : "") + SHORT[i][1]; return jaTitle(e).replace(/・/, "").replace(/\s*[（(][^）)]*[）)]/g, ""); }
   function rxLine(e) {  // 影響タグ・前回の反応・平均（ダッシュボードの「次の重要指標」と同じ計算）
     var aff = TDCore.indAffects(e.country, e.title); if (!aff.length) return "";
-    var st = TDCore.reactionStats(RX, e.country, e.title, +e.t), parts = [], rk = TDCore.rxInsts(e.country, e.title);
+    var st = TDCore.reactionStats(RX, e.country, e.title, +e.t), parts = [], rk = (TDCore.rxInsts || TDCore.indAffects)(e.country, e.title), RJ = TDCore.RX_JA || TDCore.INST_JA;  // 古い core.js がキャッシュに残っていても一覧を出す
     if (st) {
       var p = new Date(st.last.t * 1000);
-      parts.push("前回の反応 " + rk.filter(function (k) { return st.last.move[k]; }).map(function (k) { return TDCore.RX_JA[k] + " " + TDCore.moveText(k, st.last.move[k].size); }).join("・") + "（" + (p.getMonth() + 1) + "/" + p.getDate() + "）");
-      var av = rk.filter(function (k) { return st.avg[k]; }); if (av.length) parts.push("過去" + st.avg[av[0]].n + "回の平均 " + av.map(function (k) { return TDCore.RX_JA[k] + " " + TDCore.moveText(k, st.avg[k].v) + (st.avg[k].n !== st.avg[av[0]].n ? "（" + st.avg[k].n + "回）" : ""); }).join("・"));
+      parts.push("前回の反応 " + rk.filter(function (k) { return st.last.move[k]; }).map(function (k) { return RJ[k] + " " + TDCore.moveText(k, st.last.move[k].size); }).join("・") + "（" + (p.getMonth() + 1) + "/" + p.getDate() + "）");
+      var av = rk.filter(function (k) { return st.avg[k]; }); if (av.length) parts.push("過去" + st.avg[av[0]].n + "回の平均 " + av.map(function (k) { return RJ[k] + " " + TDCore.moveText(k, st.avg[k].v) + (st.avg[k].n !== st.avg[av[0]].n ? "（" + st.avg[k].n + "回）" : ""); }).join("・"));
     }
     return '<span class="itag">影響：' + aff.map(function (k) { return TDCore.INST_JA[k]; }).join("・") + "</span>" + esc(parts.join("／"));
   }
