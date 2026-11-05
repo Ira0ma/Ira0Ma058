@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="7d7f783db0">
+<meta name="build" content="881a1c86ce">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3789,7 +3789,9 @@ window.TD_THEME = (function () {
                 }
               }
               // 下縁の鋭い輝き：裾の曲線 yc に沿って、(1)白へ寄せた色の柔らかいグロー（幅10・淡く）、
-              // (2)同じ色の帯（幅4・ヒダで陰影）、(3)裾の5px下に窒素の縁取り＝紫の細線（幅2・ヒダで陰影）。
+              // (2)同じ色の帯（幅4・ヒダで陰影）、(3)白い縁の線、の順に描き、最後に(4)裾の6px下へ
+              // 窒素の縁取り＝紫の線（幅3.5・ヒダで陰影・濃いめ）を引く。紫は上の要素に塗り潰されて
+              // 見えなくならないよう、縁まわりでは必ず最後に描く。
               // 色は裾位置の虹色を白へ55%寄せたもの。区間ごとに色と濃さを変えて曲線をなぞる
               function liteAt(x2) { var c0 = colAt(0, x2); return [Math.round(c0[0] + (255 - c0[0]) * 0.55), Math.round(c0[1] + (255 - c0[1]) * 0.55), Math.round(c0[2] + (255 - c0[2]) * 0.55)]; }
               function hemStroke(lw, off, styleFn) {
@@ -3803,11 +3805,11 @@ window.TD_THEME = (function () {
               }
               hemStroke(10, 0, function (xm) { var lc = liteAt(xm); return "rgba(" + lc[0] + "," + lc[1] + "," + lc[2] + ",0.12)"; });
               hemStroke(4, 0, function (xm) { var lc = liteAt(xm); return "rgba(" + lc[0] + "," + lc[1] + "," + lc[2] + "," + (0.5 * foldAt(xm)).toFixed(3) + ")"; });
-              hemStroke(2, 5, function (xm) { return "rgba(150,120,255," + (0.20 * foldAt(xm)).toFixed(3) + ")"; });
               tc.strokeStyle = "rgba(255,240,235," + (0.55 + ph * 0.20).toFixed(2) + ")"; tc.lineWidth = 2;  // 上端の輝く縁（ゆらぎ層では少し明るくし、透けるにつれて縁が冴える）
               tc.beginPath();
               for (xx = -20; xx <= 1250; xx += 14) { if (xx === -20) tc.moveTo(AX(xx), AY(yc(xx))); else tc.lineTo(AX(xx), AY(yc(xx))); }
               tc.stroke();
+              hemStroke(3.5, 6, function (xm) { return "rgba(148,104,255," + (0.42 * foldAt(xm)).toFixed(3) + ")"; });
             }
             curtain(64 + ph * 26, 42 * (1 + ph * 0.24), 300 + ph * 197, 350, 0.30, 0.85, 0, 280);
             curtain(150 - ph * 30, 58 * (1 + ph * 0.16), 377 + ph * 197, 300, 0.22, 0.68, 0.10, 250);
