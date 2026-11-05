@@ -29,7 +29,7 @@
   color-scheme: dark;
 }
 
-/* ---------- themes （季節で変わる見た目。current は上の :root のまま＝今のデザイン） ---------- */
+/* ---------- themes （季節で変わる見た目。current は上の :root のまま＝基本デザイン） ---------- */
 html[data-theme="neon"] {
   --night: #040814; --glass: rgba(9, 17, 34, 0.88); --glass-line: rgba(34, 211, 238, 0.30);
   --ink: #f0f8ff; --ink-2: rgba(240, 248, 255, 0.72); --ink-3: rgba(240, 248, 255, 0.48);
@@ -1083,7 +1083,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
 <script>
 /* テーマ判定：保存した設定 td_theme（auto/current/neon/spring/summer/autumn/xmas/newyear/winter）と日付から決める。
-   ?theme= は確認用の一時上書き（保存しない）。current = 今のデザイン。 */
+   ?theme= は確認用の一時上書き（保存しない）。current = 基本デザイン。 */
 window.TD_THEME = (function () {
   var NAMES = ["current", "neon", "spring", "autumn", "xmas", "newyear", "winter"];
   function byDate(d) {
