@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="19f50a3231">
+<meta name="build" content="3c98ce1ef4">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2999,7 +2999,7 @@ const SOUND_JA={high:'大',mid:'中',low:'小',off:'オフ'};
 function deskSoundJa(){let v='';try{v=localStorage.getItem('desk_sound')||''}catch{}return SOUND_JA[v]||'中'}  // ホームの既定は「中」
 function notifyLine(){
   const [st,k]=notifyState();
-  return `<div class="al-ntf"><div><b>端末の通知：<span class="${k}">${st}</span></b>${k==='ok'?'':'<small>端末にも出したい場合は、ホーム（デスク）の右上の「通知」ボタンを押して許可してください。iPhone・iPadは、ホーム画面に追加したアプリから開いた場合に限り使えます</small>'}`+
+  return `<div class="al-ntf"><div><b>端末の通知：<span class="${k}">${st}</span></b>${k==='ok'?'':'<small>端末にも出したい場合は、ホーム（デスク）の左上の「通知」ボタンを押して許可してください。iPhone・iPadは、ホーム画面に追加したアプリから開いた場合に限り使えます</small>'}`+
     `<small id="alTestMsg" aria-live="polite"></small></div><button type="button" class="seg" data-altest>テスト（音と通知）</button></div>`;
 }
 // B1：テスト。デスクの中では本物の通知と同じ道（デスクの音・通知・お知らせ）を通す。単体ではこのページの音と端末の通知。履歴には「テスト」と残す
