@@ -143,13 +143,13 @@ body {
 }
 #bg { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 /* ネオンクラブ：床のにじみ。左右2つの柔らかい光がゆっくり明滅する（ネオンの時だけ表示）。
-   グラデーションの濃さ×要素の透明度で実効 alpha は約0.05〜0.14。省電力では止めて薄く固定する */
+   グラデーションの濃さ×要素の透明度で実効 alpha は約0.08〜0.19。省電力では止めて薄く固定する */
 .td-floor-glow { display: none; position: fixed; bottom: -14vh; width: 58vw; height: 44vh; pointer-events: none; z-index: 0; }
 html[data-theme="neon"] .td-floor-glow { display: block; }
 .td-floor-glow.fg-l { left: -8vw; background: radial-gradient(ellipse at 50% 100%, rgba(255, 43, 214, 0.50), rgba(255, 43, 214, 0) 70%); animation: td-floor-pulse 9s ease-in-out infinite alternate; }
 .td-floor-glow.fg-r { right: -8vw; background: radial-gradient(ellipse at 50% 100%, rgba(0, 229, 255, 0.50), rgba(0, 229, 255, 0) 70%); animation: td-floor-pulse 10s ease-in-out -5s infinite alternate-reverse; }
-@keyframes td-floor-pulse { from { opacity: 0.10; } to { opacity: 0.28; } }
-html.lowpower .td-floor-glow { animation: none; opacity: 0.16; }
+@keyframes td-floor-pulse { from { opacity: 0.16; } to { opacity: 0.38; } }
+html.lowpower .td-floor-glow { animation: none; opacity: 0.22; }
 /* 背景の動く部分だけを別の層に：金色の光の筋は透明度のアニメーション（描き直しなし）、きらめく点は軽い低解像度の層 */
 #fit {
   position: fixed; inset: 0;
@@ -3307,7 +3307,7 @@ window.TD_THEME = (function () {
             var ty0 = gyAt(trow / 7), ty1 = gyAt((trow + 1) / 7);
             for (tcol = 0; tcol < 18; tcol++) {
               var tch = TILE[trow].charAt(tcol); if (tch === ".") continue;
-              var ta = 0.05 + (trow / 6) * 0.06 + tr() * 0.05; if (ta > 0.16) ta = 0.16;
+              var ta = 0.12 + (trow / 6) * 0.10 + tr() * 0.05; if (ta > 0.30) ta = 0.30;
               x.fillStyle = "rgba(" + TILEC[tch] + "," + ta.toFixed(3) + ")";
               x.beginPath();
               x.moveTo(fxAt(tcol - 9, ty0), ty0); x.lineTo(fxAt(tcol - 8, ty0), ty0);
