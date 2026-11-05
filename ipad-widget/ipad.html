@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="7d74cc34d1">
+<meta name="build" content="385d51c266">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -45,13 +45,15 @@
 
 /* ---------- themes （季節で変わる見た目。current は上の :root のまま＝基本デザイン） ---------- */
 html[data-theme="neon"] {
-  --night: #040814; --glass: rgba(9, 17, 34, 0.88); --glass-line: rgba(34, 211, 238, 0.30);
+  /* 香港ネオン：深い紫の夜に多色のネオンが光る。--ink 系と判定色（--up-red/--up-green/--star）、
+     基調アクセント（--gold）はネオンプラス時代の値をそのまま維持し、可読性と意味の色は変えない */
+  --night: #070312; --glass: rgba(15, 9, 30, 0.88); --glass-line: rgba(168, 120, 255, 0.32);
   --ink: #f0f8ff; --ink-2: rgba(240, 248, 255, 0.72); --ink-3: rgba(240, 248, 255, 0.48);
   --gold: #22d3ee; --gold-rgb: 34, 211, 238; --gold-soft: rgba(34, 211, 238, 0.22); --gold-deep: #0ea5c8;
-  --on-accent: #06222b; --panel-rgb: 6, 24, 36;
+  --on-accent: #06222b; --panel-rgb: 22, 14, 40;
   --up-red: #ff4d6d; --up-green: #2bff88; --star: #ffbe3c;
   --head-points: #5affa0; --head-weather: #6ecdff; --head-ind: #ffbe50; --head-cal: #c39bff; --head-x: #5ae1ff; --head-books: #ff8ccd;
-  --strip-bg: linear-gradient(90deg, #ff5a5a, #ff9f43, #ffd94d, #2bff88, #22d3ee, #a78bfa); --strip-size: 100% 3px;
+  --strip-bg: linear-gradient(90deg, #22d3ee 0 14px, rgba(0,0,0,0) 14px 20px, #ff4d9d 20px 34px, rgba(0,0,0,0) 34px 40px, #ffd94d 40px 54px, rgba(0,0,0,0) 54px 60px, #2bff88 60px 74px, rgba(0,0,0,0) 74px 80px, #a78bfa 80px 94px, rgba(0,0,0,0) 94px 96px); --strip-size: 96px 3px;
 }
 html[data-theme="spring"] {
   --night: #0a080a; --glass: rgba(19, 13, 17, 0.88); --glass-line: rgba(255, 171, 194, 0.30);
@@ -101,7 +103,35 @@ html[data-theme="winter"] {
 /* カード上端の装飾（帯・点の並び）。current では出さない */
 .card::before { content: ""; position: absolute; left: 16px; right: 16px; top: 4px; height: 8px; z-index: 3; pointer-events: none; background-repeat: repeat-x; background-position: 0 center; display: none; }
 html[data-theme]:not([data-theme="current"]) .card::before { display: block; background-image: var(--strip-bg); background-size: var(--strip-size); }
-html[data-theme="neon"] .card { box-shadow: 0 0 22px rgba(34, 211, 238, 0.14), 0 18px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05); }
+/* 香港ネオン：カードごとに色の違う発光ボーダーと、四隅のコーナーブラケット（ゲームUI風の括弧）。
+   --neon-c はカードの色（RGBの3つ組）で、見出しの色分け（--head-*）と基調色にそろえる。判定色には使わない */
+html[data-theme="neon"] #clock { --neon-c: 34, 211, 238; }
+html[data-theme="neon"] #markets { --neon-c: 255, 77, 157; }
+html[data-theme="neon"] #points { --neon-c: 90, 255, 160; }
+html[data-theme="neon"] #weather { --neon-c: 110, 205, 255; }
+html[data-theme="neon"] #ind { --neon-c: 255, 190, 80; }
+html[data-theme="neon"] #cal { --neon-c: 195, 155, 255; }
+html[data-theme="neon"] #xfeed { --neon-c: 255, 140, 205; }
+html[data-theme="neon"] .card {
+  border-color: rgba(var(--neon-c, 34, 211, 238), 0.55);
+  box-shadow: 0 0 18px rgba(var(--neon-c, 34, 211, 238), 0.26), 0 0 52px rgba(var(--neon-c, 34, 211, 238), 0.10), 0 18px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+html[data-theme="neon"] .card::after {
+  content: ""; position: absolute; inset: 5px; z-index: 4; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(var(--neon-c, 34, 211, 238), 0.95), rgba(var(--neon-c, 34, 211, 238), 0.95)),
+    linear-gradient(rgba(var(--neon-c, 34, 211, 238), 0.95), rgba(var(--neon-c, 34, 211, 238), 0.95)),
+    linear-gradient(rgba(var(--neon-c, 34, 211, 238), 0.95), rgba(var(--neon-c, 34, 211, 238), 0.95)),
+    linear-gradient(rgba(var(--neon-c, 34, 211, 238), 0.95), rgba(var(--neon-c, 34, 211, 238), 0.95)),
+    linear-gradient(rgba(var(--neon-c, 34, 211, 238), 0.95), rgba(var(--neon-c, 34, 211, 238), 0.95)),
+    linear-gradient(rgba(var(--neon-c, 34, 211, 238), 0.95), rgba(var(--neon-c, 34, 211, 238), 0.95)),
+    linear-gradient(rgba(var(--neon-c, 34, 211, 238), 0.95), rgba(var(--neon-c, 34, 211, 238), 0.95)),
+    linear-gradient(rgba(var(--neon-c, 34, 211, 238), 0.95), rgba(var(--neon-c, 34, 211, 238), 0.95));
+  background-size: 16px 2px, 2px 16px, 16px 2px, 2px 16px, 16px 2px, 2px 16px, 16px 2px, 2px 16px;
+  background-position: 0 0, 0 0, 100% 0, 100% 0, 0 100%, 0 100%, 100% 100%, 100% 100%;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 4px rgba(var(--neon-c, 34, 211, 238), 0.75));
+}
 /* 見出しの色分け（current では従来どおり） */
 html[data-theme]:not([data-theme="current"]) #points .card-title { color: var(--head-points); }
 html[data-theme]:not([data-theme="current"]) #weather .card-title { color: var(--head-weather); }
@@ -1275,12 +1305,13 @@ window.TD_THEME = (function () {
 })();
 </script>
 <script>
-/* 舞う粒子（テーマの飾り）：桜・落ち葉・雪・金粉。current と neon では出さない。動きを減らす設定でも出さない。 */
+/* 舞う粒子（テーマの飾り）：桜・落ち葉・雪・金粉。neon は香港ネオンの火花（小さく光る点）。current では出さない。動きを減らす設定でも出さない。 */
 (function () {
   var id = window.TD_THEME && TD_THEME.id;
-  if (!id || id === "current" || id === "neon") return;
+  if (!id || id === "current") return;
   if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   var KIND = {
+    neon: { cols: ["#22d3ee", "#ff4d9d", "#ffd94d", "#a78bfa"], spark: true },
     spring: { cols: ["#ffb7c5", "#ffdde8", "#fff0f4"], petal: true },
     autumn: { cols: ["#e87830", "#cd5028", "#f2a246", "#b84a28"], petal: true },
     xmas: { cols: ["#ffffff"], snow: true },
@@ -1292,7 +1323,7 @@ window.TD_THEME = (function () {
   layer.className = "td-particles"; layer.setAttribute("aria-hidden", "true");
   for (var i = 0; i < 34; i++) {
     var sp = document.createElement("span"), r = Math.random;
-    var sz = K.snow ? 2.5 + r() * 3 : K.dust ? 2.5 + r() * 2.5 : 5 + r() * 5;
+    var sz = K.snow ? 2.5 + r() * 3 : K.dust ? 2.5 + r() * 2.5 : K.spark ? 2 + r() * 2.5 : 5 + r() * 5;
     sp.style.left = (r() * 100) + "vw";
     sp.style.width = sz + "px"; sp.style.height = (K.petal ? sz * 0.72 : sz) + "px";
     sp.style.background = K.cols[i % K.cols.length];
@@ -1301,6 +1332,11 @@ window.TD_THEME = (function () {
     sp.style.setProperty("--sw", ((r() * 6 - 3).toFixed(1)) + "vw");
     sp.style.animationDuration = (9 + r() * 9).toFixed(1) + "s";
     sp.style.animationDelay = (-r() * 18).toFixed(1) + "s";
+    if (K.spark) {  // 香港ネオンの火花：同色の光暈を持たせ、落下をゆっくりにする
+      sp.style.boxShadow = "0 0 6px 1px " + K.cols[i % K.cols.length];
+      sp.style.opacity = (0.45 + r() * 0.4).toFixed(2);
+      sp.style.animationDuration = (15 + r() * 10).toFixed(1) + "s";
+    }
     layer.appendChild(sp);
   }
   document.body.appendChild(layer);
@@ -2187,17 +2223,23 @@ window.TD_THEME = (function () {
     cs.forEach(function (k, i) { c.lineTo(X(i), Y(k.c)); });
     c.lineTo(X(cs.length - 1), bot); c.closePath(); c.fillStyle = g; c.fill();
     c.beginPath(); cs.forEach(function (k, i) { if (i) c.lineTo(X(i), Y(k.c)); else c.moveTo(X(i), Y(k.c)); });
+    var neonHK = window.TD_THEME && TD_THEME.id === "neon";
     if (window.TD_THEME && TD_THEME.id !== "current") {
       var lg = c.createLinearGradient(0, 0, cw, 0);
       lg.addColorStop(0, rgb(1));
       lg.addColorStop(1, "rgba(" + Math.min(255, col[0] + 70) + "," + Math.min(255, col[1] + 70) + "," + Math.min(255, col[2] + 70) + ",1)");
       c.strokeStyle = lg;
     } else c.strokeStyle = rgb(1);
-    c.lineWidth = 1.8; c.lineJoin = "round"; c.stroke();
+    c.lineJoin = "round";
+    if (neonHK) {  // 香港ネオン：本線の下に同色の太い淡線を敷いて発光させる（線の色そのもの＝判定は変えない）
+      c.save(); c.lineWidth = 6; c.strokeStyle = rgb(.16); c.stroke(); c.restore();
+    }
+    c.lineWidth = 1.8; c.stroke();
     // start point and the current point
     var dot = function (x, y, r, fill) { c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fillStyle = fill; c.fill(); };
     dot(X(0), Y(first), 2.5, "rgba(244,241,234,.6)");
     var xe = X(cs.length - 1), ye = Y(last);
+    if (neonHK) dot(xe, ye, 9, rgb(.14));
     dot(xe, ye, 5, rgb(.25)); dot(xe, ye, 3, rgb(1));
     c.restore();
   };
@@ -3225,7 +3267,7 @@ window.TD_THEME = (function () {
     var cv = document.getElementById("bg"), c, w, h, k = 1, parts = [], dot = null;
     function layer(el) { el.width = Math.round(w * k); el.height = Math.round(h * k); var x = el.getContext("2d"); x.setTransform(k, 0, 0, k, 0, 0); return { cv: el, c: x }; }
     var THEME_BG = {
-      neon: { base: "#040814", dot: "140,230,250", glows: [["rgba(34,211,238,.16)", 0.15, 0.05, 0.55], ["rgba(150,90,255,.14)", 0.92, 0.02, 0.5], ["rgba(30,220,190,.10)", 0.85, 0.98, 0.5]] },
+      neon: { base: "#070312", dot: "200,190,255", grid: 1, glows: [["rgba(255,45,150,.15)", 0.12, 0.02, 0.55], ["rgba(130,70,255,.16)", 0.9, 0.03, 0.55], ["rgba(20,180,255,.10)", 0.5, 1.02, 0.5]] },
       spring: { base: "#0a080a", dot: "255,190,205", glows: [["rgba(255,150,180,.14)", 0.15, 0.05, 0.55], ["rgba(150,230,160,.08)", 0.9, 0.9, 0.5], ["rgba(255,200,130,.08)", 0.85, 0.05, 0.45]] },
       autumn: { base: "#0a0705", dot: "255,195,120", glows: [["rgba(255,140,60,.15)", 0.15, 0.05, 0.55], ["rgba(200,70,40,.12)", 0.9, 0.1, 0.5], ["rgba(255,190,80,.08)", 0.8, 0.95, 0.5]] },
       xmas: { base: "#050907", dot: "255,240,210", glows: [["rgba(240,200,90,.12)", 0.5, 0, 0.55], ["rgba(255,90,90,.10)", 0.92, 0.05, 0.5], ["rgba(80,240,130,.10)", 0.08, 0.95, 0.5]] },
@@ -3250,6 +3292,22 @@ window.TD_THEME = (function () {
           gx.addColorStop(0, gl[0]); gx.addColorStop(1, "rgba(0,0,0,0)");
           x.fillStyle = gx; x.fillRect(0, 0, w, h);
         });
+        if (TB.grid) {
+          // 香港ネオンの床：画面下部の透視グリッド（サイバーグリッド）。静止画の一部としてリサイズ時に1回だけ描く
+          var hz = h * 0.80, vx = w * 0.5, gi, gt, gy;
+          var hg = x.createLinearGradient(0, 0, w, 0);
+          hg.addColorStop(0, "rgba(34,211,238,0)"); hg.addColorStop(0.5, "rgba(140,130,255,.32)"); hg.addColorStop(1, "rgba(255,77,157,0)");
+          x.fillStyle = hg; x.fillRect(0, hz - 1, w, 2);
+          for (gi = 1; gi <= 7; gi++) {  // 横線：地平線に近いほど間隔が詰まって淡くなる
+            gt = gi / 7; gy = hz + (h - hz) * gt * gt;
+            x.strokeStyle = "rgba(255,77,157," + (0.05 + 0.20 * gt).toFixed(3) + ")"; x.lineWidth = 1;
+            x.beginPath(); x.moveTo(0, gy); x.lineTo(w, gy); x.stroke();
+          }
+          for (gi = -9; gi <= 9; gi++) {  // 縦線：地平線上の消失点へ収束させる
+            x.strokeStyle = "rgba(34,211,238,.15)"; x.lineWidth = 1;
+            x.beginPath(); x.moveTo(vx + gi * w * 0.008, hz); x.lineTo(vx + gi * w * 0.085, h); x.stroke();
+          }
+        }
         dot = document.createElement("canvas"); dot.width = dot.height = 64;
         var dc = dot.getContext("2d"), dg = dc.createRadialGradient(32, 32, 0, 32, 32, 32);
         dg.addColorStop(0, "rgba(" + TB.dot + ",1)"); dg.addColorStop(1, "rgba(" + TB.dot + ",0)");
