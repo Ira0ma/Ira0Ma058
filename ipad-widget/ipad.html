@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="2767448605">
+<meta name="build" content="707cef1ecb">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -208,17 +208,21 @@ html[data-theme="neon"][data-club-light="b"] .td-floor-glow.fg-r { background: r
 html[data-theme="neon"][data-club-light="b"] .td-top-glow.tg-l { background: radial-gradient(ellipse at 50% 0%, rgba(0, 229, 255, 0.45), rgba(0, 229, 255, 0) 70%); }
 html[data-theme="neon"][data-club-light="b"] .td-top-glow.tg-r { background: radial-gradient(ellipse at 50% 0%, rgba(255, 43, 214, 0.45), rgba(255, 43, 214, 0) 70%); }
 /* 利確の炎：色の呼吸層。#bg の静止画（深紅寄りの炎）のすぐ上に、金色寄りの色票で別シード描画した
-   炎のキャンバス（#bg2）を重ね、透明度を16秒周期でゆっくり往復させる。2つの色票が透け合う中間で
-   橙を通るため、赤→橙→金へ色のバランスがグラデーションのように移ろうだけで、点滅にはしない
-   （頂点付近は 30%〜70% をなだらかに保ち、長時間見ても目がチラつかないようにする）。
-   あわせて11秒周期で横 ±4px の揺れと 1.008 までの拡縮を重ね、炎全体が傾いて呼吸して見えるように
-   する。炎の絵はステージ端（1210）より外側（-47〜1240）まで描いてあるので、揺れの最悪条件でも
-   端に隙間は出ない。グラデーションの敷き（溶岩の帯など）は両層とも全面に描くため端でも途切れない。
+   炎のキャンバス（#bg2）を重ね、透明度を12秒周期でゆっくり往復させる。ピークは 0.80 まで深くし、
+   2つの色票が透け合う中間で橙を通るため、赤→橙→金へ色のバランスがグラデーションのように
+   移ろうだけで、点滅にはしない（頂点付近は 30%〜70% をなだらかに保ち、長時間見ても目が
+   チラつかないようにする）。
+   あわせて8.5秒周期で、下端中央を支点に横 ±7px・傾き ±0.55度・拡縮 1.015 までの揺れを重ね、
+   炎が風にあおられて傾いて見えるようにする（呼吸とは周期も位相もずらし、単調な往復にしない）。
+   端の余白：炎の絵はステージ端（1210）より外側（-47〜1240）まで描いてあり、代表的な画面サイズで
+   左 31.9px・右 20.3px 以上の余白がある。揺れの最悪条件（傾きによる上端の移動 約8px ＋ 横移動
+   7px ＝ 約15px）でも右で 5px 以上、左で 16px 以上の余白が残る。グラデーションの敷き（溶岩の帯
+   など）は両層とも全面に描くため端でも途切れない。
    再描画はリサイズ時だけで、毎フレームの描き直しはしない（省電力では止めて薄く固定） */
 #bg2 { position: fixed; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; z-index: 0; }
-html[data-theme="shippu"] #bg2 { display: block; animation: td-flame-breathe 16s ease-in-out infinite, td-flame-sway 11s ease-in-out infinite alternate; }
-@keyframes td-flame-breathe { 0% { opacity: 0; } 30% { opacity: 0.55; } 50% { opacity: 0.62; } 70% { opacity: 0.55; } 100% { opacity: 0; } }
-@keyframes td-flame-sway { from { transform: translate(-4px, 0) scale(1); } to { transform: translate(4px, 0) scale(1.008); } }
+html[data-theme="shippu"] #bg2 { display: block; transform-origin: 50% 100%; animation: td-flame-breathe 12s ease-in-out infinite, td-flame-sway 8.5s ease-in-out -3s infinite alternate; }
+@keyframes td-flame-breathe { 0% { opacity: 0; } 30% { opacity: 0.68; } 50% { opacity: 0.80; } 70% { opacity: 0.68; } 100% { opacity: 0; } }
+@keyframes td-flame-sway { from { transform: translate(-7px, 0) rotate(-0.55deg) scale(1); } to { transform: translate(7px, 0) rotate(0.55deg) scale(1.015); } }
 html.lowpower #bg2 { animation: none; opacity: 0.30; }
 /* 安らぎのオーロラ：カーテン専用層。場面（星空・草原・ロッジ）は #bg に描き、カーテンだけを透明な2層に分ける。
    #bg4 = 位相0のカーテン、#bg3（包み #bg3w の中）= 位相1のカーテン。#bg3 は従来どおり透明度と位置
