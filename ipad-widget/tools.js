@@ -178,22 +178,62 @@
   // [kb-pure-begin] 家計簿の保存読み出しと集計（テストで切り出して検証できるよう、この範囲は get と定数だけに依存する形に保つ）
   var KAKEIBO = "td_kakeibo_v1";
   var KB_CATS = { "in": ["給料", "副業", "その他収入"], "out": ["食費", "住まい", "光熱費", "通信", "交通", "医療", "娯楽", "日用品", "その他"] };
-  // 家計簿：[{ id, date: "YYYY-MM-DD", type: "in"|"out", cat, amount, memo }]（円）。壊れた・形の違うデータは捨て、空の一覧として扱う
+  var KB_MKINDS = ["診療・治療", "医薬品購入", "介護保険サービス", "その他の医療費"];
+  // 家計簿：[{ id, date: "YYYY-MM-DD", type: "in"|"out", cat, amount, memo }]（円）。医療の支出では任意で person（受けた人）・payee（支払先）・mkind（区分）・reimb（補填額）も持つ。壊れた・形の違うデータは捨て、空の一覧として扱う
   function kakeibo() {
     var a = get(KAKEIBO, []);
     if (!Array.isArray(a)) return [];
-    return a.filter(function (e) { return e && typeof e.id === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.date || "") && (e.type === "in" || e.type === "out") && isFinite(e.amount) && e.amount > 0; });
+    return a.filter(function (e) { return e && typeof e.id === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.date || "") && (e.type === "in" || e.type === "out") && isFinite(e.amount) && e.amount > 0; }).map(function (e) {
+      var n = { id: e.id, date: e.date, type: e.type, cat: e.cat, amount: e.amount, memo: e.memo };
+      if (typeof e.person === "string" && e.person) n.person = e.person;
+      if (typeof e.payee === "string" && e.payee) n.payee = e.payee;
+      if (KB_MKINDS.indexOf(e.mkind) >= 0) n.mkind = e.mkind;
+      if (isFinite(e.reimb) && e.reimb > 0) n.reimb = +e.reimb;
+      return n;
+    });
   }
   var kbMonthList = function (list, ym) { return list.filter(function (e) { return e.date.slice(0, 7) === ym; }); };
   var kbTotals = function (list) { var inc = 0, out = 0; list.forEach(function (e) { if (e.type === "in") inc += e.amount; else out += e.amount; }); return { inc: inc, out: out, bal: inc - out }; };
   var kbCatSums = function (list, type) { var m = {}; list.forEach(function (e) { if (e.type === type) m[e.cat] = (m[e.cat] || 0) + e.amount; }); return Object.keys(m).map(function (k) { return { cat: k, sum: m[k] }; }).sort(function (a, b) { return b.sum - a.sum; }); };
+  // 申告用（年単位）：選んだ年の記録、医療の明細、控除額の目安、月ごとの年間集計、CSVの材料
+  var kbYearList = function (list, year) { var y = String(year); return list.filter(function (e) { return e.date.slice(0, 4) === y; }); };
+  var kbMkind = function (e) { return KB_MKINDS.indexOf(e.mkind) >= 0 ? e.mkind : ""; };
+  var kbMedical = function (list, year) { return kbYearList(list, year).filter(function (e) { return e.type === "out" && e.cat === "医療"; }).slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }); };
+  var kbMedTotals = function (meds) { var paid = 0, reimb = 0; meds.forEach(function (e) { paid += e.amount; reimb += e.reimb || 0; }); return { paid: paid, reimb: reimb, net: paid - reimb }; };
+  // 足切り額：総所得金額等があれば、その5%と10万円の低い方。なければ10万円。控除額の目安は差引から足切りを引き、上限200万円で止める
+  var kbDeduction = function (net, income) {
+    var ashikiri = 100000, basis = "10万円";
+    if (income != null && isFinite(income) && income >= 0) { var five = Math.floor(income * 0.05); if (five < ashikiri) { ashikiri = five; basis = "総所得金額等の5%"; } }
+    var raw = net - ashikiri;
+    return { ashikiri: ashikiri, basis: basis, est: Math.min(Math.max(0, raw), 2000000), capped: raw > 2000000 };
+  };
+  var kbMonthlyOfYear = function (list, year) {
+    var yl = kbYearList(list, year), res = [];
+    for (var m = 1; m <= 12; m++) { var ml = kbMonthList(yl, year + "-" + String(m).padStart(2, "0")), t = kbTotals(ml); res.push({ month: m, count: ml.length, inc: t.inc, out: t.out, bal: t.bal }); }
+    return res;
+  };
+  var kbCsvCell = function (v) {
+    if (v == null) return "";
+    var s = String(v);
+    if (typeof v !== "number" && /^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  var kbCsv = function (header, rows) { return "﻿" + [header].concat(rows).map(function (r) { return r.map(kbCsvCell).join(","); }).join("\r\n") + "\r\n"; };
+  var kbMedCSV = function (meds) { return kbCsv(["医療を受けた人", "病院・薬局などの名称", "医療費の区分", "支払った金額", "補填される金額"], meds.map(function (e) { return [e.person || "", e.payee || "", kbMkind(e), e.amount, e.reimb || 0]; })); };
+  var kbAnnualCSV = function (list, year) {
+    var yl = kbYearList(list, year), t = kbTotals(yl), rows = [];
+    kbCatSums(yl, "in").forEach(function (c) { rows.push(["収入", c.cat, c.sum]); });
+    kbCatSums(yl, "out").forEach(function (c) { rows.push(["支出", c.cat, c.sum]); });
+    rows.push(["収入", "合計", t.inc]); rows.push(["支出", "合計", t.out]); rows.push(["", "差額", t.bal]);
+    return kbCsv(["区分", "カテゴリ", "金額"], rows);
+  };
   // [kb-pure-end]
   var HELP = {
     money: ["口座の条件と損切り価格を入れると、許容損失に収まる数量が出ます。足りない項目があると数量は出しません。", "money"],
     check: ["入る前に7つの項目を確かめて「記録する」。次の重要指標と今日の損失も自動で表示します。"],
     journal: ["取引のあとに、まずは4項目だけで1件。くわしくは「詳しく書く」から。取引しなかった日は「見送り」も残せます。"],
     pnl: ["日ごとの確定損益と入出金をカレンダーで見て、週・月・年でまとめます。「今日のトレード収支を入れる」で1日分をまとめて入れられます。"],
-    kakeibo: ["給料や食費など、家の収入と支出を月ごとに記録します。トレード収支とは別に、この端末の中だけに保存します。"],
+    kakeibo: ["給料や食費など、家の収入と支出を月ごとに記録します。トレード収支とは別に、この端末の中だけに保存します。「申告用」では医療費控除の目安と年間の収支まとめ、CSVの書き出しもできます。"],
     signals: ["ダッシュボードの判定（買い候補・売り候補・見送り）と、その時点の根拠の記録です。売買の指示ではありません。"],
     hours: ["東京・ロンドン・ニューヨークの時間と、銘柄ごとの取引時間（目安）を日本時間で表示します。"],
     status: ["価格・ローソク足・自動分析が、いつ・どこから届いたかを確かめる画面です。数字がおかしいと思ったらまずここ。"],
@@ -230,8 +270,10 @@
     ["kakeibo", "家計簿", "家の収入と支出を月ごとに記録する場所です。トレード収支とは別の、暮らしのお金の記録です。", [
       "日付・収入か支出か・カテゴリ・金額を入れて「追加する」（メモは任意）。",
       "上の合計で、その月の収入・支出・差額が見られます。前月・次月で月を切り替えます。",
-      "下の一覧で記録をタップすると直せます。「削除」は元に戻せません。"],
-      "カテゴリ別の合計は、表示している月の記録だけを集計します。ほかの月の記録は消えずに残ります。"],
+      "下の一覧で記録をタップすると直せます。「削除」は元に戻せません。",
+      "支出でカテゴリ「医療」を選ぶと、受けた人・支払先（病院や薬局）・医療費の区分・補填される金額（保険などで戻る分）も入れられます。",
+      "上の「申告用」に切り替えると、選んだ年の医療費控除の目安と明細、年間の収支まとめが見られます。どちらもCSVで書き出せます。"],
+      "カテゴリ別の合計は、表示している月の記録だけを集計します。ほかの月の記録は消えずに残ります。医療費控除の金額は目安です。セルフメディケーション税制とは併用できません。領収書を保管し、最終的な計算と申告はe-Taxや税務署で確かめてください。"],
     ["signals", "シグナル履歴", "アプリの判定がいつ・なぜ出たかの記録です。判定を振り返るときに開きます。", [
       "「いまの判定」で、各銘柄が買い候補・売り候補・見送りのどれかと、その理由が分かります。",
       "履歴の行をタップすると、成立した条件・足りなかった条件・判定時の価格と時刻・有効期限・取り消しになった理由が見られます。",
@@ -655,27 +697,103 @@
     /* ---------- 家計簿：家の収入と支出を月ごとに（トレード収支とは別。この端末の中だけに保存） ---------- */
     kakeibo: function () {
       var todayK = C.dayKey(Date.now()), ym = kbYm || todayK.slice(0, 7), ed = kbEdit;
-      var formType = ed ? ed.type : "out";
       var yen = function (v, sign) { return (sign && v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v), 0); };
       var dayName = function (k) { var p = k.split("-").map(Number), w = "日月火水木金土"[new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay()]; return p[1] + "/" + p[2] + "（" + w + "）"; };
+      var modeSeg = '<div class="pl-seg" role="group" aria-label="月別と申告用の切り替え">' + [["month", "月別"], ["tax", "申告用"]].map(function (x) { return '<button type="button" data-km="' + x[0] + '" aria-pressed="' + (x[0] === kbMode) + '">' + x[1] + "</button>"; }).join("") + "</div>";
+      var wireMode = function () { body.querySelectorAll("[data-km]").forEach(function (b) { b.addEventListener("click", function () { kbMode = b.getAttribute("data-km"); kbEdit = null; VIEWS.kakeibo(); }); }); };
+      var dl = function (name, text) { try { download(name, text, "text/csv"); } catch (e) { /* 書き出しが止められても画面はそのままにする */ } };
+      var catsHtml = function (list, unit) {
+        var outs = kbCatSums(list, "out"), ins = kbCatSums(list, "in"), mx = outs.length ? outs[0].sum : 0;
+        return '<p class="note"><b>支出</b></p>' + (outs.length ? outs.map(function (c) {
+          return '<div class="kb-cat"><span>' + esc(c.cat) + '</span><span class="kb-bar"><i style="width:' + (mx ? Math.max(2, c.sum / mx * 100) : 0) + '%"></i></span><span class="kb-amt pl-dn">¥' + fmt(c.sum, 0) + "</span></div>";
+        }).join("") : '<p class="note">この' + unit + 'の支出はまだありません。</p>') +
+          '<p class="note"><b>収入</b></p>' + (ins.length ? '<div class="tw"><table>' + ins.map(function (c) { return "<tr><td>" + esc(c.cat) + '</td><td class="kb-amt pl-up">¥' + fmt(c.sum, 0) + "</td></tr>"; }).join("") + "</table></div>" : '<p class="note">この' + unit + 'の収入はまだありません。</p>');
+      };
+      /* ---------- 申告用：医療費控除の目安と年間の収支まとめ ---------- */
+      if (kbMode === "tax") {
+        var year = kbYear || +todayK.slice(0, 4);
+        var all = kakeibo(), yl = kbYearList(all, year), yt = kbTotals(yl);
+        var meds = kbMedical(all, year), mt = kbMedTotals(meds);
+        body.innerHTML = '<h3>家計簿</h3><p class="note">確定申告の準備に使う、年単位のまとめです。記録そのものは月別と同じ家計簿のデータで、この端末の中だけに保存します。</p>' + modeSeg +
+          '<div class="jcalh"><button type="button" id="kb-yprev" aria-label="前の年">‹</button><b>' + year + '年</b><button type="button" id="kb-ynext" aria-label="次の年">›</button><button type="button" class="btn" id="kb-ythis">今年</button></div>' +
+          '<h3>医療費控除（' + year + '年）</h3>' +
+          (meds.length ? '<div class="tw"><table><tr><th>日付</th><th>受けた人</th><th>支払先</th><th>区分</th><th>支払額</th><th>補填額</th></tr>' + meds.map(function (e) {
+            return "<tr><td>" + esc(dayName(e.date)) + "</td><td>" + esc(e.person || "") + "</td><td>" + esc(e.payee || "") + "</td><td>" + esc(kbMkind(e) || "—") + '</td><td class="kb-amt pl-dn">¥' + fmt(e.amount, 0) + '</td><td class="kb-amt">' + (e.reimb > 0 ? "−¥" + fmt(e.reimb, 0) : "¥0") + "</td></tr>";
+          }).join("") + "</table></div>" : '<p class="note">' + year + '年の医療の支出はまだ記録がありません。月別で、支出・カテゴリ「医療」として記録すると、ここに並びます。</p>') +
+          '<div class="pl-kv"><span>支払った医療費の合計<b class="pl-dn">¥' + fmt(mt.paid, 0) + '</b></span><span>補填される金額の合計<b>¥' + fmt(mt.reimb, 0) + '</b></span><span>差引<b>¥' + fmt(mt.net, 0) + "</b></span></div>" +
+          '<div class="grid">' + field("kb-inc", "総所得金額等（任意・円）", kbIncome, "number") + "</div>" +
+          '<div id="kb-medcalc"></div>' +
+          '<p class="note">これは目安です。実際の控除額は、ほかの条件でも変わります。</p>' +
+          '<p class="note">セルフメディケーション税制とは併用できません。どちらか一方を選ぶ制度です。</p>' +
+          '<p class="note">領収書の保管が必要です。明細は領収書をもとに記録してください。</p>' +
+          '<p class="note">最終的な計算と申告は、e-Taxや税務署で確かめてください。</p>' +
+          '<div class="btns"><button type="button" class="btn" id="kb-medcsv">医療費の明細をCSVで書き出す</button></div>' +
+          '<h3>年間収支まとめ（' + year + '年）</h3>' +
+          '<div class="pl-head"><div class="pl-big"><small>' + year + '年の差額（収入−支出）</small><b class="' + (yt.bal < 0 ? "pl-dn" : "") + '">' + (yl.length ? yen(yt.bal, true) : "—") + '<i>円</i></b></div>' +
+          '<div class="pl-kv"><span>収入合計<b class="pl-up">' + yen(yt.inc) + '</b></span><span>支出合計<b class="pl-dn">' + yen(yt.out) + '</b></span><span>記録<b>' + yl.length + "件</b></span></div></div>" +
+          '<div class="tw"><table><tr><th>月</th><th>収入</th><th>支出</th><th>差額</th></tr>' + kbMonthlyOfYear(all, year).map(function (m) {
+            return "<tr><td>" + m.month + "月</td>" + (m.count ? '<td class="kb-amt pl-up">¥' + fmt(m.inc, 0) + '</td><td class="kb-amt pl-dn">¥' + fmt(m.out, 0) + '</td><td class="kb-amt">' + yen(m.bal, true) + "円</td>" : '<td colspan="3" class="note">—</td>') + "</tr>";
+          }).join("") + "</table></div>" +
+          '<h3>カテゴリ別の合計（' + year + '年）</h3><div id="kb-ycats"></div>' +
+          '<div class="btns"><button type="button" class="btn" id="kb-ancsv">年間収支をCSVで書き出す</button></div>';
+        wireMode();
+        $("#kb-ycats").innerHTML = catsHtml(yl, "年");
+        $("#kb-yprev").addEventListener("click", function () { kbYear = year - 1; VIEWS.kakeibo(); });
+        $("#kb-ynext").addEventListener("click", function () { kbYear = year + 1; VIEWS.kakeibo(); });
+        $("#kb-ythis").addEventListener("click", function () { kbYear = +todayK.slice(0, 4); VIEWS.kakeibo(); });
+        var paintMedCalc = function () {
+          var raw = $("#kb-inc") ? $("#kb-inc").value : "";
+          kbIncome = raw;
+          var inc = raw === "" ? null : Number(raw);
+          if (inc !== null && (!isFinite(inc) || inc < 0)) inc = null;
+          var d = kbDeduction(mt.net, inc);
+          $("#kb-medcalc").innerHTML = '<div class="pl-kv"><span>足切り額<b>¥' + fmt(d.ashikiri, 0) + "</b>（" + esc(d.basis) + '）</span><span>控除額の目安<b class="pl-up">¥' + fmt(d.est, 0) + "</b></span></div>" +
+            '<p class="note">計算の仕方：控除額の目安 ＝ 差引（¥' + fmt(mt.net, 0) + "）− 足切り額（" + (inc === null ? "10万円" : "総所得金額等の5%と10万円のうち低い方") + "）。" + (d.capped ? "目安が大きいため、上限の200万円で止めています。" : "") + "</p>";
+        };
+        var incEl = $("#kb-inc"); if (incEl) incEl.addEventListener("input", paintMedCalc);
+        paintMedCalc();
+        $("#kb-medcsv").addEventListener("click", function () { dl("iryouhi-" + year + ".csv", kbMedCSV(meds)); });
+        $("#kb-ancsv").addEventListener("click", function () { dl("nenkanshushi-" + year + ".csv", kbAnnualCSV(all, year)); });
+        return;
+      }
+      /* ---------- 月別：家の収入と支出を月ごとに（従来の画面） ---------- */
+      var formType = ed ? ed.type : "out";
       var catSel = function (type, val) { return select("kb-cat", "カテゴリ", KB_CATS[type].map(function (c) { return [c, c]; }), val); };
-      body.innerHTML = '<h3>家計簿</h3><p class="note">家の収入と支出を月ごとに記録します。トレード収支とは別の記録で、この端末の中だけに保存し、どこにも送信しません。</p>' +
+      var medHtml = function (e) {
+        return '<div class="grid">' +
+          field("kb-person", "医療を受けた人（任意）", e ? e.person || "" : "", "text", ' placeholder="例：本人"') +
+          field("kb-payee", "支払先（病院・薬局）", e ? e.payee || "" : "", "text", ' placeholder="例：〇〇病院"') +
+          select("kb-mkind", "医療費の区分", KB_MKINDS.map(function (k) { return [k, k]; }), e && e.mkind ? e.mkind : "診療・治療") +
+          field("kb-reimb", "補填される金額（円）", e && e.reimb ? e.reimb : "", "number") + "</div>";
+      };
+      var syncMed = function () {
+        var w = $("#kb-medwrap"); if (!w) return;
+        var cat = $("#kb-cat") ? $("#kb-cat").value : "";
+        var show = formType === "out" && cat === "医療";
+        w.innerHTML = show ? medHtml(ed && ed.type === "out" && ed.cat === "医療" ? ed : null) : "";
+      };
+      body.innerHTML = '<h3>家計簿</h3><p class="note">家の収入と支出を月ごとに記録します。トレード収支とは別の記録で、この端末の中だけに保存し、どこにも送信しません。</p>' + modeSeg +
         '<div class="pl-head" id="kb-head"></div>' +
         '<div class="jcalh"><button type="button" id="kb-prev" aria-label="前の月">‹</button><b id="kb-title"></b><button type="button" id="kb-next" aria-label="次の月">›</button><button type="button" class="btn" id="kb-this">今月</button></div>' +
         '<div class="pl-in"><b>' + (ed ? "記録を直す" : "記録を足す") + '</b>' +
         '<div class="pl-seg" role="group" aria-label="収入か支出か">' + [["in", "収入"], ["out", "支出"]].map(function (x) { return '<button type="button" data-kt="' + x[0] + '" aria-pressed="' + (x[0] === formType) + '">' + x[1] + "</button>"; }).join("") + "</div>" +
         '<div class="grid">' + field("kb-date", "日付", ed ? ed.date : todayK, "date") + '<span id="kb-catwrap">' + catSel(formType, ed ? ed.cat : KB_CATS[formType][0]) + "</span>" +
         field("kb-amt", "金額（円）", ed ? ed.amount : "", "number") + field("kb-memo", "メモ（任意）", ed ? ed.memo : "") + "</div>" +
+        '<div id="kb-medwrap"></div>' +
         '<div class="btns"><button type="button" class="btn pri" id="kb-save">' + (ed ? "更新する" : "追加する") + "</button>" + (ed ? '<button type="button" class="btn" id="kb-cancel">編集をやめる</button>' : "") + "</div>" +
         '<div class="note" id="kb-msg" aria-live="polite"></div></div>' +
         '<h3>この月の記録</h3><div id="kb-list"></div>' +
         '<h3>カテゴリ別の合計</h3><div id="kb-cats"></div>';
+      wireMode();
       body.querySelectorAll("[data-kt]").forEach(function (b) { b.addEventListener("click", function () {
         formType = b.getAttribute("data-kt");
         body.querySelectorAll("[data-kt]").forEach(function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-kt") === formType ? "true" : "false"); });
         var cur = $("#kb-cat") ? $("#kb-cat").value : "";
         $("#kb-catwrap").innerHTML = catSel(formType, KB_CATS[formType].indexOf(cur) >= 0 ? cur : KB_CATS[formType][0]);
+        syncMed();
       }); });
+      $("#kb-catwrap").addEventListener("change", syncMed);
+      syncMed();
       var paint = function () {
         var list = kbMonthList(kakeibo(), ym).slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
         var t = kbTotals(list);
@@ -685,11 +803,7 @@
         $("#kb-list").innerHTML = list.length ? '<div class="tw"><table><tr><th>日付</th><th>カテゴリ</th><th>メモ</th><th>金額</th><th></th></tr>' + list.map(function (e) {
           return '<tr data-krow="' + esc(e.id) + '"><td>' + esc(dayName(e.date)) + '</td><td><span class="tag">' + esc(e.cat) + "</span></td><td>" + esc(e.memo || "") + '</td><td class="kb-amt ' + (e.type === "in" ? "pl-up" : "pl-dn") + '">' + (e.type === "in" ? "+" : "−") + "¥" + fmt(e.amount, 0) + '</td><td><button type="button" class="btn" data-ked="' + esc(e.id) + '">編集</button> <button type="button" class="btn danger" data-kdel="' + esc(e.id) + '">削除</button></td></tr>';
         }).join("") + "</table></div>" : '<p class="note">まだ記録がありません。上の欄から最初の1件を足せます。</p>';
-        var outs = kbCatSums(list, "out"), ins = kbCatSums(list, "in"), mx = outs.length ? outs[0].sum : 0;
-        $("#kb-cats").innerHTML = '<p class="note"><b>支出</b></p>' + (outs.length ? outs.map(function (c) {
-          return '<div class="kb-cat"><span>' + esc(c.cat) + '</span><span class="kb-bar"><i style="width:' + (mx ? Math.max(2, c.sum / mx * 100) : 0) + '%"></i></span><span class="kb-amt pl-dn">¥' + fmt(c.sum, 0) + "</span></div>";
-        }).join("") : '<p class="note">この月の支出はまだありません。</p>') +
-          '<p class="note"><b>収入</b></p>' + (ins.length ? '<div class="tw"><table>' + ins.map(function (c) { return "<tr><td>" + esc(c.cat) + '</td><td class="kb-amt pl-up">¥' + fmt(c.sum, 0) + "</td></tr>"; }).join("") + "</table></div>" : '<p class="note">この月の収入はまだありません。</p>');
+        $("#kb-cats").innerHTML = catsHtml(list, "月");
       };
       var shift = function (dm) { var y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1 + dm; y += Math.floor(m / 12); m = ((m % 12) + 12) % 12; kbYm = y + "-" + String(m + 1).padStart(2, "0"); kbEdit = null; VIEWS.kakeibo(); };
       $("#kb-prev").addEventListener("click", function () { shift(-1); });
@@ -700,6 +814,13 @@
         if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { $("#kb-msg").textContent = "日付を入れてください。"; return; }
         if (!isFinite(amt) || amt <= 0) { $("#kb-msg").textContent = "金額は0より大きい数字で入れてください。"; return; }
         var rec = { id: ed ? ed.id : uid(), date: date, type: formType, cat: $("#kb-cat").value, amount: amt, memo: $("#kb-memo").value.trim() };
+        if (formType === "out" && rec.cat === "医療") {
+          var person = $("#kb-person") ? $("#kb-person").value.trim() : "", payee = $("#kb-payee") ? $("#kb-payee").value.trim() : "", mkind = $("#kb-mkind") ? $("#kb-mkind").value : "", reimb = Number($("#kb-reimb") ? $("#kb-reimb").value : "");
+          if (person) rec.person = person;
+          if (payee) rec.payee = payee;
+          if (KB_MKINDS.indexOf(mkind) >= 0) rec.mkind = mkind;
+          if (isFinite(reimb) && reimb > 0) rec.reimb = reimb;
+        }
         var all = kakeibo().filter(function (x) { return x.id !== rec.id; }); all.unshift(rec);
         if (put(KAKEIBO, all, "家計簿")) { kbEdit = null; kbYm = date.slice(0, 7); VIEWS.kakeibo(); $("#kb-msg").textContent = "保存しました。"; }
       });
@@ -838,7 +959,7 @@
       });
     }
   };
-  var draft = null, pnlSel = "", pnlMonth = "", pnlMode = "", kbYm = "", kbEdit = null;
+  var draft = null, pnlSel = "", pnlMonth = "", pnlMode = "", kbYm = "", kbEdit = null, kbMode = "month", kbYear = 0, kbIncome = "";
   var num = function (v) { var x = Number(v); return v === "" || !isFinite(x) ? null : x; };
   var toLocal = function (iso) { var t = new Date(iso), z = function (x) { return String(x).padStart(2, "0"); }; return t.getFullYear() + "-" + z(t.getMonth() + 1) + "-" + z(t.getDate()) + "T" + z(t.getHours()) + ":" + z(t.getMinutes()); };
   var JCOLS = [{ name: "id", type: "string", required: true }, { name: "time", type: "time", required: true }, { name: "key", type: "string", required: true },
