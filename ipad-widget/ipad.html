@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="16a3677928">
+<meta name="build" content="e454c3cb2d">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -558,6 +558,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gl-tile[data-book="tax"] { --gl-acc: #e7a98c; --gl-rgb: 231,169,140; }
 .gl-tile[data-book="retire"] { --gl-acc: #e9a9c4; --gl-rgb: 233,169,196; }
 .gl-tile[data-book="walls"] { --gl-acc: #64c2a3; --gl-rgb: 100,194,163; }
+.gl-tile[data-book="fire"] { --gl-acc: #e2703a; --gl-rgb: 226,112,58; }
 .gl-tile { --gl-acc: var(--gold); --gl-rgb: 227,184,103; }
 .gl-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 2px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--glass-line); flex: none; }
 .gl-tabs button { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: inherit; font-size: 10.5px; font-weight: 700; color: var(--ink-3); background: none; border: 0; border-radius: 999px; padding: 4px 0; cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
@@ -653,7 +654,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gbook.eco .gb-figbox { border-color: #cfe0dc; }
 .gbook.eco .gb-resume { background: #dcecea; border-color: #bcd6d2; color: #175e63; }
 /* 学習の本（パターン図鑑・ドル円入門・FVG詳説）：用語集と同じ紙面に、ひと言→図→見る所→待つこと→例→勘違い→詳しく の順 */
-.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; } .gbook.bk-first { --bk: #8fd8a8; --bk-ink: #2f7a4c; } .gbook.bk-tax { --bk: #e7a98c; --bk-ink: #9a4f2e; } .gbook.bk-retire { --bk: #e9a9c4; --bk-ink: #8f3d63; } .gbook.bk-walls { --bk: #64c2a3; --bk-ink: #226b52; }
+.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; } .gbook.bk-first { --bk: #8fd8a8; --bk-ink: #2f7a4c; } .gbook.bk-tax { --bk: #e7a98c; --bk-ink: #9a4f2e; } .gbook.bk-retire { --bk: #e9a9c4; --bk-ink: #8f3d63; } .gbook.bk-walls { --bk: #64c2a3; --bk-ink: #226b52; } .gbook.bk-fire { --bk: #e2703a; --bk-ink: #93400f; }
 .gbook.bk-learn .gb-bar .gb-title { color: var(--bk); } .gbook.bk-learn .gb-prog i { background: var(--bk); } .gbook.bk-learn .gb-btn.gb-x { background: var(--bk); border-color: var(--bk); }
 .gbook.bk-learn .gb-cover small, .gbook.bk-learn .gb-chhead small, .gbook.bk-learn .gb-toc i, .gbook.bk-learn .gb-idx button em, .gbook.bk-learn .gb-cover .gb-hint::before, .gbook.bk-learn .gb-pts li::marker { color: var(--bk-ink); }
 .gbook.bk-learn .gb-idx h4, .gbook.bk-learn .gb-table th { background: var(--bk-ink); }
@@ -700,6 +701,15 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .lt-calc input, .lt-calc select { font: inherit; font-size: 16px; padding: 5px 8px; border: 1px solid #d9c89f; border-radius: 7px; background: #fff; color: #2b241a; min-width: 0; }
 .lt-calc i { font-style: normal; font-size: 11.5px; color: #8d7d61; }
 .lt-calc output { font-size: 13px; line-height: 1.6; color: #2b241a; min-height: 1.6em; }
+.lt-firesim .fs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
+.lt-firesim .fs-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.lt-firesim .fs-bar span { font-size: 11.5px; color: #8d7d61; }
+.fs-reset { font: inherit; font-size: 12.5px; font-weight: 700; color: #2b241a; padding: 6px 12px; border: 1px solid #d9c89f; border-radius: 999px; background: #fff; cursor: pointer; }
+.lt-firesim output { display: block; min-height: 15em; }
+.lt-firesim .fs-out { display: grid; grid-template-columns: 8.5em 1fr; gap: 3px 10px; margin: 2px 0 0; font-size: 12.5px; }
+.lt-firesim .fs-out dt { color: #8d7d61; font-weight: 700; }
+.lt-firesim .fs-out dd { margin: 0; }
+.lt-firesim .fs-note { color: #8d7d61; font-size: 11.5px; }
 .gb-rel { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
 .gb-rel > span { font-size: 10.5px; font-weight: 700; color: #8d7d61; margin-right: 2px; }
 .gb-rel button { font: inherit; font-size: 11.5px; color: #2b241a; background: #fffaf0; border: 1px solid #e3d6b8; border-radius: 999px; padding: 3px 9px; cursor: pointer; }
@@ -1067,7 +1077,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <div class="gl-head">
         <b class="gl-title">学ぶ</b><span id="gl-count"></span><button type="button" class="gl-open" data-gl="toc">目次を開く ›</button>
       </div>
-      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（1〜8の順に読む本と、2冊の辞書）"><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="walls" title="8冊目：年収の壁と扶養のしくみ（パートの税金・社会保険・配偶者控除の壁）"><i class="gl-no" aria-hidden="true">8</i>年収の壁</button><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
+      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（1〜9の順に読む本と、2冊の辞書）"><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="walls" title="8冊目：年収の壁と扶養のしくみ（パートの税金・社会保険・配偶者控除の壁）"><i class="gl-no" aria-hidden="true">8</i>年収の壁</button><button type="button" role="tab" data-glbook="fire" title="9冊目：FIREの設計図 ― 投資の組み合わせの作り方（自分の条件で設計するFIREと、設計ワーク）"><i class="gl-no" aria-hidden="true">9</i>FIRE<span class="gl-x">の設計図</span></button><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
       <div class="gl-grid" id="gl-grid"></div>
       <p class="gl-hint">本を開いたら、左右にスワイプか「次のページ ›」でめくれます</p>
     </div>
@@ -4101,6 +4111,13 @@ window.TD_THEME = (function () {
       ["合同会社", "ごうどうがいしゃ", "法人の形の1つ。株式会社より作るときの費用が少なく（執筆時点で6万円台から）、運営の決まりも比べて簡単。執筆時点の制度。手続きの前に公式情報で確認する。", { rel: ["retire:retire-36", "retire:retire-39"] }],
       ["定款", "ていかん", "会社の目的や名前、決まりごとを書いた、会社の基本のきまり。会社を作るときに作る。株式会社では公証人の認証が要る。", { rel: ["retire:retire-39"] }],
       ["登記", "とうき", "会社の名前・住所・役員などを、法務局の記録に登録すること。会社は登記をして成り立ち、だれでも内容を確かめられる。", { rel: ["retire:retire-39", "retire:retire-38"] }]
+    ]},
+    { t: "FIREと資産形成", s: "経済的自立・取り崩し・組み合わせの型", terms: [
+      ["FIRE", "ふぁいあ", "Financial Independence, Retire Earlyの略。資産からの収入や取り崩しで暮らしが成り立ち、働くかどうか・どれくらい働くかを自分で選べる状態（経済的自立）を目指す考え方。辞めること自体ではなく、選択肢を持つことが中心。", { rel: ["fire:fire-01", "fire:fire-start"] }],
+      ["4%ルール", "よんぱーせんとるーる", "米国の研究（ベンゲン／トリニティ・スタディ）から広まった取り崩しの目安。株と債券をおおむね半々に持ち、初年度に資産の4％を取り崩す方法で、過去のデータでは30年もった割合が高かったという研究の紹介。前提が日本と違うため、将来の保証ではない。", { rel: ["fire:fire-03", "fire:fire-22"] }],
+      ["コア・サテライト", "こあさてらいと", "資産の組み合わせを描く型。土台（コア）は長期・分散・低コストの積立、上乗せ（サテライト）は上限を決めて持つ値動きの大きい部分。役割を分けて設計する考え方。", { rel: ["fire:fire-17", "fire:fire-16"] }],
+      ["生活防衛資金", "せいかつぼうえいしきん", "収入が止まっても暮らしていける現金。年支出の6か月分が目安の1つ。投資のお金とは分け、元本が減らない場所に置く。相場の下落時に積立を守る役割も持つ。", { rel: ["fire:fire-05"] }],
+      ["取り崩し", "とりくずし", "貯めた資産を、暮らしの費用のために少しずつ取り出して使うこと。崩す順番（現金→課税口座→NISAなど）と、相場の悪い年の調整の仕方を先に決めておくのが設計の要点。", { rel: ["fire:fire-21", "fire:fire-22"] }]
     ]}
   ];
 
@@ -4111,7 +4128,7 @@ window.TD_THEME = (function () {
     // 2冊の本：FX用語集と経済用語集。しくみは同じで、中身・表紙・しおりだけが違う
     var BOOKS = {
       fx: { id: "fx", data: GLOSSARY, title: "FX用語集", en: "FX GLOSSARY", icon: "📖", short: SHORT, bm: "gloss-page" },
-      eco: { id: "eco", data: ECONOMY, title: "経済用語集", en: "ECONOMICS GLOSSARY", icon: "📘", short: ["投資", "経済", "金利", "株式", "投信・制度", "財政・世界", "市場心理", "くらし", "税の手続き", "退職と給付金"], bm: "eco-page" },
+      eco: { id: "eco", data: ECONOMY, title: "経済用語集", en: "ECONOMICS GLOSSARY", icon: "📘", short: ["投資", "経済", "金利", "株式", "投信・制度", "財政・世界", "市場心理", "くらし", "税の手続き", "退職と給付金", "FIREと資産形成"], bm: "eco-page" },
       // 学習の本：中身は learn/*.json（開いたときに読み込む。トップの表示では読まない）
       // 0冊目（第6部）：最初に読む本。タブの先頭
       first: { id: "first", src: "learn/first.json", title: "はじめての投資とトレード", en: "FIRST STEPS", icon: "🔰", bm: "learn-first-page", learn: true },
@@ -4121,10 +4138,11 @@ window.TD_THEME = (function () {
       fvg: { id: "fvg", src: "learn/fvg.json", title: "FVG詳説", en: "FAIR VALUE GAP", icon: "📐", bm: "learn-fvg-page", learn: true },
       tax: { id: "tax", src: "learn/tax.json", title: "確定申告ガイド", en: "TAX RETURN GUIDE", icon: "🧾", bm: "learn-tax-page", learn: true },
       retire: { id: "retire", src: "learn/retire.json", title: "退職と給付金の手続きガイド", en: "LEAVING WORK & BENEFITS", icon: "💼", bm: "learn-retire-page", learn: true },
-      walls: { id: "walls", src: "learn/walls.json", title: "年収の壁と扶養のしくみ", en: "INCOME WALLS & DEPENDENTS", icon: "🧱", bm: "learn-walls-page", learn: true }
+      walls: { id: "walls", src: "learn/walls.json", title: "年収の壁と扶養のしくみ", en: "INCOME WALLS & DEPENDENTS", icon: "🧱", bm: "learn-walls-page", learn: true },
+      fire: { id: "fire", src: "learn/fire.json", title: "FIREの設計図 ― 投資の組み合わせの作り方", en: "DESIGNING FIRE", icon: "🔥", bm: "learn-fire-page", learn: true }
     };
     // ORDER は名前で関連リンクを探す順（用語集が先）。タブの並び（読む順）は HTML の .gl-tabs 側
-    var ORDER = ["fx", "eco", "first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls"], LEARN = ["first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls"];
+    var ORDER = ["fx", "eco", "first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire"], LEARN = ["first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire"];
     // learn/*.json の1項目を、用語集と同じ [名前, 読み, 説明, 付録] の形にする（付録の L に元の項目を持つ）
     function learnBook(b, j) {
       b.version = j.version; b.lead = j.lead; b.short = j.chapters.map(function (c) { return c.short || c.t; });
@@ -4633,6 +4651,7 @@ window.TD_THEME = (function () {
           return '<li>' + (ext ? '<a href="' + esc(x[0]) + '" target="_blank" rel="noopener">' : '<button type="button" data-ref="' + esc(x[0]) + '">') + '<b>' + esc(x[1]) + (ext ? ' ↗' : '') + '</b><small>' + esc(x[2] || "") + '</small>' + (ext ? '</a>' : '</button>') + '</li>';
         }).join("") + '</ul>';
         if (k === "qa") return '<ol class="lt-qa">' + b[1].map(function (x) { return '<li><p>' + esc(x[0]) + '</p><details><summary>答えを見る</summary><p>' + esc(x[1]) + '</p></details></li>'; }).join("") + '</ol>';
+        if (k === "sim" && b[1] === "fire") return fireSimHtml();
         return "";
       }).join("");
     };
@@ -4655,6 +4674,97 @@ window.TD_THEME = (function () {
       if (kind === "goldsize" || kind === "goldpnl") return goldCalcHtml(kind);
       return (kind === "profit" ? profit : kind === "both" ? sizing + profit : sizing) + '<p class="lt-note">コスト（スプレッド・手数料・スワップ）と滑りを含まない計算例です。実際の損益や最大損失を保証しません。最小数量・取引単位は業者の条件で確認してください。</p>';
     };
+    // FIREの設計図の「FIRE設計ワーク」：自分の条件を入れると、必要額・到達の目安が自動で出る。計算は端末の中だけ（保存は localStorage）
+    var FIRE_SIM_KEY = "td_fire_sim_v1";
+    var FIRE_SIM_SAMPLE = { age: "35", sex: "m", family: "c1", spend: "360", assets: "300", monthly: "5", debt: "0", debtRate: "0", mode: "full", goal: "60" };
+    var fireSimHtml = function () {
+      var sel = function (f, opts, cur) { return '<select data-f="' + f + '">' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === cur ? " selected" : "") + '>' + o[1] + '</option>'; }).join("") + '</select>'; };
+      var num = function (f, label, unit, val, step) { return '<label>' + label + '<input type="number" inputmode="decimal" min="0" step="' + (step || "any") + '" data-f="' + f + '" value="' + val + '"><i>' + unit + '</i></label>'; };
+      return '<div class="lt-calc lt-firesim" data-calc="firesim"><h4>FIRE設計ワーク：あなたの条件で計算する</h4>' +
+        '<div class="fs-grid">' +
+        num("age", "現在の年齢", "歳", FIRE_SIM_SAMPLE.age, "1") +
+        '<label>性別' + sel("sex", [["m", "男性"], ["f", "女性"]], FIRE_SIM_SAMPLE.sex) + '<i></i></label>' +
+        '<label>家族構成' + sel("family", [["single", "単身"], ["couple", "夫婦"], ["c1", "夫婦・子ども1人"], ["c2", "夫婦・子ども2人以上"]], FIRE_SIM_SAMPLE.family) + '<i></i></label>' +
+        num("spend", "年間の支出", "万円", FIRE_SIM_SAMPLE.spend) +
+        num("assets", "現在の金融資産", "万円", FIRE_SIM_SAMPLE.assets) +
+        num("monthly", "毎月の積立額", "万円", FIRE_SIM_SAMPLE.monthly) +
+        num("debt", "借入残高", "万円", FIRE_SIM_SAMPLE.debt) +
+        num("debtRate", "借入の金利", "年％", FIRE_SIM_SAMPLE.debtRate) +
+        '<label>目指す形' + sel("mode", [["full", "フルFIRE"], ["side", "サイドFIRE"], ["barista", "バリスタFIRE"]], FIRE_SIM_SAMPLE.mode) + '<i></i></label>' +
+        num("goal", "目標の年齢", "歳", FIRE_SIM_SAMPLE.goal, "1") +
+        '</div>' +
+        '<div class="fs-bar"><button type="button" class="fs-reset" data-freset="1">サンプルに戻す</button><span>入力はこの端末の中にだけ保存され、外に送られません</span></div>' +
+        '<output aria-live="polite"></output></div>';
+    };
+    // 設計ワークの計算本体（金額は万円。need：フル＝年支出×25、サイド＝×12.5、バリスタ＝防衛資金＋不足分×25）
+    var fireCalc = function (v) {
+      var spend = Math.max(0, +v.spend || 0), assets = Math.max(0, +v.assets || 0), monthly = Math.max(0, +v.monthly || 0);
+      var age = +v.age || 0, debt = Math.max(0, +v.debt || 0), debtRate = Math.max(0, +v.debtRate || 0), targetAge = +v.targetAge || 0;
+      var reserve = spend / 2;
+      var need = v.mode === "side" ? spend * 12.5 : v.mode === "barista" ? reserve + (spend / 2) * 25 : spend * 25;
+      var maxM = Math.max(0, Math.round((100 - age) * 12));
+      var grow = function (rate, months, stopAtNeed) {
+        var bal = assets, rm = rate / 12, m = 0;
+        if (stopAtNeed && need > 0 && bal >= need) return { months: 0, bal: bal };
+        while (m < months) { bal = bal * (1 + rm) + monthly; m++; if (stopAtNeed && bal >= need) return { months: m, bal: bal }; }
+        return { months: stopAtNeed ? -1 : m, bal: bal };
+      };
+      var tgtM = Math.max(0, Math.round((targetAge - age) * 12));
+      var core = age < 35 ? [80, 90] : age < 45 ? [75, 85] : age < 55 ? [70, 80] : age < 65 ? [60, 70] : [50, 65];
+      return {
+        need: need, reserve: reserve, ratio: need > 0 ? assets / need : NaN,
+        months: { r0: grow(0, maxM, true).months, r3: grow(0.03, maxM, true).months, r5: grow(0.05, maxM, true).months },
+        atTarget: grow(0.03, tgtM, false),
+        core: core, debtHigh: debt > 0 && debtRate > 3, debt: debt, debtRate: debtRate
+      };
+    };
+    var fireFmt = function (n) { return Math.round(n).toLocaleString("ja-JP"); };
+    function runFireSim(el) {
+      var get = function (f) { var x = el.querySelector('[data-f="' + f + '"]'); return x ? x.value : ""; };
+      var set = function (f, val) { var x = el.querySelector('[data-f="' + f + '"]'); if (x) x.value = val; };
+      if (!el.getAttribute("data-hyd")) {  // 初回だけ、前回の入力（端末内保存）を復元する
+        el.setAttribute("data-hyd", "1");
+        try { var saved = JSON.parse(localStorage.getItem(FIRE_SIM_KEY) || "null"); if (saved) Object.keys(FIRE_SIM_SAMPLE).forEach(function (f) { if (saved[f] != null) set(f, saved[f]); }); } catch (e) {}
+      }
+      var raw = {}; Object.keys(FIRE_SIM_SAMPLE).forEach(function (f) { raw[f] = get(f); });
+      try { localStorage.setItem(FIRE_SIM_KEY, JSON.stringify(raw)); } catch (e) {}
+      var num = function (f) { var n = Number(raw[f]); return isFinite(n) ? n : 0; };
+      var out = el.querySelector("output");
+      var age = Math.min(90, Math.max(10, Math.round(num("age") || 35)));
+      var spend = num("spend");
+      if (!(spend > 0)) { out.textContent = "まず「年間の支出」を入れてください。必要額は、年間の支出をもとに計算します。"; return; }
+      var r = fireCalc({ age: age, spend: spend, assets: num("assets"), monthly: num("monthly"), debt: num("debt"), debtRate: num("debtRate"), mode: raw.mode || "full", targetAge: Math.round(num("goal") || 60) });
+      var modeName = { full: "フルFIRE", side: "サイドFIRE", barista: "バリスタFIRE" }[raw.mode] || "フルFIRE";
+      var line = function (months) {
+        if (months < 0) return "この条件では届かない（100歳時点でも）";
+        if (months === 0) return "すでに目安に届いています";
+        var t = age * 12 + months; return Math.floor(t / 12) + "歳" + (t % 12 ? (t % 12) + "か月" : "") + "ごろ";
+      };
+      var checks = [];
+      if (num("assets") < r.reserve) checks.push("まず生活防衛資金（年支出の6か月分＝約" + fireFmt(r.reserve) + "万円）を、現金で確保する");
+      if (r.debtHigh) checks.push("金利" + num("debtRate") + "％の借入は、想定利回り3％の積立より確実に効く負担。積立より先に繰上返済（くりあげへんさい）を優先するのが合理的になりやすい");
+      else if (r.debt > 0) checks.push("借入の金利は想定利回りの範囲内。返済を続けながら、積立も並行する考え方がある");
+      if (r.ratio < 0.5 && num("assets") >= r.reserve) checks.push("到達度はまだ半分未満。積立額・年支出・目指す形のどれを動かすか、数字を入れ替えて感触を確かめる");
+      if (r.months.r0 < 0 && r.months.r3 >= 0) checks.push("利回り0％の想定では届かない条件。積立額を増やすか、支出か目標の年齢を見直す余地がある");
+      if (raw.mode !== "full") checks.push("FIRE後の働き方に合わせて、健康保険と年金の入り方は第7章で確認しておく");
+      if (r.ratio >= 1) checks.push("目安には届いている計算。取り崩し方（第6章）と、税金・制度の確認に進む");
+      checks = checks.slice(0, 4);
+      out.innerHTML = '<dl class="fs-out">' +
+        '<dt>必要額の目安（' + modeName + '）</dt><dd><b>約' + fireFmt(r.need) + '万円</b>' + (raw.mode === "barista" ? "（内訳：防衛資金 約" + fireFmt(r.reserve) + "万円＋不足分 約" + fireFmt(r.need - r.reserve) + "万円）" : raw.mode === "side" ? "（年支出×12.5＝フルの半分を目標にする考え方）" : "（年支出×25）") + '</dd>' +
+        '<dt>現在の到達度</dt><dd><b>' + (r.ratio * 100).toFixed(1) + '％</b>（金融資産 約' + fireFmt(num("assets")) + '万円 ÷ 必要額）</dd>' +
+        '<dt>到達年齢の目安</dt><dd>利回り年0％：' + line(r.months.r0) + '<br>年3％：' + line(r.months.r3) + '<br>年5％：' + line(r.months.r5) + '<br><span class="fs-note">※ 利回りは想定であり、将来の成果を保証するものではありません</span></dd>' +
+        '<dt>' + Math.round(num("goal") || 60) + '歳時点の見込み</dt><dd>約' + fireFmt(r.atTarget.bal) + '万円（必要額の約' + (r.need > 0 ? Math.round(r.atTarget.bal / r.need * 100) : 0) + '％・利回り3％の想定）</dd>' +
+        '<dt>生活防衛資金の目安</dt><dd>約' + fireFmt(r.reserve) + '万円（年支出の6か月分）</dd>' +
+        '<dt>組み合わせの型の候補</dt><dd>コア（土台）' + r.core[0] + '〜' + r.core[1] + '％、サテライトは残り、が目安のレンジ（考え方の一つ。収入の安定度や家族構成で変わります）</dd>' +
+        (raw.sex === "f" ? '<dt>期間の見積もり</dt><dd>寿命が長い前提で、取り崩しの期間を長めに見積もる考え方があります</dd>' : '') +
+        '</dl>' +
+        (checks.length ? '<h4>次の一手</h4><ol class="lt-ol">' + checks.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join("") + '</ol>' : '');
+    }
+    function fireSimReset(el) {
+      Object.keys(FIRE_SIM_SAMPLE).forEach(function (f) { var x = el.querySelector('[data-f="' + f + '"]'); if (x) x.value = FIRE_SIM_SAMPLE[f]; });
+      try { localStorage.setItem(FIRE_SIM_KEY, JSON.stringify(FIRE_SIM_SAMPLE)); } catch (e) {}
+      runFireSim(el);
+    }
     // ゴールド入門の計算練習：数量（損失枠→オンス→ロット）と損益（価格差→費用・持ち越し→円換算）。初期値は本の仮定（説明用）
     var inp = function (f, label, unit, val, extra) { return '<label>' + label + '<input type="number" inputmode="decimal" step="any" data-f="' + f + '" value="' + val + '"' + (extra || "") + '><i>' + unit + '</i></label>'; };
     var goldCalcHtml = function (kind) {
@@ -4704,6 +4814,7 @@ window.TD_THEME = (function () {
       }
     }
     function runCalc(el) {
+      if (el.getAttribute("data-calc") === "firesim") { runFireSim(el); return; }
       if (/^gold/.test(el.getAttribute("data-calc"))) { runGold(el); return; }
       var v = function (f) { var x = el.querySelector('[data-f="' + f + '"]'); return x && x.value.trim() !== "" ? Number(x.value) : NaN; }, out = el.querySelector("output"), fmt = function (n, d) { return n.toLocaleString("ja-JP", { maximumFractionDigits: d || 0 }); };
       if (el.getAttribute("data-calc") === "sizing") {
@@ -4964,6 +5075,7 @@ window.TD_THEME = (function () {
       if (tb) { tileBook = tb.getAttribute("data-glbook"); try { localStorage.setItem("gloss-book", tileBook); } catch (er) {} renderTile(); return; }
       var zb = e.target.closest("[data-zoom]"); if (zb && book.contains(zb)) { openZoom(zb); return; }
       var rb = e.target.closest("[data-ref]"); if (rb && book.contains(rb)) { var r = resolve(rb.getAttribute("data-ref")); if (r) jump(function () { goTo(r); }); else ensureAll().then(function () { var r2 = resolve(rb.getAttribute("data-ref")); if (r2) jump(function () { goTo(r2); }); }); return; }
+      var fr = e.target.closest("[data-freset]"); if (fr && book.contains(fr)) { var fsx = fr.closest(".lt-firesim"); if (fsx) fireSimReset(fsx); return; }
       var g = e.target.closest("[data-gl],[data-go]"); if (!g) return;
       if (g.hasAttribute("data-go")) { var to = +g.getAttribute("data-go"); jump(function () { show(to, to >= cur ? 1 : -1); }); if (g.getAttribute("data-term")) mark(g.getAttribute("data-term")); return; }
       var a = g.getAttribute("data-gl");
