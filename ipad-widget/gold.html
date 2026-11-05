@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="36687a3d2e">
+<meta name="build" content="5b3cd1c118">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -623,7 +623,7 @@ footer{color:#7d8995;font-size:10px;line-height:1.65;padding:14px 2px 0}
         <label class="tvl-sc"><input type="checkbox" id="tvViaSc"> <b>TradingViewアプリで直接開く（ショートカット経由）</b></label>
         <div class="tvl-in"><label for="tvScName" class="sub" style="white-space:nowrap;align-self:center">この銘柄のショートカット名</label><input id="tvScName" type="text" autocomplete="off"><button type="button" id="tvScSave" class="seg">保存</button></div>
         <div class="tvl-how">
-          <p>ホーム画面に追加したトレードデスク・ダッシュボードから、TradingViewアプリ（ログイン済み・プレミアム）にすぐ切り替える設定です。チェックはこのiPadの全銘柄とトレードデスクの「TV ↗」に効きます。銘柄ごとに、iPadの「ショートカット」アプリで1つずつ作ってください。</p>
+          <p>ホーム画面に追加したDesk One・ダッシュボードから、TradingViewアプリ（ログイン済み・プレミアム）にすぐ切り替える設定です。チェックはこのiPadの全銘柄とDesk Oneの「TV ↗」に効きます。銘柄ごとに、iPadの「ショートカット」アプリで1つずつ作ってください。</p>
           <ol>
             <li>「ショートカット」アプリで右上の「＋」→ 新しいショートカットを作る</li>
             <li>右上の「編集」→ アクション「<b>アプリを開く</b>」を追加して、アプリに「<b>TradingView</b>」を選ぶ（GOLDのようにTradingViewの「○○ チャート」アクションがある銘柄は、それを使うとその銘柄で開きます）</li>
@@ -4530,7 +4530,7 @@ function paintTvOpen(){
 $('tvLayoutSave').onclick=()=>{
   const u=$('tvLayoutUrl').value.trim();
   if(!TV_LAYOUT_RE.test(u)){$('tvLayoutMsg').textContent='TradingViewのチャートのURL（https://www.tradingview.com/chart/〜）を貼り付けてください。';return}
-  lsSet(LSP+'tv_layout',u);$('tvLayoutMsg').textContent='保存しました。「TradingViewで開く」で開きます（トレードデスクのTVボタンも同じチャートを開きます）。';paintTvOpen();
+  lsSet(LSP+'tv_layout',u);$('tvLayoutMsg').textContent='保存しました。「TradingViewで開く」で開きます（Desk OneのTVボタンも同じチャートを開きます）。';paintTvOpen();
 };
 $('tvPartner').onclick=e=>{
   if(!tvViaSc())return;  // ふつうはリンクのまま（新しいタブで開く）

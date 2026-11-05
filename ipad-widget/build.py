@@ -53,13 +53,13 @@ head = """<!doctype html>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Trade Desk">
+<meta name="apple-mobile-web-app-title" content="Desk One">
 <meta name="theme-color" content="#06070b">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
 <meta name="build" content="{build}">
-<title>Trade Desk Home</title>
+<title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 """
 body = body.replace('</style>\n\n<canvas id="bg"', '</style>\n</head>\n<body>\n<canvas id="bg"', 1)

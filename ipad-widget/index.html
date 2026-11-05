@@ -1,4 +1,4 @@
-<title>Trade Desk Home</title>
+<title>Desk One</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@500;600&display=swap">
@@ -200,12 +200,13 @@ html[data-theme="shippu"] #bg2 { display: block; animation: td-flame-flicker 5s 
 @keyframes td-flame-flicker { from { opacity: 0; } to { opacity: 0.55; } }
 html.lowpower #bg2 { animation: none; opacity: 0.30; }
 /* 安らぎのオーロラ：ゆらぎ層。#bg の静止画の上に、位相のずれたカーテンを描いた #bg3 を重ね、
-   透明度と横位置だけをゆっくり往復させる。星空・草原・ロッジは同じ絵なので二重には見えず、カーテンだけが揺れて見える。
-   横ドリフト（±5px）で端が空かないよう、キャンバスは画面より 16px 大きく敷く。
+   透明度と位置（横±5px・縦∓3px）と、ごく僅かな拡縮（1.0→1.012）をゆっくり往復させる。星空・草原・ロッジは同じ絵なので
+   二重には見えず、カーテンだけが揺れて見える。ドリフトと拡縮で端が空かないよう、キャンバスは画面より 16px 大きく敷く
+   （拡縮は 1.0 以上しか使わないため、端の余白 8px に対して横 5px・縦 3px の移動でも空くことはない）。
    再描画はリサイズ時だけで、毎フレームの描き直しはしない（省電力では止めて薄く固定） */
 #bg3 { position: fixed; left: -8px; top: -8px; width: calc(100% + 16px); height: calc(100% + 16px); display: none; pointer-events: none; z-index: 0; }
-html[data-theme="aurora"] #bg3 { display: block; animation: td-aurora-sway 8.5s ease-in-out infinite alternate; }
-@keyframes td-aurora-sway { from { opacity: 0; transform: translateX(-5px); } to { opacity: 0.8; transform: translateX(5px); } }
+html[data-theme="aurora"] #bg3 { display: block; animation: td-aurora-sway 6.8s ease-in-out infinite alternate; }
+@keyframes td-aurora-sway { from { opacity: 0; transform: translate(-5px, 3px) scale(1); } to { opacity: 0.92; transform: translate(5px, -3px) scale(1.012); } }
 html.lowpower #bg3 { animation: none; opacity: 0.30; }
 /* 利確の炎：カードの炎仕様。炎に照らされたような枠のグロー（判断・判定の色には使わない）。
    土台の影と上端のハイライトは基本デザインの値をそのまま残す */
@@ -1776,7 +1777,7 @@ window.TD_THEME = (function () {
     entryState[d.key] = d; paintEntries();
     if (res.notify && !marketClosed(d.key)) {  // a new entry call: sound once (not again for the same call within 30 min), and a device notification
       chime(d.sig === "BUY");
-      sysNotify((ALERT_NAME[d.key] || d.key) + " " + (d.sig === "BUY" ? "買い" : "売り") + "エントリー", "セットアップ判定がエントリーになりました" + (d.tpPips ? "（利確目安まで" + d.tpPips + "pips）" : "") + "。タップでトレードデスクを開きます。", "entry-" + d.key);
+      sysNotify((ALERT_NAME[d.key] || d.key) + " " + (d.sig === "BUY" ? "買い" : "売り") + "エントリー", "セットアップ判定がエントリーになりました" + (d.tpPips ? "（利確目安まで" + d.tpPips + "pips）" : "") + "。タップでDesk Oneを開きます。", "entry-" + d.key);
     }
   });
   /* Signal history (this device): what each dashboard called, on which candle, with the conditions met and
@@ -1950,7 +1951,7 @@ window.TD_THEME = (function () {
   notifyBtn.addEventListener("click", function () {
     if (notifyOn()) { try { localStorage.setItem(NOTIFY_KEY, "0"); } catch (e) {} paintNotify(); deskToast("通知をオフにしました"); return; }
     if (!window.Notification || !Notification.requestPermission) {
-      deskToast(/iP(hone|ad|od)|Macintosh/.test(navigator.userAgent) && "ontouchend" in document ? "iPhone・iPadでは、ホーム画面に追加したトレードデスクで使えます（iOS 16.4以降）" : "このブラウザでは通知を使えません");
+      deskToast(/iP(hone|ad|od)|Macintosh/.test(navigator.userAgent) && "ontouchend" in document ? "iPhone・iPadでは、ホーム画面に追加したDesk Oneで使えます（iOS 16.4以降）" : "このブラウザでは通知を使えません");
       return;
     }
     var ask = Notification.requestPermission(function () {});
@@ -1959,7 +1960,7 @@ window.TD_THEME = (function () {
       if (p === "granted") {
         try { localStorage.setItem(NOTIFY_KEY, "1"); } catch (e) {}
         paintNotify(); deskToast("通知をオンにしました");
-        sysNotify("Trade Desk", "通知がオンになりました。アラートとエントリーをこの端末に通知します。", "notify-on");
+        sysNotify("Desk One", "通知がオンになりました。アラートとエントリーをこの端末に通知します。", "notify-on");
       } else deskToast("通知が許可されませんでした。設定アプリの通知（またはブラウザのサイト設定）で許可してください");
     });
   });
@@ -3529,14 +3530,14 @@ window.TD_THEME = (function () {
                   tc.fillRect(AX(rx + Math.sin(yy / 70 + seedOff) * 10), AY(ryb + yy), rw, Math.max(1, 4 * asc));
                 }
               }
-              tc.strokeStyle = "rgba(214,255,226,.55)"; tc.lineWidth = 2;  // 上端の輝く縁
+              tc.strokeStyle = "rgba(214,255,226," + (0.55 + ph * 0.20).toFixed(2) + ")"; tc.lineWidth = 2;  // 上端の輝く縁（ゆらぎ層では少し明るくし、透けるにつれて縁が冴える）
               tc.beginPath();
               for (xx = -20; xx <= 1250; xx += 14) { if (xx === -20) tc.moveTo(AX(xx), AY(yc(xx))); else tc.lineTo(AX(xx), AY(yc(xx))); }
               tc.stroke();
             }
-            curtain(64 + ph * 18, 42 * (1 + ph * 0.16), 300 + ph * 131, 350, 0.30, 0.85, 0);
-            curtain(150 - ph * 22, 58 * (1 + ph * 0.10), 377 + ph * 131, 300, 0.22, 0.68, 0.10);
-            curtain(24 + ph * 14, 26 * (1 + ph * 0.12), 454 + ph * 131, 230, 0.18, 0.55, 0.18);
+            curtain(64 + ph * 26, 42 * (1 + ph * 0.24), 300 + ph * 197, 350, 0.30, 0.85, 0);
+            curtain(150 - ph * 30, 58 * (1 + ph * 0.16), 377 + ph * 197, 300, 0.22, 0.68, 0.10);
+            curtain(24 + ph * 20, 26 * (1 + ph * 0.18), 454 + ph * 197, 230, 0.18, 0.55, 0.18);
             // 遠景の色ベール：大きな放射グラデーションで空に色の気配を敷く
             [[0.20, 0.08, "92,255,171", 0.10], [0.75, 0.12, "168,104,255", 0.10], [0.55, 0.0, "96,150,255", 0.08]].forEach(function (v) {
               var vg = tc.createRadialGradient(AX(1210 * v[0]), AY(841 * v[1]), 0, AX(1210 * v[0]), AY(841 * v[1]), Math.max(w, h) * 0.55);
@@ -5745,7 +5746,7 @@ window.TD_THEME = (function () {
         '<span class="shf-name">' + m.lines.map(function (s) { return esc(s); }).join("<br>") + '</span></span>' +
         '<span class="shf-badge" aria-hidden="true">' + m.no + '</span>' +
         '<span class="shf-obi">' + esc(m.obi) + '</span>' +
-        '<span class="shf-brand" aria-hidden="true">TRADE DESK</span></button>';
+        '<span class="shf-brand" aria-hidden="true">DESK ONE</span></button>';
     }
     function shelfFaceHtml(id) {  // 面陳：いちばん新しい本を表紙正面で立てかける（棚の並びにも同じ本が並ぶ）
       var m = SHELF[id], b = BOOKS[id];
@@ -5754,7 +5755,7 @@ window.TD_THEME = (function () {
         '<span class="shf-name">' + m.lines.map(function (s) { return esc(s); }).join("<br>") + '</span>' +
         '<span class="shf-en">' + esc(b.en) + '</span></span>' +
         '<span class="shf-obi">' + esc(m.obi) + '</span>' +
-        '<span class="shf-brand" aria-hidden="true">TRADE DESK</span></button></div>' +
+        '<span class="shf-brand" aria-hidden="true">DESK ONE</span></button></div>' +
         '<span class="shf-sign">いちばん新しい本<small>' + esc(b.title.split(" ― ")[0]) + '</small></span>';
     }
     function shelfSpineHtml(id) {  // 辞書は背表紙だけの細い本
