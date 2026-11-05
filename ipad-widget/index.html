@@ -100,9 +100,10 @@ html[data-theme="shippu"] {
   --strip-bg: linear-gradient(90deg, #ff4640, #ff8a3c, #ffc400); --strip-size: 100% 8px;
 }
 html[data-theme="aurora"] {
-  /* 安らぎのオーロラ：北の夜空に多色のオーロラが流れ、足元は夏の草原とホタル、フチだけの線画のロッジ村。
-     手動でのみ選べるテーマ（季節の自動切替には入らない）。背景は THEME_BG.aurora の auroraScene（静止画）に、
-     位相のずれた同じ絵を描いた #bg3 を重ねてカーテンだけをゆっくり揺らす。判定色は :root と同じ値 */
+  /* 安らぎのオーロラ：北の夜空に虹色のオーロラが流れ、足元は夏の草原とホタル、フチだけの線画のロッジ村。
+     手動でのみ選べるテーマ（季節の自動切替には入らない）。背景は THEME_BG.aurora の auroraScene で、
+     場面（星空・草原・ロッジ）は #bg、カーテンは専用層（#bg4=位相0、#bg3=位相1）に分けて描き、
+     カーテンだけをゆっくり揺らし、周期的にほぼ消えるまで薄くする。判定色は :root と同じ値 */
   --night: #05070f; --glass: rgba(9, 13, 22, 0.84); --glass-line: rgba(150, 230, 190, 0.45);
   --ink: #f2f6f2; --ink-2: rgba(242, 246, 242, 0.72); --ink-3: rgba(242, 246, 242, 0.48);
   --gold: #8fe6b8; --gold-rgb: 143, 230, 184; --gold-soft: rgba(143, 230, 184, 0.22); --gold-deep: #4da876;
@@ -199,16 +200,27 @@ html[data-theme="neon"][data-club-light="b"] .td-top-glow.tg-r { background: rad
 html[data-theme="shippu"] #bg2 { display: block; animation: td-flame-flicker 5s ease-in-out infinite alternate; }
 @keyframes td-flame-flicker { from { opacity: 0; } to { opacity: 0.55; } }
 html.lowpower #bg2 { animation: none; opacity: 0.30; }
-/* 安らぎのオーロラ：ゆらぎ層。#bg の静止画の上に、位相のずれたカーテンを描いた #bg3 を重ね、
-   透明度と位置（横±7px・縦∓3px）と、ごく僅かな拡縮（1.0→1.012）をゆっくり往復させる。星空・草原・ロッジは同じ絵なので
-   二重には見えず、カーテンだけが揺れて見える。加えてゆらぎ層ではカーテンの光条（縦の線）が横になびくよう
-   位相で曲げて描いてあり、透け具合の変化で光の線が風に流れて見える。ドリフトで端が空かないよう、キャンバスは画面より 16px 大きく敷く
+/* 安らぎのオーロラ：カーテン専用層。場面（星空・草原・ロッジ）は #bg に描き、カーテンだけを透明な2層に分ける。
+   #bg4 = 位相0のカーテン、#bg3（包み #bg3w の中）= 位相1のカーテン。#bg3 は従来どおり透明度と位置
+   （横±7px・縦∓3px）と、ごく僅かな拡縮（1.0→1.012）をゆっくり往復させ、位相1では光条（縦の線）が横になびくよう
+   曲げて描いてあるので、光の線が風に流れて見える。ドリフトで端が空かないよう、キャンバスは画面より 16px 大きく敷く
    （端の余白は片側 8px。拡縮は 1.0 以上しか使わないため最も厳しいのは拡縮 1.0 で横移動が最大の瞬間で、それでも 1px の余白が残る）。
-   再描画はリサイズ時だけで、毎フレームの描き直しはしない（省電力では止めて薄く固定） */
-#bg3 { position: fixed; left: -8px; top: -8px; width: calc(100% + 16px); height: calc(100% + 16px); display: none; pointer-events: none; z-index: 0; }
-html[data-theme="aurora"] #bg3 { display: block; animation: td-aurora-sway 6.8s ease-in-out infinite alternate; }
+   呼吸エンベロープ（td-aurora-breathe、20.4秒）：#bg4 の透明度そのものと、#bg3 の包み #bg3w の透明度に同じ波形を掛け、
+   2層が同時に沈む谷（最小 0.04）ではカーテンがほぼ消えて星空だけが残り、また戻って鮮やかになる。
+   包みに掛けるのは、#bg3 自身の透明度が揺らぎ（6.8秒往復）のクロスフェードに使われているためで、
+   包みの透明度と乗算されることで、揺らぎを保ったまま谷のタイミングがそろう。
+   再描画はリサイズ時だけで、毎フレームの描き直しはしない（省電力では止めて位相0だけを薄く固定） */
+#bg4 { position: fixed; left: -8px; top: -8px; width: calc(100% + 16px); height: calc(100% + 16px); display: none; pointer-events: none; z-index: 0; }
+#bg3w { position: fixed; left: -8px; top: -8px; width: calc(100% + 16px); height: calc(100% + 16px); display: none; pointer-events: none; z-index: 0; }
+#bg3 { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+html[data-theme="aurora"] #bg4 { display: block; animation: td-aurora-breathe 20.4s ease-in-out infinite; }
+html[data-theme="aurora"] #bg3w { display: block; animation: td-aurora-breathe 20.4s ease-in-out infinite; }
+html[data-theme="aurora"] #bg3 { animation: td-aurora-sway 6.8s ease-in-out infinite alternate; }
 @keyframes td-aurora-sway { from { opacity: 0; transform: translate(-7px, 3px) scale(1); } to { opacity: 0.92; transform: translate(7px, -3px) scale(1.012); } }
-html.lowpower #bg3 { animation: none; opacity: 0.30; }
+@keyframes td-aurora-breathe { 0% { opacity: 1; } 30% { opacity: 1; } 44% { opacity: 0.04; } 56% { opacity: 0.04; } 70% { opacity: 1; } 100% { opacity: 1; } }
+html.lowpower #bg4 { animation: none; opacity: 0.8; }
+html.lowpower #bg3w { animation: none; opacity: 1; }
+html.lowpower #bg3 { animation: none; opacity: 0; }
 /* 利確の炎：カードの炎仕様。炎に照らされたような枠のグロー（判断・判定の色には使わない）。
    土台の影と上端のハイライトは基本デザインの値をそのまま残す */
 html[data-theme="shippu"] .card {
@@ -1124,7 +1136,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
 <canvas id="bg" aria-hidden="true"></canvas>
 <canvas id="bg2" aria-hidden="true"></canvas>
-<canvas id="bg3" aria-hidden="true"></canvas>
+<canvas id="bg4" aria-hidden="true"></canvas>
+<div id="bg3w" aria-hidden="true"><canvas id="bg3"></canvas></div>
 <div class="td-floor-glow fg-l" aria-hidden="true"></div>
 <div class="td-floor-glow fg-r" aria-hidden="true"></div>
 <div class="td-top-glow tg-l" aria-hidden="true"></div>
@@ -3354,7 +3367,7 @@ window.TD_THEME = (function () {
      golden streaks and soft dots. Nothing in it moves: a moving or blended layer behind the blurred glass cards made
      the iPad re-blur them on every frame. */
   var bg = (function () {
-    var cv = document.getElementById("bg"), cv2 = document.getElementById("bg2"), cv3 = document.getElementById("bg3"), c, w, h, k = 1, parts = [], dot = null;
+    var cv = document.getElementById("bg"), cv2 = document.getElementById("bg2"), cv3 = document.getElementById("bg3"), cv4 = document.getElementById("bg4"), c, w, h, k = 1, parts = [], dot = null;
     function layer(el) { el.width = Math.round(w * k); el.height = Math.round(h * k); var x = el.getContext("2d"); x.setTransform(k, 0, 0, k, 0, 0); return { cv: el, c: x }; }
     var THEME_BG = {
       neon: { base: "#070312", dot: "200,190,255", grid: 1, glows: [["rgba(255,45,150,.26)", 0.12, 0.02, 0.55], ["rgba(130,70,255,.27)", 0.9, 0.03, 0.55], ["rgba(20,180,255,.17)", 0.5, 1.02, 0.5]] },
@@ -3448,14 +3461,17 @@ window.TD_THEME = (function () {
           flameField(layer(cv2).c, 5000, -47);
         }
         if (TB.auroraScene) {
-          // 安らぎのオーロラ：北の夜空の静止画。満天の星と多色のオーロラカーテン、夏の草原とホタル、
+          // 安らぎのオーロラ：北の夜空の静止画。プラネタリウム風の星空と虹色のオーロラカーテン、夏の草原とホタル、
           // フチだけの線画のロッジ村を、ステージ座標（1210x841）でリサイズ時に1回だけ描く。
-          // paintAuroraScene は位相（phase）を変えて2回呼び、本体（#bg）とゆらぎ層（#bg3）に同じ絵を描く。
-          // カーテン以外は種が固定で寸分違わず重なるため、#bg3 の透明度の往復ではカーテンだけが揺れて見える
+          // 場面（カーテン以外）は paintAuroraScene で #bg に、カーテンは paintAuroraCurtains で位相0を #bg4、
+          // 位相1を #bg3 に分けて描く。カーテンを場面から切り離したのは、2層とも透明度を周期的にほぼ0まで
+          // 下げて「ほぼ消える谷」を作るため（場面側にカーテンが残ると薄くなりきらない）
           var asc = Math.min(w / 1210, h / 841), aox = (w - 1210 * asc) / 2, aoy = (h - 841 * asc) / 2;
           function AX(sx) { return aox + sx * asc; }
           function AY(sy) { return aoy + sy * asc; }
-          var AUR_STOPS = [[0, [190, 255, 214]], [0.18, [96, 255, 176]], [0.42, [64, 224, 208]], [0.62, [96, 150, 255]], [0.80, [168, 104, 255]], [0.92, [255, 110, 200]], [1, [255, 130, 170]]];
+          // 虹の色票：等間隔の8色（サーモン→橙→黄→緑→青緑→青→紫→桃）。細い縞ではなく広い帯で
+          // 巡るよう色の位置は均等に割り、実際の色はカーテン内の colAt が縦の位置と横位置の両方から決める
+          var AUR_STOPS = [[0, [255, 110, 120]], [0.143, [255, 170, 80]], [0.286, [255, 235, 140]], [0.429, [110, 255, 165]], [0.571, [70, 230, 215]], [0.714, [100, 155, 255]], [0.857, [185, 110, 255]], [1, [255, 110, 195]]];
           function auroraColor(f) {
             if (f <= 0) return AUR_STOPS[0][1];
             for (var si = 0; si < AUR_STOPS.length - 1; si++) {
@@ -3466,8 +3482,8 @@ window.TD_THEME = (function () {
             }
             return AUR_STOPS[AUR_STOPS.length - 1][1];
           }
-          function paintAuroraScene(tc, phase) {
-            var ph = phase || 0, i2, xx, yy, f;
+          function paintAuroraScene(tc) {
+            var i2, xx, yy, f;
             // 空の階調
             var sky = tc.createLinearGradient(0, AY(0), 0, AY(841));
             sky.addColorStop(0, "#03050d"); sky.addColorStop(0.66, "#0b1122"); sky.addColorStop(1, "#0a0f1c");
@@ -3490,59 +3506,34 @@ window.TD_THEME = (function () {
               tc.fillStyle = "rgba(210,218,244," + (0.10 + mw() * 0.22).toFixed(3) + ")";
               tc.fillRect(AX(mx), AY(my), ms, ms);
             }
-            // 星：白を基調に、温色と寒色を混ぜる。数を増やし、明るい星も混ぜて満天らしくする
-            var sr = rng(70707), SCOLS = ["255,255,255", "255,255,255", "255,255,255", "255,244,224", "206,224,255"];
+            // 星：プラネタリウムのような本物の夜空。大半は小さく淡く、ひと握り（約4%）だけ少し明るくし、
+            // その明るい星にだけごく控えめな光のにじみ（暈）を付ける。色は淡い青白と淡い暖色を基調に、
+            // 真っ白を少しだけ混ぜる。主役はオーロラなので明るさ・密度はカーテンを上回らない控えめさにし、
+            // カーテンがほぼ消える谷のタイミングで初めて星空が前に出て見えるくらいにする（アニメーションは足さない）
+            var sr = rng(70707), SCOLS = ["214,228,255", "214,228,255", "255,240,218", "235,242,255", "255,255,255"];
             for (i2 = 0; i2 < 950; i2++) {
-              var ss = 0.8 + sr() * 1.4;
-              if (sr() < 0.06) ss = 2.2 + sr() * 0.4;  // ひと握りだけ大きな星
-              tc.fillStyle = "rgba(" + SCOLS[(sr() * SCOLS.length) | 0] + "," + (0.35 + sr() * 0.65).toFixed(3) + ")";
-              tc.beginPath(); tc.arc(AX(sr() * 1210), AY(sr() * 680), Math.max(0.5, ss * asc), 0, 7); tc.fill();
+              var scol = SCOLS[(sr() * SCOLS.length) | 0], sx2 = sr() * 1210, sy2 = sr() * 680;
+              if (sr() < 0.04) {  // 明るい星：芯＋淡い暈
+                var sgr = tc.createRadialGradient(AX(sx2), AY(sy2), 0, AX(sx2), AY(sy2), Math.max(2, 6 * asc));
+                sgr.addColorStop(0, "rgba(" + scol + ",0.16)"); sgr.addColorStop(1, "rgba(" + scol + ",0)");
+                tc.fillStyle = sgr; tc.beginPath(); tc.arc(AX(sx2), AY(sy2), Math.max(2, 6 * asc), 0, 7); tc.fill();
+                tc.fillStyle = "rgba(" + scol + "," + (0.55 + sr() * 0.30).toFixed(3) + ")";
+                tc.beginPath(); tc.arc(AX(sx2), AY(sy2), Math.max(0.6, (1.5 + sr() * 0.7) * asc), 0, 7); tc.fill();
+              } else {  // 大半の星：小さく淡く
+                tc.fillStyle = "rgba(" + scol + "," + (0.12 + sr() * 0.38).toFixed(3) + ")";
+                tc.beginPath(); tc.arc(AX(sx2), AY(sy2), Math.max(0.4, (0.5 + sr() * 0.9) * asc), 0, 7); tc.fill();
+              }
             }
-            // 瞬き：小さな十字
+            // 瞬き：小さな十字は最小限（5個だけ、淡く）
             var twk = rng(70708);
-            tc.strokeStyle = "rgba(255,255,255,.5)"; tc.lineWidth = 1;
-            for (i2 = 0; i2 < 16; i2++) {
+            tc.strokeStyle = "rgba(255,255,255,.35)"; tc.lineWidth = 1;
+            for (i2 = 0; i2 < 5; i2++) {
               var tx = 20 + twk() * 1170, ty = 10 + twk() * 350, tl = 7 * asc;
               tc.beginPath();
               tc.moveTo(AX(tx) - tl, AY(ty)); tc.lineTo(AX(tx) + tl, AY(ty));
               tc.moveTo(AX(tx), AY(ty) - tl); tc.lineTo(AX(tx), AY(ty) + tl);
               tc.stroke();
             }
-            // オーロラカーテン：絹のような多段グラデーションの面＋細い光条＋上端の輝く縁
-            function curtain(yBase, amp, seedOff, height, faceAlpha, rayAlpha, shift) {
-              function yc(x2) { return yBase + amp * Math.sin(x2 / 250 + seedOff) + amp * 0.45 * Math.sin(x2 / 90 + seedOff * 2); }
-              for (xx = -20; xx < 1250; xx += 8) {  // 面
-                var hh = height * (0.82 + 0.3 * Math.sin(xx / 340 + seedOff * 3)), yb = yc(xx);
-                for (yy = 0; yy < hh; yy += 4) {
-                  f = yy / hh;
-                  var cc = auroraColor(Math.min(1, f + shift));
-                  tc.fillStyle = "rgba(" + cc[0] + "," + cc[1] + "," + cc[2] + "," + (faceAlpha * Math.pow(1 - f, 1.4)).toFixed(3) + ")";
-                  tc.fillRect(AX(xx), AY(yb + yy), Math.max(1, 8 * asc), Math.max(1, 4 * asc));
-                }
-              }
-              var rr = rng(9000 + seedOff);  // 光条：縦の筋を細かく重ねる
-              for (var ri = 0; ri < 170; ri++) {
-                var rx = -20 + ri * (1270 / 170) + (rr() - 0.5) * 8, ryb = yc(rx);
-                var ln = height * (0.5 + rr() * 0.6), ra = rayAlpha * (0.3 + rr() * 0.7), rw = Math.max(0.6, (1 + rr() * 2) * asc);
-                // 横なびき：光条の下端の横ずらし量。本体（phase 0）は左へ僅かに -5px、ゆらぎ層（phase 1）は右へ大きく、
-                // しかも x で波打たせて一様な滑りではなく風に吹かれる波に見せる。ずれは深さ f に対して
-                // 二次ベジェ（中深の制御点 55%）の形 1.1f-0.1f² で効かせ、上端は縁に留めたまま下へ行くほど曲がる
-                var lb = ph ? (24 + 10 * Math.sin(rx * 0.008 + 1.7)) : -5;
-                for (yy = 0; yy < ln; yy += 4) {
-                  f = yy / ln;
-                  var rc = auroraColor(Math.min(1, f + shift));
-                  tc.fillStyle = "rgba(" + rc[0] + "," + rc[1] + "," + rc[2] + "," + (ra * (1 - f * 0.75)).toFixed(3) + ")";
-                  tc.fillRect(AX(rx + Math.sin(yy / 70 + seedOff) * 10 + lb * (1.1 * f - 0.1 * f * f)), AY(ryb + yy), rw, Math.max(1, 4 * asc));
-                }
-              }
-              tc.strokeStyle = "rgba(214,255,226," + (0.55 + ph * 0.20).toFixed(2) + ")"; tc.lineWidth = 2;  // 上端の輝く縁（ゆらぎ層では少し明るくし、透けるにつれて縁が冴える）
-              tc.beginPath();
-              for (xx = -20; xx <= 1250; xx += 14) { if (xx === -20) tc.moveTo(AX(xx), AY(yc(xx))); else tc.lineTo(AX(xx), AY(yc(xx))); }
-              tc.stroke();
-            }
-            curtain(64 + ph * 26, 42 * (1 + ph * 0.24), 300 + ph * 197, 350, 0.30, 0.85, 0);
-            curtain(150 - ph * 30, 58 * (1 + ph * 0.16), 377 + ph * 197, 300, 0.22, 0.68, 0.10);
-            curtain(24 + ph * 20, 26 * (1 + ph * 0.18), 454 + ph * 197, 230, 0.18, 0.55, 0.18);
             // 遠景の色ベール：大きな放射グラデーションで空に色の気配を敷く
             [[0.20, 0.08, "92,255,171", 0.10], [0.75, 0.12, "168,104,255", 0.10], [0.55, 0.0, "96,150,255", 0.08]].forEach(function (v) {
               var vg = tc.createRadialGradient(AX(1210 * v[0]), AY(841 * v[1]), 0, AX(1210 * v[0]), AY(841 * v[1]), Math.max(w, h) * 0.55);
@@ -3663,9 +3654,56 @@ window.TD_THEME = (function () {
               tc.beginPath(); tc.moveTo(AX(shx), AY(shy)); tc.lineTo(AX(shx), AY(shy + 2 + shr() * 5)); tc.stroke();
             }
           }
-          paintAuroraScene(x, 0);
-          // ゆらぎ層（#bg3）：カーテンの種と位置だけをずらした同じ絵。本体と交互に透けてカーテンがゆっくり揺れる
-          paintAuroraScene(layer(cv3).c, 1);
+          function paintAuroraCurtains(tc, phase) {
+            var ph = phase || 0, xx, yy, f;
+            // オーロラカーテン：絹のような多段グラデーションの面＋細い光条＋上端の輝く縁
+            function curtain(yBase, amp, seedOff, height, faceAlpha, rayAlpha, shift) {
+              function yc(x2) { return yBase + amp * Math.sin(x2 / 250 + seedOff) + amp * 0.45 * Math.sin(x2 / 90 + seedOff * 2); }
+              // 虹の色：縦はカーテンの高さいっぱいに等間隔の広い帯でゆっくり巡らせ、横にも位置で
+              // 色相をずらして、空全体で虹が横に流れる大きな流れにする。位相1では横ずらしを広げて
+              // （±0.10→±0.15＋全体+0.05）揺らめきと一緒に虹自体がゆっくり横へ流れていくようにする。
+              // 縦は 0.86 倍に抑え、横ずらしで端が色票の外へはみ出して平らに潰れる範囲を小さくする
+              function colAt(f2, x2) {
+                var t = f2 * 0.86 + ((x2 / 1210) - 0.5) * (ph ? 0.30 : 0.20) + (ph ? 0.05 : 0) + shift;
+                return auroraColor(t < 0 ? 0 : t > 1 ? 1 : t);
+              }
+              for (xx = -20; xx < 1250; xx += 8) {  // 面
+                var hh = height * (0.82 + 0.3 * Math.sin(xx / 340 + seedOff * 3)), yb = yc(xx);
+                for (yy = 0; yy < hh; yy += 4) {
+                  f = yy / hh;
+                  var cc = colAt(f, xx);
+                  tc.fillStyle = "rgba(" + cc[0] + "," + cc[1] + "," + cc[2] + "," + (faceAlpha * Math.pow(1 - f, 1.4)).toFixed(3) + ")";
+                  tc.fillRect(AX(xx), AY(yb + yy), Math.max(1, 8 * asc), Math.max(1, 4 * asc));
+                }
+              }
+              var rr = rng(9000 + seedOff);  // 光条：縦の筋を細かく重ねる
+              for (var ri = 0; ri < 170; ri++) {
+                var rx = -20 + ri * (1270 / 170) + (rr() - 0.5) * 8, ryb = yc(rx);
+                var ln = height * (0.5 + rr() * 0.6), ra = rayAlpha * (0.3 + rr() * 0.7), rw = Math.max(0.6, (1 + rr() * 2) * asc);
+                // 横なびき：光条の下端の横ずらし量。本体（phase 0）は左へ僅かに -5px、ゆらぎ層（phase 1）は右へ大きく、
+                // しかも x で波打たせて一様な滑りではなく風に吹かれる波に見せる。ずれは深さ f に対して
+                // 二次ベジェ（中深の制御点 55%）の形 1.1f-0.1f² で効かせ、上端は縁に留めたまま下へ行くほど曲がる
+                var lb = ph ? (24 + 10 * Math.sin(rx * 0.008 + 1.7)) : -5;
+                for (yy = 0; yy < ln; yy += 4) {
+                  f = yy / ln;
+                  var rc = colAt(f, rx);
+                  tc.fillStyle = "rgba(" + rc[0] + "," + rc[1] + "," + rc[2] + "," + (ra * (1 - f * 0.75)).toFixed(3) + ")";
+                  tc.fillRect(AX(rx + Math.sin(yy / 70 + seedOff) * 10 + lb * (1.1 * f - 0.1 * f * f)), AY(ryb + yy), rw, Math.max(1, 4 * asc));
+                }
+              }
+              tc.strokeStyle = "rgba(255,240,235," + (0.55 + ph * 0.20).toFixed(2) + ")"; tc.lineWidth = 2;  // 上端の輝く縁（ゆらぎ層では少し明るくし、透けるにつれて縁が冴える）
+              tc.beginPath();
+              for (xx = -20; xx <= 1250; xx += 14) { if (xx === -20) tc.moveTo(AX(xx), AY(yc(xx))); else tc.lineTo(AX(xx), AY(yc(xx))); }
+              tc.stroke();
+            }
+            curtain(64 + ph * 26, 42 * (1 + ph * 0.24), 300 + ph * 197, 350, 0.30, 0.85, 0);
+            curtain(150 - ph * 30, 58 * (1 + ph * 0.16), 377 + ph * 197, 300, 0.22, 0.68, 0.10);
+            curtain(24 + ph * 20, 26 * (1 + ph * 0.18), 454 + ph * 197, 230, 0.18, 0.55, 0.18);
+          }
+          paintAuroraScene(x);
+          // カーテン専用層：位相0は #bg4、位相1は #bg3（どちらもカーテン以外は透明で、場面の上に重なる）
+          paintAuroraCurtains(layer(cv4).c, 0);
+          paintAuroraCurtains(layer(cv3).c, 1);
         }
         if (TB.grid) {
           // 香港ネオンの床：画面下部の透視グリッド（サイバーグリッド）。静止画の一部としてリサイズ時に1回だけ描く
