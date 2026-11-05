@@ -670,6 +670,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gl-tile[data-book="retire"] { --gl-acc: #e9a9c4; --gl-rgb: 233,169,196; }
 .gl-tile[data-book="walls"] { --gl-acc: #64c2a3; --gl-rgb: 100,194,163; }
 .gl-tile[data-book="fire"] { --gl-acc: #e2703a; --gl-rgb: 226,112,58; }
+.gl-tile[data-book="safetynet"] { --gl-acc: #5cb87a; --gl-rgb: 92,184,122; }
 .gl-tile { --gl-acc: var(--gold); --gl-rgb: 227,184,103; }
 .gl-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 2px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--glass-line); flex: none; }
 .gl-tabs button { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: inherit; font-size: 10.5px; font-weight: 700; color: var(--ink-3); background: none; border: 0; border-radius: 999px; padding: 4px 0; cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
@@ -767,7 +768,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gbook.eco .gb-figbox { border-color: #cfe0dc; }
 .gbook.eco .gb-resume { background: #dcecea; border-color: #bcd6d2; color: #175e63; }
 /* 学習の本（パターン図鑑・ドル円入門・FVG詳説）：用語集と同じ紙面に、ひと言→図→見る所→待つこと→例→勘違い→詳しく の順 */
-.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; } .gbook.bk-first { --bk: #8fd8a8; --bk-ink: #2f7a4c; } .gbook.bk-tax { --bk: #e7a98c; --bk-ink: #9a4f2e; } .gbook.bk-retire { --bk: #e9a9c4; --bk-ink: #8f3d63; } .gbook.bk-walls { --bk: #64c2a3; --bk-ink: #226b52; } .gbook.bk-fire { --bk: #e2703a; --bk-ink: #93400f; }
+.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; } .gbook.bk-first { --bk: #8fd8a8; --bk-ink: #2f7a4c; } .gbook.bk-tax { --bk: #e7a98c; --bk-ink: #9a4f2e; } .gbook.bk-retire { --bk: #e9a9c4; --bk-ink: #8f3d63; } .gbook.bk-walls { --bk: #64c2a3; --bk-ink: #226b52; } .gbook.bk-fire { --bk: #e2703a; --bk-ink: #93400f; } .gbook.bk-safetynet { --bk: #5cb87a; --bk-ink: #2c6e44; }
 .gbook.bk-learn .gb-bar .gb-title { color: var(--bk); } .gbook.bk-learn .gb-prog i { background: var(--bk); } .gbook.bk-learn .gb-btn.gb-x { background: var(--bk); border-color: var(--bk); }
 .gbook.bk-learn .gb-cover small, .gbook.bk-learn .gb-chhead small, .gbook.bk-learn .gb-toc i, .gbook.bk-learn .gb-idx button em, .gbook.bk-learn .gb-cover .gb-hint::before, .gbook.bk-learn .gb-pts li::marker { color: var(--bk-ink); }
 .gbook.bk-learn .gb-idx h4, .gbook.bk-learn .gb-table th { background: var(--bk-ink); }
@@ -881,6 +882,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .shf-book[data-book="retire"] { --acc: #e9a9c4; --rgb: 233, 169, 196; --deep: #4c1d33; --mid: #84355a; }
 .shf-book[data-book="walls"] { --acc: #64c2a3; --rgb: 100, 194, 163; --deep: #123a2e; --mid: #226b52; }
 .shf-book[data-book="fire"] { --acc: #e2703a; --rgb: 226, 112, 58; --deep: #4d1f05; --mid: #93400f; }
+.shf-book[data-book="safetynet"] { --acc: #5cb87a; --rgb: 92, 184, 122; --deep: #17452a; --mid: #2c6e44; }
 .shf-spine[data-book="fx"] { --acc: #e3b867; --rgb: 227, 184, 103; --deep: #3d2f0e; --mid: #6f5518; }
 .shf-spine[data-book="eco"] { --acc: #6fd0d4; --rgb: 111, 208, 212; --deep: #123a3d; --mid: #1f5f63; }
 .shf-book::before { content: ""; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: rgba(0, 0, 0, .42); box-shadow: 1px 0 0 rgba(255, 255, 255, .13); }
@@ -1304,7 +1306,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <div class="gl-head">
         <b class="gl-title">学ぶ</b><span id="gl-count"></span><button type="button" class="gl-open" data-gl="toc">目次を開く ›</button><button type="button" class="gl-shelf" data-shf="open">📚 小さな書斎</button>
       </div>
-      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（1〜9の順に読む本と、2冊の辞書）"><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="walls" title="8冊目：年収の壁と扶養のしくみ（パートの税金・社会保険・配偶者控除の壁）"><i class="gl-no" aria-hidden="true">8</i>年収の壁</button><button type="button" role="tab" data-glbook="fire" title="9冊目：FIREの設計図 ― 投資の組み合わせの作り方（自分の条件で設計するFIREと、設計ワーク）"><i class="gl-no" aria-hidden="true">9</i>FIRE<span class="gl-x">の設計図</span></button><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
+      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（1〜10の順に読む本と、2冊の辞書）"><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="walls" title="8冊目：年収の壁と扶養のしくみ（パートの税金・社会保険・配偶者控除の壁）"><i class="gl-no" aria-hidden="true">8</i>年収の壁</button><button type="button" role="tab" data-glbook="fire" title="9冊目：FIREの設計図 ― 投資の組み合わせの作り方（自分の条件で設計するFIREと、設計ワーク）"><i class="gl-no" aria-hidden="true">9</i>FIRE<span class="gl-x">の設計図</span></button><button type="button" role="tab" data-glbook="safetynet" title="10冊目：困ったときに読む本 ― 生活のセーフティーネット（困ったときに開く本）"><i class="gl-no" aria-hidden="true">10</i>困ったときの<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
       <div class="gl-grid" id="gl-grid"></div>
       <p class="gl-hint">本を開いたら、左右にスワイプか「次のページ ›」でめくれます</p>
     </div>
@@ -4775,7 +4777,13 @@ window.TD_THEME = (function () {
       ["均等割", "きんとうわり", "利益のあるなしにかかわらず、決まった額がかかる住民税の部分。法人では赤字でもかかり、いちばん小さい区分で年7万円程度。執筆時点の制度。手続きの前に公式情報で確認する。", { rel: ["retire:retire-37", "retire:retire-39"] }],
       ["合同会社", "ごうどうがいしゃ", "法人の形の1つ。株式会社より作るときの費用が少なく（執筆時点で6万円台から）、運営の決まりも比べて簡単。執筆時点の制度。手続きの前に公式情報で確認する。", { rel: ["retire:retire-36", "retire:retire-39"] }],
       ["定款", "ていかん", "会社の目的や名前、決まりごとを書いた、会社の基本のきまり。会社を作るときに作る。株式会社では公証人の認証が要る。", { rel: ["retire:retire-39"] }],
-      ["登記", "とうき", "会社の名前・住所・役員などを、法務局の記録に登録すること。会社は登記をして成り立ち、だれでも内容を確かめられる。", { rel: ["retire:retire-39", "retire:retire-38"] }]
+      ["登記", "とうき", "会社の名前・住所・役員などを、法務局の記録に登録すること。会社は登記をして成り立ち、だれでも内容を確かめられる。", { rel: ["retire:retire-39", "retire:retire-38"] }],
+      ["生活保護", "せいかつほご", "収入や資産を使っても最低限度の生活が保てない世帯に、その不足分を支える公的扶助の制度。申請は国民の権利で、窓口は福祉事務所。扶助は生活・住宅・医療・介護など8種類。執筆時点の制度。判断の前に公式情報で確認する。", { rel: ["safetynet:safetynet-13", "safetynet:safetynet-14"] }],
+      ["自立相談支援機関", "じりつそうだんしえんきかん", "生活の困りごと全般を無料で相談できる、生活困窮者自立支援制度の総合窓口。支援プランを一緒に作り、住居確保給付金の申請先にもなる。", { rel: ["safetynet:safetynet-06"] }],
+      ["福祉事務所", "ふくしじむしょ", "生活保護の相談と申請を受け付ける役所の窓口。市と特別区ではその自治体が、町村では都道府県の福祉事務所が担当する。", { rel: ["safetynet:safetynet-07", "safetynet:safetynet-14"] }],
+      ["社会福祉協議会", "しゃかいふくしきょうぎかい", "市区町村ごとに置かれた福祉団体で、通称「社協（しゃきょう）」。生活福祉資金（緊急小口資金・総合支援資金など）の貸付の窓口。", { rel: ["safetynet:safetynet-08", "safetynet:safetynet-43"] }],
+      ["住居確保給付金", "じゅうきょかくほきゅうふきん", "離職や収入の減少で家賃が払えない人に、家賃相当額を自治体から家主へ支給する給付金。原則3か月、最長9か月。要件は収入・資産・求職活動。執筆時点の制度。手続きの前に公式情報で確認する。", { rel: ["safetynet:safetynet-19"] }],
+      ["緊急小口資金", "きんきゅうしょうぐちしきん", "生活福祉資金の1つ。緊急かつ一時的に生計の維持が難しくなった世帯へ、10万円以内を無利子・連帯保証人不要で貸し付ける。窓口は社会福祉協議会。執筆時点の制度。手続きの前に公式情報で確認する。", { rel: ["safetynet:safetynet-01"] }]
     ]},
     { t: "FIREと資産形成", s: "経済的自立・取り崩し・組み合わせの型", terms: [
       ["FIRE", "ふぁいあ", "Financial Independence, Retire Earlyの略。資産からの収入や取り崩しで暮らしが成り立ち、働くかどうか・どれくらい働くかを自分で選べる状態（経済的自立）を目指す考え方。辞めること自体ではなく、選択肢を持つことが中心。", { rel: ["fire:fire-01", "fire:fire-start"] }],
@@ -4804,10 +4812,11 @@ window.TD_THEME = (function () {
       tax: { id: "tax", src: "learn/tax.json", title: "確定申告ガイド", en: "TAX RETURN GUIDE", icon: "🧾", bm: "learn-tax-page", learn: true },
       retire: { id: "retire", src: "learn/retire.json", title: "退職と給付金の手続きガイド", en: "LEAVING WORK & BENEFITS", icon: "💼", bm: "learn-retire-page", learn: true },
       walls: { id: "walls", src: "learn/walls.json", title: "年収の壁と扶養のしくみ", en: "INCOME WALLS & DEPENDENTS", icon: "🧱", bm: "learn-walls-page", learn: true },
-      fire: { id: "fire", src: "learn/fire.json", title: "FIREの設計図 ― 投資の組み合わせの作り方", en: "DESIGNING FIRE", icon: "🔥", bm: "learn-fire-page", learn: true }
+      fire: { id: "fire", src: "learn/fire.json", title: "FIREの設計図 ― 投資の組み合わせの作り方", en: "DESIGNING FIRE", icon: "🔥", bm: "learn-fire-page", learn: true },
+      safetynet: { id: "safetynet", src: "learn/safetynet.json", title: "困ったときに読む本 ― 生活のセーフティーネット", en: "SAFETY NET GUIDE", icon: "🛟", bm: "learn-safetynet-page", learn: true }
     };
     // ORDER は名前で関連リンクを探す順（用語集が先）。タブの並び（読む順）は HTML の .gl-tabs 側
-    var ORDER = ["fx", "eco", "first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire"], LEARN = ["first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire"];
+    var ORDER = ["fx", "eco", "first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire", "safetynet"], LEARN = ["first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire", "safetynet"];
     // learn/*.json の1項目を、用語集と同じ [名前, 読み, 説明, 付録] の形にする（付録の L に元の項目を持つ）
     function learnBook(b, j) {
       b.version = j.version; b.lead = j.lead; b.short = j.chapters.map(function (c) { return c.short || c.t; });
@@ -5787,10 +5796,11 @@ window.TD_THEME = (function () {
       tax: { no: 6, lines: ["確定申告", "ガイド"], obi: "令和7年分の制度で確認", n: 49 },
       retire: { no: 7, lines: ["退職と", "給付金の", "手続き"], obi: "手続きを順番に", n: 46 },
       walls: { no: 8, lines: ["年収の壁と", "扶養の", "しくみ"], obi: "令和8年分の最新版", n: 32 },
-      fire: { no: 9, lines: ["FIREの", "設計図"], obi: "設計ワーク付き", n: 31 }
+      fire: { no: 9, lines: ["FIREの", "設計図"], obi: "設計ワーク付き", n: 31 },
+      safetynet: { no: 10, lines: ["困ったときに", "読む本"], obi: "制度は使うためにある", n: 51 }
     };
     var SHELF_TOP = ["first", "gold", "usdjpy", "pattern", "fvg", "tax"];
-    var SHELF_LOW = ["retire", "walls", "fire"];
+    var SHELF_LOW = ["retire", "walls", "fire", "safetynet"];
     var SHELF_DIC = ["fx", "eco"];
     var shelfEl = document.getElementById("shelf"), shelfBody = document.getElementById("shf-body"), shelfOpener = null;
     function shelfLast() { try { return localStorage.getItem("shelf-last") || ""; } catch (e) { return ""; } }
