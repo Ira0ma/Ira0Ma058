@@ -39,7 +39,7 @@ html[data-theme="neon"] {
   --on-accent: #06222b; --panel-rgb: 22, 14, 40;
   --up-red: #ff4d6d; --up-green: #2bff88; --star: #ffbe3c;
   --head-points: #5affa0; --head-weather: #6ecdff; --head-ind: #ffbe50; --head-cal: #c39bff; --head-x: #5ae1ff; --head-books: #ff8ccd;
-  --strip-bg: linear-gradient(90deg, #00e5ff 0 14px, rgba(0,0,0,0) 14px 20px, #ff2bd6 20px 34px, rgba(0,0,0,0) 34px 40px, #ffc400 40px 54px, rgba(0,0,0,0) 54px 60px, #3dff7a 60px 74px, rgba(0,0,0,0) 74px 80px, #b26bff 80px 94px, rgba(0,0,0,0) 94px 96px); --strip-size: 96px 3px;
+  --strip-bg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='8'%3E%3Crect x='2' y='3' width='5' height='5' fill='%2300e5ff'/%3E%3Crect x='12' y='0' width='5' height='8' fill='%23ff2bd6'/%3E%3Crect x='22' y='5' width='5' height='3' fill='%23ffc400'/%3E%3Crect x='32' y='2' width='5' height='6' fill='%233dff7a'/%3E%3Crect x='42' y='0' width='5' height='8' fill='%23b26bff'/%3E%3Crect x='52' y='4' width='5' height='4' fill='%2300e5ff'/%3E%3Crect x='62' y='1' width='5' height='7' fill='%23ff2bd6'/%3E%3Crect x='72' y='3' width='5' height='5' fill='%23ffc400'/%3E%3Crect x='82' y='0' width='5' height='8' fill='%233dff7a'/%3E%3Crect x='92' y='5' width='5' height='3' fill='%23b26bff'/%3E%3C/svg%3E"); --strip-size: 100px 8px;
 }
 html[data-theme="spring"] {
   --night: #0a080a; --glass: rgba(19, 13, 17, 0.88); --glass-line: rgba(255, 171, 194, 0.30);
@@ -142,6 +142,14 @@ body {
   -webkit-user-select: none; user-select: none;
 }
 #bg { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+/* ネオンクラブ：床のにじみ。左右2つの柔らかい光がゆっくり明滅する（ネオンの時だけ表示）。
+   グラデーションの濃さ×要素の透明度で実効 alpha は約0.05〜0.14。省電力では止めて薄く固定する */
+.td-floor-glow { display: none; position: fixed; bottom: -14vh; width: 58vw; height: 44vh; pointer-events: none; z-index: 0; }
+html[data-theme="neon"] .td-floor-glow { display: block; }
+.td-floor-glow.fg-l { left: -8vw; background: radial-gradient(ellipse at 50% 100%, rgba(255, 43, 214, 0.50), rgba(255, 43, 214, 0) 70%); animation: td-floor-pulse 9s ease-in-out infinite alternate; }
+.td-floor-glow.fg-r { right: -8vw; background: radial-gradient(ellipse at 50% 100%, rgba(0, 229, 255, 0.50), rgba(0, 229, 255, 0) 70%); animation: td-floor-pulse 10s ease-in-out -5s infinite alternate-reverse; }
+@keyframes td-floor-pulse { from { opacity: 0.10; } to { opacity: 0.28; } }
+html.lowpower .td-floor-glow { animation: none; opacity: 0.16; }
 /* 背景の動く部分だけを別の層に：金色の光の筋は透明度のアニメーション（描き直しなし）、きらめく点は軽い低解像度の層 */
 #fit {
   position: fixed; inset: 0;
@@ -1044,6 +1052,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 </style>
 
 <canvas id="bg" aria-hidden="true"></canvas>
+<div class="td-floor-glow fg-l" aria-hidden="true"></div>
+<div class="td-floor-glow fg-r" aria-hidden="true"></div>
 <div id="fit">
 <div id="stage">
 
@@ -1439,8 +1449,8 @@ window.TD_THEME = (function () {
   var jnBtn = dockBtn("journal-toggle", "📝 日誌", "取引の記録を入れる・一覧", "journal"), plBtn = dockBtn("pnl-toggle", "📅 収支", "日ごとの確定損益・入出金のカレンダーと、週・月・年のまとめ", "pnl");
   paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn); dock.appendChild(jnBtn); dock.appendChild(plBtn); document.body.appendChild(dock);
   /* theme switch (plan A: a button at the bottom-right with a list). The dock stays at four buttons by design, so the theme lives on its own at the right. Same setting as the tools screen (td_theme). */
-  var THEME_LABELS = [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["neon", "ネオンプラス"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"]];
-  var THEME_NAMES = { current: "基本デザイン", neon: "ネオンプラス", spring: "春", summer: "夏", autumn: "秋", xmas: "クリスマス", newyear: "正月", winter: "冬" };
+  var THEME_LABELS = [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"]];
+  var THEME_NAMES = { current: "基本デザイン", neon: "アゲアゲ⭐︎ネオン", spring: "春", summer: "夏", autumn: "秋", xmas: "クリスマス", newyear: "正月", winter: "冬" };
   var themeModeNow = function () { try { return localStorage.getItem("td_theme") || "auto"; } catch (e) { return "auto"; } };
   var themeBtn = document.createElement("button"); themeBtn.type = "button"; themeBtn.className = "dk-theme-btn"; themeBtn.id = "theme-toggle";
   themeBtn.title = "ホーム画面のテーマを切り替えます（ツール画面の設定と同じ）";
@@ -3280,6 +3290,31 @@ window.TD_THEME = (function () {
         if (TB.grid) {
           // 香港ネオンの床：画面下部の透視グリッド（サイバーグリッド）。静止画の一部としてリサイズ時に1回だけ描く
           var hz = h * 0.80, vx = w * 0.5, gi, gt, gy;
+          // ネオンクラブ：スポットライトの円錐（上から差す柔らかい光。レーザーの下に敷く）
+          [[0.30, "178,107,255"], [0.72, "0,229,255"]].forEach(function (sp) {
+            var ax = w * sp[0], bw2 = w * 0.17, by = h * 0.65;
+            var cg = x.createLinearGradient(0, 0, 0, by);
+            cg.addColorStop(0, "rgba(" + sp[1] + ",0.10)"); cg.addColorStop(1, "rgba(" + sp[1] + ",0)");
+            x.fillStyle = cg; x.beginPath(); x.moveTo(ax, 0); x.lineTo(ax - bw2, by); x.lineTo(ax + bw2, by); x.closePath(); x.fill();
+          });
+          // ネオンクラブ：ダンスフロアのタイル。透視グリッドのセルを固定パターンで淡く光らせる（再描画しても同じ模様。線はこの上に描く）
+          var TILE = ["..M.....C....V....", ".C....V.....M...G.", "....P..C....G..M..", "..M...G....P...C..", ".C..P....M...G..V.", "...M..C..G....P...", "..G...M....C..P..."];
+          var TILEC = { C: "0,229,255", M: "255,43,214", V: "178,107,255", Y: "255,196,0", G: "61,255,122", P: "255,77,141" };
+          var tr = rng(42), trow, tcol;
+          function fxAt(g2, yy) { var tt = (yy - hz) / (h - hz); return vx + g2 * w * (0.008 + 0.077 * tt); }
+          function gyAt(tt) { return hz + (h - hz) * tt * tt; }
+          for (trow = 0; trow < 7; trow++) {
+            var ty0 = gyAt(trow / 7), ty1 = gyAt((trow + 1) / 7);
+            for (tcol = 0; tcol < 18; tcol++) {
+              var tch = TILE[trow].charAt(tcol); if (tch === ".") continue;
+              var ta = 0.05 + (trow / 6) * 0.06 + tr() * 0.05; if (ta > 0.16) ta = 0.16;
+              x.fillStyle = "rgba(" + TILEC[tch] + "," + ta.toFixed(3) + ")";
+              x.beginPath();
+              x.moveTo(fxAt(tcol - 9, ty0), ty0); x.lineTo(fxAt(tcol - 8, ty0), ty0);
+              x.lineTo(fxAt(tcol - 8, ty1), ty1); x.lineTo(fxAt(tcol - 9, ty1), ty1);
+              x.closePath(); x.fill();
+            }
+          }
           var hg = x.createLinearGradient(0, 0, w, 0);
           hg.addColorStop(0, "rgba(0,229,255,0)"); hg.addColorStop(0.5, "rgba(140,130,255,.60)"); hg.addColorStop(1, "rgba(255,43,214,0)");
           x.fillStyle = hg; x.fillRect(0, hz - 1, w, 2);
@@ -3291,6 +3326,39 @@ window.TD_THEME = (function () {
           for (gi = -9; gi <= 9; gi++) {  // 縦線：地平線上の消失点へ収束させる
             x.strokeStyle = "rgba(0,229,255,.30)"; x.lineWidth = 1;
             x.beginPath(); x.moveTo(vx + gi * w * 0.008, hz); x.lineTo(vx + gi * w * 0.085, h); x.stroke();
+          }
+          // ネオンクラブ：レーザー（静止画。掃引アニメーションは目の負担と描画負荷を避けて入れない）。両上角と天井中央から床へ、太い淡線→中→細い芯の3層
+          var BEAMS = [
+            [0, 0, 0.32, 0.90, "0,229,255"], [0, 0, 0.56, 0.97, "0,229,255"],
+            [1, 0, 0.68, 0.92, "255,43,214"], [1, 0, 0.44, 0.98, "255,43,214"],
+            [0.5, 0, 0.85, 0.94, "178,107,255"]
+          ];
+          BEAMS.forEach(function (b) {
+            var bx0 = w * b[0], by0 = h * b[1], bx1 = w * b[2], by1 = h * b[3];
+            [[7, 0.05], [3, 0.12], [1, 0.55]].forEach(function (lw) {
+              x.strokeStyle = "rgba(" + b[4] + "," + lw[1] + ")"; x.lineWidth = lw[0];
+              x.beginPath(); x.moveTo(bx0, by0); x.lineTo(bx1, by1); x.stroke();
+            });
+            x.fillStyle = "rgba(" + b[4] + ",0.25)"; x.beginPath(); x.arc(bx1, by1, 6, 0, 7); x.fill();
+            x.fillStyle = "rgba(240,250,255,0.85)"; x.beginPath(); x.arc(bx1, by1, 2.2, 0, 7); x.fill();
+          });
+          // ネオンクラブ：ミラーボール。天井中央、ステージ上端の余白（相場カードの上）に置く。位置と大きさはステージの拡縮に合わせる
+          var bsc = Math.min(w / 1210, h / 841), boy = (h - 841 * bsc) / 2;
+          var mBx = w * 0.5, mBy = boy + 17 * bsc, mBr = Math.max(8, 13 * bsc);
+          x.fillStyle = "rgba(16,14,28,0.9)"; x.beginPath(); x.arc(mBx, mBy, mBr, 0, 7); x.fill();
+          x.strokeStyle = "rgba(210,220,240,0.75)"; x.lineWidth = 1; x.beginPath(); x.arc(mBx, mBy, mBr, 0, 7); x.stroke();
+          x.strokeStyle = "rgba(160,170,200,0.45)";
+          [0.45, 0.8].forEach(function (fr) { x.beginPath(); x.arc(mBx, mBy, mBr * fr, 0, 7); x.stroke(); });
+          x.beginPath(); x.moveTo(mBx - mBr, mBy); x.lineTo(mBx + mBr, mBy); x.stroke();
+          x.beginPath(); x.moveTo(mBx, mBy - mBr); x.lineTo(mBx, mBy + mBr); x.stroke();
+          x.save(); x.translate(mBx, mBy); x.scale(0.5, 1); x.beginPath(); x.arc(0, 0, mBr, 0, 7); x.stroke(); x.restore();
+          x.fillStyle = "rgba(255,255,255,0.8)"; x.beginPath(); x.arc(mBx - mBr * 0.35, mBy - mBr * 0.4, Math.max(1.2, mBr * 0.14), 0, 7); x.fill();
+          // ネオンクラブ：ミラーボールの反射。上部1/3に小さな十字のきらめきを固定配置で散らす
+          var gr2 = rng(1234), GC2 = ["0,229,255", "255,43,214", "255,196,0", "61,255,122", "178,107,255", "255,77,141"];
+          for (gi = 0; gi < 20; gi++) {
+            var gx2 = w * (0.03 + gr2() * 0.94), gy2 = h * (0.02 + gr2() * 0.30), gs = 2.5 + gr2() * 3.5, ga = 0.25 + gr2() * 0.35;
+            x.strokeStyle = "rgba(" + GC2[gi % GC2.length] + "," + ga.toFixed(2) + ")"; x.lineWidth = 1;
+            x.beginPath(); x.moveTo(gx2 - gs, gy2); x.lineTo(gx2 + gs, gy2); x.moveTo(gx2, gy2 - gs); x.lineTo(gx2, gy2 + gs); x.stroke();
           }
         }
         dot = document.createElement("canvas"); dot.width = dot.height = 64;
