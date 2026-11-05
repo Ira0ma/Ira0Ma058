@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="8f8e4a46fe">
+<meta name="build" content="27a51d20a1">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -718,7 +718,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gl-tile[data-book="nursing"] { --gl-acc: #7a9b6d; --gl-rgb: 122,155,109; }
 .gl-tile[data-book="marriage"] { --gl-acc: #b45a68; --gl-rgb: 180,90,104; }
 .gl-tile { --gl-acc: var(--gold); --gl-rgb: 227,184,103; }
-.gl-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-rows: minmax(min-content, auto); gap: 2px; padding: 2px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--glass-line); flex: none; max-height: 55%; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+.gl-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-rows: minmax(min-content, auto); gap: 2px; padding: 2px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--glass-line); flex: none; max-height: 37%; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
 /* 学ぶ：カテゴリ見出し（書斎の棚と同じ4分類）。タブ列の幅いっぱいに引く */
 .gl-cat { grid-column: 1 / -1; font-size: 10px; font-weight: 800; letter-spacing: .1em; color: var(--gold); padding: 5px 2px 2px; border-bottom: 1px solid rgba(var(--gold-rgb), .25); }
 .gl-cat:first-child { padding-top: 1px; }
@@ -739,7 +739,9 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gl-shelf:hover { background: rgba(var(--gold-rgb),.22); }
 .gl-hint { margin: 0; font-size: 10.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gl-hint::before { content: "↔ "; color: var(--gl-acc); font-weight: 700; }
-.gl-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 5px; flex: 1; min-height: 0; }
+/* 章ボタンは自然な高さ（下限25px、長い題字は行が伸びる）で並べ、入りきらない分はグリッド内のスクロールに逃がす。
+   以前の minmax(0, 1fr) は残り高さを等分して行が潰れ、文字がボタンの外にあふれていた */
+.gl-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-rows: minmax(25px, auto); gap: 5px; flex: 1; min-height: 0; align-content: start; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
 .gl-grid button { font: inherit; display: flex; flex-direction: row; justify-content: flex-start; align-items: center; gap: 4px; min-width: 0; padding: 2px 6px; border-radius: 9px; border: 1px solid rgba(var(--gl-rgb),.18); background: rgba(var(--gl-rgb),.06); color: var(--ink); cursor: pointer; text-align: left; }
 .gl-grid button:hover, .gl-grid button:focus-visible { background: rgba(var(--gl-rgb),.16); outline: none; }
 .gl-grid b { font-size: 12px; font-weight: 700; line-height: 1.25; overflow: hidden; max-width: 100%; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; word-break: keep-all; overflow-wrap: anywhere; }
@@ -1049,6 +1051,7 @@ html.flow .gb-btn, html.phone .gb-btn { min-height: 44px; }
 html.flow .gb-toc button, html.phone .gb-toc button { min-height: 44px; }
 html.flow .gb-idx button, html.phone .gb-idx button { min-height: 44px; }
 html.phone .gl-tabs, html.phone .gl-grid { overflow-y: auto; -webkit-overflow-scrolling: touch; }  /* 横向きはカードの高さが固定なので、広げた分は枠の中のスクロールで逃がす */
+html.flow .gl-tabs, html.phone .gl-tabs { max-height: 55%; }  /* スマホ側の帯の割合は従来どおり（stage の 37% は効かせない） */
 html.flow .shf-body, html.phone .shf-body { gap: 26px; padding: 12px 12px 24px; }
 html.flow .shf-row, html.phone .shf-row { flex-wrap: wrap; row-gap: 14px; padding: 0 8px; }
 html.flow .shf-book, html.phone .shf-book { flex: 0 0 68px !important; height: 198px !important; }
