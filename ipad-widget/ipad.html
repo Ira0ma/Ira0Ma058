@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="1f9b65f8ad">
+<meta name="build" content="d1a6a88123">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3718,9 +3718,14 @@ window.TD_THEME = (function () {
           }
           function paintAuroraCurtains(tc, phase) {
             var ph = phase || 0, xx, yy, f;
-            // オーロラカーテン：絹のような多段グラデーションの面＋細い光条＋上端の輝く縁
-            function curtain(yBase, amp, seedOff, height, faceAlpha, rayAlpha, shift) {
-              function yc(x2) { return yBase + amp * Math.sin(x2 / 250 + seedOff) + amp * 0.45 * Math.sin(x2 / 90 + seedOff * 2); }
+            // オーロラカーテン：絹のような多段グラデーションの面＋細い光条＋上端の輝く縁。
+            // 本物のカーテンに寄せて、縦のヒダ（x方向の明暗の折り目）・裾の細かい波打ち・
+            // 下縁の鋭い輝き（白へ寄せた帯＋下地のグロー）と窒素の紫の縁取りを足す
+            function curtain(yBase, amp, seedOff, height, faceAlpha, rayAlpha, shift, lam1) {
+              // 裾の曲線：従来の大波＋中波に、波長約195px・振幅±12pxの細かい波打ちを重ねる。
+              // 位相1では波打ちを+0.7radずらし、透け合いの中で波が横へ流れて見えるようにする。
+              // 面・光条・縁はすべてこの同じ yc に揃える
+              function yc(x2) { return yBase + amp * Math.sin(x2 / 250 + seedOff) + amp * 0.45 * Math.sin(x2 / 90 + seedOff * 2) + 12 * Math.sin(x2 * 6.2831853 / 195 + seedOff * 1.7 + ph * 0.7); }
               // 虹の色：縦はカーテンの高さいっぱいに等間隔の広い帯でゆっくり巡らせ、横にも位置で
               // 色相をずらして、空全体で虹が横に流れる大きな流れにする。位相1では横ずらしを広げて
               // （±0.10→±0.15＋全体+0.05）揺らめきと一緒に虹自体がゆっくり横へ流れていくようにする。
@@ -3729,12 +3734,21 @@ window.TD_THEME = (function () {
                 var t = f2 * 0.86 + ((x2 / 1210) - 0.5) * (ph ? 0.30 : 0.20) + (ph ? 0.05 : 0) + shift;
                 return auroraColor(t < 0 ? 0 : t > 1 ? 1 : t);
               }
+              // 縦のヒダ：x方向の低周波の明暗（0.62〜1.0）。主波（波長 lam1）に副波（波長0.45倍）を
+              // 掛け合わせて折り目を不規則にする。位相1では位相を+0.9radずらし（主波長250pxなら約36px分）、
+              // 2層の透け合いの中でヒダが幕に沿って流れて見えるようにする
+              var phiF = seedOff * 0.11 + ph * 0.9;
+              function foldAt(x2) {
+                var s1 = 0.5 + 0.5 * Math.sin(x2 * 6.2831853 / lam1 + phiF);
+                var s2 = 0.5 + 0.5 * Math.sin(x2 * 6.2831853 / (lam1 * 0.45) + phiF * 1.7 + 1.3);
+                return 0.62 + 0.38 * s1 * (0.7 + 0.3 * s2);
+              }
               for (xx = -20; xx < 1250; xx += 8) {  // 面
                 var hh = height * (0.82 + 0.3 * Math.sin(xx / 340 + seedOff * 3)), yb = yc(xx);
                 for (yy = 0; yy < hh; yy += 4) {
                   f = yy / hh;
                   var cc = colAt(f, xx);
-                  tc.fillStyle = "rgba(" + cc[0] + "," + cc[1] + "," + cc[2] + "," + (faceAlpha * Math.pow(1 - f, 1.4)).toFixed(3) + ")";
+                  tc.fillStyle = "rgba(" + cc[0] + "," + cc[1] + "," + cc[2] + "," + (faceAlpha * Math.pow(1 - f, 1.4) * foldAt(xx)).toFixed(3) + ")";
                   tc.fillRect(AX(xx), AY(yb + yy), Math.max(1, 8 * asc), Math.max(1, 4 * asc));
                 }
               }
@@ -3749,18 +3763,34 @@ window.TD_THEME = (function () {
                 for (yy = 0; yy < ln; yy += 4) {
                   f = yy / ln;
                   var rc = colAt(f, rx);
-                  tc.fillStyle = "rgba(" + rc[0] + "," + rc[1] + "," + rc[2] + "," + (ra * (1 - f * 0.75)).toFixed(3) + ")";
+                  tc.fillStyle = "rgba(" + rc[0] + "," + rc[1] + "," + rc[2] + "," + (ra * (1 - f * 0.75) * foldAt(rx)).toFixed(3) + ")";
                   tc.fillRect(AX(rx + Math.sin(yy / 70 + seedOff) * 10 + lb * (1.1 * f - 0.1 * f * f)), AY(ryb + yy), rw, Math.max(1, 4 * asc));
                 }
               }
+              // 下縁の鋭い輝き：裾の曲線 yc に沿って、(1)白へ寄せた色の柔らかいグロー（幅10・淡く）、
+              // (2)同じ色の帯（幅4・ヒダで陰影）、(3)裾の5px下に窒素の縁取り＝紫の細線（幅2・ヒダで陰影）。
+              // 色は裾位置の虹色を白へ55%寄せたもの。区間ごとに色と濃さを変えて曲線をなぞる
+              function liteAt(x2) { var c0 = colAt(0, x2); return [Math.round(c0[0] + (255 - c0[0]) * 0.55), Math.round(c0[1] + (255 - c0[1]) * 0.55), Math.round(c0[2] + (255 - c0[2]) * 0.55)]; }
+              function hemStroke(lw, off, styleFn) {
+                tc.lineWidth = lw;
+                for (xx = -20; xx < 1250; xx += 14) {
+                  tc.strokeStyle = styleFn(xx + 7);
+                  tc.beginPath();
+                  tc.moveTo(AX(xx), AY(yc(xx) + off)); tc.lineTo(AX(xx + 14), AY(yc(xx + 14) + off));
+                  tc.stroke();
+                }
+              }
+              hemStroke(10, 0, function (xm) { var lc = liteAt(xm); return "rgba(" + lc[0] + "," + lc[1] + "," + lc[2] + ",0.12)"; });
+              hemStroke(4, 0, function (xm) { var lc = liteAt(xm); return "rgba(" + lc[0] + "," + lc[1] + "," + lc[2] + "," + (0.5 * foldAt(xm)).toFixed(3) + ")"; });
+              hemStroke(2, 5, function (xm) { return "rgba(150,120,255," + (0.20 * foldAt(xm)).toFixed(3) + ")"; });
               tc.strokeStyle = "rgba(255,240,235," + (0.55 + ph * 0.20).toFixed(2) + ")"; tc.lineWidth = 2;  // 上端の輝く縁（ゆらぎ層では少し明るくし、透けるにつれて縁が冴える）
               tc.beginPath();
               for (xx = -20; xx <= 1250; xx += 14) { if (xx === -20) tc.moveTo(AX(xx), AY(yc(xx))); else tc.lineTo(AX(xx), AY(yc(xx))); }
               tc.stroke();
             }
-            curtain(64 + ph * 26, 42 * (1 + ph * 0.24), 300 + ph * 197, 350, 0.30, 0.85, 0);
-            curtain(150 - ph * 30, 58 * (1 + ph * 0.16), 377 + ph * 197, 300, 0.22, 0.68, 0.10);
-            curtain(24 + ph * 20, 26 * (1 + ph * 0.18), 454 + ph * 197, 230, 0.18, 0.55, 0.18);
+            curtain(64 + ph * 26, 42 * (1 + ph * 0.24), 300 + ph * 197, 350, 0.30, 0.85, 0, 280);
+            curtain(150 - ph * 30, 58 * (1 + ph * 0.16), 377 + ph * 197, 300, 0.22, 0.68, 0.10, 250);
+            curtain(24 + ph * 20, 26 * (1 + ph * 0.18), 454 + ph * 197, 230, 0.18, 0.55, 0.18, 200);
           }
           paintAuroraScene(x);
           // カーテン専用層：位相0は #bg4、位相1は #bg3（どちらもカーテン以外は透明で、場面の上に重なる）
