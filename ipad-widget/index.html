@@ -87,8 +87,9 @@ html[data-theme="winter"] {
   --strip-bg: radial-gradient(circle at 4px 50%, #96dcff 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 30px 50%, #e6f5ff 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 56px 50%, #aabefb 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 82px 50%, #c8ebff 0 2.8px, rgba(0,0,0,0) 3.4px); --strip-size: 104px 7px;
 }
 html[data-theme="shippu"] {
-  /* 疾風怒濤：深い藍黒に金と炎の差し色。手動でのみ選べるテーマ（季節の自動切替には入らない）。
-     背景は地獄の灼熱（左→右へ増える炎が強風で右へなびく静止画、THEME_BG.shippu の inferno）。
+  /* 疾風怒濤（利確の炎）：深い藍黒に金と炎の差し色。手動でのみ選べるテーマ（季節の自動切替には入らない）。
+     背景は地獄の灼熱（左→右へ増える炎が強風で右へなびく静止画、THEME_BG.shippu の inferno）に、
+     別シードの炎を描いた #bg2 を重ねてゆらめきを出す。カードには炎の枠グローを付ける。
      炎がカード越しに透けて見えるよう --glass は他のテーマより透明にしてある。判定色は :root と同じ値 */
   --night: #07090f; --glass: rgba(9, 8, 12, 0.68); --glass-line: rgba(227, 184, 103, 0.30);
   --ink: #f5f2ec; --ink-2: rgba(245, 242, 236, 0.72); --ink-3: rgba(245, 242, 236, 0.48);
@@ -179,6 +180,19 @@ html[data-theme="neon"][data-club-light="b"] .td-floor-glow.fg-l { background: r
 html[data-theme="neon"][data-club-light="b"] .td-floor-glow.fg-r { background: radial-gradient(ellipse at 50% 100%, rgba(255, 43, 214, 0.50), rgba(255, 43, 214, 0) 70%); }
 html[data-theme="neon"][data-club-light="b"] .td-top-glow.tg-l { background: radial-gradient(ellipse at 50% 0%, rgba(0, 229, 255, 0.45), rgba(0, 229, 255, 0) 70%); }
 html[data-theme="neon"][data-club-light="b"] .td-top-glow.tg-r { background: radial-gradient(ellipse at 50% 0%, rgba(255, 43, 214, 0.45), rgba(255, 43, 214, 0) 70%); }
+/* 利確の炎：ゆらめき層。#bg の静止画のすぐ上に、別シードで描いた炎だけのキャンバス（#bg2）を重ね、
+   透明度だけをゆっくり往復させる。輪郭の違う2つの炎が入れ替わって揺らめいて見える。
+   再描画はリサイズ時だけで、毎フレームの描き直しはしない（省電力では止めて薄く固定） */
+#bg2 { position: fixed; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; z-index: 0; }
+html[data-theme="shippu"] #bg2 { display: block; animation: td-flame-flicker 5s ease-in-out infinite alternate; }
+@keyframes td-flame-flicker { from { opacity: 0; } to { opacity: 0.55; } }
+html.lowpower #bg2 { animation: none; opacity: 0.30; }
+/* 利確の炎：カードの炎仕様。炎に照らされたような枠のグロー（判断・判定の色には使わない）。
+   土台の影と上端のハイライトは基本デザインの値をそのまま残す */
+html[data-theme="shippu"] .card {
+  border-color: rgba(255, 110, 40, 0.55);
+  box-shadow: 0 0 18px rgba(255, 90, 20, 0.18), 0 18px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 0 24px rgba(255, 140, 40, 0.10);
+}
 /* 背景の動く部分だけを別の層に：金色の光の筋は透明度のアニメーション（描き直しなし）、きらめく点は軽い低解像度の層 */
 #fit {
   position: fixed; inset: 0;
@@ -1081,6 +1095,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 </style>
 
 <canvas id="bg" aria-hidden="true"></canvas>
+<canvas id="bg2" aria-hidden="true"></canvas>
 <div class="td-floor-glow fg-l" aria-hidden="true"></div>
 <div class="td-floor-glow fg-r" aria-hidden="true"></div>
 <div class="td-top-glow tg-l" aria-hidden="true"></div>
@@ -2249,8 +2264,15 @@ window.TD_THEME = (function () {
     c.beginPath(); c.moveTo(X(0), bot);
     cs.forEach(function (k, i) { c.lineTo(X(i), Y(k.c)); });
     c.lineTo(X(cs.length - 1), bot); c.closePath(); c.fillStyle = g; c.fill();
+    if (window.TD_THEME && TD_THEME.id === "shippu") {  // 利確の炎：折れ線の下に炎色の明かりを敷く（線と下地の色＝判定は変えない）
+      var fg = c.createLinearGradient(0, top, 0, bot); fg.addColorStop(0, "rgba(255,110,30,.20)"); fg.addColorStop(1, "rgba(255,110,30,0)");
+      c.beginPath(); c.moveTo(X(0), bot);
+      cs.forEach(function (k, i) { c.lineTo(X(i), Y(k.c)); });
+      c.lineTo(X(cs.length - 1), bot); c.closePath(); c.fillStyle = fg; c.fill();
+    }
     c.beginPath(); cs.forEach(function (k, i) { if (i) c.lineTo(X(i), Y(k.c)); else c.moveTo(X(i), Y(k.c)); });
     var neonHK = window.TD_THEME && TD_THEME.id === "neon";
+    var shippuFlame = window.TD_THEME && TD_THEME.id === "shippu";
     if (window.TD_THEME && TD_THEME.id !== "current") {
       var lg = c.createLinearGradient(0, 0, cw, 0);
       lg.addColorStop(0, rgb(1));
@@ -2261,12 +2283,16 @@ window.TD_THEME = (function () {
     if (neonHK) {  // 香港ネオン：本線の下に同色の太い淡線を敷いて発光させる（線の色そのもの＝判定は変えない）
       c.save(); c.lineWidth = 6; c.strokeStyle = rgb(.26); c.stroke(); c.restore();
     }
+    if (shippuFlame) {  // 利確の炎：本線の下に炎色の太い淡線を敷く（線の色そのもの＝判定は変えない）
+      c.save(); c.lineWidth = 6; c.strokeStyle = "rgba(255,110,30,.20)"; c.stroke(); c.restore();
+    }
     c.lineWidth = 1.8; c.stroke();
     // start point and the current point
     var dot = function (x, y, r, fill) { c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fillStyle = fill; c.fill(); };
     dot(X(0), Y(first), 2.5, "rgba(244,241,234,.6)");
     var xe = X(cs.length - 1), ye = Y(last);
     if (neonHK) dot(xe, ye, 9, rgb(.14));
+    if (shippuFlame) dot(xe, ye, 9, "rgba(255,110,30,.14)");
     dot(xe, ye, 5, rgb(.25)); dot(xe, ye, 3, rgb(1));
     c.restore();
   };
@@ -3291,7 +3317,7 @@ window.TD_THEME = (function () {
      golden streaks and soft dots. Nothing in it moves: a moving or blended layer behind the blurred glass cards made
      the iPad re-blur them on every frame. */
   var bg = (function () {
-    var cv = document.getElementById("bg"), c, w, h, k = 1, parts = [], dot = null;
+    var cv = document.getElementById("bg"), cv2 = document.getElementById("bg2"), c, w, h, k = 1, parts = [], dot = null;
     function layer(el) { el.width = Math.round(w * k); el.height = Math.round(h * k); var x = el.getContext("2d"); x.setTransform(k, 0, 0, k, 0, 0); return { cv: el, c: x }; }
     var THEME_BG = {
       neon: { base: "#070312", dot: "200,190,255", grid: 1, glows: [["rgba(255,45,150,.26)", 0.12, 0.02, 0.55], ["rgba(130,70,255,.27)", 0.9, 0.03, 0.55], ["rgba(20,180,255,.17)", 0.5, 1.02, 0.5]] },
@@ -3336,25 +3362,37 @@ window.TD_THEME = (function () {
           var igr = x.createRadialGradient(IX(1050), IY(841), 0, IX(1050), IY(841), 700 * isc);
           igr.addColorStop(0, "rgba(255,120,25,0.16)"); igr.addColorStop(1, "rgba(255,120,25,0)");
           x.fillStyle = igr; x.fillRect(0, 0, w, h);
-          // 炎の層（奥→手前）。舌は根元が太く、先端が風で右へ大きく倒れる涙滴形
-          function tongue(bx, base, tw, th, lean, col) {
+          // 溶岩の帯：最下部ほど明るい黄橙のグラデーション（既存の底グローと放射に重ねる）
+          var ilv = x.createLinearGradient(0, IY(731), 0, IY(841));
+          ilv.addColorStop(0, "rgba(255,150,30,0)"); ilv.addColorStop(0.7, "rgba(255,150,30,0.16)"); ilv.addColorStop(1, "rgba(255,190,60,0.30)");
+          x.fillStyle = ilv; x.fillRect(0, 0, w, h);
+          // 炎の層（奥→手前）。舌は根元が太く、先端が風で右へ大きく倒れる涙滴形。
+          // flameField は描き先と乱数の種を変えて何度でも呼べる（静止画本体とゆらめき層で共用）
+          function tongue(tc, bx, base, tw, th, lean, col) {
             var tipX = bx + tw * 0.5 + lean, tipY = base - th;
-            x.fillStyle = col; x.beginPath();
-            x.moveTo(IX(bx), IY(base));
-            x.quadraticCurveTo(IX(bx + tw * 0.06), IY(base - th * 0.62), IX(tipX), IY(tipY));
-            x.quadraticCurveTo(IX(bx + tw * 0.86 + lean * 0.35), IY(base - th * 0.48), IX(bx + tw), IY(base));
-            x.closePath(); x.fill();
+            tc.fillStyle = col; tc.beginPath();
+            tc.moveTo(IX(bx), IY(base));
+            tc.quadraticCurveTo(IX(bx + tw * 0.06), IY(base - th * 0.62), IX(tipX), IY(tipY));
+            tc.quadraticCurveTo(IX(bx + tw * 0.86 + lean * 0.35), IY(base - th * 0.48), IX(bx + tw), IY(base));
+            tc.closePath(); tc.fill();
           }
-          [[500, "#b01a04", 46], [385, "#e83e06", 40], [255, "#ff7a14", 34], [140, "#ffba36", 28]].forEach(function (FL, li) {
-            var fr = rng(1000 + li * 77), fx = -30;
-            while (fx < 1240) {
-              var grad = 0.14 + 0.86 * Math.pow(Math.max(0, fx / 1210), 1.2);
-              var th = FL[0] * grad * (0.62 + fr() * 0.5);
-              var tw = FL[2] * (1.15 + fr() * 0.55);
-              tongue(fx, 847, tw, th, th * (0.34 + fr() * 0.21), FL[1]);
-              fx += FL[2] * (0.8 + fr() * 0.35);
-            }
-          });
+          function flameField(tc, seedOff, fx0) {
+            [[500, "#b01a04", 46], [385, "#e83e06", 40], [255, "#ff7a14", 34], [140, "#ffba36", 28]].forEach(function (FL, li) {
+              var fr = rng(1000 + li * 77 + seedOff), fx = fx0;
+              while (fx < 1240) {
+                var grad = 0.14 + 0.86 * Math.pow(Math.max(0, fx / 1210), 1.2);
+                var th = FL[0] * grad * (0.62 + fr() * 0.5);
+                var tw = FL[2] * (1.15 + fr() * 0.55);
+                tongue(tc, fx, 847, tw, th, th * (0.34 + fr() * 0.21), FL[1]);
+                fx += FL[2] * (0.8 + fr() * 0.35);
+              }
+            });
+          }
+          flameField(x, 0, -30);
+          // 右端の大炎：1本だけ突出させる。層色を重ねて奥行きを出す（静止画側だけに描く）
+          tongue(x, 1090, 847, 150, 640, 640 * 0.44, "#e83e06");
+          tongue(x, 1114, 847, 104, 520, 520 * 0.44, "#ff7a14");
+          tongue(x, 1136, 847, 62, 380, 380 * 0.44, "#ffba36");
           // 風の流れ：上部〜中ほどを左→右へ抜ける細い弧
           var wr = rng(555);
           for (var wi = 0; wi < 14; wi++) {
@@ -3367,6 +3405,9 @@ window.TD_THEME = (function () {
             }
             x.stroke();
           }
+          // ゆらめき層（#bg2）：別シードで輪郭の違う炎だけを描く。本体と交互に透けることで炎が揺らめく。
+          // 座標の拡縮計算（IX/IY）は本体と共用し、描き直しはこのリサイズ時だけ
+          flameField(layer(cv2).c, 5000, -47);
         }
         if (TB.grid) {
           // 香港ネオンの床：画面下部の透視グリッド（サイバーグリッド）。静止画の一部としてリサイズ時に1回だけ描く
