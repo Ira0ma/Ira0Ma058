@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="e363131923">
+<meta name="build" content="7d74cc34d1">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -5115,7 +5115,8 @@ window.TD_THEME = (function () {
       book.hidden = false; show(i || 0);
       book.querySelector('[data-gl="next"]').focus();
     }
-    function close() { closeZoom(); closeSearch(); book.hidden = true; backStack = []; if (opener && opener.focus) opener.focus(); }
+    function close() { closeZoom(); closeSearch(); book.hidden = true; backStack = []; if (typeof shelfEl !== "undefined" && shelfEl && !shelfEl.hidden) renderShelf();  // 書斎に戻るときは棚を描き直して、しおり（最後に読んだ本）を反映する
+      if (opener && opener.focus) opener.focus(); }
     // 用語を光らせる（索引やダッシュボードの「?」から来たとき）
     function mark(name) { var el = spread.querySelector('.gb-term[data-term="' + name.replace(/"/g, '\\"') + '"]'); if (!el) return; el.classList.remove("hit"); void el.offsetWidth; el.classList.add("hit"); }
     // ダッシュボードの「?」ボタンなどから：用語名（または「ch:章の名前」）でそのページを開く
