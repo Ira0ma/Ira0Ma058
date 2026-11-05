@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="223a6369f7">
+<meta name="build" content="5780c1351f">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1121,6 +1121,14 @@ window.TD_THEME = (function () {
     else id = byDate(new Date());
   }
   document.documentElement.setAttribute("data-theme", id);
+  if (!q) {  // 自動のときだけ、日付が変わったら開き直してテーマを切り替える
+    setInterval(function () {
+      var m2 = "auto";
+      try { m2 = localStorage.getItem("td_theme") || "auto"; } catch (e) {}
+      if (m2 !== "auto") return;
+      if (byDate(new Date()) !== document.documentElement.getAttribute("data-theme")) location.reload();
+    }, 60000);
+  }
   return { mode: mode, id: id, byDate: byDate, NAMES: NAMES };
 })();
 </script>
@@ -5019,6 +5027,18 @@ window.TD_THEME = (function () {
     document.querySelector('[data-wx="hours"]').innerHTML = "";
     document.querySelector("[data-wx-main]").innerHTML = "";
   }
+  /* テーマの即時適用（ツール画面の設定から呼ばれる）：色・背景・折れ線を新しいテーマで描き直す */
+  window.TDThemeApply = function () {
+    var T = window.TD_THEME; if (!T) return;
+    var mode = "auto";
+    try { mode = localStorage.getItem("td_theme") || "auto"; } catch (e) {}
+    var id = mode === "auto" ? T.byDate(new Date()) : mode === "summer" ? "neon" : (T.NAMES.indexOf(mode) >= 0 ? mode : T.byDate(new Date()));
+    T.mode = mode; T.id = id;
+    document.documentElement.setAttribute("data-theme", id);
+    var pl = document.querySelector(".td-particles"); if (pl) pl.remove();  // 舞う飾りは開き直したときに切り替わる
+    bg.resize();
+    (window.__mkts || []).forEach(function (mk) { if (mk.draw) mk.draw(); });
+  };
   tickClock(); renderCal(); bg.start(); layout(); loadWeather(); loadPrices();
   eqHistory(); eqConnect(); setInterval(eqHistory, 2 * 60000); setInterval(eqPaint, 30000);
   if (loc.gps) locate(loadWeather, function () {});
