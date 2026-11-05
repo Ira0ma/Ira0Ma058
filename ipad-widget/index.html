@@ -89,7 +89,7 @@ html[data-theme="winter"] {
 html[data-theme="shippu"] {
   /* 疾風怒濤（利確の炎）：深い藍黒に金と炎の差し色。手動でのみ選べるテーマ（季節の自動切替には入らない）。
      背景は地獄の灼熱（左→右へ増える炎が強風で右へなびく静止画、THEME_BG.shippu の inferno）に、
-     別シードの炎を描いた #bg2 を重ねてゆらめきを出す。カードには炎の枠グローを付ける。
+     金色寄りの色票で描いた #bg2 を重ね、色のバランスがゆっくり呼吸するようにする。カードには炎の枠グローを付ける。
      炎がカード越しに透けて見えるよう --glass は他のテーマより透明にしてある。判定色は :root と同じ値 */
   --night: #07090f; --glass: rgba(9, 8, 12, 0.68); --glass-line: rgba(227, 184, 103, 0.30);
   --ink: #f5f2ec; --ink-2: rgba(245, 242, 236, 0.72); --ink-3: rgba(245, 242, 236, 0.48);
@@ -193,12 +193,18 @@ html[data-theme="neon"][data-club-light="b"] .td-floor-glow.fg-l { background: r
 html[data-theme="neon"][data-club-light="b"] .td-floor-glow.fg-r { background: radial-gradient(ellipse at 50% 100%, rgba(255, 43, 214, 0.50), rgba(255, 43, 214, 0) 70%); }
 html[data-theme="neon"][data-club-light="b"] .td-top-glow.tg-l { background: radial-gradient(ellipse at 50% 0%, rgba(0, 229, 255, 0.45), rgba(0, 229, 255, 0) 70%); }
 html[data-theme="neon"][data-club-light="b"] .td-top-glow.tg-r { background: radial-gradient(ellipse at 50% 0%, rgba(255, 43, 214, 0.45), rgba(255, 43, 214, 0) 70%); }
-/* 利確の炎：ゆらめき層。#bg の静止画のすぐ上に、別シードで描いた炎だけのキャンバス（#bg2）を重ね、
-   透明度だけをゆっくり往復させる。輪郭の違う2つの炎が入れ替わって揺らめいて見える。
+/* 利確の炎：色の呼吸層。#bg の静止画（深紅寄りの炎）のすぐ上に、金色寄りの色票で別シード描画した
+   炎のキャンバス（#bg2）を重ね、透明度を16秒周期でゆっくり往復させる。2つの色票が透け合う中間で
+   橙を通るため、赤→橙→金へ色のバランスがグラデーションのように移ろうだけで、点滅にはしない
+   （頂点付近は 30%〜70% をなだらかに保ち、長時間見ても目がチラつかないようにする）。
+   あわせて11秒周期で横 ±4px の揺れと 1.008 までの拡縮を重ね、炎全体が傾いて呼吸して見えるように
+   する。炎の絵はステージ端（1210）より外側（-47〜1240）まで描いてあるので、揺れの最悪条件でも
+   端に隙間は出ない。グラデーションの敷き（溶岩の帯など）は両層とも全面に描くため端でも途切れない。
    再描画はリサイズ時だけで、毎フレームの描き直しはしない（省電力では止めて薄く固定） */
 #bg2 { position: fixed; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; z-index: 0; }
-html[data-theme="shippu"] #bg2 { display: block; animation: td-flame-flicker 5s ease-in-out infinite alternate; }
-@keyframes td-flame-flicker { from { opacity: 0; } to { opacity: 0.55; } }
+html[data-theme="shippu"] #bg2 { display: block; animation: td-flame-breathe 16s ease-in-out infinite, td-flame-sway 11s ease-in-out infinite alternate; }
+@keyframes td-flame-breathe { 0% { opacity: 0; } 30% { opacity: 0.55; } 50% { opacity: 0.62; } 70% { opacity: 0.55; } 100% { opacity: 0; } }
+@keyframes td-flame-sway { from { transform: translate(-4px, 0) scale(1); } to { transform: translate(4px, 0) scale(1.008); } }
 html.lowpower #bg2 { animation: none; opacity: 0.30; }
 /* 安らぎのオーロラ：カーテン専用層。場面（星空・草原・ロッジ）は #bg に描き、カーテンだけを透明な2層に分ける。
    #bg4 = 位相0のカーテン、#bg3（包み #bg3w の中）= 位相1のカーテン。#bg3 は従来どおり透明度と位置
@@ -3427,8 +3433,8 @@ window.TD_THEME = (function () {
             tc.quadraticCurveTo(IX(bx + tw * 0.86 + lean * 0.35), IY(base - th * 0.48), IX(bx + tw), IY(base));
             tc.closePath(); tc.fill();
           }
-          function flameField(tc, seedOff, fx0) {
-            [[500, "#b01a04", 46], [385, "#e83e06", 40], [255, "#ff7a14", 34], [140, "#ffba36", 28]].forEach(function (FL, li) {
+          function flameField(tc, seedOff, fx0, pal) {
+            (pal || [[500, "#b01a04", 46], [385, "#e83e06", 40], [255, "#ff7a14", 34], [140, "#ffba36", 28]]).forEach(function (FL, li) {
               var fr = rng(1000 + li * 77 + seedOff), fx = fx0;
               while (fx < 1240) {
                 var grad = 0.14 + 0.86 * Math.pow(Math.max(0, fx / 1210), 1.2);
@@ -3456,9 +3462,19 @@ window.TD_THEME = (function () {
             }
             x.stroke();
           }
-          // ゆらめき層（#bg2）：別シードで輪郭の違う炎だけを描く。本体と交互に透けることで炎が揺らめく。
+          // 色の呼吸層（#bg2）：本体と同じ構図のまま、色票だけを金色寄りに替えて別シードで描く。
+          // 深紅寄りの本体と透け合う中間で橙を通るので、赤→橙→金へ色のバランスがゆっくり移ろう。
+          // 溶岩の帯と右端の大炎も金寄りの色で重ね、画面の下端と主役の炎も一緒に呼吸させる。
           // 座標の拡縮計算（IX/IY）は本体と共用し、描き直しはこのリサイズ時だけ
-          flameField(layer(cv2).c, 5000, -47);
+          var x2 = layer(cv2).c;
+          var ilv2 = x2.createLinearGradient(0, IY(731), 0, IY(841));
+          ilv2.addColorStop(0, "rgba(255,170,40,0)"); ilv2.addColorStop(0.7, "rgba(255,185,55,0.16)"); ilv2.addColorStop(1, "rgba(255,215,106,0.34)");
+          x2.fillStyle = ilv2; x2.fillRect(0, 0, w, h);
+          flameField(x2, 5000, -47, [[500, "#e8480c", 46], [385, "#ff8a1e", 40], [255, "#ffca3a", 34], [140, "#ffd76a", 28]]);
+          // 右端の大炎の金版：本体より少しだけ大きく・高く描き、透け合いで炎が育って見えるようにする
+          tongue(x2, 1082, 847, 156, 660, 660 * 0.44, "#ff8a1e");
+          tongue(x2, 1108, 847, 108, 545, 545 * 0.44, "#ffca3a");
+          tongue(x2, 1132, 847, 64, 400, 400 * 0.44, "#ffd76a");
         }
         if (TB.auroraScene) {
           // 安らぎのオーロラ：北の夜空の静止画。プラネタリウム風の星空と虹色のオーロラカーテン、夏の草原とホタル、
