@@ -200,12 +200,13 @@ html[data-theme="shippu"] #bg2 { display: block; animation: td-flame-flicker 5s 
 @keyframes td-flame-flicker { from { opacity: 0; } to { opacity: 0.55; } }
 html.lowpower #bg2 { animation: none; opacity: 0.30; }
 /* 安らぎのオーロラ：ゆらぎ層。#bg の静止画の上に、位相のずれたカーテンを描いた #bg3 を重ね、
-   透明度だけをゆっくり往復させる。星空・草原・ロッジは同じ絵なので二重には見えず、カーテンだけが揺れて見える。
+   透明度と横位置だけをゆっくり往復させる。星空・草原・ロッジは同じ絵なので二重には見えず、カーテンだけが揺れて見える。
+   横ドリフト（±5px）で端が空かないよう、キャンバスは画面より 16px 大きく敷く。
    再描画はリサイズ時だけで、毎フレームの描き直しはしない（省電力では止めて薄く固定） */
-#bg3 { position: fixed; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; z-index: 0; }
-html[data-theme="aurora"] #bg3 { display: block; animation: td-aurora-sway 11s ease-in-out infinite alternate; }
-@keyframes td-aurora-sway { from { opacity: 0; } to { opacity: 0.5; } }
-html.lowpower #bg3 { animation: none; opacity: 0.25; }
+#bg3 { position: fixed; left: -8px; top: -8px; width: calc(100% + 16px); height: calc(100% + 16px); display: none; pointer-events: none; z-index: 0; }
+html[data-theme="aurora"] #bg3 { display: block; animation: td-aurora-sway 8.5s ease-in-out infinite alternate; }
+@keyframes td-aurora-sway { from { opacity: 0; transform: translateX(-5px); } to { opacity: 0.8; transform: translateX(5px); } }
+html.lowpower #bg3 { animation: none; opacity: 0.30; }
 /* 利確の炎：カードの炎仕様。炎に照らされたような枠のグロー（判断・判定の色には使わない）。
    土台の影と上端のハイライトは基本デザインの値をそのまま残す */
 html[data-theme="shippu"] .card {
@@ -1075,14 +1076,16 @@ html:not(.beginner) .step-note { display: none; }
   font: inherit; font-size: 12px; font-weight: 700; color: var(--gold); background: rgba(var(--panel-rgb),.85); border: 1px solid rgba(var(--gold-rgb),.5); border-radius: 999px; padding: 3px 11px; line-height: 1.4; cursor: pointer;
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 #layout-toggle:hover, #layout-toggle:focus-visible { background: var(--gold); color: var(--on-accent); outline: none; }
-.dk-dock { position: fixed; z-index: 30; left: calc(env(safe-area-inset-left, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 4px); display: flex; gap: 8px; }
+.dk-dock { position: fixed; z-index: 30; left: calc(env(safe-area-inset-left, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 4px); display: flex; gap: 7px; }
 .dk-dock #layout-toggle { position: static; }
 #tools-toggle, .dk-dock .dk-btn { font: inherit; font-size: 12px; font-weight: 700; color: var(--gold); background: rgba(var(--panel-rgb),.85); border: 1px solid rgba(var(--gold-rgb),.5); border-radius: 999px; padding: 3px 11px; line-height: 1.4; cursor: pointer; }
 #tools-toggle:hover, #tools-toggle:focus-visible, .dk-dock .dk-btn:hover, .dk-dock .dk-btn:focus-visible { background: var(--gold); color: var(--on-accent); outline: none; }
-@media (pointer: coarse) { .dk-dock #layout-toggle, #tools-toggle, .dk-dock .dk-btn { min-height: 36px; padding: 6px 14px; } }
+@media (pointer: coarse) { .dk-dock #layout-toggle, #tools-toggle, .dk-dock .dk-btn { min-height: 36px; padding: 6px 12px; } }
 .dk-theme-btn { position: fixed; z-index: 30; right: calc(env(safe-area-inset-right, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 4px); font: inherit; font-size: 12px; font-weight: 700; color: var(--gold); background: rgba(var(--panel-rgb),.85); border: 1px solid rgba(var(--gold-rgb),.5); border-radius: 999px; padding: 3px 11px; line-height: 1.4; cursor: pointer; }
 .dk-theme-btn:hover, .dk-theme-btn:focus-visible { background: var(--gold); color: var(--on-accent); outline: none; }
 @media (pointer: coarse) { .dk-theme-btn { min-height: 36px; padding: 6px 14px; } }
+/* 狭い画面（iPhone SE級・縦375px）：ドックは5ボタン化（2026-11-06）で幅が増えたため、詰めて折り返し、右下のテーマボタンと重ならないようにする */
+@media (max-width: 640px) { .dk-dock { gap: 4px; left: calc(env(safe-area-inset-left, 0px) + 6px); flex-wrap: wrap; max-width: calc(100vw - 176px); } .dk-dock #layout-toggle, #tools-toggle, .dk-dock .dk-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; } .dk-theme-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; right: calc(env(safe-area-inset-right, 0px) + 6px); max-width: 164px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
 .dk-theme-pop { position: fixed; z-index: 60; right: calc(env(safe-area-inset-right, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 48px); width: 228px; background: rgba(var(--panel-rgb),.97); border: 1px solid rgba(var(--gold-rgb),.55); border-radius: 14px; padding: 8px; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
 .dk-theme-pop h4 { margin: 2px 6px 6px; font-size: 11px; color: var(--ink-3); font-weight: 700; letter-spacing: .04em; }
 .dk-theme-pop button { display: flex; width: 100%; align-items: center; gap: 8px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); background: none; border: 0; border-radius: 9px; padding: 7px 8px; cursor: pointer; text-align: left; }
@@ -1513,13 +1516,13 @@ window.TD_THEME = (function () {
   };
   var dock = document.createElement("div"); dock.className = "dk-dock";
   var toolsBtn = document.createElement("button"); toolsBtn.type = "button"; toolsBtn.id = "tools-toggle"; toolsBtn.innerHTML = "🧰 ツール";
-  toolsBtn.title = "資金管理・取引前チェック・日誌・シグナル履歴・市場時間・データ状態・設定";
+  toolsBtn.title = "資金管理・取引前チェック・日誌・トレード収支・家計簿・シグナル履歴・市場時間・データ状態・設定";
   toolsBtn.addEventListener("click", function () { openTools("", toolsBtn); });
-  // A：日誌・収支も1タップで（ドックは「見る順番・ツール・日誌・収支」の4つまで。これ以上は増やさない）
+  // A：日誌・収支も1タップで。当初はドックを「見る順番・ツール・日誌・収支」の4つまでと決めていたが、2026-11-06に収支→トレード収支へ改名し、家計簿を足して5つにすることを決定した
   var dockBtn = function (id, html, title, tab) { var b = document.createElement("button"); b.type = "button"; b.id = id; b.className = "dk-btn"; b.innerHTML = html; b.title = title; b.addEventListener("click", function () { openTools(tab, b); }); return b; };
-  var jnBtn = dockBtn("journal-toggle", "📝 日誌", "取引の記録を入れる・一覧", "journal"), plBtn = dockBtn("pnl-toggle", "📅 収支", "日ごとの確定損益・入出金のカレンダーと、週・月・年のまとめ", "pnl");
-  paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn); dock.appendChild(jnBtn); dock.appendChild(plBtn); document.body.appendChild(dock);
-  /* theme switch (plan A: a button at the bottom-right with a list). The dock stays at four buttons by design, so the theme lives on its own at the right. Same setting as the tools screen (td_theme). */
+  var jnBtn = dockBtn("journal-toggle", "📝 日誌", "取引の記録を入れる・一覧", "journal"), plBtn = dockBtn("pnl-toggle", "📅 トレード収支", "日ごとの確定損益・入出金のカレンダーと、週・月・年のまとめ", "pnl"), kbBtn = dockBtn("kakeibo-toggle", "🧾 家計簿", "家の収入と支出を月ごとに記録（この端末の中だけに保存）", "kakeibo");
+  paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn); dock.appendChild(jnBtn); dock.appendChild(plBtn); dock.appendChild(kbBtn); document.body.appendChild(dock);
+  /* theme switch (plan A: a button at the bottom-right with a list). The dock holds the five main buttons (four until 2026-11-06), so the theme lives on its own at the right. Same setting as the tools screen (td_theme). */
   var THEME_LABELS = [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"], ["shippu", "利確の炎🔥"], ["aurora", "🌌 安らぎのオーロラ"]];
   var THEME_NAMES = { current: "基本デザイン", neon: "アゲアゲ⭐︎ネオン", spring: "春", summer: "夏", autumn: "秋", xmas: "クリスマス", newyear: "正月", winter: "冬", shippu: "利確の炎🔥", aurora: "安らぎのオーロラ" };
   var themeModeNow = function () { try { return localStorage.getItem("td_theme") || "auto"; } catch (e) { return "auto"; } };
@@ -3467,25 +3470,36 @@ window.TD_THEME = (function () {
             var sky = tc.createLinearGradient(0, AY(0), 0, AY(841));
             sky.addColorStop(0, "#03050d"); sky.addColorStop(0.66, "#0b1122"); sky.addColorStop(1, "#0a0f1c");
             tc.fillStyle = sky; tc.fillRect(0, 0, w, h);
-            // 天の川：斜めの帯に微光の点を集める（中心線 y = 20 + (x/1210)*330 + 24*sin(x/190)）
+            // 天の川：まず帯そのものを柔らかい光の重なりで敷き、その上に微光の点を集める（中心線 y = 20 + (x/1210)*330 + 24*sin(x/190)）
+            var mwb = rng(20239);
+            for (i2 = 0; i2 < 18; i2++) {
+              var bx = 60 + (i2 + 0.5) * (1090 / 18) + (mwb() - 0.5) * 30;
+              var by = 20 + (bx / 1210) * 330 + 24 * Math.sin(bx / 190) + (mwb() - 0.5) * 22;
+              var br = Math.max(10, (90 + mwb() * 70) * asc);
+              var mbg = tc.createRadialGradient(AX(bx), AY(by), 0, AX(bx), AY(by), br);
+              mbg.addColorStop(0, "rgba(200,212,244," + (0.05 + mwb() * 0.04).toFixed(3) + ")"); mbg.addColorStop(1, "rgba(200,212,244,0)");
+              tc.fillStyle = mbg; tc.beginPath(); tc.arc(AX(bx), AY(by), br, 0, 7); tc.fill();
+            }
             var mw = rng(20240);
-            for (i2 = 0; i2 < 700; i2++) {
+            for (i2 = 0; i2 < 1500; i2++) {
               var mx = 60 + mw() * 1090;
               var my = 20 + (mx / 1210) * 330 + 24 * Math.sin(mx / 190) + (mw() + mw() + mw() - 1.5) * 26;
               var ms = Math.max(0.6, (0.5 + mw() * 0.9) * asc);
-              tc.fillStyle = "rgba(210,218,244," + (0.05 + mw() * 0.11).toFixed(3) + ")";
+              tc.fillStyle = "rgba(210,218,244," + (0.10 + mw() * 0.22).toFixed(3) + ")";
               tc.fillRect(AX(mx), AY(my), ms, ms);
             }
-            // 星：白を基調に、温色と寒色を混ぜる
+            // 星：白を基調に、温色と寒色を混ぜる。数を増やし、明るい星も混ぜて満天らしくする
             var sr = rng(70707), SCOLS = ["255,255,255", "255,255,255", "255,255,255", "255,244,224", "206,224,255"];
-            for (i2 = 0; i2 < 480; i2++) {
-              tc.fillStyle = "rgba(" + SCOLS[(sr() * SCOLS.length) | 0] + "," + (0.15 + sr() * 0.8).toFixed(3) + ")";
-              tc.beginPath(); tc.arc(AX(sr() * 1210), AY(sr() * 680), Math.max(0.5, (0.6 + sr() * 1.0) * asc), 0, 7); tc.fill();
+            for (i2 = 0; i2 < 950; i2++) {
+              var ss = 0.8 + sr() * 1.4;
+              if (sr() < 0.06) ss = 2.2 + sr() * 0.4;  // ひと握りだけ大きな星
+              tc.fillStyle = "rgba(" + SCOLS[(sr() * SCOLS.length) | 0] + "," + (0.35 + sr() * 0.65).toFixed(3) + ")";
+              tc.beginPath(); tc.arc(AX(sr() * 1210), AY(sr() * 680), Math.max(0.5, ss * asc), 0, 7); tc.fill();
             }
             // 瞬き：小さな十字
             var twk = rng(70708);
             tc.strokeStyle = "rgba(255,255,255,.5)"; tc.lineWidth = 1;
-            for (i2 = 0; i2 < 10; i2++) {
+            for (i2 = 0; i2 < 16; i2++) {
               var tx = 20 + twk() * 1170, ty = 10 + twk() * 350, tl = 7 * asc;
               tc.beginPath();
               tc.moveTo(AX(tx) - tl, AY(ty)); tc.lineTo(AX(tx) + tl, AY(ty));
@@ -3520,9 +3534,9 @@ window.TD_THEME = (function () {
               for (xx = -20; xx <= 1250; xx += 14) { if (xx === -20) tc.moveTo(AX(xx), AY(yc(xx))); else tc.lineTo(AX(xx), AY(yc(xx))); }
               tc.stroke();
             }
-            curtain(64 + ph * 6, 42, 300 + ph * 77, 350, 0.30, 0.85, 0);
-            curtain(150 - ph * 8, 58, 377 + ph * 77, 300, 0.22, 0.68, 0.10);
-            curtain(24 + ph * 4, 26, 454 + ph * 77, 230, 0.18, 0.55, 0.18);
+            curtain(64 + ph * 18, 42 * (1 + ph * 0.16), 300 + ph * 131, 350, 0.30, 0.85, 0);
+            curtain(150 - ph * 22, 58 * (1 + ph * 0.10), 377 + ph * 131, 300, 0.22, 0.68, 0.10);
+            curtain(24 + ph * 14, 26 * (1 + ph * 0.12), 454 + ph * 131, 230, 0.18, 0.55, 0.18);
             // 遠景の色ベール：大きな放射グラデーションで空に色の気配を敷く
             [[0.20, 0.08, "92,255,171", 0.10], [0.75, 0.12, "168,104,255", 0.10], [0.55, 0.0, "96,150,255", 0.08]].forEach(function (v) {
               var vg = tc.createRadialGradient(AX(1210 * v[0]), AY(841 * v[1]), 0, AX(1210 * v[0]), AY(841 * v[1]), Math.max(w, h) * 0.55);
