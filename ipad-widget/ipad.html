@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="0f815e8b25">
+<meta name="build" content="92409e6373">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -259,18 +259,18 @@ html.lowpower #bg3 { animation: none; opacity: 0; }
    にじみ・スポットライトを強めに描いた透明な重ね絵を載せ、クラブの照明がゆっくり満ち引きする
    ように見せる。表示とアニメーションはテーマ属性だけで切り替わるため、他のテーマへ移ると
    層ごと隠れてアニメーションも外れる（炎・オーロラと同じ作法）。
-   呼吸（td-neon-breathe、8秒）：透明度を 0.12〜0.80 の範囲で ease-in-out の往復。最小でも 0 に
+   呼吸（td-neon-breathe、8秒）：透明度を 0.10〜0.92 の範囲で ease-in-out の往復。最小でも 0 に
    せず、頂点・谷ともなだらかに往復させるので、光が付いたり消えたりする点滅にはならず、
    長時間見ても目がチラつかない（炎の呼吸 12秒・オーロラの呼吸 20.4秒と同じ一族の緩さ）。
-   ゆらめき（td-neon-drift、11秒）：横 ±10px・縦 ∓4px だけ位置を流す。呼吸とは周期をずらし、
+   ゆらめき（td-neon-drift、11秒）：横 ±14px・縦 ∓6px だけ位置を流す。呼吸とは周期をずらし、
    単調な往復に見せない。基本の #bg4 は画面より片側 8px 大きく敷いてある（オーロラのカーテン用）が、
-   横 ±10px の移動には足りないため、ネオンのときだけ下のルールで片側 14px に広げる（オーロラの
-   基本寸法は変えない）。絵も全面に描くため、揺れの端（横 10px・縦 4px）でも余白（14px）の範囲に
-   収まり、横 4px・縦 10px の猶予を残して端が空かない。
+   横 ±14px の移動には足りないため、ネオンのときだけ下のルールで片側 20px に広げる（オーロラの
+   基本寸法は変えない）。絵も全面に描くため、揺れの端（横 14px・縦 6px）でも余白（20px）の範囲に
+   収まり、横 6px・縦 14px の猶予を残して端が空かない。
    拡縮は使わない。再描画はリサイズ時だけで、動くのは透明度と位置のみ（合成だけ） */
-html[data-theme="neon"] #bg4 { display: block; left: -14px; top: -14px; width: calc(100% + 28px); height: calc(100% + 28px); animation: td-neon-breathe 8s ease-in-out infinite alternate, td-neon-drift 11s ease-in-out infinite alternate; }
-@keyframes td-neon-breathe { from { opacity: 0.12; } to { opacity: 0.80; } }
-@keyframes td-neon-drift { from { transform: translate(-10px, 4px); } to { transform: translate(10px, -4px); } }
+html[data-theme="neon"] #bg4 { display: block; left: -20px; top: -20px; width: calc(100% + 40px); height: calc(100% + 40px); animation: td-neon-breathe 8s ease-in-out infinite alternate, td-neon-drift 11s ease-in-out infinite alternate; }
+@keyframes td-neon-breathe { from { opacity: 0.10; } to { opacity: 0.92; } }
+@keyframes td-neon-drift { from { transform: translate(-14px, 6px); } to { transform: translate(14px, -6px); } }
 /* 省電力：全体ルール（html.lowpower *）でアニメーションは止まる。静止時の濃さはオーロラ用の
    0.8 では強すぎるため、ネオンでは薄く固定する */
 html[data-theme="neon"].lowpower #bg4 { opacity: 0.30; }
@@ -3511,7 +3511,7 @@ window.TD_THEME = (function () {
     var cv = document.getElementById("bg"), cv2 = document.getElementById("bg2"), cv3 = document.getElementById("bg3"), cv4 = document.getElementById("bg4"), c, w, h, k = 1, parts = [], dot = null;
     function layer(el) { el.width = Math.round(w * k); el.height = Math.round(h * k); var x = el.getContext("2d"); x.setTransform(k, 0, 0, k, 0, 0); return { cv: el, c: x }; }
     var THEME_BG = {
-      neon: { base: "#070312", dot: "200,190,255", grid: 1, glows: [["rgba(255,45,150,.26)", 0.12, 0.02, 0.55], ["rgba(130,70,255,.27)", 0.9, 0.03, 0.55], ["rgba(20,180,255,.17)", 0.5, 1.02, 0.5]], glowsHi: [["rgba(255,45,150,.58)", 0.12, 0.02, 0.66], ["rgba(130,70,255,.60)", 0.9, 0.03, 0.66], ["rgba(20,180,255,.40)", 0.5, 1.02, 0.60]] },
+      neon: { base: "#070312", dot: "200,190,255", grid: 1, glows: [["rgba(255,45,150,.26)", 0.12, 0.02, 0.55], ["rgba(130,70,255,.27)", 0.9, 0.03, 0.55], ["rgba(20,180,255,.17)", 0.5, 1.02, 0.5]], glowsHi: [["rgba(255,45,150,.72)", 0.12, 0.02, 0.70], ["rgba(130,70,255,.74)", 0.9, 0.03, 0.70], ["rgba(20,180,255,.52)", 0.5, 1.02, 0.64]] },
       spring: { base: "#0a080a", dot: "255,190,205", glows: [["rgba(255,150,180,.14)", 0.15, 0.05, 0.55], ["rgba(150,230,160,.08)", 0.9, 0.9, 0.5], ["rgba(255,200,130,.08)", 0.85, 0.05, 0.45]] },
       autumn: { base: "#0a0705", dot: "255,195,120", glows: [["rgba(255,140,60,.15)", 0.15, 0.05, 0.55], ["rgba(200,70,40,.12)", 0.9, 0.1, 0.5], ["rgba(255,190,80,.08)", 0.8, 0.95, 0.5]] },
       xmas: { base: "#050907", dot: "255,240,210", glows: [["rgba(240,200,90,.12)", 0.5, 0, 0.55], ["rgba(255,90,90,.10)", 0.92, 0.05, 0.5], ["rgba(80,240,130,.10)", 0.08, 0.95, 0.5]] },
@@ -3979,7 +3979,7 @@ window.TD_THEME = (function () {
           // 呼吸する光の層（#bg4）：本体と同じにじみを強く・広くし、スポットライトの円錐と
           // 地平線の帯も強めに敷いた透明な重ね絵。本体（#bg）の絵（グリッド・タイル・レーザー・
           // ミラーボール）は描かず、光のにじみだけを重ねる。全面に描くので、CSS のゆらめき
-          // （横 ±10px・縦 ∓4px）で層がずれても端が空かない（ネオン時は CSS で #bg4 を片側 14px
+          // （横 ±14px・縦 ∓6px）で層がずれても端が空かない（ネオン時は CSS で #bg4 を片側 20px
           // 大きく敷く。基本の片側 8px はオーロラ用の寸法で変えていない）。
           // 描き直しはこのリサイズ時だけで、動きは CSS の透明度と位置が担う
           var x4 = layer(cv4).c;
@@ -3991,11 +3991,11 @@ window.TD_THEME = (function () {
           [[0.30, "178,107,255"], [0.72, "0,229,255"]].forEach(function (sp) {
             var ax4 = w * sp[0], bw4 = w * 0.17, by4 = h * 0.65;
             var cg4 = x4.createLinearGradient(0, 0, 0, by4);
-            cg4.addColorStop(0, "rgba(" + sp[1] + ",0.28)"); cg4.addColorStop(1, "rgba(" + sp[1] + ",0)");
+            cg4.addColorStop(0, "rgba(" + sp[1] + ",0.36)"); cg4.addColorStop(1, "rgba(" + sp[1] + ",0)");
             x4.fillStyle = cg4; x4.beginPath(); x4.moveTo(ax4, 0); x4.lineTo(ax4 - bw4, by4); x4.lineTo(ax4 + bw4, by4); x4.closePath(); x4.fill();
           });
           var hb4 = x4.createLinearGradient(0, h * 0.68, 0, h * 0.92);
-          hb4.addColorStop(0, "rgba(140,130,255,0)"); hb4.addColorStop(0.5, "rgba(140,130,255,.22)"); hb4.addColorStop(1, "rgba(140,130,255,0)");
+          hb4.addColorStop(0, "rgba(140,130,255,0)"); hb4.addColorStop(0.5, "rgba(140,130,255,.28)"); hb4.addColorStop(1, "rgba(140,130,255,0)");
           x4.fillStyle = hb4; x4.fillRect(0, h * 0.68, w, h * 0.24);
         }
         dot = document.createElement("canvas"); dot.width = dot.height = 64;
