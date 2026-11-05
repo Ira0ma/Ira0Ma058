@@ -86,6 +86,18 @@ html[data-theme="winter"] {
   --head-points: #96dcff; --head-weather: #beebff; --head-ind: #aac8ff; --head-cal: #c8dcff; --head-x: #8ce1ff; --head-books: #d2e6ff;
   --strip-bg: radial-gradient(circle at 4px 50%, #96dcff 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 30px 50%, #e6f5ff 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 56px 50%, #aabefb 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 82px 50%, #c8ebff 0 2.8px, rgba(0,0,0,0) 3.4px); --strip-size: 104px 7px;
 }
+html[data-theme="shippu"] {
+  /* 疾風怒濤：深い藍黒に金と炎の差し色。手動でのみ選べるテーマ（季節の自動切替には入らない）。
+     背景は地獄の灼熱（左→右へ増える炎が強風で右へなびく静止画、THEME_BG.shippu の inferno）。
+     炎がカード越しに透けて見えるよう --glass は他のテーマより透明にしてある。判定色は :root と同じ値 */
+  --night: #07090f; --glass: rgba(9, 8, 12, 0.68); --glass-line: rgba(227, 184, 103, 0.30);
+  --ink: #f5f2ec; --ink-2: rgba(245, 242, 236, 0.72); --ink-3: rgba(245, 242, 236, 0.48);
+  --gold: #e3b867; --gold-rgb: 227, 184, 103; --gold-soft: rgba(227, 184, 103, 0.22); --gold-deep: #a37a2c;
+  --on-accent: #14100a; --panel-rgb: 13, 15, 22;
+  --up-red: #ff6a5c; --up-green: #43d27f; --star: #f0573f;
+  --head-points: #e3b867; --head-weather: #ff6a4d; --head-ind: #e3b867; --head-cal: #ff6a4d; --head-x: #ff6a4d; --head-books: #e3b867;
+  --strip-bg: linear-gradient(90deg, #ff4640, #ff8a3c, #ffc400); --strip-size: 100% 8px;
+}
 /* カード上端の装飾（帯・点の並び）。current では出さない */
 .card::before { content: ""; position: absolute; left: 16px; right: 16px; top: 4px; height: 8px; z-index: 3; pointer-events: none; background-repeat: repeat-x; background-position: 0 center; display: none; }
 html[data-theme]:not([data-theme="current"]) .card::before { display: block; background-image: var(--strip-bg); background-size: var(--strip-size); }
@@ -1264,10 +1276,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 </div>
 
 <script>
-/* テーマ判定：保存した設定 td_theme（auto/current/neon/spring/summer/autumn/xmas/newyear/winter）と日付から決める。
-   ?theme= は確認用の一時上書き（保存しない）。current = 基本デザイン。 */
+/* テーマ判定：保存した設定 td_theme（auto/current/neon/spring/summer/autumn/xmas/newyear/winter/shippu）と日付から決める。
+   ?theme= は確認用の一時上書き（保存しない）。current = 基本デザイン。shippu = 疾風怒濤（手動のみ、季節の自動切替には入らない）。 */
 window.TD_THEME = (function () {
-  var NAMES = ["current", "neon", "spring", "autumn", "xmas", "newyear", "winter"];
+  var NAMES = ["current", "neon", "spring", "autumn", "xmas", "newyear", "winter", "shippu"];
   function byDate(d) {
     var m = d.getMonth() + 1, day = d.getDate();
     if ((m === 12 && day >= 29) || (m === 1 && day <= 3)) return "newyear";
@@ -1311,7 +1323,8 @@ window.TD_THEME = (function () {
     autumn: { cols: ["#e87830", "#cd5028", "#f2a246", "#b84a28"], petal: true },
     xmas: { cols: ["#ffffff"], snow: true },
     newyear: { cols: ["#ffd782", "#fff0d2", "#ffb46e"], dust: true },
-    winter: { cols: ["#ffffff"], snow: true }
+    winter: { cols: ["#ffffff"], snow: true },
+    shippu: { cols: ["#ffb03a", "#ff7a3c", "#ffd76a"], spark: true }
   };
   var K = KIND[id]; if (!K) return;
   var layer = document.createElement("div");
@@ -1449,8 +1462,8 @@ window.TD_THEME = (function () {
   var jnBtn = dockBtn("journal-toggle", "📝 日誌", "取引の記録を入れる・一覧", "journal"), plBtn = dockBtn("pnl-toggle", "📅 収支", "日ごとの確定損益・入出金のカレンダーと、週・月・年のまとめ", "pnl");
   paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn); dock.appendChild(jnBtn); dock.appendChild(plBtn); document.body.appendChild(dock);
   /* theme switch (plan A: a button at the bottom-right with a list). The dock stays at four buttons by design, so the theme lives on its own at the right. Same setting as the tools screen (td_theme). */
-  var THEME_LABELS = [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"]];
-  var THEME_NAMES = { current: "基本デザイン", neon: "アゲアゲ⭐︎ネオン", spring: "春", summer: "夏", autumn: "秋", xmas: "クリスマス", newyear: "正月", winter: "冬" };
+  var THEME_LABELS = [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"], ["shippu", "利確の炎🔥"]];
+  var THEME_NAMES = { current: "基本デザイン", neon: "アゲアゲ⭐︎ネオン", spring: "春", summer: "夏", autumn: "秋", xmas: "クリスマス", newyear: "正月", winter: "冬", shippu: "利確の炎🔥" };
   var themeModeNow = function () { try { return localStorage.getItem("td_theme") || "auto"; } catch (e) { return "auto"; } };
   var themeBtn = document.createElement("button"); themeBtn.type = "button"; themeBtn.className = "dk-theme-btn"; themeBtn.id = "theme-toggle";
   themeBtn.title = "ホーム画面のテーマを切り替えます（ツール画面の設定と同じ）";
@@ -3267,7 +3280,8 @@ window.TD_THEME = (function () {
       autumn: { base: "#0a0705", dot: "255,195,120", glows: [["rgba(255,140,60,.15)", 0.15, 0.05, 0.55], ["rgba(200,70,40,.12)", 0.9, 0.1, 0.5], ["rgba(255,190,80,.08)", 0.8, 0.95, 0.5]] },
       xmas: { base: "#050907", dot: "255,240,210", glows: [["rgba(240,200,90,.12)", 0.5, 0, 0.55], ["rgba(255,90,90,.10)", 0.92, 0.05, 0.5], ["rgba(80,240,130,.10)", 0.08, 0.95, 0.5]] },
       newyear: { base: "#090606", dot: "255,220,150", glows: [["rgba(245,200,95,.14)", 0.15, 0.05, 0.55], ["rgba(255,100,95,.10)", 0.9, 0.08, 0.5], ["rgba(255,170,90,.08)", 0.85, 0.95, 0.5]] },
-      winter: { base: "#06090e", dot: "205,232,255", glows: [["rgba(140,200,255,.13)", 0.15, 0.05, 0.55], ["rgba(90,130,255,.12)", 0.9, 0.05, 0.5], ["rgba(120,220,255,.08)", 0.85, 0.95, 0.5]] }
+      winter: { base: "#06090e", dot: "205,232,255", glows: [["rgba(140,200,255,.13)", 0.15, 0.05, 0.55], ["rgba(90,130,255,.12)", 0.9, 0.05, 0.5], ["rgba(120,220,255,.08)", 0.85, 0.95, 0.5]] },
+      shippu: { inferno: 1, base: "#0a0202", dot: "255,176,58", glows: [] }
     };
     function resize() {
       k = Math.min(window.devicePixelRatio || 1, 2);
@@ -3287,6 +3301,54 @@ window.TD_THEME = (function () {
           gx.addColorStop(0, gl[0]); gx.addColorStop(1, "rgba(0,0,0,0)");
           x.fillStyle = gx; x.fillRect(0, 0, w, h);
         });
+        if (TB.inferno) {
+          // 疾風怒濤：地獄の灼熱。自然な涙滴形の炎が強風で右へなびき、左→右で量が増える。静止画の一部として
+          // リサイズ時に1回だけ描く（アニメーションなし）。座標はステージ（1210x841）基準にそろえる
+          var isc = Math.min(w / 1210, h / 841), iox = (w - 1210 * isc) / 2, ioy = (h - 841 * isc) / 2;
+          function IX(sx) { return iox + sx * isc; }
+          function IY(sy) { return ioy + sy * isc; }
+          var ig = x.createLinearGradient(0, 0, 0, h);
+          ig.addColorStop(0, "#0a0202"); ig.addColorStop(1, "#420804");
+          x.fillStyle = ig; x.fillRect(0, 0, w, h);
+          // 底のグロー：右ほど強い
+          var igl = x.createLinearGradient(0, IY(461), 0, IY(841));
+          igl.addColorStop(0, "rgba(255,100,15,0)"); igl.addColorStop(1, "rgba(255,100,15,0.12)");
+          x.fillStyle = igl; x.fillRect(0, 0, w, h);
+          var igr = x.createRadialGradient(IX(1050), IY(841), 0, IX(1050), IY(841), 700 * isc);
+          igr.addColorStop(0, "rgba(255,120,25,0.16)"); igr.addColorStop(1, "rgba(255,120,25,0)");
+          x.fillStyle = igr; x.fillRect(0, 0, w, h);
+          // 炎の層（奥→手前）。舌は根元が太く、先端が風で右へ大きく倒れる涙滴形
+          function tongue(bx, base, tw, th, lean, col) {
+            var tipX = bx + tw * 0.5 + lean, tipY = base - th;
+            x.fillStyle = col; x.beginPath();
+            x.moveTo(IX(bx), IY(base));
+            x.quadraticCurveTo(IX(bx + tw * 0.06), IY(base - th * 0.62), IX(tipX), IY(tipY));
+            x.quadraticCurveTo(IX(bx + tw * 0.86 + lean * 0.35), IY(base - th * 0.48), IX(bx + tw), IY(base));
+            x.closePath(); x.fill();
+          }
+          [[500, "#b01a04", 46], [385, "#e83e06", 40], [255, "#ff7a14", 34], [140, "#ffba36", 28]].forEach(function (FL, li) {
+            var fr = rng(1000 + li * 77), fx = -30;
+            while (fx < 1240) {
+              var grad = 0.14 + 0.86 * Math.pow(Math.max(0, fx / 1210), 1.2);
+              var th = FL[0] * grad * (0.62 + fr() * 0.5);
+              var tw = FL[2] * (1.15 + fr() * 0.55);
+              tongue(fx, 847, tw, th, th * (0.34 + fr() * 0.21), FL[1]);
+              fx += FL[2] * (0.8 + fr() * 0.35);
+            }
+          });
+          // 風の流れ：上部〜中ほどを左→右へ抜ける細い弧
+          var wr = rng(555);
+          for (var wi = 0; wi < 14; wi++) {
+            var wx0 = -40 + wr() * 900, wy0 = 120 + wr() * 580, wln = 90 + wr() * 170;
+            x.strokeStyle = "rgba(255,200,130," + (0.05 + wr() * 0.05).toFixed(3) + ")"; x.lineWidth = 1;
+            x.beginPath();
+            for (var wp = 0; wp <= 12; wp++) {
+              var wpx = wx0 + wp * wln / 12, wpy = wy0 - 14 * Math.sin(wp / 12 * Math.PI) + wp * 2.2;
+              if (wp === 0) x.moveTo(IX(wpx), IY(wpy)); else x.lineTo(IX(wpx), IY(wpy));
+            }
+            x.stroke();
+          }
+        }
         if (TB.grid) {
           // 香港ネオンの床：画面下部の透視グリッド（サイバーグリッド）。静止画の一部としてリサイズ時に1回だけ描く
           var hz = h * 0.80, vx = w * 0.5, gi, gt, gy;

@@ -721,7 +721,7 @@
     settings: function () {
       var nt = D.notify(), low = document.documentElement.classList.contains("lowpower");
       var themeNow = "auto"; try { themeNow = LS.getItem("td_theme") || "auto"; } catch (e) {}
-      body.innerHTML = '<h3>テーマ（見た目）</h3>' + select("st-theme", "ホーム画面のテーマ", [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"]], themeNow) +
+      body.innerHTML = '<h3>テーマ（見た目）</h3>' + select("st-theme", "ホーム画面のテーマ", [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"], ["shippu", "利確の炎🔥"]], themeNow) +
         '<p class="note">季節の割り当て：春 3〜5月／夏 6〜8月／秋 9〜11月／クリスマス 12月／正月 12月29日〜1月3日／冬 1〜2月。テーマはこの端末のブラウザに保存されます（端末ごとに別です）。舞う飾り（桜・落ち葉・雪・金粉）は、ページを開き直すと切り替わります。</p>' +
         '<h3>省電力</h3><label class="chk"><input type="checkbox" id="st-low"' + (low ? " checked" : "") + '><span>省電力モード（背景の動き・光・ぼかし・点滅を止めます。iPadの発熱や電池の消費を抑えたいときに）</span></label>' +
         '<h3>通知について</h3><div class="out">' + esc("端末の通知：" + ({ granted: "許可済み", denied: "拒否（端末の設定から変更）", default: "未設定（通知のボタンを押したときに確認します）", unsupported: "この環境では使えません" }[nt.permission] || nt.permission) +
