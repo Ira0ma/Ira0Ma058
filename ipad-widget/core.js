@@ -534,7 +534,8 @@
       /^(gold|usdjpy|btc)_(tf|levels|trend|fvg|ma|hidden_lv|ev_filter|dir|tv_layout|tv_sc_name|chart_src)$/, /^tv_via_shortcut$/],
     notify: [/^desk_sound$/, /^desk_notify$/, /^(gold|usdjpy|btc)_alerts$/, /^td-notify-v1$/],
     trading: [/^(gold|usdjpy|btc)_(capital|risk_pct|lot_manual|sl_mult|rr|auto_risk|broker|contract|tp_basis|tp_basis_v|checks|xm_.*|xs_.*)$/, /^pt-v1$/,
-      /^td-journal-v1$/, /^td-daily-v1$/, /^td-signals-v1$/, /^td-checks-v1$/, /^td-risk-v1$/, /^td-kakeibo-v1$/]
+      /^td-journal-v1$/, /^td-daily-v1$/, /^td-signals-v1$/, /^td-checks-v1$/, /^td-risk-v1$/,
+      /^td_kakeibo_v1$/, /^td_kakeibo_loans_v1$/, /^td_kakeibo_assets_v1$/]
   };
   var CACHE = [/_auto_cache_final$/, /^quote-/];
   function groupOf(k) {

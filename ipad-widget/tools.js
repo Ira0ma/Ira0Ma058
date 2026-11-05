@@ -177,14 +177,21 @@
   function dailyIn() { var d = get(DAILY, {}); return d && typeof d === "object" && !Array.isArray(d) ? d : {}; }
   // [kb-pure-begin] 家計簿の保存読み出しと集計（テストで切り出して検証できるよう、この範囲は get と定数だけに依存する形に保つ）
   var KAKEIBO = "td_kakeibo_v1";
+  var KAKEIBO_LOANS = "td_kakeibo_loans_v1";
+  var KAKEIBO_ASSETS = "td_kakeibo_assets_v1";
+  // 生活のカテゴリ（従来どおり）。KB_CATS は生活分を指す名前として残す
   var KB_CATS = { "in": ["給料", "副業", "その他収入"], "out": ["食費", "住まい", "光熱費", "通信", "交通", "医療", "娯楽", "日用品", "その他"] };
+  // 事業のカテゴリ。支出は収支内訳表の科目の並び
+  var KB_BIZ_OUT = ["仕入", "給料賃金", "外注工賃", "減価償却費", "利子割引料", "地代家賃", "租税公課", "水道光熱費", "旅費交通費", "通信費", "広告宣伝費", "接待交際費", "損害保険料", "修繕費", "消耗品費", "福利厚生費", "雑費", "その他事業費"];
+  var KB_CATS_BIZ = { "in": ["売上", "雑収入", "その他事業収入"], "out": KB_BIZ_OUT };
+  var kbCats = function (scope, type) { return (scope === "biz" ? KB_CATS_BIZ : KB_CATS)[type] || []; };
   var KB_MKINDS = ["診療・治療", "医薬品購入", "介護保険サービス", "その他の医療費"];
-  // 家計簿：[{ id, date: "YYYY-MM-DD", type: "in"|"out", cat, amount, memo }]（円）。医療の支出では任意で person（受けた人）・payee（支払先）・mkind（区分）・reimb（補填額）も持つ。壊れた・形の違うデータは捨て、空の一覧として扱う
+  // 家計簿：[{ id, date: "YYYY-MM-DD", type: "in"|"out", scope: "life"|"biz", cat, amount, memo }]（円）。scope がなければ生活として扱う。医療の支出（生活）では任意で person（受けた人）・payee（支払先）・mkind（区分）・reimb（補填額）も持つ。壊れた・形の違うデータは捨て、空の一覧として扱う
   function kakeibo() {
     var a = get(KAKEIBO, []);
     if (!Array.isArray(a)) return [];
     return a.filter(function (e) { return e && typeof e.id === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.date || "") && (e.type === "in" || e.type === "out") && isFinite(e.amount) && e.amount > 0; }).map(function (e) {
-      var n = { id: e.id, date: e.date, type: e.type, cat: e.cat, amount: e.amount, memo: e.memo };
+      var n = { id: e.id, date: e.date, type: e.type, scope: e.scope === "biz" ? "biz" : "life", cat: e.cat, amount: e.amount, memo: e.memo };
       if (typeof e.person === "string" && e.person) n.person = e.person;
       if (typeof e.payee === "string" && e.payee) n.payee = e.payee;
       if (KB_MKINDS.indexOf(e.mkind) >= 0) n.mkind = e.mkind;
@@ -198,7 +205,7 @@
   // 申告用（年単位）：選んだ年の記録、医療の明細、控除額の目安、月ごとの年間集計、CSVの材料
   var kbYearList = function (list, year) { var y = String(year); return list.filter(function (e) { return e.date.slice(0, 4) === y; }); };
   var kbMkind = function (e) { return KB_MKINDS.indexOf(e.mkind) >= 0 ? e.mkind : ""; };
-  var kbMedical = function (list, year) { return kbYearList(list, year).filter(function (e) { return e.type === "out" && e.cat === "医療"; }).slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }); };
+  var kbMedical = function (list, year) { return kbYearList(list, year).filter(function (e) { return e.type === "out" && e.scope !== "biz" && e.cat === "医療"; }).slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }); };
   var kbMedTotals = function (meds) { var paid = 0, reimb = 0; meds.forEach(function (e) { paid += e.amount; reimb += e.reimb || 0; }); return { paid: paid, reimb: reimb, net: paid - reimb }; };
   // 足切り額：総所得金額等があれば、その5%と10万円の低い方。なければ10万円。控除額の目安は差引から足切りを引き、上限200万円で止める
   var kbDeduction = function (net, income) {
@@ -227,13 +234,100 @@
     rows.push(["収入", "合計", t.inc]); rows.push(["支出", "合計", t.out]); rows.push(["", "差額", t.bal]);
     return kbCsv(["区分", "カテゴリ", "金額"], rows);
   };
+  /* ---------- 事業の収支（申告用）：事業分の記録を収支内訳表の科目順にまとめ、減価償却費と利子割引料の自動計算分を足す ---------- */
+  var kbBizSummary = function (list, year, depAuto, intAuto) {
+    var yl = kbYearList(list, year).filter(function (e) { return e.scope === "biz"; });
+    var inc = kbTotals(yl.filter(function (e) { return e.type === "in"; })).inc;
+    var sums = {};
+    yl.forEach(function (e) { if (e.type === "out") sums[e.cat] = (sums[e.cat] || 0) + e.amount; });
+    var lines = [], exp = 0;
+    KB_BIZ_OUT.forEach(function (cat) {
+      if (sums[cat]) { lines.push({ cat: cat, sum: sums[cat], auto: false }); exp += sums[cat]; delete sums[cat]; }
+      if (cat === "減価償却費" && depAuto > 0) { lines.push({ cat: "減価償却費（自動計算）", sum: depAuto, auto: true }); exp += depAuto; }
+      if (cat === "利子割引料" && intAuto > 0) { lines.push({ cat: "利子割引料（自動計算）", sum: intAuto, auto: true }); exp += intAuto; }
+    });
+    Object.keys(sums).forEach(function (cat) { lines.push({ cat: cat, sum: sums[cat], auto: false }); exp += sums[cat]; });
+    return { inc: inc, lines: lines, exp: exp, bal: inc - exp };
+  };
+  var kbBizCSV = function (list, year, biz) {
+    var yl = kbYearList(list, year).filter(function (e) { return e.scope === "biz"; }), rows = [];
+    kbCatSums(yl, "in").forEach(function (c) { rows.push(["収入", c.cat, c.sum]); });
+    biz.lines.forEach(function (l) { rows.push(["支出", l.cat, l.sum]); });
+    rows.push(["収入", "合計", biz.inc]); rows.push(["支出", "合計", biz.exp]); rows.push(["", "差額", biz.bal]);
+    return kbCsv(["区分", "科目", "金額"], rows);
+  };
+  /* ---------- 借入：[{ id, name, purpose: "住宅"|"事業"|"その他", principal, ratePct, monthly, startYm: "YYYY-MM", guarantee, bizRatio, homeType }] ---------- */
+  var KB_LOAN_PURPOSES = ["住宅", "事業", "その他"];
+  var KB_HOME_TYPES = ["一般（新築）", "認定長期優良・低炭素", "ZEH水準", "省エネ基準適合", "一般（中古）", "認定等（中古）"];
+  // 住宅ローン控除の借入限度額と控除期間（令和6・7年入居の制度、国税庁タックスアンサーNo.1211-1・1211-3で確認。一般の新築は令和5年末までに建築確認を受けた住宅の額と期間）
+  var KB_HOME_LIMITS = { "一般（新築）": { limit: 20000000, years: 10 }, "認定長期優良・低炭素": { limit: 45000000, years: 13 }, "ZEH水準": { limit: 35000000, years: 13 }, "省エネ基準適合": { limit: 30000000, years: 13 }, "一般（中古）": { limit: 20000000, years: 10 }, "認定等（中古）": { limit: 30000000, years: 10 } };
+  var KB_HOME_RATE = 0.007;
+  var kbBizRatioDef = function (purpose) { return purpose === "住宅" ? 0 : 100; };
+  function kbLoans() {
+    var a = get(KAKEIBO_LOANS, []);
+    if (!Array.isArray(a)) return [];
+    return a.filter(function (e) { return e && typeof e.id === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(e.startYm || "") && isFinite(e.principal) && e.principal > 0 && isFinite(e.monthly) && e.monthly > 0; }).map(function (e) {
+      var purpose = KB_LOAN_PURPOSES.indexOf(e.purpose) >= 0 ? e.purpose : "その他";
+      var n = { id: e.id, name: typeof e.name === "string" ? e.name : "", purpose: purpose, principal: +e.principal, ratePct: isFinite(e.ratePct) && e.ratePct >= 0 ? +e.ratePct : 0, monthly: +e.monthly, startYm: e.startYm, guarantee: isFinite(e.guarantee) && e.guarantee > 0 ? +e.guarantee : 0, bizRatio: isFinite(e.bizRatio) ? Math.min(100, Math.max(0, +e.bizRatio)) : kbBizRatioDef(purpose) };
+      if (purpose === "住宅") n.homeType = KB_HOME_TYPES.indexOf(e.homeType) >= 0 ? e.homeType : "一般（新築）";
+      return n;
+    });
+  }
+  // 元利均等の返済を月ごとに進め、年ごとの元本・利息・年末残高を出す。毎月の利息は円未満を四捨五入。返済額が利息以下のときは stuck で止める
+  var kbAmortize = function (loan) {
+    var bal = loan.principal, rate = loan.ratePct / 100 / 12, y = +loan.startYm.slice(0, 4), m = +loan.startYm.slice(5, 7);
+    var years = {}, total = 0, stuck = false;
+    for (var i = 0; i < 720 && bal > 0; i++) {
+      var interest = Math.round(bal * rate), pp = loan.monthly - interest;
+      if (pp <= 0) { stuck = true; break; }
+      if (pp > bal) pp = bal;
+      bal -= pp; total++;
+      var key = String(y), rec = years[key] || (years[key] = { principal: 0, interest: 0, endBalance: bal, months: 0 });
+      rec.principal += pp; rec.interest += interest; rec.endBalance = bal; rec.months++;
+      m++; if (m > 12) { m = 1; y++; }
+    }
+    return { years: years, months: total, stuck: stuck, paidOff: bal <= 0 };
+  };
+  // 住宅ローン控除の目安：年末残高と借入限度額の小さいほう × 0.7%（100円未満切り捨て）。入居年は借入開始年で代用する
+  var kbHomeCredit = function (loan, year, endBalance) {
+    var t = KB_HOME_LIMITS[loan.homeType] || KB_HOME_LIMITS["一般（新築）"], startYear = +loan.startYm.slice(0, 4), nth = year - startYear + 1;
+    if (nth < 1) return { ok: false, reason: "借入を始める前の年です。" };
+    if (nth > t.years) return { ok: false, reason: "控除期間（" + t.years + "年）を過ぎています。", years: t.years, limit: t.limit };
+    var base = Math.min(endBalance, t.limit);
+    return { ok: true, nth: nth, years: t.years, limit: t.limit, base: base, credit: Math.floor(base * KB_HOME_RATE / 100) * 100 };
+  };
+  /* ---------- 減価償却の資産：[{ id, name, date: "YYYY-MM-DD", price, life, bizRatio }]。定額法、1年目は取得月から12月までの月割り、残存簿価1円まで ---------- */
+  var KB_DEP_RATES = { 2: .500, 3: .334, 4: .250, 5: .200, 6: .167, 7: .143, 8: .125, 9: .112, 10: .100, 11: .091, 12: .084, 13: .077, 14: .072, 15: .067, 16: .063, 17: .059, 18: .056, 19: .053, 20: .050, 22: .046, 25: .040, 30: .034, 35: .029, 40: .025, 47: .022 };
+  var kbDepRate = function (life) { return KB_DEP_RATES[life] || Math.ceil(1000 / life) / 1000; };
+  function kbAssets() {
+    var a = get(KAKEIBO_ASSETS, []);
+    if (!Array.isArray(a)) return [];
+    return a.filter(function (e) { return e && typeof e.id === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.date || "") && isFinite(e.price) && e.price > 0 && isFinite(e.life) && e.life >= 2; }).map(function (e) {
+      return { id: e.id, name: typeof e.name === "string" ? e.name : "", date: e.date, price: +e.price, life: Math.round(+e.life), bizRatio: isFinite(e.bizRatio) ? Math.min(100, Math.max(0, +e.bizRatio)) : 100 };
+    });
+  }
+  var kbDepSchedule = function (asset) {
+    var ay = +asset.date.slice(0, 4), am = +asset.date.slice(5, 7), full = Math.round(asset.price * kbDepRate(asset.life));
+    var book = asset.price, out = {}, y = ay, guard = 0;
+    while (book > 1 && guard < 100) {
+      var d = y === ay ? Math.round(full * (13 - am) / 12) : full;
+      if (d > book - 1) d = book - 1;
+      if (d <= 0) break;
+      out[y] = d; book -= d; y++; guard++;
+    }
+    return out;
+  };
+  var kbDepForYear = function (asset, year) {
+    var d = kbDepSchedule(asset)[year] || 0;
+    return { total: d, biz: Math.round(d * asset.bizRatio / 100) };
+  };
   // [kb-pure-end]
   var HELP = {
     money: ["口座の条件と損切り価格を入れると、許容損失に収まる数量が出ます。足りない項目があると数量は出しません。", "money"],
     check: ["入る前に7つの項目を確かめて「記録する」。次の重要指標と今日の損失も自動で表示します。"],
     journal: ["取引のあとに、まずは4項目だけで1件。くわしくは「詳しく書く」から。取引しなかった日は「見送り」も残せます。"],
     pnl: ["日ごとの確定損益と入出金をカレンダーで見て、週・月・年でまとめます。「今日のトレード収支を入れる」で1日分をまとめて入れられます。"],
-    kakeibo: ["給料や食費など、家の収入と支出を月ごとに記録します。トレード収支とは別に、この端末の中だけに保存します。「申告用」では医療費控除の目安と年間の収支まとめ、CSVの書き出しもできます。"],
+    kakeibo: ["給料や食費など、家の収入と支出を月ごとに記録します。生活と事業を分けて記録でき、過去の日付でも入れられます。トレード収支とは別に、この端末の中だけに保存します。「申告用」では医療費控除・事業の収支・年間の収支まとめの目安とCSVの書き出し、借入の返済内訳と住宅ローン控除の目安、減価償却の計算もできます。"],
     signals: ["ダッシュボードの判定（買い候補・売り候補・見送り）と、その時点の根拠の記録です。売買の指示ではありません。"],
     hours: ["東京・ロンドン・ニューヨークの時間と、銘柄ごとの取引時間（目安）を日本時間で表示します。"],
     status: ["価格・ローソク足・自動分析が、いつ・どこから届いたかを確かめる画面です。数字がおかしいと思ったらまずここ。"],
@@ -267,13 +361,16 @@
       "カレンダーには、日ごとの確定損益（＋は緑、−は赤）と、入金・出金が出ます。日をタップすると、その日の内訳と記録の編集へ進めます。",
       "上には月の合計・入金・出金・勝ち日と負け日・損益の積み上がり。下の「期間のまとめ」で週・月・年を切り替えられます（週は月曜はじまり）。"],
       "その日の損益は、日次入力に確定損益があればそれを使い、日誌の取引ごとの損益とは足しません。日次入力がない日は、日誌の取引ごとの損益の合計です。入金・出金は日次入力だけから数えます。"],
-    ["kakeibo", "家計簿", "家の収入と支出を月ごとに記録する場所です。トレード収支とは別の、暮らしのお金の記録です。", [
-      "日付・収入か支出か・カテゴリ・金額を入れて「追加する」（メモは任意）。",
-      "上の合計で、その月の収入・支出・差額が見られます。前月・次月で月を切り替えます。",
-      "下の一覧で記録をタップすると直せます。「削除」は元に戻せません。",
-      "支出でカテゴリ「医療」を選ぶと、受けた人・支払先（病院や薬局）・医療費の区分・補填される金額（保険などで戻る分）も入れられます。",
-      "上の「申告用」に切り替えると、選んだ年の医療費控除の目安と明細、年間の収支まとめが見られます。どちらもCSVで書き出せます。"],
-      "カテゴリ別の合計は、表示している月の記録だけを集計します。ほかの月の記録は消えずに残ります。医療費控除の金額は目安です。セルフメディケーション税制とは併用できません。領収書を保管し、最終的な計算と申告はe-Taxや税務署で確かめてください。"],
+    ["kakeibo", "家計簿", "家の収入と支出を月ごとに記録する場所です。トレード収支とは別の、暮らしのお金の記録です。生活のお金と事業のお金を分けて記録でき、確定申告の準備にも使えます。", [
+      "日付・収入か支出か・生活か事業か・カテゴリ・金額を入れて「追加する」（メモは任意）。日付は過去の日も選べて、保存するとその月の画面に移ります。続けて入れるときは、前回と同じ日付が残ります（「今日」ボタンで今日に戻せます）。",
+      "上の合計で、その月の収入・支出・差額が見られます。事業分がある月は「うち事業分」も出ます。前月・次月で月を切り替えます。",
+      "下の一覧で記録をタップすると直せます。事業の記録には「事業」の札が付きます。「削除」は元に戻せません。",
+      "支出でカテゴリ「医療」（生活）を選ぶと、受けた人・支払先（病院や薬局）・医療費の区分・補填される金額（保険などで戻る分）も入れられます。",
+      "上の「申告用」に切り替えると、選んだ年の医療費控除の目安と明細、年間の収支まとめが見られます。どちらもCSVで書き出せます。",
+      "「申告用」の事業の収支では、事業の記録が収支内訳表の科目の並びでまとまります。減価償却費と利子割引料は、下の資産・借入から自動計算した分が入ります（手入力と重ねないでください）。差額は事業所得の目安です。",
+      "「借入と返済の内訳」に借入を登録すると、元利均等返済として年ごとの元本・利息・年末残高が出ます。住宅の借入では、住宅ローン控除の控除額の目安と、申請の仕方（1年目は確定申告、2年目以降は年末調整）も見られます。",
+      "「減価償却の資産」に備品や建物を登録すると、定額法でその年の償却費を計算し、事業に使う割合分を事業の収支へ入れます。耐用年数は目安からも選べます。"],
+      "カテゴリ別の合計は、表示している月の記録だけを集計します。ほかの月の記録は消えずに残ります。医療費控除・住宅ローン控除・事業所得の金額はすべて目安です。個別の税務判断は税務署・税理士に確認してください。医療費控除はセルフメディケーション税制と併用できません。領収書を保管し、最終的な計算と申告はe-Taxや税務署で確かめてください。住宅ローン控除の目安は令和6・7年入居の制度（国税庁）で計算しています。入居年は返済を始めた年で代用しているため、実際の入居年と違うときは目安も変わります。"],
     ["signals", "シグナル履歴", "アプリの判定がいつ・なぜ出たかの記録です。判定を振り返るときに開きます。", [
       "「いまの判定」で、各銘柄が買い候補・売り候補・見送りのどれかと、その理由が分かります。",
       "履歴の行をタップすると、成立した条件・足りなかった条件・判定時の価格と時刻・有効期限・取り消しになった理由が見られます。",
@@ -714,6 +811,90 @@
         var year = kbYear || +todayK.slice(0, 4);
         var all = kakeibo(), yl = kbYearList(all, year), yt = kbTotals(yl);
         var meds = kbMedical(all, year), mt = kbMedTotals(meds);
+        /* --- 事業の収支・借入・減価償却の材料（自動計算分は資産と借入から） --- */
+        var loans = kbLoans(), assets = kbAssets();
+        var loanCalc = loans.map(function (l) { return { loan: l, am: kbAmortize(l) }; });
+        var depAuto = 0, intAuto = 0;
+        assets.forEach(function (a) { depAuto += kbDepForYear(a, year).biz; });
+        loanCalc.forEach(function (c) { if (c.loan.purpose === "事業") { var yr = c.am.years[year]; if (yr) intAuto += Math.round(yr.interest * c.loan.bizRatio / 100); } });
+        var biz = kbBizSummary(all, year, depAuto, intAuto), bizInCats = kbCatSums(yl.filter(function (e) { return e.scope === "biz"; }), "in");
+        var lnEd = kbLoanEdit, asEd = kbAssetEdit;
+        var bizHtml = '<h3>事業の収支（' + year + '年）</h3>' +
+          '<p class="note">月別で「事業」を選んだ記録を、収支内訳表の科目の並びでまとめました。減価償却費と利子割引料の（自動計算）は、下の資産・借入から計算した分です。手入力の分と重ねて入れないでください。</p>' +
+          ((biz.inc || biz.lines.length) ? '<div class="tw"><table><tr><th>区分</th><th>科目</th><th>金額</th></tr>' +
+            bizInCats.map(function (c) { return '<tr><td>収入</td><td>' + esc(c.cat) + '</td><td class="kb-amt pl-up">¥' + fmt(c.sum, 0) + "</td></tr>"; }).join("") +
+            biz.lines.map(function (l) { return '<tr><td>支出</td><td>' + esc(l.cat) + '</td><td class="kb-amt pl-dn">¥' + fmt(l.sum, 0) + "</td></tr>"; }).join("") + "</table></div>" : '<p class="note">この年の事業の記録はまだありません。月別で「事業」を選んで記録すると、ここに並びます。</p>') +
+          '<div class="pl-kv"><span>収入合計<b class="pl-up">¥' + fmt(biz.inc, 0) + '</b></span><span>経費合計<b class="pl-dn">¥' + fmt(biz.exp, 0) + '</b></span><span>差額<b>¥' + fmt(biz.bal, 0) + "</b></span></div>" +
+          '<p class="note">差額は事業所得の目安です（青色申告特別控除・専従者給与などは含みません）。</p>' +
+          '<div class="btns"><button type="button" class="btn" id="kb-bizcsv">事業収支をCSVで書き出す</button></div>';
+        var loanHtml = '<h3>借入と返済の内訳</h3>' +
+          '<p class="note">借入を登録すると、元利均等返済として年ごとの元本と利息、年末残高を計算します。保証料は返済の計算には含めず、借りた年にメモとして出します（経費になるかは契約内容によります）。</p>' +
+          '<div class="pl-in"><b>' + (lnEd ? "借入を直す" : "借入を足す") + '</b>' +
+          '<div class="grid">' +
+          field("kb-ln-name", "名前", lnEd ? lnEd.name : "", "text", ' placeholder="例：住宅ローン"') +
+          select("kb-ln-purpose", "使いみち", KB_LOAN_PURPOSES.map(function (p) { return [p, p]; }), lnEd ? lnEd.purpose : "住宅") +
+          field("kb-ln-principal", "借入額（円）", lnEd ? lnEd.principal : "", "number") +
+          field("kb-ln-rate", "金利（年・%）", lnEd ? lnEd.ratePct : "", "number") +
+          field("kb-ln-monthly", "毎月の返済額（円）", lnEd ? lnEd.monthly : "", "number") +
+          field("kb-ln-start", "返済を始めた月", lnEd ? lnEd.startYm : "", "month") +
+          field("kb-ln-guarantee", "保証料（円・任意）", lnEd && lnEd.guarantee ? lnEd.guarantee : "", "number") +
+          field("kb-ln-biz", "事業に使う割合（%）", lnEd ? lnEd.bizRatio : "", "number", ' placeholder="空欄なら住宅0・事業100"') +
+          '<span id="kb-ln-homewrap">' + select("kb-ln-home", "住宅の種類（住宅ローン控除）", KB_HOME_TYPES.map(function (t) { return [t, t]; }), lnEd && lnEd.homeType ? lnEd.homeType : "一般（新築）") + "</span>" +
+          "</div>" +
+          '<div class="btns"><button type="button" class="btn pri" id="kb-lnsave">' + (lnEd ? "更新する" : "追加する") + "</button>" + (lnEd ? '<button type="button" class="btn" id="kb-lncancel">編集をやめる</button>' : "") + "</div>" +
+          '<div class="note" id="kb-lnmsg" aria-live="polite"></div></div>' +
+          '<div id="kb-lnlist">' + (loanCalc.length ? loanCalc.map(function (c) {
+            var l = c.loan, am = c.am, yr = am.years[year], startYear = +l.startYm.slice(0, 4), s = "";
+            s += '<div class="pl-in"><b>' + esc(l.name || (l.purpose + "の借入")) + '</b> <span class="tag">' + esc(l.purpose) + "</span>" +
+              '<div class="pl-kv"><span>借入額<b>¥' + fmt(l.principal, 0) + '</b></span><span>金利<b>' + fmt(l.ratePct, 2) + '%</b></span><span>毎月の返済<b>¥' + fmt(l.monthly, 0) + '</b></span><span>返済開始<b>' + esc(l.startYm.replace("-", "年")) + "月</b></span>" + (l.bizRatio ? '<span>事業の割合<b>' + fmt(l.bizRatio, 0) + "%</b></span>" : "") + "</div>";
+            if (yr) s += '<p class="note">' + year + '年の内訳：元本 ¥' + fmt(yr.principal, 0) + " ・ 利息 ¥" + fmt(yr.interest, 0) + " ・ 年末残高 ¥" + fmt(yr.endBalance, 0) + "（" + yr.months + "か月分）</p>";
+            else s += '<p class="note">' + year + "年の返済記録はありません" + (am.paidOff && year > startYear ? "（完済済み）" : year < startYear ? "（借入を始める前）" : "") + "。</p>";
+            if (l.guarantee > 0 && startYear === year) s += '<p class="note">保証料 ¥' + fmt(l.guarantee, 0) + "（借りた年に記録）</p>";
+            if (am.stuck) s += '<p class="warn">毎月の返済額が利息以下のため、元本が減りません。返済額を見直してください。</p>';
+            if (l.purpose === "住宅") {
+              if (!yr) s += '<p class="note">住宅ローン控除：' + (year < startYear ? "借入を始める前の年です。" : "この年の年末残高がないため、目安は出せません。") + "</p>";
+              else {
+                var hc = kbHomeCredit(l, year, yr.endBalance);
+                if (!hc.ok) s += '<p class="note">住宅ローン控除：' + esc(hc.reason) + "</p>";
+                else s += '<p class="note"><b>住宅ローン控除の目安</b>（' + hc.nth + "年目／" + hc.years + "年）</p>" +
+                  '<div class="pl-kv"><span>年末残高<b>¥' + fmt(yr.endBalance, 0) + '</b></span><span>借入限度額<b>¥' + fmt(hc.limit, 0) + '</b></span><span>控除額の目安<b class="pl-up">¥' + fmt(hc.credit, 0) + "</b></span></div>" +
+                  '<p class="note">年末残高と借入限度額の小さいほう × 0.7%です。入居した年は、返済を始めた年で代用しています。要件には、控除を受ける年の合計所得金額が2,000万円以下、床面積が原則50㎡以上などがあります。</p>';
+              }
+              s += '<p class="note">令和6・7年入居の制度での目安です。最新は国税庁で確認を。</p>';
+            }
+            s += '<div class="btns"><button type="button" class="btn" data-lned="' + esc(l.id) + '">編集</button> <button type="button" class="btn danger" data-lndel="' + esc(l.id) + '">削除</button></div></div>';
+            return s;
+          }).join("") : '<p class="note">借入はまだ登録がありません。上の欄から足せます。</p>') + "</div>" +
+          '<details><summary>住宅ローン控除の申請の仕方</summary>' +
+          '<p class="note">1年目（入居した年）は、会社員でも確定申告が必要です。そろえる書類は次のとおりです。</p>' +
+          '<ul class="steps">' +
+          "<li>（特定増改築等）住宅借入金等特別控除額の計算明細書</li>" +
+          "<li>金融機関の年末残高証明書（調書方式に対応した金融機関では、マイナポータル連携で代わりになる場合があります）</li>" +
+          "<li>建物（と土地）の登記事項証明書</li>" +
+          "<li>売買契約書（請負契約書）の写し</li>" +
+          "<li>源泉徴収票（給与所得のある人）</li>" +
+          "<li>認定長期優良住宅・低炭素住宅・ZEH水準・省エネ基準適合の家は、認定通知書や住宅用家屋証明書、建設住宅性能評価書の写しなど、性能を証明する書類</li>" +
+          "</ul>" +
+          '<p class="note">2年目以降は年末調整で受けられます。税務署から届く控除証明書（給与所得者の住宅借入金等特別控除申告書）と金融機関の年末残高証明書を、勤務先へ出します。給与以外の所得がある人・自営業の人は、毎年、確定申告で受けます。</p>' +
+          "</details>";
+        var assetHtml = '<h3>減価償却の資産</h3>' +
+          '<p class="note">10万円以上の備品や建物などは、耐用年数に分けて少しずつ経費にします（定額法）。登録すると、その年の償却費のうち事業に使う割合分を、事業の収支へ自動で入れます。</p>' +
+          '<div class="pl-in"><b>' + (asEd ? "資産を直す" : "資産を足す") + '</b>' +
+          '<div class="grid">' +
+          field("kb-as-name", "名前", asEd ? asEd.name : "", "text", ' placeholder="例：パソコン"') +
+          field("kb-as-date", "買った日", asEd ? asEd.date : todayK, "date") +
+          field("kb-as-price", "買った金額（円）", asEd ? asEd.price : "", "number") +
+          field("kb-as-life", "耐用年数（年）", asEd ? asEd.life : "", "number") +
+          select("kb-as-pick", "耐用年数の目安", [["", "目安から選ぶ（任意）"], ["4", "パソコン（4年）"], ["6", "普通自動車（6年）"], ["6", "エアコン（6年）"], ["6", "冷蔵庫（6年）"], ["8", "家具・応接セットなど（8年）"], ["22", "木造の住宅（22年）"], ["47", "鉄骨鉄筋コンクリートの住宅（47年）"]].map(function (o) { return o; }), "") +
+          field("kb-as-biz", "事業に使う割合（%）", asEd ? asEd.bizRatio : "", "number", ' placeholder="空欄なら100"') +
+          "</div>" +
+          '<div class="btns"><button type="button" class="btn pri" id="kb-assave">' + (asEd ? "更新する" : "追加する") + "</button>" + (asEd ? '<button type="button" class="btn" id="kb-ascancel">編集をやめる</button>' : "") + "</div>" +
+          '<div class="note" id="kb-asmsg" aria-live="polite"></div></div>' +
+          (assets.length ? '<div class="tw"><table><tr><th>名前</th><th>買った日</th><th>金額</th><th>耐用年数</th><th>事業の割合</th><th>' + year + '年の償却費（事業分）</th><th></th></tr>' + assets.map(function (a) {
+            var d = kbDepForYear(a, year);
+            return "<tr><td>" + esc(a.name || "資産") + "</td><td>" + esc(dayName(a.date)) + '</td><td class="kb-amt">¥' + fmt(a.price, 0) + "</td><td>" + a.life + '年</td><td>' + fmt(a.bizRatio, 0) + '%</td><td class="kb-amt pl-dn">¥' + fmt(d.biz, 0) + (d.total !== d.biz ? "（全体 ¥" + fmt(d.total, 0) + "）" : "") + '</td><td><button type="button" class="btn" data-ased="' + esc(a.id) + '">編集</button> <button type="button" class="btn danger" data-asdel="' + esc(a.id) + '">削除</button></td></tr>';
+          }).join("") + "</table></div>" +
+          '<div class="pl-kv"><span>' + year + '年の償却費の合計（事業分）<b class="pl-dn">¥' + fmt(depAuto, 0) + "</b></span></div>" : '<p class="note">資産はまだ登録がありません。上の欄から足せます。</p>');
         body.innerHTML = '<h3>家計簿</h3><p class="note">確定申告の準備に使う、年単位のまとめです。記録そのものは月別と同じ家計簿のデータで、この端末の中だけに保存します。</p>' + modeSeg +
           '<div class="jcalh"><button type="button" id="kb-yprev" aria-label="前の年">‹</button><b>' + year + '年</b><button type="button" id="kb-ynext" aria-label="次の年">›</button><button type="button" class="btn" id="kb-ythis">今年</button></div>' +
           '<h3>医療費控除（' + year + '年）</h3>' +
@@ -735,7 +916,7 @@
             return "<tr><td>" + m.month + "月</td>" + (m.count ? '<td class="kb-amt pl-up">¥' + fmt(m.inc, 0) + '</td><td class="kb-amt pl-dn">¥' + fmt(m.out, 0) + '</td><td class="kb-amt">' + yen(m.bal, true) + "円</td>" : '<td colspan="3" class="note">—</td>') + "</tr>";
           }).join("") + "</table></div>" +
           '<h3>カテゴリ別の合計（' + year + '年）</h3><div id="kb-ycats"></div>' +
-          '<div class="btns"><button type="button" class="btn" id="kb-ancsv">年間収支をCSVで書き出す</button></div>';
+          '<div class="btns"><button type="button" class="btn" id="kb-ancsv">年間収支をCSVで書き出す</button></div>' + bizHtml + loanHtml + assetHtml;
         wireMode();
         $("#kb-ycats").innerHTML = catsHtml(yl, "年");
         $("#kb-yprev").addEventListener("click", function () { kbYear = year - 1; VIEWS.kakeibo(); });
@@ -754,11 +935,61 @@
         paintMedCalc();
         $("#kb-medcsv").addEventListener("click", function () { dl("iryouhi-" + year + ".csv", kbMedCSV(meds)); });
         $("#kb-ancsv").addEventListener("click", function () { dl("nenkanshushi-" + year + ".csv", kbAnnualCSV(all, year)); });
+        $("#kb-bizcsv").addEventListener("click", function () { dl("jigyoshushi-" + year + ".csv", kbBizCSV(all, year, biz)); });
+        /* --- 借入の登録・編集・削除 --- */
+        var lnPurpose = $("#kb-ln-purpose"), lnHomeWrap = $("#kb-ln-homewrap");
+        var syncLnHome = function () { if (lnHomeWrap) lnHomeWrap.style.display = lnPurpose && lnPurpose.value === "住宅" ? "" : "none"; };
+        if (lnPurpose) lnPurpose.addEventListener("change", syncLnHome);
+        syncLnHome();
+        $("#kb-lnsave").addEventListener("click", function () {
+          var msg = $("#kb-lnmsg"), purpose = lnPurpose.value;
+          var principal = Number($("#kb-ln-principal").value), rate = Number($("#kb-ln-rate").value), monthly = Number($("#kb-ln-monthly").value), startYm = $("#kb-ln-start").value;
+          var guarantee = Number($("#kb-ln-guarantee").value), bizRaw = $("#kb-ln-biz").value, bizR = bizRaw === "" ? kbBizRatioDef(purpose) : Number(bizRaw);
+          if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(startYm)) { msg.textContent = "返済を始めた月を入れてください。"; return; }
+          if (!isFinite(principal) || principal <= 0) { msg.textContent = "借入額は0より大きい数字で入れてください。"; return; }
+          if (!isFinite(monthly) || monthly <= 0) { msg.textContent = "毎月の返済額は0より大きい数字で入れてください。"; return; }
+          if (!isFinite(rate) || rate < 0) rate = 0;
+          if (!isFinite(guarantee) || guarantee < 0) guarantee = 0;
+          if (!isFinite(bizR)) bizR = kbBizRatioDef(purpose);
+          bizR = Math.min(100, Math.max(0, bizR));
+          var rec = { id: lnEd ? lnEd.id : uid(), name: $("#kb-ln-name").value.trim() || (purpose + "の借入"), purpose: purpose, principal: principal, ratePct: rate, monthly: monthly, startYm: startYm, guarantee: guarantee, bizRatio: bizR };
+          if (purpose === "住宅") rec.homeType = $("#kb-ln-home").value;
+          var arr = kbLoans().filter(function (x) { return x.id !== rec.id; }); arr.unshift(rec);
+          if (put(KAKEIBO_LOANS, arr, "家計簿")) { kbLoanEdit = null; VIEWS.kakeibo(); }
+        });
+        var lnCancel = $("#kb-lncancel"); if (lnCancel) lnCancel.addEventListener("click", function () { kbLoanEdit = null; VIEWS.kakeibo(); });
+        $("#kb-lnlist").addEventListener("click", function (e) {
+          var del = e.target.closest("[data-lndel]"), edb = e.target.closest("[data-lned]");
+          if (del) { var did = del.getAttribute("data-lndel"); if (confirm("この借入を削除しますか？（元に戻せません）") && put(KAKEIBO_LOANS, kbLoans().filter(function (x) { return x.id !== did; }), "家計簿")) { if (kbLoanEdit && kbLoanEdit.id === did) kbLoanEdit = null; VIEWS.kakeibo(); } return; }
+          if (edb) { kbLoanEdit = kbLoans().filter(function (x) { return x.id === edb.getAttribute("data-lned"); })[0] || null; VIEWS.kakeibo(); }
+        });
+        /* --- 減価償却の資産の登録・編集・削除 --- */
+        var asPick = $("#kb-as-pick");
+        if (asPick) asPick.addEventListener("change", function () { if (asPick.value) $("#kb-as-life").value = asPick.value; });
+        $("#kb-assave").addEventListener("click", function () {
+          var msg = $("#kb-asmsg"), date = $("#kb-as-date").value, price = Number($("#kb-as-price").value), life = Math.round(Number($("#kb-as-life").value));
+          var bizRaw = $("#kb-as-biz").value, bizR = bizRaw === "" ? 100 : Number(bizRaw);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { msg.textContent = "買った日を入れてください。"; return; }
+          if (!isFinite(price) || price <= 0) { msg.textContent = "買った金額は0より大きい数字で入れてください。"; return; }
+          if (!isFinite(life) || life < 2) { msg.textContent = "耐用年数は2年以上の数字で入れてください（目安からも選べます）。"; return; }
+          if (!isFinite(bizR)) bizR = 100;
+          bizR = Math.min(100, Math.max(0, bizR));
+          var rec = { id: asEd ? asEd.id : uid(), name: $("#kb-as-name").value.trim() || "資産", date: date, price: price, life: life, bizRatio: bizR };
+          var arr = kbAssets().filter(function (x) { return x.id !== rec.id; }); arr.unshift(rec);
+          if (put(KAKEIBO_ASSETS, arr, "家計簿")) { kbAssetEdit = null; VIEWS.kakeibo(); }
+        });
+        var asCancel = $("#kb-ascancel"); if (asCancel) asCancel.addEventListener("click", function () { kbAssetEdit = null; VIEWS.kakeibo(); });
+        body.querySelectorAll("[data-ased], [data-asdel]").forEach(function (b) { b.addEventListener("click", function () {
+          var delId = b.getAttribute("data-asdel"), edId = b.getAttribute("data-ased");
+          if (delId) { if (confirm("この資産を削除しますか？（元に戻せません）") && put(KAKEIBO_ASSETS, kbAssets().filter(function (x) { return x.id !== delId; }), "家計簿")) { if (kbAssetEdit && kbAssetEdit.id === delId) kbAssetEdit = null; VIEWS.kakeibo(); } return; }
+          if (edId) { kbAssetEdit = kbAssets().filter(function (x) { return x.id === edId; })[0] || null; VIEWS.kakeibo(); }
+        }); });
         return;
       }
       /* ---------- 月別：家の収入と支出を月ごとに（従来の画面） ---------- */
       var formType = ed ? ed.type : "out";
-      var catSel = function (type, val) { return select("kb-cat", "カテゴリ", KB_CATS[type].map(function (c) { return [c, c]; }), val); };
+      var formScope = ed ? ed.scope : kbScopeLast;
+      var catSel = function (scope, type, val) { return select("kb-cat", "カテゴリ", kbCats(scope, type).map(function (c) { return [c, c]; }), val); };
       var medHtml = function (e) {
         return '<div class="grid">' +
           field("kb-person", "医療を受けた人（任意）", e ? e.person || "" : "", "text", ' placeholder="例：本人"') +
@@ -769,39 +1000,52 @@
       var syncMed = function () {
         var w = $("#kb-medwrap"); if (!w) return;
         var cat = $("#kb-cat") ? $("#kb-cat").value : "";
-        var show = formType === "out" && cat === "医療";
-        w.innerHTML = show ? medHtml(ed && ed.type === "out" && ed.cat === "医療" ? ed : null) : "";
+        var show = formType === "out" && formScope === "life" && cat === "医療";
+        w.innerHTML = show ? medHtml(ed && ed.type === "out" && ed.scope !== "biz" && ed.cat === "医療" ? ed : null) : "";
       };
       body.innerHTML = '<h3>家計簿</h3><p class="note">家の収入と支出を月ごとに記録します。トレード収支とは別の記録で、この端末の中だけに保存し、どこにも送信しません。</p>' + modeSeg +
         '<div class="pl-head" id="kb-head"></div>' +
         '<div class="jcalh"><button type="button" id="kb-prev" aria-label="前の月">‹</button><b id="kb-title"></b><button type="button" id="kb-next" aria-label="次の月">›</button><button type="button" class="btn" id="kb-this">今月</button></div>' +
         '<div class="pl-in"><b>' + (ed ? "記録を直す" : "記録を足す") + '</b>' +
-        '<div class="pl-seg" role="group" aria-label="収入か支出か">' + [["in", "収入"], ["out", "支出"]].map(function (x) { return '<button type="button" data-kt="' + x[0] + '" aria-pressed="' + (x[0] === formType) + '">' + x[1] + "</button>"; }).join("") + "</div>" +
-        '<div class="grid">' + field("kb-date", "日付", ed ? ed.date : todayK, "date") + '<span id="kb-catwrap">' + catSel(formType, ed ? ed.cat : KB_CATS[formType][0]) + "</span>" +
+        '<div class="pl-seg" role="group" aria-label="収入か支出か">' + [["in", "収入"], ["out", "支出"]].map(function (x) { return '<button type="button" data-kt="' + x[0] + '" aria-pressed="' + (x[0] === formType) + '">' + x[1] + "</button>"; }).join("") + "</div> " +
+        '<div class="pl-seg" role="group" aria-label="生活か事業か">' + [["life", "生活"], ["biz", "事業"]].map(function (x) { return '<button type="button" data-ks="' + x[0] + '" aria-pressed="' + (x[0] === formScope) + '">' + x[1] + "</button>"; }).join("") + "</div>" +
+        '<div class="grid"><span>' + field("kb-date", "日付", ed ? ed.date : (kbLastDate || todayK), "date") + '<button type="button" class="btn" id="kb-today">今日</button></span>' + '<span id="kb-catwrap">' + catSel(formScope, formType, ed ? ed.cat : kbCats(formScope, formType)[0]) + "</span>" +
         field("kb-amt", "金額（円）", ed ? ed.amount : "", "number") + field("kb-memo", "メモ（任意）", ed ? ed.memo : "") + "</div>" +
         '<div id="kb-medwrap"></div>' +
         '<div class="btns"><button type="button" class="btn pri" id="kb-save">' + (ed ? "更新する" : "追加する") + "</button>" + (ed ? '<button type="button" class="btn" id="kb-cancel">編集をやめる</button>' : "") + "</div>" +
-        '<div class="note" id="kb-msg" aria-live="polite"></div></div>' +
+        '<div class="note" id="kb-msg" aria-live="polite"></div>' +
+        '<p class="note">過去の日付も選べます。保存すると、その月の画面に移動します。</p></div>' +
         '<h3>この月の記録</h3><div id="kb-list"></div>' +
         '<h3>カテゴリ別の合計</h3><div id="kb-cats"></div>';
       wireMode();
+      var rebuildCat = function () {
+        var cur = $("#kb-cat") ? $("#kb-cat").value : "", set = kbCats(formScope, formType);
+        $("#kb-catwrap").innerHTML = catSel(formScope, formType, set.indexOf(cur) >= 0 ? cur : set[0]);
+        syncMed();
+      };
       body.querySelectorAll("[data-kt]").forEach(function (b) { b.addEventListener("click", function () {
         formType = b.getAttribute("data-kt");
         body.querySelectorAll("[data-kt]").forEach(function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-kt") === formType ? "true" : "false"); });
-        var cur = $("#kb-cat") ? $("#kb-cat").value : "";
-        $("#kb-catwrap").innerHTML = catSel(formType, KB_CATS[formType].indexOf(cur) >= 0 ? cur : KB_CATS[formType][0]);
-        syncMed();
+        rebuildCat();
       }); });
+      body.querySelectorAll("[data-ks]").forEach(function (b) { b.addEventListener("click", function () {
+        formScope = b.getAttribute("data-ks"); kbScopeLast = formScope;
+        body.querySelectorAll("[data-ks]").forEach(function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-ks") === formScope ? "true" : "false"); });
+        rebuildCat();
+      }); });
+      $("#kb-today").addEventListener("click", function () { $("#kb-date").value = todayK; });
       $("#kb-catwrap").addEventListener("change", syncMed);
       syncMed();
       var paint = function () {
         var list = kbMonthList(kakeibo(), ym).slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
         var t = kbTotals(list);
         $("#kb-title").textContent = ym.slice(0, 4) + "年" + (+ym.slice(5, 7)) + "月";
+        var bt = kbTotals(list.filter(function (e) { return e.scope === "biz"; })), hasBiz = list.some(function (e) { return e.scope === "biz"; });
         $("#kb-head").innerHTML = '<div class="pl-big"><small>' + (+ym.slice(5, 7)) + '月の差額（収入−支出）</small><b class="' + (t.bal < 0 ? "pl-dn" : "") + '">' + (list.length ? yen(t.bal, true) : "—") + '<i>円</i></b></div>' +
-          '<div class="pl-kv"><span>収入合計<b class="pl-up">' + yen(t.inc) + '</b></span><span>支出合計<b class="pl-dn">' + yen(t.out) + '</b></span><span>記録<b>' + list.length + "件</b></span></div>";
+          '<div class="pl-kv"><span>収入合計<b class="pl-up">' + yen(t.inc) + '</b></span><span>支出合計<b class="pl-dn">' + yen(t.out) + '</b></span><span>記録<b>' + list.length + "件</b></span></div>" +
+          (hasBiz ? '<p class="note">うち事業分：収入 ¥' + fmt(bt.inc, 0) + " ・ 支出 ¥" + fmt(bt.out, 0) + "</p>" : "");
         $("#kb-list").innerHTML = list.length ? '<div class="tw"><table><tr><th>日付</th><th>カテゴリ</th><th>メモ</th><th>金額</th><th></th></tr>' + list.map(function (e) {
-          return '<tr data-krow="' + esc(e.id) + '"><td>' + esc(dayName(e.date)) + '</td><td><span class="tag">' + esc(e.cat) + "</span></td><td>" + esc(e.memo || "") + '</td><td class="kb-amt ' + (e.type === "in" ? "pl-up" : "pl-dn") + '">' + (e.type === "in" ? "+" : "−") + "¥" + fmt(e.amount, 0) + '</td><td><button type="button" class="btn" data-ked="' + esc(e.id) + '">編集</button> <button type="button" class="btn danger" data-kdel="' + esc(e.id) + '">削除</button></td></tr>';
+          return '<tr data-krow="' + esc(e.id) + '"><td>' + esc(dayName(e.date)) + '</td><td><span class="tag">' + esc(e.cat) + "</span>" + (e.scope === "biz" ? ' <span class="tag">事業</span>' : "") + '</td><td>' + esc(e.memo || "") + '</td><td class="kb-amt ' + (e.type === "in" ? "pl-up" : "pl-dn") + '">' + (e.type === "in" ? "+" : "−") + "¥" + fmt(e.amount, 0) + '</td><td><button type="button" class="btn" data-ked="' + esc(e.id) + '">編集</button> <button type="button" class="btn danger" data-kdel="' + esc(e.id) + '">削除</button></td></tr>';
         }).join("") + "</table></div>" : '<p class="note">まだ記録がありません。上の欄から最初の1件を足せます。</p>';
         $("#kb-cats").innerHTML = catsHtml(list, "月");
       };
@@ -813,8 +1057,8 @@
         var date = $("#kb-date").value, amt = Number($("#kb-amt").value);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { $("#kb-msg").textContent = "日付を入れてください。"; return; }
         if (!isFinite(amt) || amt <= 0) { $("#kb-msg").textContent = "金額は0より大きい数字で入れてください。"; return; }
-        var rec = { id: ed ? ed.id : uid(), date: date, type: formType, cat: $("#kb-cat").value, amount: amt, memo: $("#kb-memo").value.trim() };
-        if (formType === "out" && rec.cat === "医療") {
+        var rec = { id: ed ? ed.id : uid(), date: date, type: formType, scope: formScope, cat: $("#kb-cat").value, amount: amt, memo: $("#kb-memo").value.trim() };
+        if (formType === "out" && formScope === "life" && rec.cat === "医療") {
           var person = $("#kb-person") ? $("#kb-person").value.trim() : "", payee = $("#kb-payee") ? $("#kb-payee").value.trim() : "", mkind = $("#kb-mkind") ? $("#kb-mkind").value : "", reimb = Number($("#kb-reimb") ? $("#kb-reimb").value : "");
           if (person) rec.person = person;
           if (payee) rec.payee = payee;
@@ -822,7 +1066,7 @@
           if (isFinite(reimb) && reimb > 0) rec.reimb = reimb;
         }
         var all = kakeibo().filter(function (x) { return x.id !== rec.id; }); all.unshift(rec);
-        if (put(KAKEIBO, all, "家計簿")) { kbEdit = null; kbYm = date.slice(0, 7); VIEWS.kakeibo(); $("#kb-msg").textContent = "保存しました。"; }
+        if (put(KAKEIBO, all, "家計簿")) { kbEdit = null; kbLastDate = date; kbYm = date.slice(0, 7); VIEWS.kakeibo(); $("#kb-msg").textContent = "保存しました。"; }
       });
       var cancel = $("#kb-cancel"); if (cancel) cancel.addEventListener("click", function () { kbEdit = null; VIEWS.kakeibo(); });
       $("#kb-list").addEventListener("click", function (e) {
@@ -959,7 +1203,7 @@
       });
     }
   };
-  var draft = null, pnlSel = "", pnlMonth = "", pnlMode = "", kbYm = "", kbEdit = null, kbMode = "month", kbYear = 0, kbIncome = "";
+  var draft = null, pnlSel = "", pnlMonth = "", pnlMode = "", kbYm = "", kbEdit = null, kbMode = "month", kbYear = 0, kbIncome = "", kbLastDate = "", kbScopeLast = "life", kbLoanEdit = null, kbAssetEdit = null;
   var num = function (v) { var x = Number(v); return v === "" || !isFinite(x) ? null : x; };
   var toLocal = function (iso) { var t = new Date(iso), z = function (x) { return String(x).padStart(2, "0"); }; return t.getFullYear() + "-" + z(t.getMonth() + 1) + "-" + z(t.getDate()) + "T" + z(t.getHours()) + ":" + z(t.getMinutes()); };
   var JCOLS = [{ name: "id", type: "string", required: true }, { name: "time", type: "time", required: true }, { name: "key", type: "string", required: true },
