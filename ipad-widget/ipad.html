@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="daedb62a7c">
+<meta name="build" content="1f9b65f8ad">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -212,17 +212,22 @@ html[data-theme="neon"][data-club-light="b"] .td-top-glow.tg-r { background: rad
    2つの色票が透け合う中間で橙を通るため、赤→橙→金へ色のバランスがグラデーションのように
    移ろうだけで、点滅にはしない（頂点付近は 30%〜70% をなだらかに保ち、長時間見ても目が
    チラつかないようにする）。
-   あわせて8.5秒周期で、下端中央を支点に横 ±7px・傾き ±0.55度・拡縮 1.015 までの揺れを重ね、
-   炎が風にあおられて傾いて見えるようにする（呼吸とは周期も位相もずらし、単調な往復にしない）。
+   あわせて8.5秒周期で、下端中央を支点に横 ±4px・傾き ±0.3度・拡縮 1.008 までの揺れを重ねる
+   （呼吸とは周期も位相もずらし、単調な往復にしない）。ただし変形は呼吸層（#bg2）だけに効き、
+   輪郭を決める本体（#bg）の炎は静止したままなので、変形の揺れだけでは先端の動きが見えない。
+   そこで「なびき」の主役は描画側に持たせた：呼吸層の炎は本体より高く（大炎で ×1.07）、先端を
+   余分に右へ倒して描く（大炎の先端で約 +22px、野の舌は高さに応じて +10〜+20px）。金が強まる
+   につれて炎が倒れて育つように見え、変形の揺れはそれを助ける脇役に留める。
    端の余白：炎の絵はステージ端（1210）より外側（-47〜1240）まで描いてあり、代表的な画面サイズで
-   左 31.9px・右 20.3px 以上の余白がある。揺れの最悪条件（傾きによる上端の移動 約8px ＋ 横移動
-   7px ＝ 約15px）でも右で 5px 以上、左で 16px 以上の余白が残る。グラデーションの敷き（溶岩の帯
-   など）は両層とも全面に描くため端でも途切れない。
+   左 31.9px・右 20.3px 以上の余白がある。変形の最悪条件（傾きによる上端の移動 約4px ＋ 横移動
+   4px ＋ 拡縮の横ずれ 約5px ＝ 約13px）でも右で 7px 以上、左で 18px 以上の余白が残る。描画側の
+   倒れ差は大炎の先端でもステージ内（約1468/1210 はみ出しは従来どおり絵の範囲内）に収まる。
+   グラデーションの敷き（溶岩の帯など）は両層とも全面に描くため端でも途切れない。
    再描画はリサイズ時だけで、毎フレームの描き直しはしない（省電力では止めて薄く固定） */
 #bg2 { position: fixed; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; z-index: 0; }
 html[data-theme="shippu"] #bg2 { display: block; transform-origin: 50% 100%; animation: td-flame-breathe 12s ease-in-out infinite, td-flame-sway 8.5s ease-in-out -3s infinite alternate; }
 @keyframes td-flame-breathe { 0% { opacity: 0; } 30% { opacity: 0.68; } 50% { opacity: 0.80; } 70% { opacity: 0.68; } 100% { opacity: 0; } }
-@keyframes td-flame-sway { from { transform: translate(-7px, 0) rotate(-0.55deg) scale(1); } to { transform: translate(7px, 0) rotate(0.55deg) scale(1.015); } }
+@keyframes td-flame-sway { from { transform: translate(-4px, 0) rotate(-0.3deg) scale(1); } to { transform: translate(4px, 0) rotate(0.3deg) scale(1.008); } }
 html.lowpower #bg2 { animation: none; opacity: 0.30; }
 /* 安らぎのオーロラ：カーテン専用層。場面（星空・草原・ロッジ）は #bg に描き、カーテンだけを透明な2層に分ける。
    #bg4 = 位相0のカーテン、#bg3（包み #bg3w の中）= 位相1のカーテン。#bg3 は従来どおり透明度と位置
@@ -3465,14 +3470,19 @@ window.TD_THEME = (function () {
             tc.quadraticCurveTo(IX(bx + tw * 0.86 + lean * 0.35), IY(base - th * 0.48), IX(bx + tw), IY(base));
             tc.closePath(); tc.fill();
           }
-          function flameField(tc, seedOff, fx0, pal) {
+          // lean を渡すと「なびき版」になる：舌を層ごとに ×1.04〜×1.06 高くし、先端を高さに
+          // 応じて +10〜+20px 余分に右へ倒す。補正は乱数を消費しない決定式で入れ、本体と同じ
+          // 配置・同じ乱数列のまま形だけを倒す（透け合いの途中で炎がなびいて見えるように）
+          function flameField(tc, seedOff, fx0, pal, lean) {
             (pal || [[500, "#b01a04", 46], [385, "#e83e06", 40], [255, "#ff7a14", 34], [140, "#ffba36", 28]]).forEach(function (FL, li) {
               var fr = rng(1000 + li * 77 + seedOff), fx = fx0;
               while (fx < 1240) {
                 var grad = 0.14 + 0.86 * Math.pow(Math.max(0, fx / 1210), 1.2);
                 var th = FL[0] * grad * (0.62 + fr() * 0.5);
                 var tw = FL[2] * (1.15 + fr() * 0.55);
-                tongue(tc, fx, 847, tw, th, th * (0.34 + fr() * 0.21), FL[1]);
+                if (lean) th *= 1.04 + li * 0.006;
+                var leanX = lean ? 10 + Math.min(10, th * 0.02) : 0;
+                tongue(tc, fx, 847, tw, th, th * (0.34 + fr() * 0.21) + leanX, FL[1]);
                 fx += FL[2] * (0.8 + fr() * 0.35);
               }
             });
@@ -3496,17 +3506,21 @@ window.TD_THEME = (function () {
           }
           // 色の呼吸層（#bg2）：本体と同じ構図のまま、色票だけを金色寄りに替えて別シードで描く。
           // 深紅寄りの本体と透け合う中間で橙を通るので、赤→橙→金へ色のバランスがゆっくり移ろう。
-          // 溶岩の帯と右端の大炎も金寄りの色で重ね、画面の下端と主役の炎も一緒に呼吸させる。
+          // さらに lean 指定で炎そのものを本体より高く・右へ倒して描く。輪郭を決める本体（#bg）は
+          // 静止したままなので、CSS の変形だけでは先端が動いて見えなかった。描画側に倒れ差を
+          // 入れることで、金が強まるにつれて炎がなびいて見える（溶岩の帯と右端の大炎も金寄りの
+          // 色で重ね、画面の下端と主役の炎も一緒に呼吸させる）。
           // 座標の拡縮計算（IX/IY）は本体と共用し、描き直しはこのリサイズ時だけ
           var x2 = layer(cv2).c;
           var ilv2 = x2.createLinearGradient(0, IY(731), 0, IY(841));
           ilv2.addColorStop(0, "rgba(255,170,40,0)"); ilv2.addColorStop(0.7, "rgba(255,185,55,0.16)"); ilv2.addColorStop(1, "rgba(255,215,106,0.34)");
           x2.fillStyle = ilv2; x2.fillRect(0, 0, w, h);
-          flameField(x2, 5000, -47, [[500, "#e8480c", 46], [385, "#ff8a1e", 40], [255, "#ffca3a", 34], [140, "#ffd76a", 28]]);
-          // 右端の大炎の金版：本体より少しだけ大きく・高く描き、透け合いで炎が育って見えるようにする
-          tongue(x2, 1082, 847, 156, 660, 660 * 0.44, "#ff8a1e");
-          tongue(x2, 1108, 847, 108, 545, 545 * 0.44, "#ffca3a");
-          tongue(x2, 1132, 847, 64, 400, 400 * 0.44, "#ffd76a");
+          flameField(x2, 5000, -47, [[500, "#e8480c", 46], [385, "#ff8a1e", 40], [255, "#ffca3a", 34], [140, "#ffd76a", 28]], 1);
+          // 右端の大炎の金版：本体（高さ640・倒れ係数0.44）より高く（×1.07）・先端を約22px右へ
+          // 倒して（係数0.45）描き、透け合いで炎が育ってなびいて見えるようにする
+          tongue(x2, 1082, 847, 156, 685, 685 * 0.45, "#ff8a1e");
+          tongue(x2, 1108, 847, 108, 556, 556 * 0.45, "#ffca3a");
+          tongue(x2, 1132, 847, 64, 407, 407 * 0.45, "#ffd76a");
         }
         if (TB.auroraScene) {
           // 安らぎのオーロラ：北の夜空の静止画。プラネタリウム風の星空と虹色のオーロラカーテン、夏の草原とホタル、
