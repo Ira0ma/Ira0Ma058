@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="caa703f3d7">
+<meta name="build" content="3418191cca">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -176,6 +176,23 @@ html[data-theme="neon"] .td-floor-glow { display: block; }
 .td-floor-glow.fg-r { right: -8vw; background: radial-gradient(ellipse at 50% 100%, rgba(0, 229, 255, 0.50), rgba(0, 229, 255, 0) 70%); animation: td-floor-pulse 10s ease-in-out -5s infinite alternate-reverse; }
 @keyframes td-floor-pulse { from { opacity: 0.16; } to { opacity: 0.38; } }
 html.lowpower .td-floor-glow { animation: none; opacity: 0.22; }
+/* ネオンクラブ：カード上端のイコライザーの帯をゆっくり流す（ネオンの時だけ）。
+   タイル幅ちょうど100pxぶん動かすので継ぎ目なくループする。省電力では全体ルール（*::before を含む）で止まる */
+html[data-theme="neon"] .card::before { animation: td-eq-slide 7s linear infinite; }
+@keyframes td-eq-slide { from { background-position-x: 0; } to { background-position-x: 100px; } }
+/* ネオンクラブ：照明チェンジの「上の光」。床のにじみと同じ作りで、天井側の角に淡く敷く。
+   既定（照明a）は左マゼンタ・右バイオレット。実効 alpha は約0.05〜0.10 */
+.td-top-glow { display: none; position: fixed; top: -14vh; width: 58vw; height: 40vh; pointer-events: none; z-index: 0; }
+html[data-theme="neon"] .td-top-glow { display: block; }
+.td-top-glow.tg-l { left: -8vw; background: radial-gradient(ellipse at 50% 0%, rgba(255, 43, 214, 0.45), rgba(255, 43, 214, 0) 70%); animation: td-top-pulse 11s ease-in-out infinite alternate; }
+.td-top-glow.tg-r { right: -8vw; background: radial-gradient(ellipse at 50% 0%, rgba(178, 107, 255, 0.45), rgba(178, 107, 255, 0) 70%); animation: td-top-pulse 12s ease-in-out -6s infinite alternate-reverse; }
+@keyframes td-top-pulse { from { opacity: 0.12; } to { opacity: 0.22; } }
+html.lowpower .td-top-glow { animation: none; opacity: 0.16; }
+/* 照明b（奇数時）：床と上の光の色を入れ替える。上の光は左シアン・右マゼンタ */
+html[data-theme="neon"][data-club-light="b"] .td-floor-glow.fg-l { background: radial-gradient(ellipse at 50% 100%, rgba(0, 229, 255, 0.50), rgba(0, 229, 255, 0) 70%); }
+html[data-theme="neon"][data-club-light="b"] .td-floor-glow.fg-r { background: radial-gradient(ellipse at 50% 100%, rgba(255, 43, 214, 0.50), rgba(255, 43, 214, 0) 70%); }
+html[data-theme="neon"][data-club-light="b"] .td-top-glow.tg-l { background: radial-gradient(ellipse at 50% 0%, rgba(0, 229, 255, 0.45), rgba(0, 229, 255, 0) 70%); }
+html[data-theme="neon"][data-club-light="b"] .td-top-glow.tg-r { background: radial-gradient(ellipse at 50% 0%, rgba(255, 43, 214, 0.45), rgba(255, 43, 214, 0) 70%); }
 /* 背景の動く部分だけを別の層に：金色の光の筋は透明度のアニメーション（描き直しなし）、きらめく点は軽い低解像度の層 */
 #fit {
   position: fixed; inset: 0;
@@ -1081,6 +1098,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 <canvas id="bg" aria-hidden="true"></canvas>
 <div class="td-floor-glow fg-l" aria-hidden="true"></div>
 <div class="td-floor-glow fg-r" aria-hidden="true"></div>
+<div class="td-top-glow tg-l" aria-hidden="true"></div>
+<div class="td-top-glow tg-r" aria-hidden="true"></div>
 <div id="fit">
 <div id="stage">
 
@@ -5619,6 +5638,13 @@ window.TD_THEME = (function () {
     document.querySelector('[data-wx="hours"]').innerHTML = "";
     document.querySelector("[data-wx-main]").innerHTML = "";
   }
+  /* ネオンクラブの照明チェンジ：端末の現地時刻で偶数時=a・奇数時=b。属性はネオンの時だけ付け、
+     色の入れ替え自体は CSS（[data-club-light="b"]）が担う */
+  function clubLightSync() {
+    var de = document.documentElement;
+    if (de.getAttribute("data-theme") === "neon") de.setAttribute("data-club-light", new Date().getHours() % 2 === 0 ? "a" : "b");
+    else de.removeAttribute("data-club-light");
+  }
   /* テーマの即時適用（ツール画面の設定から呼ばれる）：色・背景・折れ線を新しいテーマで描き直す */
   window.TDThemeApply = function () {
     var T = window.TD_THEME; if (!T) return;
@@ -5627,11 +5653,13 @@ window.TD_THEME = (function () {
     var id = mode === "auto" ? T.byDate(new Date()) : mode === "summer" ? "neon" : (T.NAMES.indexOf(mode) >= 0 ? mode : T.byDate(new Date()));
     T.mode = mode; T.id = id;
     document.documentElement.setAttribute("data-theme", id);
+    clubLightSync();
     var pl = document.querySelector(".td-particles"); if (pl) pl.remove();  // 舞う飾りは開き直したときに切り替わる
     bg.resize();
     (window.__mkts || []).forEach(function (mk) { if (mk.draw) mk.draw(); });
     if (window.TDThemeBtnPaint) window.TDThemeBtnPaint();
   };
+  clubLightSync(); setInterval(clubLightSync, 60000);  // 照明チェンジ：開いた時点の時刻で付け、毎分追随する
   tickClock(); renderCal(); bg.start(); layout(); loadWeather(); loadPrices();
   eqHistory(); eqConnect(); setInterval(eqHistory, 2 * 60000); setInterval(eqPaint, 30000);
   if (loc.gps) locate(loadWeather, function () {});
