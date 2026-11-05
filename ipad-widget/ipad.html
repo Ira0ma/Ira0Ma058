@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="017aaf39bf">
+<meta name="build" content="a87e7dcb27">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -703,6 +703,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gl-tile[data-book="aiside"] { --gl-acc: #7d7bf0; --gl-rgb: 125,123,240; }
 .gl-tile[data-book="med"] { --gl-acc: #4f96b4; --gl-rgb: 79,150,180; }
 .gl-tile[data-book="safety"] { --gl-acc: #c9971c; --gl-rgb: 201,151,28; }
+.gl-tile[data-book="disaster"] { --gl-acc: #2f5aa8; --gl-rgb: 47,90,168; }
 .gl-tile { --gl-acc: var(--gold); --gl-rgb: 227,184,103; }
 .gl-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 2px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--glass-line); flex: none; }
 .gl-tabs button { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: inherit; font-size: 10.5px; font-weight: 700; color: var(--ink-3); background: none; border: 0; border-radius: 999px; padding: 4px 0; cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
@@ -800,7 +801,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gbook.eco .gb-figbox { border-color: #cfe0dc; }
 .gbook.eco .gb-resume { background: #dcecea; border-color: #bcd6d2; color: #175e63; }
 /* 学習の本（パターン図鑑・ドル円入門・FVG詳説）：用語集と同じ紙面に、ひと言→図→見る所→待つこと→例→勘違い→詳しく の順 */
-.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; } .gbook.bk-first { --bk: #8fd8a8; --bk-ink: #2f7a4c; } .gbook.bk-tax { --bk: #e7a98c; --bk-ink: #9a4f2e; } .gbook.bk-retire { --bk: #e9a9c4; --bk-ink: #8f3d63; } .gbook.bk-walls { --bk: #64c2a3; --bk-ink: #226b52; } .gbook.bk-fire { --bk: #e2703a; --bk-ink: #93400f; } .gbook.bk-safetynet { --bk: #5cb87a; --bk-ink: #2c6e44; } .gbook.bk-loan { --bk: #c07f3e; --bk-ink: #7e4f1c; } .gbook.bk-aiside { --bk: #7d7bf0; --bk-ink: #4a3ec2; } .gbook.bk-med { --bk: #4f96b4; --bk-ink: #2c5d72; } .gbook.bk-safety { --bk: #c9971c; --bk-ink: #7d5c0d; }
+.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; } .gbook.bk-first { --bk: #8fd8a8; --bk-ink: #2f7a4c; } .gbook.bk-tax { --bk: #e7a98c; --bk-ink: #9a4f2e; } .gbook.bk-retire { --bk: #e9a9c4; --bk-ink: #8f3d63; } .gbook.bk-walls { --bk: #64c2a3; --bk-ink: #226b52; } .gbook.bk-fire { --bk: #e2703a; --bk-ink: #93400f; } .gbook.bk-safetynet { --bk: #5cb87a; --bk-ink: #2c6e44; } .gbook.bk-loan { --bk: #c07f3e; --bk-ink: #7e4f1c; } .gbook.bk-aiside { --bk: #7d7bf0; --bk-ink: #4a3ec2; } .gbook.bk-med { --bk: #4f96b4; --bk-ink: #2c5d72; } .gbook.bk-safety { --bk: #c9971c; --bk-ink: #7d5c0d; } .gbook.bk-disaster { --bk: #2f5aa8; --bk-ink: #1e3c74; }
 .gbook.bk-learn .gb-bar .gb-title { color: var(--bk); } .gbook.bk-learn .gb-prog i { background: var(--bk); } .gbook.bk-learn .gb-btn.gb-x { background: var(--bk); border-color: var(--bk); }
 .gbook.bk-learn .gb-cover small, .gbook.bk-learn .gb-chhead small, .gbook.bk-learn .gb-toc i, .gbook.bk-learn .gb-idx button em, .gbook.bk-learn .gb-cover .gb-hint::before, .gbook.bk-learn .gb-pts li::marker { color: var(--bk-ink); }
 .gbook.bk-learn .gb-idx h4, .gbook.bk-learn .gb-table th { background: var(--bk-ink); }
@@ -894,6 +895,14 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
     .lt-medcheck .fs-out dt { color: #7d8b93; font-weight: 700; }
     .lt-medcheck .fs-out dd { margin: 0; }
     .lt-medcheck .fs-note { color: #7d8b93; font-size: 11.5px; }
+    .lt-stockcalc .fs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
+    .lt-stockcalc .fs-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .lt-stockcalc .fs-bar span { font-size: 11.5px; color: #8d7d61; }
+    .lt-stockcalc output { display: block; min-height: 6em; }
+    .lt-stockcalc .fs-out { display: grid; grid-template-columns: 8.5em 1fr; gap: 3px 10px; margin: 2px 0 0; font-size: 12.5px; }
+    .lt-stockcalc .fs-out dt { color: #8d7d61; font-weight: 700; }
+    .lt-stockcalc .fs-out dd { margin: 0; }
+    .lt-stockcalc .fs-note { color: #8d7d61; font-size: 11.5px; }
 .gb-rel { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
 .gb-rel > span { font-size: 10.5px; font-weight: 700; color: #8d7d61; margin-right: 2px; }
 .gb-rel button { font: inherit; font-size: 11.5px; color: #2b241a; background: #fffaf0; border: 1px solid #e3d6b8; border-radius: 999px; padding: 3px 9px; cursor: pointer; }
@@ -957,6 +966,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .shf-book[data-book="aiside"] { --acc: #7d7bf0; --rgb: 125, 123, 240; --deep: #232055; --mid: #4a3ec2; }
 .shf-book[data-book="med"] { --acc: #4f96b4; --rgb: 79, 150, 180; --deep: #17333f; --mid: #2c5d72; }
 .shf-book[data-book="safety"] { --acc: #c9971c; --rgb: 201, 151, 28; --deep: #3a2c07; --mid: #7d5c0d; }
+.shf-book[data-book="disaster"] { --acc: #2f5aa8; --rgb: 47, 90, 168; --deep: #101f3c; --mid: #1e3c74; }
 .shf-spine[data-book="fx"] { --acc: #e3b867; --rgb: 227, 184, 103; --deep: #3d2f0e; --mid: #6f5518; }
 .shf-spine[data-book="eco"] { --acc: #6fd0d4; --rgb: 111, 208, 212; --deep: #123a3d; --mid: #1f5f63; }
 .shf-book::before { content: ""; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: rgba(0, 0, 0, .42); box-shadow: 1px 0 0 rgba(255, 255, 255, .13); }
@@ -1381,7 +1391,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <div class="gl-head">
         <b class="gl-title">学ぶ</b><span id="gl-count"></span><button type="button" class="gl-open" data-gl="toc">目次を開く ›</button><button type="button" class="gl-shelf" data-shf="open">📚 小さな書斎</button>
       </div>
-      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（1〜14の順に読む本と、2冊の辞書）"><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="walls" title="8冊目：年収の壁と扶養のしくみ（パートの税金・社会保険・配偶者控除の壁）"><i class="gl-no" aria-hidden="true">8</i>年収の壁</button><button type="button" role="tab" data-glbook="fire" title="9冊目：FIREの設計図 ― 投資の組み合わせの作り方（自分の条件で設計するFIREと、設計ワーク）"><i class="gl-no" aria-hidden="true">9</i>FIRE<span class="gl-x">の設計図</span></button><button type="button" role="tab" data-glbook="safetynet" title="10冊目：困ったときに読む本 ― 生活のセーフティーネット（困ったときに開く本）"><i class="gl-no" aria-hidden="true">10</i>困ったときの<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="loan" title="11冊目：お金を借りる前に読む本 ― 上手な借り入れ、悪い借り入れ（借りる前に読む本）"><i class="gl-no" aria-hidden="true">11</i>借りる前の<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="aiside" title="12冊目：AIと始める副業の教科書 ― クラウドワークス・アフィリエイト・コンテンツ販売（AIと始める副業の教科書）"><i class="gl-no" aria-hidden="true">12</i>AI副業の<span class="gl-x">教科書</span></button><button type="button" role="tab" data-glbook="med" title="13冊目：家庭の医学 ― 体調を崩したときに開く本（体調を崩したときに開く本）"><i class="gl-no" aria-hidden="true">13</i>家庭の<span class="gl-x">医学</span></button><button type="button" role="tab" data-glbook="safety" title="14冊目：巻き込まれたときに開く本 ― 犯罪・トラブルの安全マニュアル（巻き込まれたときに開く本）"><i class="gl-no" aria-hidden="true">14</i>巻き込まれた<span class="gl-x">ときの本</span></button><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
+      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（1〜15の順に読む本と、2冊の辞書）"><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="walls" title="8冊目：年収の壁と扶養のしくみ（パートの税金・社会保険・配偶者控除の壁）"><i class="gl-no" aria-hidden="true">8</i>年収の壁</button><button type="button" role="tab" data-glbook="fire" title="9冊目：FIREの設計図 ― 投資の組み合わせの作り方（自分の条件で設計するFIREと、設計ワーク）"><i class="gl-no" aria-hidden="true">9</i>FIRE<span class="gl-x">の設計図</span></button><button type="button" role="tab" data-glbook="safetynet" title="10冊目：困ったときに読む本 ― 生活のセーフティーネット（困ったときに開く本）"><i class="gl-no" aria-hidden="true">10</i>困ったときの<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="loan" title="11冊目：お金を借りる前に読む本 ― 上手な借り入れ、悪い借り入れ（借りる前に読む本）"><i class="gl-no" aria-hidden="true">11</i>借りる前の<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="aiside" title="12冊目：AIと始める副業の教科書 ― クラウドワークス・アフィリエイト・コンテンツ販売（AIと始める副業の教科書）"><i class="gl-no" aria-hidden="true">12</i>AI副業の<span class="gl-x">教科書</span></button><button type="button" role="tab" data-glbook="med" title="13冊目：家庭の医学 ― 体調を崩したときに開く本（体調を崩したときに開く本）"><i class="gl-no" aria-hidden="true">13</i>家庭の<span class="gl-x">医学</span></button><button type="button" role="tab" data-glbook="safety" title="14冊目：巻き込まれたときに開く本 ― 犯罪・トラブルの安全マニュアル（巻き込まれたときに開く本）"><i class="gl-no" aria-hidden="true">14</i>巻き込まれた<span class="gl-x">ときの本</span></button><button type="button" role="tab" data-glbook="disaster" title="15冊目：災害のときに開く本 ― 避難と備えのマニュアル（災害のときに開く本）"><i class="gl-no" aria-hidden="true">15</i>災害の<span class="gl-x">ときの本</span></button><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
       <div class="gl-grid" id="gl-grid"></div>
       <p class="gl-hint">本を開いたら、左右にスワイプか「次のページ ›」でめくれます</p>
     </div>
@@ -4950,10 +4960,11 @@ window.TD_THEME = (function () {
       loan: { id: "loan", src: "learn/loan.json", title: "お金を借りる前に読む本 ― 上手な借り入れ、悪い借り入れ", en: "BORROWING GUIDE", icon: "💰", bm: "learn-loan-page", learn: true },
       aiside: { id: "aiside", src: "learn/aiside.json", title: "AIと始める副業の教科書 ― クラウドワークス・アフィリエイト・コンテンツ販売", en: "AI SIDE-JOB TEXTBOOK", icon: "🤖", bm: "learn-aiside-page", learn: true },
       med: { id: "med", src: "learn/med.json", title: "家庭の医学 ― 体調を崩したときに開く本", en: "HOME MEDICINE", icon: "🩺", bm: "learn-med-page", learn: true },
-      safety: { id: "safety", src: "learn/safety.json", title: "巻き込まれたときに開く本 ― 犯罪・トラブルの安全マニュアル", en: "SAFETY MANUAL", icon: "🛡️", bm: "learn-safety-page", learn: true }
+      safety: { id: "safety", src: "learn/safety.json", title: "巻き込まれたときに開く本 ― 犯罪・トラブルの安全マニュアル", en: "SAFETY MANUAL", icon: "🛡️", bm: "learn-safety-page", learn: true },
+      disaster: { id: "disaster", src: "learn/disaster.json", title: "災害のときに開く本 ― 避難と備えのマニュアル", en: "DISASTER MANUAL", icon: "🎒", bm: "learn-disaster-page", learn: true }
     };
     // ORDER は名前で関連リンクを探す順（用語集が先）。タブの並び（読む順）は HTML の .gl-tabs 側
-    var ORDER = ["fx", "eco", "first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire", "safetynet", "loan", "aiside", "med", "safety"], LEARN = ["first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire", "safetynet", "loan", "aiside", "med", "safety"];
+    var ORDER = ["fx", "eco", "first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire", "safetynet", "loan", "aiside", "med", "safety", "disaster"], LEARN = ["first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire", "safetynet", "loan", "aiside", "med", "safety", "disaster"];
     // learn/*.json の1項目を、用語集と同じ [名前, 読み, 説明, 付録] の形にする（付録の L に元の項目を持つ）
     function learnBook(b, j) {
       b.version = j.version; b.lead = j.lead; b.short = j.chapters.map(function (c) { return c.short || c.t; });
@@ -5466,6 +5477,7 @@ window.TD_THEME = (function () {
         if (k === "sim" && b[1] === "loan") return loanSimHtml();
         if (k === "sim" && b[1] === "aidiag") return aiDiagHtml();
         if (k === "sim" && b[1] === "medcheck") return medCheckHtml();
+        if (k === "sim" && b[1] === "stockcalc") return stockCalcHtml();
         return "";
       }).join("");
     };
@@ -5755,6 +5767,52 @@ window.TD_THEME = (function () {
       try { localStorage.setItem(MEDCHECK_KEY, JSON.stringify({})); } catch (e) {}
       runMedCheck(el);
     }
+    // 災害のときに開く本の「備えの目安計算」：家族の人数と備える日数から、飲料水・食料・携帯トイレ・カセットボンベの目安を出す。計算は端末の中だけ（保存は localStorage）
+    var STOCKCALC_KEY = "td_stockcalc_v1";
+    var STOCKCALC_SAMPLE = { persons: "2", days: "3" };
+    var stockCalcHtml = function () {
+      var num = function (f, label, unit, val) { return '<label>' + label + '<input type="number" inputmode="decimal" min="0" step="any" data-f="' + f + '" value="' + val + '"><i>' + unit + '</i></label>'; };
+      return '<div class="lt-calc lt-stockcalc" data-calc="stockcalc"><h4>備えの目安計算：わが家の量を出す</h4>' +
+        '<div class="fs-grid">' +
+        num("persons", "家族の人数", "人", STOCKCALC_SAMPLE.persons) +
+        num("days", "備える日数", "日", STOCKCALC_SAMPLE.days) +
+        '</div>' +
+        '<div class="fs-bar"><button type="button" class="fs-reset" data-sreset="1">サンプルに戻す</button><span>入力はこの端末の中にだけ保存され、外に送られません</span></div>' +
+        '<output aria-live="polite"></output></div>';
+    };
+    // 計算本体（飲料水＝3リットル×人数×日数、食料＝3食×人数×日数、携帯トイレ＝5回×人数×日数、カセットボンベ＝1人1週間あたり約6本から換算した概算）
+    var stockCalc = function (persons, days) {
+      var water = 3 * persons * days;
+      return { water: water, bottles: Math.ceil(water / 2), meals: 3 * persons * days, toilet: 5 * persons * days, gas: Math.ceil(6 * persons * days / 7) };
+    };
+    function runStockCalc(el) {
+      var get = function (f) { var x = el.querySelector('[data-f="' + f + '"]'); return x ? x.value : ""; };
+      var set = function (f, val) { var x = el.querySelector('[data-f="' + f + '"]'); if (x) x.value = val; };
+      if (!el.getAttribute("data-hyd")) {  // 初回だけ、前回の入力（端末内保存）を復元する
+        el.setAttribute("data-hyd", "1");
+        try { var saved = JSON.parse(localStorage.getItem(STOCKCALC_KEY) || "null"); if (saved) Object.keys(STOCKCALC_SAMPLE).forEach(function (f) { if (saved[f] != null) set(f, saved[f]); }); } catch (e) {}
+      }
+      var raw = {}; Object.keys(STOCKCALC_SAMPLE).forEach(function (f) { raw[f] = get(f); });
+      try { localStorage.setItem(STOCKCALC_KEY, JSON.stringify(raw)); } catch (e) {}
+      var num = function (f) { var n = Number(raw[f]); return isFinite(n) ? n : NaN; };
+      var out = el.querySelector("output");
+      var persons = num("persons"), days = num("days");
+      if (!(persons > 0)) { out.textContent = "まず「家族の人数」を入れてください。"; return; }
+      if (!(days > 0)) { out.textContent = "「備える日数」を入れてください（目安は最低3日、できれば7日）。"; return; }
+      var r = stockCalc(persons, days);
+      var fmt = function (n) { return Math.round(n).toLocaleString("ja-JP"); };
+      out.innerHTML = '<dl class="fs-out">' +
+        '<dt>飲料水の目安</dt><dd><b>' + fmt(r.water) + 'リットル</b>（2リットルのペットボトルで約' + fmt(r.bottles) + '本。飲む分と調理の分）</dd>' +
+        '<dt>食料の目安</dt><dd><b>' + fmt(r.meals) + '食分</b>（1人1日3食で計算）</dd>' +
+        '<dt>携帯トイレの目安</dt><dd><b>' + fmt(r.toilet) + '回分</b>（1人1日5回で計算）</dd>' +
+        '<dt>カセットボンベの目安</dt><dd><b>約' + fmt(r.gas) + '本</b>（1人1週間あたり約6本から換算した概算）</dd>' +
+        '</dl><p class="fs-note">※ 水の量には、トイレや洗い物に使う生活用水は含まれません。3日分は最低ラインで、大きな災害に備えるなら1週間分が目安です。ふだんの物を少し多めに持つ「ローリングストック」で、期限切れを防ぎながら備えます。</p>';
+    }
+    function stockCalcReset(el) {
+      Object.keys(STOCKCALC_SAMPLE).forEach(function (f) { var x = el.querySelector('[data-f="' + f + '"]'); if (x) x.value = STOCKCALC_SAMPLE[f]; });
+      try { localStorage.setItem(STOCKCALC_KEY, JSON.stringify(STOCKCALC_SAMPLE)); } catch (e) {}
+      runStockCalc(el);
+    }
     // ゴールド入門の計算練習：数量（損失枠→オンス→ロット）と損益（価格差→費用・持ち越し→円換算）。初期値は本の仮定（説明用）
     var inp = function (f, label, unit, val, extra) { return '<label>' + label + '<input type="number" inputmode="decimal" step="any" data-f="' + f + '" value="' + val + '"' + (extra || "") + '><i>' + unit + '</i></label>'; };
     var goldCalcHtml = function (kind) {
@@ -5808,6 +5866,7 @@ window.TD_THEME = (function () {
       if (el.getAttribute("data-calc") === "loansim") { runLoanSim(el); return; }
       if (el.getAttribute("data-calc") === "aidiag") { runAiDiag(el); return; }
       if (el.getAttribute("data-calc") === "medcheck") { runMedCheck(el); return; }
+      if (el.getAttribute("data-calc") === "stockcalc") { runStockCalc(el); return; }
       if (/^gold/.test(el.getAttribute("data-calc"))) { runGold(el); return; }
       var v = function (f) { var x = el.querySelector('[data-f="' + f + '"]'); return x && x.value.trim() !== "" ? Number(x.value) : NaN; }, out = el.querySelector("output"), fmt = function (n, d) { return n.toLocaleString("ja-JP", { maximumFractionDigits: d || 0 }); };
       if (el.getAttribute("data-calc") === "sizing") {
@@ -6072,6 +6131,7 @@ window.TD_THEME = (function () {
       var rb = e.target.closest("[data-ref]"); if (rb && book.contains(rb)) { var r = resolve(rb.getAttribute("data-ref")); if (r) jump(function () { goTo(r); }); else ensureAll().then(function () { var r2 = resolve(rb.getAttribute("data-ref")); if (r2) jump(function () { goTo(r2); }); }); return; }
       var fr = e.target.closest("[data-freset]"); if (fr && book.contains(fr)) { var fsx = fr.closest(".lt-firesim"); if (fsx) fireSimReset(fsx); return; }
       var lr = e.target.closest("[data-lreset]"); if (lr && book.contains(lr)) { var lsx = lr.closest(".lt-loansim"); if (lsx) loanSimReset(lsx); return; }
+      var sr = e.target.closest("[data-sreset]"); if (sr && book.contains(sr)) { var ssx = sr.closest(".lt-stockcalc"); if (ssx) stockCalcReset(ssx); return; }
       var dr = e.target.closest("[data-dreset]"); if (dr && book.contains(dr)) { var dsx = dr.closest(".lt-aidiag"); if (dsx) { aiDiagReset(dsx); return; } var dsm = dr.closest(".lt-medcheck"); if (dsm) { medCheckReset(dsm); return; } }
       var g = e.target.closest("[data-gl],[data-go]"); if (!g) return;
       if (g.hasAttribute("data-go")) { var to = +g.getAttribute("data-go"); jump(function () { show(to, to >= cur ? 1 : -1); }); if (g.getAttribute("data-term")) mark(g.getAttribute("data-term")); return; }
@@ -6122,10 +6182,11 @@ window.TD_THEME = (function () {
       loan: { no: 11, lines: ["お金を", "借りる前に", "読む本"], obi: "借りる前に読む本", n: 39 },
       aiside: { no: 12, lines: ["AIと", "始める", "副業"], obi: "AIと始める副業", n: 46 },
       med: { no: 13, lines: ["家庭の", "医学"], obi: "体調を崩したときに開く本", n: 55 },
-      safety: { no: 14, lines: ["巻き込まれた", "ときに開く本"], obi: "犯罪・トラブルの安全マニュアル", n: 41 }
+      safety: { no: 14, lines: ["巻き込まれた", "ときに開く本"], obi: "犯罪・トラブルの安全マニュアル", n: 41 },
+      disaster: { no: 15, lines: ["災害のときに", "開く本"], obi: "避難と備えのマニュアル", n: 38 }
     };
     var SHELF_TOP = ["first", "gold", "usdjpy", "pattern", "fvg", "tax"];
-    var SHELF_LOW = ["retire", "walls", "fire", "safetynet", "loan", "aiside", "med", "safety"];
+    var SHELF_LOW = ["retire", "walls", "fire", "safetynet", "loan", "aiside", "med", "safety", "disaster"];
     var SHELF_DIC = ["fx", "eco"];
     var shelfEl = document.getElementById("shelf"), shelfBody = document.getElementById("shf-body"), shelfOpener = null;
     function shelfLast() { try { return localStorage.getItem("shelf-last") || ""; } catch (e) { return ""; } }
