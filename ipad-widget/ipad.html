@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="70e2e0d051">
+<meta name="build" content="16a3677928">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -557,6 +557,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gl-tile[data-book="first"] { --gl-acc: #8fd8a8; --gl-rgb: 143,216,168; }
 .gl-tile[data-book="tax"] { --gl-acc: #e7a98c; --gl-rgb: 231,169,140; }
 .gl-tile[data-book="retire"] { --gl-acc: #e9a9c4; --gl-rgb: 233,169,196; }
+.gl-tile[data-book="walls"] { --gl-acc: #64c2a3; --gl-rgb: 100,194,163; }
 .gl-tile { --gl-acc: var(--gold); --gl-rgb: 227,184,103; }
 .gl-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 2px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--glass-line); flex: none; }
 .gl-tabs button { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: inherit; font-size: 10.5px; font-weight: 700; color: var(--ink-3); background: none; border: 0; border-radius: 999px; padding: 4px 0; cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
@@ -652,7 +653,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gbook.eco .gb-figbox { border-color: #cfe0dc; }
 .gbook.eco .gb-resume { background: #dcecea; border-color: #bcd6d2; color: #175e63; }
 /* 学習の本（パターン図鑑・ドル円入門・FVG詳説）：用語集と同じ紙面に、ひと言→図→見る所→待つこと→例→勘違い→詳しく の順 */
-.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; } .gbook.bk-first { --bk: #8fd8a8; --bk-ink: #2f7a4c; } .gbook.bk-tax { --bk: #e7a98c; --bk-ink: #9a4f2e; } .gbook.bk-retire { --bk: #e9a9c4; --bk-ink: #8f3d63; }
+.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; } .gbook.bk-first { --bk: #8fd8a8; --bk-ink: #2f7a4c; } .gbook.bk-tax { --bk: #e7a98c; --bk-ink: #9a4f2e; } .gbook.bk-retire { --bk: #e9a9c4; --bk-ink: #8f3d63; } .gbook.bk-walls { --bk: #64c2a3; --bk-ink: #226b52; }
 .gbook.bk-learn .gb-bar .gb-title { color: var(--bk); } .gbook.bk-learn .gb-prog i { background: var(--bk); } .gbook.bk-learn .gb-btn.gb-x { background: var(--bk); border-color: var(--bk); }
 .gbook.bk-learn .gb-cover small, .gbook.bk-learn .gb-chhead small, .gbook.bk-learn .gb-toc i, .gbook.bk-learn .gb-idx button em, .gbook.bk-learn .gb-cover .gb-hint::before, .gbook.bk-learn .gb-pts li::marker { color: var(--bk-ink); }
 .gbook.bk-learn .gb-idx h4, .gbook.bk-learn .gb-table th { background: var(--bk-ink); }
@@ -1066,7 +1067,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <div class="gl-head">
         <b class="gl-title">学ぶ</b><span id="gl-count"></span><button type="button" class="gl-open" data-gl="toc">目次を開く ›</button>
       </div>
-      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（1〜7の順に読む本と、2冊の辞書）"><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
+      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（1〜8の順に読む本と、2冊の辞書）"><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="walls" title="8冊目：年収の壁と扶養のしくみ（パートの税金・社会保険・配偶者控除の壁）"><i class="gl-no" aria-hidden="true">8</i>年収の壁</button><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
       <div class="gl-grid" id="gl-grid"></div>
       <p class="gl-hint">本を開いたら、左右にスワイプか「次のページ ›」でめくれます</p>
     </div>
@@ -4079,7 +4080,13 @@ window.TD_THEME = (function () {
       ["再就職手当", "さいしゅうしょくてあて", "基本手当の日数を一定以上残して安定した仕事に就いたとき、残りの日数の一部がまとめて支給される給付。執筆時点では残り3分の1以上で60％、3分の2以上で70％が目安。執筆時点の制度。手続きの前に公式情報で確認する。", { rel: ["retire:retire-23"] }],
       ["教育訓練給付金", "きょういくくんれんきゅうふきん", "国が指定した講座を受けると、費用の一部が支給される雇用保険の給付。一般・特定一般・専門実践の3つの区分があり、割合と上限が違う。執筆時点の制度。手続きの前に公式情報で確認する。", { rel: ["retire:retire-25", "retire:retire-kyouiku-table"] }],
       ["任意継続", "にんいけいぞく", "退職したあとも、辞めた会社の健康保険に個人として最長2年入り続ける仕組み。資格を失った日から20日以内に申し出る。保険料は全額自分で払う。執筆時点の制度。手続きの前に公式情報で確認する。", { rel: ["retire:retire-12", "retire:retire-11"] }],
-      ["被扶養者", "ひふようしゃ", "健康保険に入っている家族に扶養されて、その健康保険に入る人。本人の保険料はかからないが、年間収入の見込みなどの条件がある。", { rel: ["retire:retire-14"] }],
+      ["配偶者控除", "はいぐうしゃこうじょ", "収入の少ない配偶者がいる人の税金を軽くする仕組み。令和8年分では、配偶者の合計所得が62万円以下（給与収入だけなら136万円以下）で、本人の合計所得900万円以下なら38万円（老人控除対象配偶者は48万円）。控除を受けるのは配偶者の側。執筆時点の制度。判断の前に公式情報で確認する。", { rel: ["walls:walls-12"] }],
+      ["配偶者特別控除", "はいぐうしゃとくべつこうじょ", "配偶者控除の対象から外れた配偶者がいる場合に、配偶者の所得に応じて段階的に適用される控除。令和8年分では配偶者の合計所得62万円超133万円以下が対象で、少しずつ減ってゼロになる「坂道」型。執筆時点の制度。判断の前に公式情報で確認する。", { rel: ["walls:walls-13"] }],
+      ["特定親族特別控除", "とくていしんぞくとくべつこうじょ", "19歳以上23歳未満の子どもなど（特定親族）が稼ぐ場合に、親などが受けられる控除。令和7年分に創設。令和8年分では特定親族の合計所得62万円超123万円以下（給与収入197万円以下）が対象で、満額は63万円。執筆時点の制度。判断の前に公式情報で確認する。", { rel: ["walls:walls-15"] }],
+      ["勤労学生控除", "きんろうがくせいこうじょ", "働きながら学ぶ学生本人の所得税を軽くする控除。令和8年分では合計所得89万円以下（給与収入だけなら163万円以下）などの条件で27万円。親の扶養控除や社会保険の扶養認定とは別の判定。執筆時点の制度。判断の前に公式情報で確認する。", { rel: ["walls:walls-16"] }],
+      ["同一生計配偶者", "どういつせいけいはいぐうしゃ", "生計を一にしている配偶者で、その年の合計所得が一定額以下の人。扶養控除などの判定や、住民税の非課税の判定で数える対象になる。令和8年分の所得要件は62万円以下。執筆時点の制度。判断の前に公式情報で確認する。", { rel: ["walls:walls-12"] }],
+      ["第3号被保険者", "だいさんごうひほけんしゃ", "会社員など（第2号被保険者）に扶養される配偶者で、国民年金の保険料を自分で払わなくてよい立場の人。年間収入の見込みが原則130万円未満などの、被扶養者の認定とセットで扱われる。執筆時点の制度。判断の前に公式情報で確認する。", { rel: ["walls:walls-06", "retire:retire-15"] }],
+      ["被扶養者", "ひふようしゃ", "健康保険に入っている家族に扶養されて、その健康保険に入る人。本人の保険料はかからないが、年間収入の見込みなどの条件がある。", { rel: ["retire:retire-14", "walls:walls-06"] }],
       ["標準報酬月額", "ひょうじゅんほうしゅうげつがく", "健康保険や厚生年金の保険料と給付を計算するもとになる、給与を区切りのよい等級に当てはめた額。任意継続の保険料や傷病手当金の額にも使われる。", { rel: ["retire:retire-12", "retire:retire-31"] }],
       ["傷病手当金", "しょうびょうてあてきん", "会社の健康保険の給付。仕事以外の病気やケガで働けず給料が出ないとき、休み始めて4日目から、通算1年6か月まで支給される。条件によって退職後も続く。執筆時点の制度。手続きの前に公式情報で確認する。", { rel: ["retire:retire-31"] }],
       ["高額療養費", "こうがくりょうようひ", "医療費の自己負担が1か月の上限を超えたとき、超えた分が戻る健康保険の制度。上限は年齢と所得で決まる。執筆時点の制度。手続きの前に公式情報で確認する。", { rel: ["retire:retire-30"] }],
@@ -4113,10 +4120,11 @@ window.TD_THEME = (function () {
       usdjpy: { id: "usdjpy", src: "learn/usdjpy.json", title: "ドル円入門", en: "USD/JPY BASICS", icon: "💴", bm: "learn-usdjpy-page", learn: true },
       fvg: { id: "fvg", src: "learn/fvg.json", title: "FVG詳説", en: "FAIR VALUE GAP", icon: "📐", bm: "learn-fvg-page", learn: true },
       tax: { id: "tax", src: "learn/tax.json", title: "確定申告ガイド", en: "TAX RETURN GUIDE", icon: "🧾", bm: "learn-tax-page", learn: true },
-      retire: { id: "retire", src: "learn/retire.json", title: "退職と給付金の手続きガイド", en: "LEAVING WORK & BENEFITS", icon: "💼", bm: "learn-retire-page", learn: true }
+      retire: { id: "retire", src: "learn/retire.json", title: "退職と給付金の手続きガイド", en: "LEAVING WORK & BENEFITS", icon: "💼", bm: "learn-retire-page", learn: true },
+      walls: { id: "walls", src: "learn/walls.json", title: "年収の壁と扶養のしくみ", en: "INCOME WALLS & DEPENDENTS", icon: "🧱", bm: "learn-walls-page", learn: true }
     };
     // ORDER は名前で関連リンクを探す順（用語集が先）。タブの並び（読む順）は HTML の .gl-tabs 側
-    var ORDER = ["fx", "eco", "first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire"], LEARN = ["first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire"];
+    var ORDER = ["fx", "eco", "first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls"], LEARN = ["first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls"];
     // learn/*.json の1項目を、用語集と同じ [名前, 読み, 説明, 付録] の形にする（付録の L に元の項目を持つ）
     function learnBook(b, j) {
       b.version = j.version; b.lead = j.lead; b.short = j.chapters.map(function (c) { return c.short || c.t; });
