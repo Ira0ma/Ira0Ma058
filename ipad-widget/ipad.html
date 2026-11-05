@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="1b77bff76b">
+<meta name="build" content="223a6369f7">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -42,6 +42,78 @@
   --gutter: 16px;
   color-scheme: dark;
 }
+
+/* ---------- themes （季節で変わる見た目。current は上の :root のまま＝今のデザイン） ---------- */
+html[data-theme="neon"] {
+  --night: #040814; --glass: rgba(9, 17, 34, 0.88); --glass-line: rgba(34, 211, 238, 0.30);
+  --ink: #f0f8ff; --ink-2: rgba(240, 248, 255, 0.72); --ink-3: rgba(240, 248, 255, 0.48);
+  --gold: #22d3ee; --gold-rgb: 34, 211, 238; --gold-soft: rgba(34, 211, 238, 0.22); --gold-deep: #0ea5c8;
+  --on-accent: #06222b; --panel-rgb: 6, 24, 36;
+  --up-red: #ff4d6d; --up-green: #2bff88; --star: #ffbe3c;
+  --head-points: #5affa0; --head-weather: #6ecdff; --head-ind: #ffbe50; --head-cal: #c39bff; --head-x: #5ae1ff; --head-books: #ff8ccd;
+  --strip-bg: linear-gradient(90deg, #ff5a5a, #ff9f43, #ffd94d, #2bff88, #22d3ee, #a78bfa); --strip-size: 100% 3px;
+}
+html[data-theme="spring"] {
+  --night: #0a080a; --glass: rgba(19, 13, 17, 0.88); --glass-line: rgba(255, 171, 194, 0.30);
+  --ink: #faf4f6; --ink-2: rgba(250, 244, 246, 0.72); --ink-3: rgba(250, 244, 246, 0.48);
+  --gold: #ffabc2; --gold-rgb: 255, 171, 194; --gold-soft: rgba(255, 171, 194, 0.22); --gold-deep: #d16a86;
+  --on-accent: #33141f; --panel-rgb: 30, 19, 24;
+  --up-red: #ff6e78; --up-green: #6eeb96; --star: #ffc86e;
+  --head-points: #96f0aa; --head-weather: #ffbecc; --head-ind: #ffcd82; --head-cal: #ffabc2; --head-x: #aad4ff; --head-books: #ffb4d2;
+  --strip-bg: radial-gradient(circle at 4px 50%, #ffb7c5 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 30px 50%, #ffe1eb 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 56px 50%, #bef0aa 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 82px 50%, #ffcddc 0 2.8px, rgba(0,0,0,0) 3.4px); --strip-size: 104px 7px;
+}
+html[data-theme="autumn"] {
+  --night: #0a0705; --glass: rgba(20, 13, 9, 0.88); --glass-line: rgba(255, 160, 70, 0.30);
+  --ink: #f8f2eb; --ink-2: rgba(248, 242, 235, 0.72); --ink-3: rgba(248, 242, 235, 0.48);
+  --gold: #ffa046; --gold-rgb: 255, 160, 70; --gold-soft: rgba(255, 160, 70, 0.22); --gold-deep: #c46a28;
+  --on-accent: #2b1503; --panel-rgb: 30, 19, 12;
+  --up-red: #ff6e5a; --up-green: #78e678; --star: #ffbe50;
+  --head-points: #ffaa50; --head-weather: #ff8c5a; --head-ind: #ffc85a; --head-cal: #ff7864; --head-x: #ffaa6e; --head-books: #e6785a;
+  --strip-bg: radial-gradient(circle at 4px 50%, #ff963c 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 30px 50%, #dc5028 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 56px 50%, #ffbe50 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 82px 50%, #aa3c23 0 2.8px, rgba(0,0,0,0) 3.4px); --strip-size: 104px 7px;
+}
+html[data-theme="xmas"] {
+  --night: #050907; --glass: rgba(10, 17, 13, 0.88); --glass-line: rgba(240, 200, 90, 0.32);
+  --ink: #f5f8f0; --ink-2: rgba(245, 248, 240, 0.72); --ink-3: rgba(245, 248, 240, 0.48);
+  --gold: #f0c85a; --gold-rgb: 240, 200, 90; --gold-soft: rgba(240, 200, 90, 0.22); --gold-deep: #b8912f;
+  --on-accent: #241a03; --panel-rgb: 14, 26, 17;
+  --up-red: #ff5f5f; --up-green: #50f082; --star: #ffcd55;
+  --head-points: #5affa0; --head-weather: #6ecdff; --head-ind: #ffbe50; --head-cal: #ff966e; --head-x: #5ae1ff; --head-books: #ff8ccd;
+  --strip-bg: radial-gradient(circle at 4px 50%, #ff5f5f 0 3.2px, rgba(0,0,0,0) 4px), radial-gradient(circle at 30px 50%, #5fff91 0 3.2px, rgba(0,0,0,0) 4px), radial-gradient(circle at 56px 50%, #ffcd55 0 3.2px, rgba(0,0,0,0) 4px), radial-gradient(circle at 82px 50%, #6ebeff 0 3.2px, rgba(0,0,0,0) 4px); --strip-size: 104px 8px;
+}
+html[data-theme="newyear"] {
+  --night: #090606; --glass: rgba(18, 11, 10, 0.88); --glass-line: rgba(245, 200, 95, 0.32);
+  --ink: #faf5ee; --ink-2: rgba(250, 245, 238, 0.72); --ink-3: rgba(250, 245, 238, 0.48);
+  --gold: #f5c85f; --gold-rgb: 245, 200, 95; --gold-soft: rgba(245, 200, 95, 0.22); --gold-deep: #c39a3a;
+  --on-accent: #241a03; --panel-rgb: 30, 18, 12;
+  --up-red: #ff645f; --up-green: #6eeb8c; --star: #ffcd55;
+  --head-points: #ff9678; --head-weather: #ffcd82; --head-ind: #ffbe5a; --head-cal: #ff826e; --head-x: #ffdc96; --head-books: #ffa082;
+  --strip-bg: radial-gradient(circle at 4px 50%, #ffcd6e 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 30px 50%, #ff6e5f 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 56px 50%, #fff0d2 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 82px 50%, #ffaa5a 0 2.8px, rgba(0,0,0,0) 3.4px); --strip-size: 104px 7px;
+}
+html[data-theme="winter"] {
+  --night: #06090e; --glass: rgba(11, 16, 24, 0.88); --glass-line: rgba(165, 215, 255, 0.30);
+  --ink: #f2f8ff; --ink-2: rgba(242, 248, 255, 0.72); --ink-3: rgba(242, 248, 255, 0.48);
+  --gold: #a5d7ff; --gold-rgb: 165, 215, 255; --gold-soft: rgba(165, 215, 255, 0.22); --gold-deep: #6aa8d8;
+  --on-accent: #0a1c2e; --panel-rgb: 14, 22, 34;
+  --up-red: #ff7882; --up-green: #5aebaa; --star: #c8e1ff;
+  --head-points: #96dcff; --head-weather: #beebff; --head-ind: #aac8ff; --head-cal: #c8dcff; --head-x: #8ce1ff; --head-books: #d2e6ff;
+  --strip-bg: radial-gradient(circle at 4px 50%, #96dcff 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 30px 50%, #e6f5ff 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 56px 50%, #aabefb 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 82px 50%, #c8ebff 0 2.8px, rgba(0,0,0,0) 3.4px); --strip-size: 104px 7px;
+}
+/* カード上端の装飾（帯・点の並び）。current では出さない */
+.card::before { content: ""; position: absolute; left: 16px; right: 16px; top: 4px; height: 8px; z-index: 3; pointer-events: none; background-repeat: repeat-x; background-position: 0 center; display: none; }
+html[data-theme]:not([data-theme="current"]) .card::before { display: block; background-image: var(--strip-bg); background-size: var(--strip-size); }
+html[data-theme="neon"] .card { box-shadow: 0 0 22px rgba(34, 211, 238, 0.14), 0 18px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05); }
+/* 見出しの色分け（current では従来どおり） */
+html[data-theme]:not([data-theme="current"]) #points .card-title { color: var(--head-points); }
+html[data-theme]:not([data-theme="current"]) #weather .card-title { color: var(--head-weather); }
+html[data-theme]:not([data-theme="current"]) #ind .card-title { color: var(--head-ind); }
+html[data-theme]:not([data-theme="current"]) #cal .card-title { color: var(--head-cal); }
+html[data-theme]:not([data-theme="current"]) #xfeed .card-title { color: var(--head-books); }
+/* 節目マップの縦線＝判定メーター（テーマ時は 上＝レジスタンス色 → 基調色 → 下＝サポート色） */
+html[data-theme]:not([data-theme="current"]) .pm-map::before { width: 2px; background: linear-gradient(180deg, var(--up-red), var(--gold), var(--up-green)); opacity: 0.85; }
+/* 舞う粒子（桜・落ち葉・雪・金粉）。操作は妨げない */
+.td-particles { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; }
+.td-particles span { position: absolute; top: -4vh; display: block; animation-name: td-fall; animation-timing-function: linear; animation-iteration-count: infinite; will-change: transform; }
+@keyframes td-fall { 0% { transform: translate3d(0, -4vh, 0) rotate(0deg); } 100% { transform: translate3d(var(--sw, 3vw), 106vh, 0) rotate(300deg); } }
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { height: 100%; }
@@ -1024,6 +1096,66 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   </div>
 </div>
 
+<script>
+/* テーマ判定：保存した設定 td_theme（auto/current/neon/spring/summer/autumn/xmas/newyear/winter）と日付から決める。
+   ?theme= は確認用の一時上書き（保存しない）。current = 今のデザイン。 */
+window.TD_THEME = (function () {
+  var NAMES = ["current", "neon", "spring", "autumn", "xmas", "newyear", "winter"];
+  function byDate(d) {
+    var m = d.getMonth() + 1, day = d.getDate();
+    if ((m === 12 && day >= 29) || (m === 1 && day <= 3)) return "newyear";
+    if (m === 12) return "xmas";
+    if (m >= 3 && m <= 5) return "spring";
+    if (m >= 6 && m <= 8) return "neon";
+    if (m >= 9 && m <= 11) return "autumn";
+    return "winter";
+  }
+  var mode = "auto";
+  try { mode = localStorage.getItem("td_theme") || "auto"; } catch (e) {}
+  var id = null, q = /[?&]theme=([a-z]+)/.exec(location.search || "");
+  if (q && NAMES.indexOf(q[1]) >= 0) id = q[1];
+  if (!id) {
+    if (mode === "auto") id = byDate(new Date());
+    else if (mode === "summer") id = "neon";
+    else if (NAMES.indexOf(mode) >= 0) id = mode;
+    else id = byDate(new Date());
+  }
+  document.documentElement.setAttribute("data-theme", id);
+  return { mode: mode, id: id, byDate: byDate, NAMES: NAMES };
+})();
+</script>
+<script>
+/* 舞う粒子（テーマの飾り）：桜・落ち葉・雪・金粉。current と neon では出さない。動きを減らす設定でも出さない。 */
+(function () {
+  var id = window.TD_THEME && TD_THEME.id;
+  if (!id || id === "current" || id === "neon") return;
+  if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var KIND = {
+    spring: { cols: ["#ffb7c5", "#ffdde8", "#fff0f4"], petal: true },
+    autumn: { cols: ["#e87830", "#cd5028", "#f2a246", "#b84a28"], petal: true },
+    xmas: { cols: ["#ffffff"], snow: true },
+    newyear: { cols: ["#ffd782", "#fff0d2", "#ffb46e"], dust: true },
+    winter: { cols: ["#ffffff"], snow: true }
+  };
+  var K = KIND[id]; if (!K) return;
+  var layer = document.createElement("div");
+  layer.className = "td-particles"; layer.setAttribute("aria-hidden", "true");
+  for (var i = 0; i < 34; i++) {
+    var sp = document.createElement("span"), r = Math.random;
+    var sz = K.snow ? 2.5 + r() * 3 : K.dust ? 2.5 + r() * 2.5 : 5 + r() * 5;
+    sp.style.left = (r() * 100) + "vw";
+    sp.style.width = sz + "px"; sp.style.height = (K.petal ? sz * 0.72 : sz) + "px";
+    sp.style.background = K.cols[i % K.cols.length];
+    sp.style.borderRadius = K.petal ? "70% 4px 70% 4px" : "50%";
+    sp.style.opacity = (0.3 + r() * 0.4).toFixed(2);
+    sp.style.setProperty("--sw", ((r() * 6 - 3).toFixed(1)) + "vw");
+    sp.style.animationDuration = (9 + r() * 9).toFixed(1) + "s";
+    sp.style.animationDelay = (-r() * 18).toFixed(1) + "s";
+    layer.appendChild(sp);
+  }
+  document.body.appendChild(layer);
+})();
+</script>
 <script src="core.js"></script>
 <script>
 (function () {
@@ -1858,7 +1990,13 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     cs.forEach(function (k, i) { c.lineTo(X(i), Y(k.c)); });
     c.lineTo(X(cs.length - 1), bot); c.closePath(); c.fillStyle = g; c.fill();
     c.beginPath(); cs.forEach(function (k, i) { if (i) c.lineTo(X(i), Y(k.c)); else c.moveTo(X(i), Y(k.c)); });
-    c.strokeStyle = rgb(1); c.lineWidth = 1.8; c.lineJoin = "round"; c.stroke();
+    if (window.TD_THEME && TD_THEME.id !== "current") {
+      var lg = c.createLinearGradient(0, 0, cw, 0);
+      lg.addColorStop(0, rgb(1));
+      lg.addColorStop(1, "rgba(" + Math.min(255, col[0] + 70) + "," + Math.min(255, col[1] + 70) + "," + Math.min(255, col[2] + 70) + ",1)");
+      c.strokeStyle = lg;
+    } else c.strokeStyle = rgb(1);
+    c.lineWidth = 1.8; c.lineJoin = "round"; c.stroke();
     // start point and the current point
     var dot = function (x, y, r, fill) { c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fillStyle = fill; c.fill(); };
     dot(X(0), Y(first), 2.5, "rgba(244,241,234,.6)");
@@ -2888,6 +3026,14 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   var bg = (function () {
     var cv = document.getElementById("bg"), c, w, h, k = 1, parts = [], dot = null;
     function layer(el) { el.width = Math.round(w * k); el.height = Math.round(h * k); var x = el.getContext("2d"); x.setTransform(k, 0, 0, k, 0, 0); return { cv: el, c: x }; }
+    var THEME_BG = {
+      neon: { base: "#040814", dot: "140,230,250", glows: [["rgba(34,211,238,.16)", 0.15, 0.05, 0.55], ["rgba(150,90,255,.14)", 0.92, 0.02, 0.5], ["rgba(30,220,190,.10)", 0.85, 0.98, 0.5]] },
+      spring: { base: "#0a080a", dot: "255,190,205", glows: [["rgba(255,150,180,.14)", 0.15, 0.05, 0.55], ["rgba(150,230,160,.08)", 0.9, 0.9, 0.5], ["rgba(255,200,130,.08)", 0.85, 0.05, 0.45]] },
+      autumn: { base: "#0a0705", dot: "255,195,120", glows: [["rgba(255,140,60,.15)", 0.15, 0.05, 0.55], ["rgba(200,70,40,.12)", 0.9, 0.1, 0.5], ["rgba(255,190,80,.08)", 0.8, 0.95, 0.5]] },
+      xmas: { base: "#050907", dot: "255,240,210", glows: [["rgba(240,200,90,.12)", 0.5, 0, 0.55], ["rgba(255,90,90,.10)", 0.92, 0.05, 0.5], ["rgba(80,240,130,.10)", 0.08, 0.95, 0.5]] },
+      newyear: { base: "#090606", dot: "255,220,150", glows: [["rgba(245,200,95,.14)", 0.15, 0.05, 0.55], ["rgba(255,100,95,.10)", 0.9, 0.08, 0.5], ["rgba(255,170,90,.08)", 0.85, 0.95, 0.5]] },
+      winter: { base: "#06090e", dot: "205,232,255", glows: [["rgba(140,200,255,.13)", 0.15, 0.05, 0.55], ["rgba(90,130,255,.12)", 0.9, 0.05, 0.5], ["rgba(120,220,255,.08)", 0.85, 0.95, 0.5]] }
+    };
     function resize() {
       k = Math.min(window.devicePixelRatio || 1, 2);
       w = innerWidth; h = innerHeight;
@@ -2897,6 +3043,22 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       for (i = 0; i < 260; i++) { var ang = Math.PI * (0.98 + r() * 0.55), rad = 0.86 + r() * 0.13; cityPts.push([ang, rad, r()]); }
       // still layer
       var L = layer(cv), x = L.c;
+      var TB = THEME_BG[(window.TD_THEME && window.TD_THEME.id) || "current"];
+      if (TB) {
+        // テーマ時：今の背景絵（惑星・金色の筋など）は描かず、テーマの色のにじみと点だけにする
+        x.fillStyle = TB.base; x.fillRect(0, 0, w, h);
+        TB.glows.forEach(function (gl) {
+          var gx = x.createRadialGradient(w * gl[1], h * gl[2], 0, w * gl[1], h * gl[2], Math.max(w, h) * gl[3]);
+          gx.addColorStop(0, gl[0]); gx.addColorStop(1, "rgba(0,0,0,0)");
+          x.fillStyle = gx; x.fillRect(0, 0, w, h);
+        });
+        dot = document.createElement("canvas"); dot.width = dot.height = 64;
+        var dc = dot.getContext("2d"), dg = dc.createRadialGradient(32, 32, 0, 32, 32, 32);
+        dg.addColorStop(0, "rgba(" + TB.dot + ",1)"); dg.addColorStop(1, "rgba(" + TB.dot + ",0)");
+        dc.fillStyle = dg; dc.fillRect(0, 0, 64, 64);
+        c = x; draw();
+        return;
+      }
       x.fillStyle = "#06070b"; x.fillRect(0, 0, w, h);
       var g = x.createRadialGradient(w * 0.82, h * 0.95, 0, w * 0.82, h * 0.95, Math.max(w, h) * 0.75);
       g.addColorStop(0, "rgba(150,100,40,.55)"); g.addColorStop(0.35, "rgba(70,45,20,.35)"); g.addColorStop(1, "rgba(6,7,11,0)");
