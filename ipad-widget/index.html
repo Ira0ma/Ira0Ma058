@@ -681,6 +681,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gl-tile[data-book="fire"] { --gl-acc: #e2703a; --gl-rgb: 226,112,58; }
 .gl-tile[data-book="safetynet"] { --gl-acc: #5cb87a; --gl-rgb: 92,184,122; }
 .gl-tile[data-book="loan"] { --gl-acc: #c07f3e; --gl-rgb: 192,127,62; }
+.gl-tile[data-book="aiside"] { --gl-acc: #7d7bf0; --gl-rgb: 125,123,240; }
 .gl-tile { --gl-acc: var(--gold); --gl-rgb: 227,184,103; }
 .gl-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 2px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--glass-line); flex: none; }
 .gl-tabs button { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: inherit; font-size: 10.5px; font-weight: 700; color: var(--ink-3); background: none; border: 0; border-radius: 999px; padding: 4px 0; cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
@@ -778,7 +779,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .gbook.eco .gb-figbox { border-color: #cfe0dc; }
 .gbook.eco .gb-resume { background: #dcecea; border-color: #bcd6d2; color: #175e63; }
 /* 学習の本（パターン図鑑・ドル円入門・FVG詳説）：用語集と同じ紙面に、ひと言→図→見る所→待つこと→例→勘違い→詳しく の順 */
-.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; } .gbook.bk-first { --bk: #8fd8a8; --bk-ink: #2f7a4c; } .gbook.bk-tax { --bk: #e7a98c; --bk-ink: #9a4f2e; } .gbook.bk-retire { --bk: #e9a9c4; --bk-ink: #8f3d63; } .gbook.bk-walls { --bk: #64c2a3; --bk-ink: #226b52; } .gbook.bk-fire { --bk: #e2703a; --bk-ink: #93400f; } .gbook.bk-safetynet { --bk: #5cb87a; --bk-ink: #2c6e44; } .gbook.bk-loan { --bk: #c07f3e; --bk-ink: #7e4f1c; }
+.gbook.bk-gold { --bk: #e6c27a; --bk-ink: #8a6420; } .gbook.bk-pattern { --bk: #6f9a6a; --bk-ink: #3f6b3a; } .gbook.bk-usdjpy { --bk: #8fa8e6; --bk-ink: #3f5aa8; } .gbook.bk-fvg { --bk: #b9a3e3; --bk-ink: #5f4a9a; } .gbook.bk-first { --bk: #8fd8a8; --bk-ink: #2f7a4c; } .gbook.bk-tax { --bk: #e7a98c; --bk-ink: #9a4f2e; } .gbook.bk-retire { --bk: #e9a9c4; --bk-ink: #8f3d63; } .gbook.bk-walls { --bk: #64c2a3; --bk-ink: #226b52; } .gbook.bk-fire { --bk: #e2703a; --bk-ink: #93400f; } .gbook.bk-safetynet { --bk: #5cb87a; --bk-ink: #2c6e44; } .gbook.bk-loan { --bk: #c07f3e; --bk-ink: #7e4f1c; } .gbook.bk-aiside { --bk: #7d7bf0; --bk-ink: #4a3ec2; }
 .gbook.bk-learn .gb-bar .gb-title { color: var(--bk); } .gbook.bk-learn .gb-prog i { background: var(--bk); } .gbook.bk-learn .gb-btn.gb-x { background: var(--bk); border-color: var(--bk); }
 .gbook.bk-learn .gb-cover small, .gbook.bk-learn .gb-chhead small, .gbook.bk-learn .gb-toc i, .gbook.bk-learn .gb-idx button em, .gbook.bk-learn .gb-cover .gb-hint::before, .gbook.bk-learn .gb-pts li::marker { color: var(--bk-ink); }
 .gbook.bk-learn .gb-idx h4, .gbook.bk-learn .gb-table th { background: var(--bk-ink); }
@@ -843,6 +844,20 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
     .lt-loansim .fs-out dd { margin: 0; }
     .lt-loansim .fs-note { color: #8d7d61; font-size: 11.5px; }
     .lt-loansim .ls-warn { color: #a33b1f; }
+    .lt-aidiag .dg-q { border: 0; margin: 0 0 8px; padding: 0; }
+    .lt-aidiag .dg-q legend { font-size: 12.5px; font-weight: 700; color: #2b241a; padding: 0; margin-bottom: 4px; }
+    .lt-aidiag .dg-opts { display: flex; flex-wrap: wrap; gap: 5px; }
+    .lt-aidiag .dg-opts label { position: relative; }
+    .lt-aidiag .dg-opts input { position: absolute; opacity: 0; pointer-events: none; }
+    .lt-aidiag .dg-opts span { display: inline-block; font-size: 12px; color: #2b241a; background: #fffaf0; border: 1px solid #e3d6b8; border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+    .lt-aidiag .dg-opts input:checked + span { background: #4a3ec2; border-color: #4a3ec2; color: #fff; }
+    .lt-aidiag .fs-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .lt-aidiag .fs-bar span { font-size: 11.5px; color: #8d7d61; }
+    .lt-aidiag output { display: block; min-height: 3em; }
+    .lt-aidiag .fs-out { display: grid; grid-template-columns: 8.5em 1fr; gap: 3px 10px; margin: 2px 0 0; font-size: 12.5px; }
+    .lt-aidiag .fs-out dt { color: #8d7d61; font-weight: 700; }
+    .lt-aidiag .fs-out dd { margin: 0; }
+    .lt-aidiag .fs-note { color: #8d7d61; font-size: 11.5px; }
 .gb-rel { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
 .gb-rel > span { font-size: 10.5px; font-weight: 700; color: #8d7d61; margin-right: 2px; }
 .gb-rel button { font: inherit; font-size: 11.5px; color: #2b241a; background: #fffaf0; border: 1px solid #e3d6b8; border-radius: 999px; padding: 3px 9px; cursor: pointer; }
@@ -903,6 +918,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .shf-book[data-book="fire"] { --acc: #e2703a; --rgb: 226, 112, 58; --deep: #4d1f05; --mid: #93400f; }
 .shf-book[data-book="safetynet"] { --acc: #5cb87a; --rgb: 92, 184, 122; --deep: #17452a; --mid: #2c6e44; }
 .shf-book[data-book="loan"] { --acc: #c07f3e; --rgb: 192, 127, 62; --deep: #422a0d; --mid: #7e4f1c; }
+.shf-book[data-book="aiside"] { --acc: #7d7bf0; --rgb: 125, 123, 240; --deep: #232055; --mid: #4a3ec2; }
 .shf-spine[data-book="fx"] { --acc: #e3b867; --rgb: 227, 184, 103; --deep: #3d2f0e; --mid: #6f5518; }
 .shf-spine[data-book="eco"] { --acc: #6fd0d4; --rgb: 111, 208, 212; --deep: #123a3d; --mid: #1f5f63; }
 .shf-book::before { content: ""; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: rgba(0, 0, 0, .42); box-shadow: 1px 0 0 rgba(255, 255, 255, .13); }
@@ -1326,7 +1342,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <div class="gl-head">
         <b class="gl-title">学ぶ</b><span id="gl-count"></span><button type="button" class="gl-open" data-gl="toc">目次を開く ›</button><button type="button" class="gl-shelf" data-shf="open">📚 小さな書斎</button>
       </div>
-      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（1〜11の順に読む本と、2冊の辞書）"><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="walls" title="8冊目：年収の壁と扶養のしくみ（パートの税金・社会保険・配偶者控除の壁）"><i class="gl-no" aria-hidden="true">8</i>年収の壁</button><button type="button" role="tab" data-glbook="fire" title="9冊目：FIREの設計図 ― 投資の組み合わせの作り方（自分の条件で設計するFIREと、設計ワーク）"><i class="gl-no" aria-hidden="true">9</i>FIRE<span class="gl-x">の設計図</span></button><button type="button" role="tab" data-glbook="safetynet" title="10冊目：困ったときに読む本 ― 生活のセーフティーネット（困ったときに開く本）"><i class="gl-no" aria-hidden="true">10</i>困ったときの<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="loan" title="11冊目：お金を借りる前に読む本 ― 上手な借り入れ、悪い借り入れ（借りる前に読む本）"><i class="gl-no" aria-hidden="true">11</i>借りる前の<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
+      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（1〜12の順に読む本と、2冊の辞書）"><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="walls" title="8冊目：年収の壁と扶養のしくみ（パートの税金・社会保険・配偶者控除の壁）"><i class="gl-no" aria-hidden="true">8</i>年収の壁</button><button type="button" role="tab" data-glbook="fire" title="9冊目：FIREの設計図 ― 投資の組み合わせの作り方（自分の条件で設計するFIREと、設計ワーク）"><i class="gl-no" aria-hidden="true">9</i>FIRE<span class="gl-x">の設計図</span></button><button type="button" role="tab" data-glbook="safetynet" title="10冊目：困ったときに読む本 ― 生活のセーフティーネット（困ったときに開く本）"><i class="gl-no" aria-hidden="true">10</i>困ったときの<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="loan" title="11冊目：お金を借りる前に読む本 ― 上手な借り入れ、悪い借り入れ（借りる前に読む本）"><i class="gl-no" aria-hidden="true">11</i>借りる前の<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="aiside" title="12冊目：AIと始める副業の教科書 ― クラウドワークス・アフィリエイト・コンテンツ販売（AIと始める副業の教科書）"><i class="gl-no" aria-hidden="true">12</i>AI副業の<span class="gl-x">教科書</span></button><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
       <div class="gl-grid" id="gl-grid"></div>
       <p class="gl-hint">本を開いたら、左右にスワイプか「次のページ ›」でめくれます</p>
     </div>
@@ -4847,7 +4863,11 @@ window.TD_THEME = (function () {
       ["元利均等返済", "がんりきんとうへんさい", "毎月の返済額（元本と利息の合計）がずっと一定の返し方。初めは利息の割合が大きく、元本の減りは後半に速くなる。住宅ローンやカードローンの定番。", { rel: ["loan:loan-07"] }],
       ["元金均等返済", "がんきんきんとうへんさい", "元本を毎月同じ額ずつ返す返し方。返済額は最初がいちばん大きく、残高が減るにつれて小さくなる。利息の合計は、同じ条件の元利均等より小さくなるのが普通。", { rel: ["loan:loan-08"] }],
       ["総量規制", "そうりょうきせい", "貸金業者からの個人の借入れを、合計で年収の3分の1までに制限する貸金業法のルール。銀行は対象外。住宅ローンや自動車ローンなどは「除外」として残高に数えない。執筆時点の制度。手続きの前に公式情報で確認する。", { rel: ["loan:loan-21"] }],
-      ["遅延損害金", "ちえんそんがいきん", "返済が遅れたときに、遅れた日数に応じて発生する賠償金。法律で上限があり、銀行や消費者金融など業として貸す場合は年20％。執筆時点の制度。手続きの前に公式情報で確認する。", { rel: ["loan:loan-22"] }]
+      ["遅延損害金", "ちえんそんがいきん", "返済が遅れたときに、遅れた日数に応じて発生する賠償金。法律で上限があり、銀行や消費者金融など業として貸す場合は年20％。執筆時点の制度。手続きの前に公式情報で確認する。", { rel: ["loan:loan-22"] }],
+      ["生成AI", "せいせいえーあい", "文章や画像などを自動で作るAI。副業では調査と下書きに使うと速いが、数字の裏取りと最終確認は人間が行う。出力にそれらしい誤り（ハルシネーション）が混ざることがある。", { rel: ["aiside:aiside-06"] }],
+      ["クラウドソーシング", "くらうどそーしんぐ", "仕事を頼みたい人と受けたい人を、インターネット上でつなぐ仕組み（クラウドワークスなど）。報酬からはサービスの利用料が引かれ、率や計算方法は各サービスの公式案内で確認する。", { rel: ["aiside:aiside-20"] }],
+      ["ステマ規制", "すてまきせい", "広告であることが消費者に分からない表示を、景品表示法の不当表示として規制する仕組み。令和5年10月1日施行。紹介には「PR」「広告」などの明瞭な表示が要る。", { rel: ["aiside:aiside-31"] }],
+      ["著作権", "ちょさくけん", "文章や画像などの創作物を守る権利。AIの生成物でも、既存の著作物との類似性と依拠性が認められれば侵害になり得ると、文化庁の考え方で整理されている。", { rel: ["aiside:aiside-10"] }]
     ]},
     { t: "FIREと資産形成", s: "経済的自立・取り崩し・組み合わせの型", terms: [
       ["FIRE", "ふぁいあ", "Financial Independence, Retire Earlyの略。資産からの収入や取り崩しで暮らしが成り立ち、働くかどうか・どれくらい働くかを自分で選べる状態（経済的自立）を目指す考え方。辞めること自体ではなく、選択肢を持つことが中心。", { rel: ["fire:fire-01", "fire:fire-start"] }],
@@ -4878,10 +4898,11 @@ window.TD_THEME = (function () {
       walls: { id: "walls", src: "learn/walls.json", title: "年収の壁と扶養のしくみ", en: "INCOME WALLS & DEPENDENTS", icon: "🧱", bm: "learn-walls-page", learn: true },
       fire: { id: "fire", src: "learn/fire.json", title: "FIREの設計図 ― 投資の組み合わせの作り方", en: "DESIGNING FIRE", icon: "🔥", bm: "learn-fire-page", learn: true },
       safetynet: { id: "safetynet", src: "learn/safetynet.json", title: "困ったときに読む本 ― 生活のセーフティーネット", en: "SAFETY NET GUIDE", icon: "🛟", bm: "learn-safetynet-page", learn: true },
-      loan: { id: "loan", src: "learn/loan.json", title: "お金を借りる前に読む本 ― 上手な借り入れ、悪い借り入れ", en: "BORROWING GUIDE", icon: "💰", bm: "learn-loan-page", learn: true }
+      loan: { id: "loan", src: "learn/loan.json", title: "お金を借りる前に読む本 ― 上手な借り入れ、悪い借り入れ", en: "BORROWING GUIDE", icon: "💰", bm: "learn-loan-page", learn: true },
+      aiside: { id: "aiside", src: "learn/aiside.json", title: "AIと始める副業の教科書 ― クラウドワークス・アフィリエイト・コンテンツ販売", en: "AI SIDE-JOB TEXTBOOK", icon: "🤖", bm: "learn-aiside-page", learn: true }
     };
     // ORDER は名前で関連リンクを探す順（用語集が先）。タブの並び（読む順）は HTML の .gl-tabs 側
-    var ORDER = ["fx", "eco", "first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire", "safetynet", "loan"], LEARN = ["first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire", "safetynet", "loan"];
+    var ORDER = ["fx", "eco", "first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire", "safetynet", "loan", "aiside"], LEARN = ["first", "gold", "pattern", "usdjpy", "fvg", "tax", "retire", "walls", "fire", "safetynet", "loan", "aiside"];
     // learn/*.json の1項目を、用語集と同じ [名前, 読み, 説明, 付録] の形にする（付録の L に元の項目を持つ）
     function learnBook(b, j) {
       b.version = j.version; b.lead = j.lead; b.short = j.chapters.map(function (c) { return c.short || c.t; });
@@ -5392,6 +5413,7 @@ window.TD_THEME = (function () {
         if (k === "qa") return '<ol class="lt-qa">' + b[1].map(function (x) { return '<li><p>' + esc(x[0]) + '</p><details><summary>答えを見る</summary><p>' + esc(x[1]) + '</p></details></li>'; }).join("") + '</ol>';
         if (k === "sim" && b[1] === "fire") return fireSimHtml();
         if (k === "sim" && b[1] === "loan") return loanSimHtml();
+        if (k === "sim" && b[1] === "aidiag") return aiDiagHtml();
         return "";
       }).join("");
     };
@@ -5567,6 +5589,60 @@ window.TD_THEME = (function () {
       try { localStorage.setItem(LOAN_SIM_KEY, JSON.stringify(LOAN_SIM_SAMPLE)); } catch (e) {}
       runLoanSim(el);
     }
+    // AIと始める副業の教科書の「自分向き診断」：5つの質問の回答を4つの入口（クラウドソーシング／コンテンツ販売／アフィリエイト／スキル販売）に点数化して、向いていそうな入口の目安を出す。計算は端末の中だけ（保存は localStorage）
+    var AIDIAG_KEY = "td_aidiag_v1";
+    var AIDIAG_ROUTES = [
+      { key: "cs", name: "クラウドソーシング", chap: "第6章（稼ぎ方1）", reason: "仕事を受けて納品する形が、早く小さく形にする進め方と合っています" },
+      { key: "cont", name: "コンテンツ販売", chap: "第7章（稼ぎ方2）", reason: "自分の記録やノウハウを、記事や道具の形にして売る進め方と合っています" },
+      { key: "aff", name: "アフィリエイト", chap: "第8章（稼ぎ方3）", reason: "調べたことや使っているものを、媒体で紹介していく進め方と合っています" },
+      { key: "skill", name: "スキル販売", chap: "第9章（稼ぎ方4）", reason: "作れるもの・できる作業を、サービスの形で出す進め方と合っています" }
+    ];
+    var AIDIAG_QS = [
+      { q: "副業に使える時間は？", name: "q1", opts: [["a", "週5時間未満（細切れ）"], ["b", "週5〜10時間"], ["c", "週10時間以上"]], w: { a: [0, 1, 2, 0], b: [1, 1, 0, 1], c: [2, 0, 0, 1] } },
+      { q: "得意なこと・好きなことは？", name: "q2", opts: [["a", "文章を書くこと"], ["b", "調べる・まとめること"], ["c", "作る・手を動かすこと"]], w: { a: [0, 2, 1, 0], b: [0, 1, 2, 0], c: [1, 0, 0, 2] } },
+      { q: "人とのやり取りは？", name: "q3", opts: [["a", "少ないほうがいい"], ["b", "メッセージ程度なら平気"], ["c", "打ち合わせも平気"]], w: { a: [0, 2, 2, 0], b: [0, 1, 1, 1], c: [2, 0, 0, 1] } },
+      { q: "収入の出方は、どちらが合う？", name: "q4", opts: [["a", "早く小さく形にしたい"], ["b", "時間をかけて積み上げたい"], ["c", "どちらでもよい"]], w: { a: [2, 0, 0, 1], b: [0, 2, 2, 0], c: [1, 1, 1, 1] } },
+      { q: "手元にある材料は？", name: "q5", opts: [["a", "まだ何もない"], ["b", "経験・ノウハウがある"], ["c", "売れるスキル・作れるものがある"]], w: { a: [2, 0, 1, 0], b: [0, 2, 0, 1], c: [1, 0, 0, 2] } }
+    ];
+    // 採点本体（回答 {q1:"a",...} からルート別の点数と上位ルートを返す純粋関数）
+    var aiDiagScore = function (ans) {
+      var scores = [0, 0, 0, 0];
+      AIDIAG_QS.forEach(function (q) { var w = q.w[ans[q.name]]; if (w) for (var i = 0; i < 4; i++) scores[i] += w[i]; });
+      var max = Math.max.apply(null, scores), tops = [];
+      scores.forEach(function (s, i) { if (s === max) tops.push(i); });
+      return { scores: scores, tops: tops };
+    };
+    var aiDiagHtml = function () {
+      var qs = AIDIAG_QS.map(function (q, qi) {
+        return '<fieldset class="dg-q"><legend>' + (qi + 1) + ". " + esc(q.q) + '</legend><div class="dg-opts">' + q.opts.map(function (o) {
+          return '<label><input type="radio" name="aidiag-' + q.name + '" value="' + o[0] + '" data-f="' + q.name + '"><span>' + esc(o[1]) + '</span></label>';
+        }).join("") + '</div></fieldset>';
+      }).join("");
+      return '<div class="lt-calc lt-aidiag" data-calc="aidiag"><h4>自分向き診断：4つの入口のどこから始めるか</h4>' + qs +
+        '<div class="fs-bar"><button type="button" class="fs-reset" data-dreset="1">回答をクリア</button><span>回答はこの端末の中にだけ保存され、外に送られません</span></div>' +
+        '<output aria-live="polite"></output></div>';
+    };
+    function runAiDiag(el) {
+      if (!el.getAttribute("data-hyd")) {  // 初回だけ、前回の回答（端末内保存）を復元する
+        el.setAttribute("data-hyd", "1");
+        try { var saved = JSON.parse(localStorage.getItem(AIDIAG_KEY) || "null"); if (saved) AIDIAG_QS.forEach(function (q) { var v = saved[q.name]; if (v) { var x = el.querySelector('input[name="aidiag-' + q.name + '"][value="' + v + '"]'); if (x) x.checked = true; } }); } catch (e) {}
+      }
+      var ans = {}, left = 0;
+      AIDIAG_QS.forEach(function (q) { var x = el.querySelector('input[name="aidiag-' + q.name + '"]:checked'); ans[q.name] = x ? x.value : ""; if (!x) left++; });
+      try { localStorage.setItem(AIDIAG_KEY, JSON.stringify(ans)); } catch (e) {}
+      var out = el.querySelector("output");
+      if (left > 0) { out.innerHTML = '<p class="fs-note">あと' + left + '問に答えると、目安が出ます。</p>'; return; }
+      var r = aiDiagScore(ans);
+      var html = '<dl class="fs-out">';
+      r.tops.forEach(function (i) { var rt = AIDIAG_ROUTES[i]; html += '<dt>向いていそうな入口</dt><dd><b>' + rt.name + '</b>（' + rt.chap + 'から）<br>' + rt.reason + '。</dd>'; });
+      html += '</dl><p class="fs-note">※ これは目安です。適性や成果を保証するものではありません。まず小さく始めて、記録を見て判断してください（第10章）。</p>';
+      out.innerHTML = html;
+    }
+    function aiDiagReset(el) {
+      el.querySelectorAll('input[type="radio"]').forEach(function (x) { x.checked = false; });
+      try { localStorage.setItem(AIDIAG_KEY, JSON.stringify({})); } catch (e) {}
+      runAiDiag(el);
+    }
     // ゴールド入門の計算練習：数量（損失枠→オンス→ロット）と損益（価格差→費用・持ち越し→円換算）。初期値は本の仮定（説明用）
     var inp = function (f, label, unit, val, extra) { return '<label>' + label + '<input type="number" inputmode="decimal" step="any" data-f="' + f + '" value="' + val + '"' + (extra || "") + '><i>' + unit + '</i></label>'; };
     var goldCalcHtml = function (kind) {
@@ -5618,6 +5694,7 @@ window.TD_THEME = (function () {
     function runCalc(el) {
       if (el.getAttribute("data-calc") === "firesim") { runFireSim(el); return; }
       if (el.getAttribute("data-calc") === "loansim") { runLoanSim(el); return; }
+      if (el.getAttribute("data-calc") === "aidiag") { runAiDiag(el); return; }
       if (/^gold/.test(el.getAttribute("data-calc"))) { runGold(el); return; }
       var v = function (f) { var x = el.querySelector('[data-f="' + f + '"]'); return x && x.value.trim() !== "" ? Number(x.value) : NaN; }, out = el.querySelector("output"), fmt = function (n, d) { return n.toLocaleString("ja-JP", { maximumFractionDigits: d || 0 }); };
       if (el.getAttribute("data-calc") === "sizing") {
@@ -5882,6 +5959,7 @@ window.TD_THEME = (function () {
       var rb = e.target.closest("[data-ref]"); if (rb && book.contains(rb)) { var r = resolve(rb.getAttribute("data-ref")); if (r) jump(function () { goTo(r); }); else ensureAll().then(function () { var r2 = resolve(rb.getAttribute("data-ref")); if (r2) jump(function () { goTo(r2); }); }); return; }
       var fr = e.target.closest("[data-freset]"); if (fr && book.contains(fr)) { var fsx = fr.closest(".lt-firesim"); if (fsx) fireSimReset(fsx); return; }
       var lr = e.target.closest("[data-lreset]"); if (lr && book.contains(lr)) { var lsx = lr.closest(".lt-loansim"); if (lsx) loanSimReset(lsx); return; }
+      var dr = e.target.closest("[data-dreset]"); if (dr && book.contains(dr)) { var dsx = dr.closest(".lt-aidiag"); if (dsx) aiDiagReset(dsx); return; }
       var g = e.target.closest("[data-gl],[data-go]"); if (!g) return;
       if (g.hasAttribute("data-go")) { var to = +g.getAttribute("data-go"); jump(function () { show(to, to >= cur ? 1 : -1); }); if (g.getAttribute("data-term")) mark(g.getAttribute("data-term")); return; }
       var a = g.getAttribute("data-gl");
@@ -5928,10 +6006,11 @@ window.TD_THEME = (function () {
       walls: { no: 8, lines: ["年収の壁と", "扶養の", "しくみ"], obi: "令和8年分の最新版", n: 32 },
       fire: { no: 9, lines: ["FIREの", "設計図"], obi: "設計ワーク付き", n: 31 },
       safetynet: { no: 10, lines: ["困ったときに", "読む本"], obi: "制度は使うためにある", n: 51 },
-      loan: { no: 11, lines: ["お金を", "借りる前に", "読む本"], obi: "借りる前に読む本", n: 39 }
+      loan: { no: 11, lines: ["お金を", "借りる前に", "読む本"], obi: "借りる前に読む本", n: 39 },
+      aiside: { no: 12, lines: ["AIと", "始める", "副業"], obi: "AIと始める副業", n: 46 }
     };
     var SHELF_TOP = ["first", "gold", "usdjpy", "pattern", "fvg", "tax"];
-    var SHELF_LOW = ["retire", "walls", "fire", "safetynet", "loan"];
+    var SHELF_LOW = ["retire", "walls", "fire", "safetynet", "loan", "aiside"];
     var SHELF_DIC = ["fx", "eco"];
     var shelfEl = document.getElementById("shelf"), shelfBody = document.getElementById("shf-body"), shelfOpener = null;
     function shelfLast() { try { return localStorage.getItem("shelf-last") || ""; } catch (e) { return ""; } }
