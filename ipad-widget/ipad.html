@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="350d637499">
+<meta name="build" content="fb7b20b9e1">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -214,13 +214,14 @@ html[data-theme="shippu"] #bg2 { display: block; animation: td-flame-flicker 5s 
 @keyframes td-flame-flicker { from { opacity: 0; } to { opacity: 0.55; } }
 html.lowpower #bg2 { animation: none; opacity: 0.30; }
 /* 安らぎのオーロラ：ゆらぎ層。#bg の静止画の上に、位相のずれたカーテンを描いた #bg3 を重ね、
-   透明度と位置（横±5px・縦∓3px）と、ごく僅かな拡縮（1.0→1.012）をゆっくり往復させる。星空・草原・ロッジは同じ絵なので
-   二重には見えず、カーテンだけが揺れて見える。ドリフトと拡縮で端が空かないよう、キャンバスは画面より 16px 大きく敷く
-   （拡縮は 1.0 以上しか使わないため、端の余白 8px に対して横 5px・縦 3px の移動でも空くことはない）。
+   透明度と位置（横±7px・縦∓3px）と、ごく僅かな拡縮（1.0→1.012）をゆっくり往復させる。星空・草原・ロッジは同じ絵なので
+   二重には見えず、カーテンだけが揺れて見える。加えてゆらぎ層ではカーテンの光条（縦の線）が横になびくよう
+   位相で曲げて描いてあり、透け具合の変化で光の線が風に流れて見える。ドリフトで端が空かないよう、キャンバスは画面より 16px 大きく敷く
+   （端の余白は片側 8px。拡縮は 1.0 以上しか使わないため最も厳しいのは拡縮 1.0 で横移動が最大の瞬間で、それでも 1px の余白が残る）。
    再描画はリサイズ時だけで、毎フレームの描き直しはしない（省電力では止めて薄く固定） */
 #bg3 { position: fixed; left: -8px; top: -8px; width: calc(100% + 16px); height: calc(100% + 16px); display: none; pointer-events: none; z-index: 0; }
 html[data-theme="aurora"] #bg3 { display: block; animation: td-aurora-sway 6.8s ease-in-out infinite alternate; }
-@keyframes td-aurora-sway { from { opacity: 0; transform: translate(-5px, 3px) scale(1); } to { opacity: 0.92; transform: translate(5px, -3px) scale(1.012); } }
+@keyframes td-aurora-sway { from { opacity: 0; transform: translate(-7px, 3px) scale(1); } to { opacity: 0.92; transform: translate(7px, -3px) scale(1.012); } }
 html.lowpower #bg3 { animation: none; opacity: 0.30; }
 /* 利確の炎：カードの炎仕様。炎に照らされたような枠のグロー（判断・判定の色には使わない）。
    土台の影と上端のハイライトは基本デザインの値をそのまま残す */
@@ -3538,11 +3539,15 @@ window.TD_THEME = (function () {
               for (var ri = 0; ri < 170; ri++) {
                 var rx = -20 + ri * (1270 / 170) + (rr() - 0.5) * 8, ryb = yc(rx);
                 var ln = height * (0.5 + rr() * 0.6), ra = rayAlpha * (0.3 + rr() * 0.7), rw = Math.max(0.6, (1 + rr() * 2) * asc);
+                // 横なびき：光条の下端の横ずらし量。本体（phase 0）は左へ僅かに -5px、ゆらぎ層（phase 1）は右へ大きく、
+                // しかも x で波打たせて一様な滑りではなく風に吹かれる波に見せる。ずれは深さ f に対して
+                // 二次ベジェ（中深の制御点 55%）の形 1.1f-0.1f² で効かせ、上端は縁に留めたまま下へ行くほど曲がる
+                var lb = ph ? (24 + 10 * Math.sin(rx * 0.008 + 1.7)) : -5;
                 for (yy = 0; yy < ln; yy += 4) {
                   f = yy / ln;
                   var rc = auroraColor(Math.min(1, f + shift));
                   tc.fillStyle = "rgba(" + rc[0] + "," + rc[1] + "," + rc[2] + "," + (ra * (1 - f * 0.75)).toFixed(3) + ")";
-                  tc.fillRect(AX(rx + Math.sin(yy / 70 + seedOff) * 10), AY(ryb + yy), rw, Math.max(1, 4 * asc));
+                  tc.fillRect(AX(rx + Math.sin(yy / 70 + seedOff) * 10 + lb * (1.1 * f - 0.1 * f * f)), AY(ryb + yy), rw, Math.max(1, 4 * asc));
                 }
               }
               tc.strokeStyle = "rgba(214,255,226," + (0.55 + ph * 0.20).toFixed(2) + ")"; tc.lineWidth = 2;  // 上端の輝く縁（ゆらぎ層では少し明るくし、透けるにつれて縁が冴える）
