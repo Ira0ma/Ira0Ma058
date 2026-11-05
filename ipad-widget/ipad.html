@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="385d51c266">
+<meta name="build" content="e30516ba7b">
 <title>Trade Desk Home</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -53,7 +53,7 @@ html[data-theme="neon"] {
   --on-accent: #06222b; --panel-rgb: 22, 14, 40;
   --up-red: #ff4d6d; --up-green: #2bff88; --star: #ffbe3c;
   --head-points: #5affa0; --head-weather: #6ecdff; --head-ind: #ffbe50; --head-cal: #c39bff; --head-x: #5ae1ff; --head-books: #ff8ccd;
-  --strip-bg: linear-gradient(90deg, #22d3ee 0 14px, rgba(0,0,0,0) 14px 20px, #ff4d9d 20px 34px, rgba(0,0,0,0) 34px 40px, #ffd94d 40px 54px, rgba(0,0,0,0) 54px 60px, #2bff88 60px 74px, rgba(0,0,0,0) 74px 80px, #a78bfa 80px 94px, rgba(0,0,0,0) 94px 96px); --strip-size: 96px 3px;
+  --strip-bg: linear-gradient(90deg, #00e5ff 0 14px, rgba(0,0,0,0) 14px 20px, #ff2bd6 20px 34px, rgba(0,0,0,0) 34px 40px, #ffc400 40px 54px, rgba(0,0,0,0) 54px 60px, #3dff7a 60px 74px, rgba(0,0,0,0) 74px 80px, #b26bff 80px 94px, rgba(0,0,0,0) 94px 96px); --strip-size: 96px 3px;
 }
 html[data-theme="spring"] {
   --night: #0a080a; --glass: rgba(19, 13, 17, 0.88); --glass-line: rgba(255, 171, 194, 0.30);
@@ -105,32 +105,32 @@ html[data-theme="winter"] {
 html[data-theme]:not([data-theme="current"]) .card::before { display: block; background-image: var(--strip-bg); background-size: var(--strip-size); }
 /* 香港ネオン：カードごとに色の違う発光ボーダーと、四隅のコーナーブラケット（ゲームUI風の括弧）。
    --neon-c はカードの色（RGBの3つ組）で、見出しの色分け（--head-*）と基調色にそろえる。判定色には使わない */
-html[data-theme="neon"] #clock { --neon-c: 34, 211, 238; }
-html[data-theme="neon"] #markets { --neon-c: 255, 77, 157; }
-html[data-theme="neon"] #points { --neon-c: 90, 255, 160; }
-html[data-theme="neon"] #weather { --neon-c: 110, 205, 255; }
-html[data-theme="neon"] #ind { --neon-c: 255, 190, 80; }
-html[data-theme="neon"] #cal { --neon-c: 195, 155, 255; }
-html[data-theme="neon"] #xfeed { --neon-c: 255, 140, 205; }
+html[data-theme="neon"] #clock { --neon-c: 0, 229, 255; }
+html[data-theme="neon"] #markets { --neon-c: 255, 43, 214; }
+html[data-theme="neon"] #points { --neon-c: 61, 255, 122; }
+html[data-theme="neon"] #weather { --neon-c: 47, 196, 255; }
+html[data-theme="neon"] #ind { --neon-c: 255, 196, 0; }
+html[data-theme="neon"] #cal { --neon-c: 178, 107, 255; }
+html[data-theme="neon"] #xfeed { --neon-c: 255, 77, 141; }
 html[data-theme="neon"] .card {
-  border-color: rgba(var(--neon-c, 34, 211, 238), 0.55);
-  box-shadow: 0 0 18px rgba(var(--neon-c, 34, 211, 238), 0.26), 0 0 52px rgba(var(--neon-c, 34, 211, 238), 0.10), 0 18px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border-color: rgba(var(--neon-c, 0, 229, 255), 0.95);
+  box-shadow: 0 0 18px rgba(var(--neon-c, 0, 229, 255), 0.50), 0 0 52px rgba(var(--neon-c, 0, 229, 255), 0.28), 0 18px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 html[data-theme="neon"] .card::after {
   content: ""; position: absolute; inset: 5px; z-index: 4; pointer-events: none;
   background-image:
-    linear-gradient(rgba(var(--neon-c, 34, 211, 238), 0.95), rgba(var(--neon-c, 34, 211, 238), 0.95)),
-    linear-gradient(rgba(var(--neon-c, 34, 211, 238), 0.95), rgba(var(--neon-c, 34, 211, 238), 0.95)),
-    linear-gradient(rgba(var(--neon-c, 34, 211, 238), 0.95), rgba(var(--neon-c, 34, 211, 238), 0.95)),
-    linear-gradient(rgba(var(--neon-c, 34, 211, 238), 0.95), rgba(var(--neon-c, 34, 211, 238), 0.95)),
-    linear-gradient(rgba(var(--neon-c, 34, 211, 238), 0.95), rgba(var(--neon-c, 34, 211, 238), 0.95)),
-    linear-gradient(rgba(var(--neon-c, 34, 211, 238), 0.95), rgba(var(--neon-c, 34, 211, 238), 0.95)),
-    linear-gradient(rgba(var(--neon-c, 34, 211, 238), 0.95), rgba(var(--neon-c, 34, 211, 238), 0.95)),
-    linear-gradient(rgba(var(--neon-c, 34, 211, 238), 0.95), rgba(var(--neon-c, 34, 211, 238), 0.95));
+    linear-gradient(rgba(var(--neon-c, 0, 229, 255), 1), rgba(var(--neon-c, 0, 229, 255), 1)),
+    linear-gradient(rgba(var(--neon-c, 0, 229, 255), 1), rgba(var(--neon-c, 0, 229, 255), 1)),
+    linear-gradient(rgba(var(--neon-c, 0, 229, 255), 1), rgba(var(--neon-c, 0, 229, 255), 1)),
+    linear-gradient(rgba(var(--neon-c, 0, 229, 255), 1), rgba(var(--neon-c, 0, 229, 255), 1)),
+    linear-gradient(rgba(var(--neon-c, 0, 229, 255), 1), rgba(var(--neon-c, 0, 229, 255), 1)),
+    linear-gradient(rgba(var(--neon-c, 0, 229, 255), 1), rgba(var(--neon-c, 0, 229, 255), 1)),
+    linear-gradient(rgba(var(--neon-c, 0, 229, 255), 1), rgba(var(--neon-c, 0, 229, 255), 1)),
+    linear-gradient(rgba(var(--neon-c, 0, 229, 255), 1), rgba(var(--neon-c, 0, 229, 255), 1));
   background-size: 16px 2px, 2px 16px, 16px 2px, 2px 16px, 16px 2px, 2px 16px, 16px 2px, 2px 16px;
   background-position: 0 0, 0 0, 100% 0, 100% 0, 0 100%, 0 100%, 100% 100%, 100% 100%;
   background-repeat: no-repeat;
-  filter: drop-shadow(0 0 4px rgba(var(--neon-c, 34, 211, 238), 0.75));
+  filter: drop-shadow(0 0 4px rgba(var(--neon-c, 0, 229, 255), 1));
 }
 /* 見出しの色分け（current では従来どおり） */
 html[data-theme]:not([data-theme="current"]) #points .card-title { color: var(--head-points); }
@@ -1311,7 +1311,7 @@ window.TD_THEME = (function () {
   if (!id || id === "current") return;
   if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   var KIND = {
-    neon: { cols: ["#22d3ee", "#ff4d9d", "#ffd94d", "#a78bfa"], spark: true },
+    neon: { cols: ["#00e5ff", "#ff2bd6", "#3dff7a", "#2fc4ff", "#ffc400", "#b26bff", "#ff4d8d"], spark: true },
     spring: { cols: ["#ffb7c5", "#ffdde8", "#fff0f4"], petal: true },
     autumn: { cols: ["#e87830", "#cd5028", "#f2a246", "#b84a28"], petal: true },
     xmas: { cols: ["#ffffff"], snow: true },
@@ -2232,7 +2232,7 @@ window.TD_THEME = (function () {
     } else c.strokeStyle = rgb(1);
     c.lineJoin = "round";
     if (neonHK) {  // 香港ネオン：本線の下に同色の太い淡線を敷いて発光させる（線の色そのもの＝判定は変えない）
-      c.save(); c.lineWidth = 6; c.strokeStyle = rgb(.16); c.stroke(); c.restore();
+      c.save(); c.lineWidth = 6; c.strokeStyle = rgb(.26); c.stroke(); c.restore();
     }
     c.lineWidth = 1.8; c.stroke();
     // start point and the current point
@@ -3267,7 +3267,7 @@ window.TD_THEME = (function () {
     var cv = document.getElementById("bg"), c, w, h, k = 1, parts = [], dot = null;
     function layer(el) { el.width = Math.round(w * k); el.height = Math.round(h * k); var x = el.getContext("2d"); x.setTransform(k, 0, 0, k, 0, 0); return { cv: el, c: x }; }
     var THEME_BG = {
-      neon: { base: "#070312", dot: "200,190,255", grid: 1, glows: [["rgba(255,45,150,.15)", 0.12, 0.02, 0.55], ["rgba(130,70,255,.16)", 0.9, 0.03, 0.55], ["rgba(20,180,255,.10)", 0.5, 1.02, 0.5]] },
+      neon: { base: "#070312", dot: "200,190,255", grid: 1, glows: [["rgba(255,45,150,.26)", 0.12, 0.02, 0.55], ["rgba(130,70,255,.27)", 0.9, 0.03, 0.55], ["rgba(20,180,255,.17)", 0.5, 1.02, 0.5]] },
       spring: { base: "#0a080a", dot: "255,190,205", glows: [["rgba(255,150,180,.14)", 0.15, 0.05, 0.55], ["rgba(150,230,160,.08)", 0.9, 0.9, 0.5], ["rgba(255,200,130,.08)", 0.85, 0.05, 0.45]] },
       autumn: { base: "#0a0705", dot: "255,195,120", glows: [["rgba(255,140,60,.15)", 0.15, 0.05, 0.55], ["rgba(200,70,40,.12)", 0.9, 0.1, 0.5], ["rgba(255,190,80,.08)", 0.8, 0.95, 0.5]] },
       xmas: { base: "#050907", dot: "255,240,210", glows: [["rgba(240,200,90,.12)", 0.5, 0, 0.55], ["rgba(255,90,90,.10)", 0.92, 0.05, 0.5], ["rgba(80,240,130,.10)", 0.08, 0.95, 0.5]] },
@@ -3296,15 +3296,15 @@ window.TD_THEME = (function () {
           // 香港ネオンの床：画面下部の透視グリッド（サイバーグリッド）。静止画の一部としてリサイズ時に1回だけ描く
           var hz = h * 0.80, vx = w * 0.5, gi, gt, gy;
           var hg = x.createLinearGradient(0, 0, w, 0);
-          hg.addColorStop(0, "rgba(34,211,238,0)"); hg.addColorStop(0.5, "rgba(140,130,255,.32)"); hg.addColorStop(1, "rgba(255,77,157,0)");
+          hg.addColorStop(0, "rgba(0,229,255,0)"); hg.addColorStop(0.5, "rgba(140,130,255,.60)"); hg.addColorStop(1, "rgba(255,43,214,0)");
           x.fillStyle = hg; x.fillRect(0, hz - 1, w, 2);
           for (gi = 1; gi <= 7; gi++) {  // 横線：地平線に近いほど間隔が詰まって淡くなる
             gt = gi / 7; gy = hz + (h - hz) * gt * gt;
-            x.strokeStyle = "rgba(255,77,157," + (0.05 + 0.20 * gt).toFixed(3) + ")"; x.lineWidth = 1;
+            x.strokeStyle = "rgba(255,43,214," + (0.10 + 0.38 * gt).toFixed(3) + ")"; x.lineWidth = 1;
             x.beginPath(); x.moveTo(0, gy); x.lineTo(w, gy); x.stroke();
           }
           for (gi = -9; gi <= 9; gi++) {  // 縦線：地平線上の消失点へ収束させる
-            x.strokeStyle = "rgba(34,211,238,.15)"; x.lineWidth = 1;
+            x.strokeStyle = "rgba(0,229,255,.30)"; x.lineWidth = 1;
             x.beginPath(); x.moveTo(vx + gi * w * 0.008, hz); x.lineTo(vx + gi * w * 0.085, h); x.stroke();
           }
         }
