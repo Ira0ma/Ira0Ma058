@@ -3293,7 +3293,7 @@ window.TD_THEME = (function () {
   }
   function loadNews() {
     if (!window.fetch || PREVIEW) return;
-    fetch("../news.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)); })
+    fetch("/Ira0Ma058/news.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)); })
       .then(function (j) { if (!j || !Array.isArray(j.items)) throw new Error("形式が違います"); newsData = j; newsAt = Date.now(); srcMark("news", true); paintAlerts(); })
       .catch(function (e) { srcMark("news", false, e && e.message); });  // 失敗：バナーは出さず、他のカードはそのまま
   }
@@ -3386,7 +3386,7 @@ window.TD_THEME = (function () {
       return '<svg class="hz-map" viewBox="0 0 ' + W + ' ' + H + '">' + g + '</svg>';
     }
     function typhoons() {
-      getJson("typhoon.json").then(function (j) {
+      getJson("/Ira0Ma058/typhoon.json").then(function (j) {
         var items = (j.items || []).filter(function (t) { return (t.track || []).length; });
         var up = j.updated ? '<p class="hz-src">気象庁の台風情報（' + hm(j.updated * 1000) + ' 取得）　' + link("https://www.jma.go.jp/bosai/map.html#contents=typhoon", "気象庁の台風情報") + '</p>' : '';
         if (!items.length) { body.innerHTML = '<div class="hz-calm">🌀<b>現在、台風は発生していません</b><span>日本の周辺で台風が発生すると、ここに位置と予報の進路が出ます。</span></div>' + up; return; }
@@ -3414,7 +3414,7 @@ window.TD_THEME = (function () {
     }
     var LV = function (v) { return v == null ? ["--", ""] : v < 10 ? ["少ない", "#3a8fd6"] : v < 30 ? ["やや多い", "#d7b52e"] : v < 100 ? ["多い", "#e8692f"] : ["非常に多い", "#b3262b"]; };
     function pollen() {
-      getJson("pollen.json").then(function (j) {
+      getJson("/Ira0Ma058/pollen.json").then(function (j) {
         var links = '<p class="hz-src">' + link("https://tenki.jp/pollen/", "tenki.jp 花粉情報") + '　' + link("https://weathernews.jp/s/pollen/", "ウェザーニュース 花粉") + '</p>';
         if (!j.season || !(j.cities || []).length) { body.innerHTML = '<p class="hz-lead">今は花粉の観測期間（2〜5月）の外です。季節になると、天気の場所に近い観測地点の飛散数がここに出ます。</p>' + pollenCal() + links; return; }
         var me = (window.wxLoc && wxLoc()) || { lat: 35.68, lon: 139.76 }, near = j.cities.slice().sort(function (a, b) { return (Math.pow(a.lat - me.lat, 2) + Math.pow(a.lon - me.lon, 2)) - (Math.pow(b.lat - me.lat, 2) + Math.pow(b.lon - me.lon, 2)); })[0];
@@ -3451,7 +3451,7 @@ window.TD_THEME = (function () {
         var sc = hit && Math.max.apply(null, hit.points.filter(function (p) { return p.pref === pref; }).map(function (p) { return p.scale; }));
         flag("eq", hit, hit ? pref + "で震度" + ((SC[sc] || [])[0] || "") + "の地震（" + hm(eqTime(hit.earthquake.time)) + "）" : "", hit ? (sc >= 50 ? "強い揺れ" : "震度" + ((SC[sc] || [])[0] || "")) : "なし");
       }).catch(function () { flag("eq", false, "", "取得失敗"); });
-      getJson("typhoon.json").then(function (j) {
+      getJson("/Ira0Ma058/typhoon.json").then(function (j) {
         var near = null;
         (j.items || []).forEach(function (ty) { (ty.track || []).forEach(function (p, k) {
           var t = Date.parse(p.t); if (!p.pos || (k && isFinite(t) && t - Date.now() > 48 * 3600e3)) return;  // 今の位置と48時間先までの予報
@@ -3460,7 +3460,7 @@ window.TD_THEME = (function () {
         }); });
         flag("ty", near, near ? "台風第" + near.n + "号が" + (me.name || "天気の場所") + "に近づくおそれ（約" + Math.round(near.d / 10) * 10 + "km）" : "", near ? "接近" : "なし");
       }).catch(function () { flag("ty", false, "", "取得失敗"); });
-      getJson("pollen.json").then(function (j) {
+      getJson("/Ira0Ma058/pollen.json").then(function (j) {
         if (!j.season || !(j.cities || []).length) { flag("pl", false, "", "季節外"); return; }
         var c = j.cities.slice().sort(function (a, b) { return km(me.lat, me.lon, a.lat, a.lon) - km(me.lat, me.lon, b.lat, b.lon); })[0];
         flag("pl", c.max != null && c.max >= 30, c.name + "の花粉が" + LV(c.max)[0] + "（1時間" + c.max + "個）", c.max == null ? "データなし" : LV(c.max)[0]);
@@ -3482,12 +3482,12 @@ window.TD_THEME = (function () {
      the list above is the fallback. */
   function loadHolidays() {
     if (!window.fetch) return;
-    fetch("../holidays.json?v=" + new Date().toDateString().replace(/ /g, ""), { cache: "no-store" })
+    fetch("/Ira0Ma058/holidays.json?v=" + new Date().toDateString().replace(/ /g, ""), { cache: "no-store" })
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (j) { HOL_NAMES = j; HOL += " " + Object.keys(j).join(" "); renderCal(); srcMark("holidays", true); })
       .catch(function () { srcMark("holidays", false); });
     // 米国・英国の市場休場（サイトが規則から作る market_holidays.json。臨時の休場・短縮取引は含まない＝目安）
-    fetch("../market_holidays.json?v=" + new Date().toDateString().replace(/ /g, ""), { cache: "no-store" })
+    fetch("/Ira0Ma058/market_holidays.json?v=" + new Date().toDateString().replace(/ /g, ""), { cache: "no-store" })
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (j) { MKT_HOL = j || {}; renderCal(); }).catch(function () {});
   }
@@ -4123,11 +4123,14 @@ window.TD_THEME = (function () {
           var gmist = x.createLinearGradient(0, GY(636), 0, GY(706));
           gmist.addColorStop(0, "rgba(255,225,170,0)"); gmist.addColorStop(0.5, "rgba(255,225,170,0.13)"); gmist.addColorStop(1, "rgba(255,225,170,0)");
           x.fillStyle = gmist; x.fillRect(0, GY(636), w, GY(706) - GY(636));
-          // 十字架のシルエット（丘の頂き・光の中心）
+          // 十字架のシルエット（丘の頂き・光の中心）。背後に柔らかい光を敷いて輪郭を立てる
+          var ghalo = x.createRadialGradient(GX(605), GY(636), 0, GX(605), GY(636), 120 * gsc);
+          ghalo.addColorStop(0, "rgba(255,232,175,0.42)"); ghalo.addColorStop(1, "rgba(255,232,175,0)");
+          x.fillStyle = ghalo; x.fillRect(GX(605) - 120 * gsc, GY(636) - 120 * gsc, 240 * gsc, 240 * gsc);
           x.fillStyle = "#04050d";
-          var gcw = 7 * gsc, gch = 56 * gsc, gbx = GX(605), gby = GY(672);
+          var gcw = 9 * gsc, gch = 76 * gsc, gbx = GX(605), gby = GY(672);
           x.fillRect(gbx - gcw / 2, gby - gch, gcw, gch);
-          x.fillRect(gbx - 17 * gsc, gby - gch + 15 * gsc, 34 * gsc, 6 * gsc);
+          x.fillRect(gbx - 23 * gsc, gby - gch + 22 * gsc, 46 * gsc, 8 * gsc);
           // 下端の影（画面を締める）
           var gvig = x.createLinearGradient(0, GY(700), 0, GY(841));
           gvig.addColorStop(0, "rgba(3,4,10,0)"); gvig.addColorStop(1, "rgba(3,4,10,0.42)");
@@ -4316,7 +4319,7 @@ window.TD_THEME = (function () {
   var RX = null;
   function loadReactions() {
     if (!window.fetch) return;
-    fetch("../reactions.json?t=" + Math.floor(Date.now() / 300000), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; })
+    fetch("/Ira0Ma058/reactions.json?t=" + Math.floor(Date.now() / 300000), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; })
       .then(function (j) { if (j && j.events) { RX = j; renderIndicators(); } }).catch(function () {});
   }
   // 帯の中は狭いので、主な指標は短い名前で（ない指標は日本語名からかっこ書きを外したもの）
@@ -4504,7 +4507,7 @@ window.TD_THEME = (function () {
     var minute = Math.floor(Date.now() / 60000);
     var fc = fetch("https://www.financecalendar.com/wp-json/fc/v1/week?tz=Asia/Tokyo&t=" + minute, { cache: "no-store" })
       .then(function (r) { return r.ok ? r.json() : null; }).then(fcRows).catch(function () { return []; });
-    fetch("../calendar.json?t=" + minute, { cache: "no-store" })
+    fetch("/Ira0Ma058/calendar.json?t=" + minute, { cache: "no-store" })
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (rows) {
         if (!Array.isArray(rows)) return;
@@ -4693,7 +4696,7 @@ window.TD_THEME = (function () {
   })();
   function loadReport() {
     if (!window.fetch) return;
-    fetch("../strategy.json", { cache: "no-cache" })
+    fetch("/Ira0Ma058/strategy.json", { cache: "no-cache" })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) { if (d && typeof d === "object") { report = d; renderStrategy(); srcMark("report", true); } else srcMark("report", false, "まだ作成されていません"); })
       .catch(function () { srcMark("report", false); });
@@ -4742,7 +4745,7 @@ window.TD_THEME = (function () {
   function loadMarket() {
     if (!window.fetch) return;
     var id = marketSeq.next();
-    fetch("../market.json", { cache: "no-cache" })  // revalidates (304 when unchanged)
+    fetch("/Ira0Ma058/market.json", { cache: "no-cache" })  // revalidates (304 when unchanged)
       .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)); })
       .then(function (d) {
         if (!marketSeq.latest(id)) return;  // a later request already answered
