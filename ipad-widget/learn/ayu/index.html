@@ -1389,6 +1389,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     </div>
     <div class="dash-open">
       <button class="gold-open" data-sheet="gold" type="button" aria-haspopup="dialog" aria-label="GOLD分析を開く">GOLD <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+      <button class="gold-open" data-sheet="silver" type="button" aria-haspopup="dialog" aria-label="シルバー分析を開く">SILVER <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
       <button class="gold-open" data-sheet="usdjpy" type="button" aria-haspopup="dialog" aria-label="ドル円分析を開く">ドル円 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
       <button class="gold-open" data-sheet="btc" type="button" aria-haspopup="dialog" aria-label="BTC分析を開く">BTC <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
       <button class="gold-open" data-sheet="oil" type="button" aria-haspopup="dialog" aria-label="オイル分析（USオイル・OILCash 補正表示）を開く">オイル <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
@@ -1968,6 +1969,7 @@ window.TD_THEME = (function () {
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
     gold: { src: "gold.html?v=ebbef4c95d", title: "GOLD分析" },
+    silver: { src: "silver.html?v=035a35d683", title: "シルバー分析" },
     usdjpy: { src: "usdjpy.html?v=37d5f18b9f", title: "ドル円分析" },
     btc: { src: "btc.html?v=9195c7baf7", title: "BTC分析" },
     oil: { src: "oil.html?v=0aeeeabb9b", title: "オイル分析" }
