@@ -1492,10 +1492,18 @@
       var nt = D.notify(), low = document.documentElement.classList.contains("lowpower");
       var themeNow = "grace"; try { themeNow = LS.getItem("ayu_td_theme") || "grace"; } catch (e) {}
       var langNow = "ja"; try { langNow = LS.getItem("ayu_td_lang") === "en" ? "en" : "ja"; } catch (e) {}
+      var vmNow = "both"; try { var _vm = LS.getItem("ayu_verse_mode"); if (_vm === "ja" || _vm === "en") vmNow = _vm; } catch (e) {}
+      var vcNow = "on"; try { if (LS.getItem("ayu_verse_card") === "off") vcNow = "off"; } catch (e) {}
+      var fsNow = "std"; try { var _fs = LS.getItem("ayu_font_size"); if (_fs === "l" || _fs === "xl") fsNow = _fs; } catch (e) {}
       body.innerHTML = '<h3>テーマ（見た目）</h3>' + select("st-theme", "ホーム画面のテーマ", [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["grace", tdLang() === "en" ? "Grace Light" : "恵みの光"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"], ["shippu", "利確の炎🔥"], ["aurora", "🌌 安らぎのオーロラ"]], themeNow) +
         '<p class="note">季節の割り当て：春 3〜5月／夏 6〜8月／秋 9〜11月／クリスマス 12月／正月 12月29日〜1月3日／冬 1〜2月。テーマはこの端末のブラウザに保存されます（端末ごとに別です）。舞う飾り（桜・落ち葉・雪・金粉）は、ページを開き直すと切り替わります。</p>' +
         '<h3>言語 / Language</h3>' + select("st-lang", "表示言語 / Display language", [["ja", "日本語"], ["en", "English"]], langNow) +
         '<p class="note">ドックのボタン・カードの見出し・ツールのタブ名・聖書コーナーの表示が切り替わります。学ぶの本の本文や長い説明文は日本語のままです。</p>' +
+        '<h3>' + (tdLang() === "en" ? "Ayu's Arrangement" : "あゆさんのアレンジ") + '</h3>' +
+        select("st-vmode", tdLang() === "en" ? "Verse display" : "みことばの表示", [["both", tdLang() === "en" ? "Japanese + English" : "日本語＋英語"], ["ja", tdLang() === "en" ? "Japanese only" : "日本語のみ"], ["en", tdLang() === "en" ? "English only" : "英語のみ"]], vmNow) +
+        select("st-vcard", tdLang() === "en" ? "Verse card" : "みことばカード", [["on", tdLang() === "en" ? "Show" : "表示する"], ["off", tdLang() === "en" ? "Hide" : "表示しない"]], vcNow) +
+        select("st-fsize", tdLang() === "en" ? "Text size" : "文字の大きさ", [["std", tdLang() === "en" ? "Standard" : "標準"], ["l", tdLang() === "en" ? "Large" : "大きい"], ["xl", tdLang() === "en" ? "Extra large" : "特大"]], fsNow) +
+        '<p class="note">' + (tdLang() === "en" ? "Saved in this device's browser, like the theme. Hiding the verse card lets the Key Points card fill the space in the wide layout. Text size applies to the verse card, the Learn reader, the home cards and the dock buttons." : "テーマと同じく、この端末のブラウザに保存されます。みことばカードを隠すと、横長の画面では「今日の注目ポイント」のカードが空いた分だけ広がります。文字の大きさは、みことば・学ぶの本文・ホームのカード・下のボタンに効きます。") + '</p>' +
         '<h3>省電力</h3><label class="chk"><input type="checkbox" id="st-low"' + (low ? " checked" : "") + '><span>省電力モード（背景の動き・光・ぼかし・点滅を止めます。iPadの発熱や電池の消費を抑えたいときに）</span></label>' +
         '<h3>通知について</h3><div class="out">' + esc("端末の通知：" + ({ granted: "許可済み", denied: "拒否（端末の設定から変更）", default: "未設定（通知のボタンを押したときに確認します）", unsupported: "この環境では使えません" }[nt.permission] || nt.permission) +
           "\n通知音：" + ({ high: "大", mid: "中", low: "小", off: "オフ" }[nt.sound] || "中") + "（ホームの右上のスピーカーのボタンと同じ。エントリー・ダッシュボードのアラート・急変・地震の音量）" +
@@ -1508,6 +1516,9 @@
         '<button type="button" class="btn danger" data-rs="display">表示の設定</button><button type="button" class="btn danger" data-rs="notify">通知・アラート</button><button type="button" class="btn danger" data-rs="trading">資金管理・日誌・履歴</button><button type="button" class="btn danger" data-rs="all">すべて</button></div>';
       $("#st-theme").addEventListener("change", function () { try { LS.setItem("ayu_td_theme", this.value); } catch (e) {} if (window.TDThemeApply) window.TDThemeApply(); });
       $("#st-lang").addEventListener("change", function () { try { LS.setItem("ayu_td_lang", this.value); } catch (e) {} var go = $("#st-theme option[value=\"grace\"]"); if (go) go.textContent = this.value === "en" ? "Grace Light" : "恵みの光"; paintTabLabels(); if (window.TDLangApply) window.TDLangApply(); });
+      $("#st-vmode").addEventListener("change", function () { try { LS.setItem("ayu_verse_mode", this.value); } catch (e) {} if (window.TDAyuPrefApply) window.TDAyuPrefApply(); });
+      $("#st-vcard").addEventListener("change", function () { try { LS.setItem("ayu_verse_card", this.value); } catch (e) {} if (window.TDAyuPrefApply) window.TDAyuPrefApply(); });
+      $("#st-fsize").addEventListener("change", function () { try { LS.setItem("ayu_font_size", this.value); } catch (e) {} if (window.TDAyuPrefApply) window.TDAyuPrefApply(); });
       $("#st-low").addEventListener("change", function () { D.setPower(this.checked); });
       $("#st-exp").addEventListener("click", function () { download("desk-of-ayu-backup-" + C.dayKey(Date.now()) + ".json", JSON.stringify(C.exportSettings(LS, Date.now()), null, 1), "application/json"); });
       $("#st-imp").addEventListener("click", function () {
