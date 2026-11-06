@@ -4138,7 +4138,7 @@ function renderNext(){
 // 追加D：前回の反応1行（デスクの重要指標パネルと同じ reactions.json・同じ計算＝TDCore.reactionStats）。記録がない指標は出さない
 function rxNextLine(e){
   if(!window.TDCore||!TDCore.reactionStats||e.speech)return '';
-  if(!rxNextLine.j&&!rxNextLine.loading){rxNextLine.loading=true;fetch('reactions.json?t='+Math.floor(Date.now()/300000),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{rxNextLine.loading=false;if(j&&j.events){rxNextLine.j=j;renderNext()}}).catch(()=>{rxNextLine.loading=false});setTimeout(()=>{rxNextLine.j=null},15*60000)}
+  if(!rxNextLine.j&&!rxNextLine.loading){rxNextLine.loading=true;fetch('/Ira0Ma058/reactions.json?t='+Math.floor(Date.now()/300000),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{rxNextLine.loading=false;if(j&&j.events){rxNextLine.j=j;renderNext()}}).catch(()=>{rxNextLine.loading=false});setTimeout(()=>{rxNextLine.j=null},15*60000)}
   // デスクの重要指標パネルと同じ集計（TDCore.reactionStats）を使い、このダッシュボードの銘柄の動きだけを出す
   const k=INSTR.key,st=TDCore.reactionStats(rxNextLine.j,e.currency,e.title,e.ts);
   if(!st||(TDCore.rxInsts||TDCore.indAffects)(e.currency,e.title).indexOf(k)<0||!st.last.move[k])return '';
@@ -4614,7 +4614,7 @@ refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(release
 // ===== B：ゴトー日のタグ（ドル円だけ）。決め方は core.js（TDCore.gotobi）、日本の祝日はサイトの holidays.json（デスクと同じ） =====
 function paintGoto(){  // 祝日の一覧は関数に持たせる（読み込みの早い段階＝定期の呼び出しの登録時から呼ばれるため）
   if(!IS_FX||!window.TDCore||!TDCore.gotobi)return;
-  if(!paintGoto.hol){paintGoto.hol={};fetch('holidays.json?v='+new Date().toDateString().replace(/ /g,''),{cache:'no-store'}).then(r=>r.ok?r.json():{}).then(j=>{paintGoto.hol=j||{};paintGoto()}).catch(()=>{})}
+  if(!paintGoto.hol){paintGoto.hol={};fetch('/Ira0Ma058/holidays.json?v='+new Date().toDateString().replace(/ /g,''),{cache:'no-store'}).then(r=>r.ok?r.json():{}).then(j=>{paintGoto.hol=j||{};paintGoto()}).catch(()=>{})}
   const H=paintGoto.hol,g=TDCore.gotobi(TDCore.dayKey(Date.now()),k=>!!H[k]),el=$('gotoTag');
   el.hidden=!g;if(g)el.textContent=g.kind==='real'?'ゴトー日':'ゴトー日（振替）';
 }
