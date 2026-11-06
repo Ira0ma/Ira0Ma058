@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="75b49db197">
+<meta name="build" content="026496dfec">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -905,7 +905,7 @@ const INSTRUMENTS={
     brokerNote:'原油の1lotの量（バレル数）は業者・口座で違います。XMのOILCashなど、ご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,2),
     footer:'データ: 価格とチャートは OKX の WTI 連動パーペチュアル（CL-USDT-SWAP。リアルタイム配信、届かないときは30秒ごとの取得）。OKX が読めないときはサイトの定期取得（Yahoo Finance の WTI原油先物 CL=F・約15分ごと）。日足以上は CL=F の足をパーペチュアルとの差だけずらした足・Forex Factory（経済指標）。XM の OILCash の値そのものではありません。'},
-  // シルバー（XAG/USD）：価格は Gold API・Swissquote の現物（取れないときはサイトの定期取得＝COMEX銀先物 SI=F を現物に換算した値）。
+  // シルバー（XAG/USD）：価格は OKX の銀連動パーペチュアル（XAG-USDT-SWAP）のリアルタイム配信を現物に補正した値（配信がないときは Gold API・Swissquote の現物、取れないときはサイトの定期取得＝COMEX銀先物 SI=F を現物に換算した値）。
   // 利確の基準は COMEX銀先物（SI=F）の実測（2016〜2026年）にもとづく：デイ（1時間足）は TP1 +50pips／TP2 +2R、
   // スイングは 4時間足なら TP1 +50pips、日足が近いときは TP1 1R（損切り幅と同幅）。minTp は型ごとに持つ（minTpBy）
   silver:{key:'silver',site:'silver',title:'SILVER',label:'XAG / USD',short:'SILVER',name:'シルバー',asset:'銀',sub:'XAG/USD専用｜自動更新｜iPad・iPhone・Android対応',
@@ -913,7 +913,7 @@ const INSTRUMENTS={
     spreadSrc:'目安として入れた初期値（実測値ではありません）',
     brokerNote:'XMのシルバーは1lot＝5,000ozです。XSの契約量はご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,2),
-    footer:'データ: Gold API・Swissquote（XAG現物。取れないときはサイトの定期取得）／チャートはGitHub Actionsで定期取得したYahoo Finance足（COMEX銀先物 SI=F を現物に換算）・Forex Factory（経済指標）／Frankfurter（USD/JPY補助）。利確の目安はCOMEX銀先物の実測にもとづく目安で、現物とは価格差があります（1時間足・4時間足の標本は約2年で、上昇局面に限られます）。'}
+    footer:'データ: 価格はリアルタイム配信（OKXの銀連動パーペチュアルXAG-USDT-SWAPを現物に補正）、配信がないときはGold API・Swissquote（XAG現物。取れないときはサイトの定期取得）／チャートはGitHub Actionsで定期取得したYahoo Finance足（COMEX銀先物 SI=F を現物に換算）・Forex Factory（経済指標）／Frankfurter（USD/JPY補助）。利確の目安はCOMEX銀先物の実測にもとづく目安で、現物とは価格差があります（1時間足・4時間足の標本は約2年で、上昇局面に限られます）。'}
 };
 const INSTR=INSTRUMENTS[window.INSTR_KEY||(/usdjpy/i.test(location.pathname)?'usdjpy':/btc/i.test(location.pathname)?'btc':/oil/i.test(location.pathname)?'usoil':/silver/i.test(location.pathname)?'silver':'gold')];
 const IS_GOLD=INSTR.key==='gold',IS_FX=INSTR.key==='usdjpy',IS_BTC=INSTR.key==='btc',IS_OIL=INSTR.key==='usoil',IS_SILVER=INSTR.key==='silver';
@@ -1272,6 +1272,8 @@ async function refreshFx(){
 /* ---------- リアルタイム（WebSocket）：ローソク足を秒単位で動かす ----------
    ドル円：GMOコイン外国為替FXの公開配信（売値。サイトで測ったXS売値との差を引く）。
    ゴールド：金に連動するトークンXAUTの配信（OKX→Bitfinex→KrakenのPAXG）。現物より数ドル高いので、
+   30秒ごとに取る現物価格（Gold API）との差の中央値を引いて現物に合わせる。
+   シルバー：銀に連動するパーペチュアルXAG-USDT-SWAPの配信（OKX）。ゴールドと同じく、
    30秒ごとに取る現物価格（Gold API）との差の中央値を引いて現物に合わせる。 */
 /* 市場の休場：ゴールド・ドル円は週末（NY時間 金曜17時〜日曜17時。ゴールドは日曜18時まで、平日17〜18時も休み）は動かない。
    XAUTなどの配信は週末も動くので、休場中は配信の値を使わず、点滅も止める（BTCは24時間なので対象外） */
@@ -1322,6 +1324,9 @@ const GOLD_WS=[
 const OIL_WS=[
   {name:'OKX CL（WTI連動パーペチュアル）',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'tickers',instId:'CL-USDT-SWAP'}]},ping:'ping',
    parse:m=>{const d=m?.data?.[0];return d&&+d.bidPx&&+d.askPx?(+d.bidPx+ +d.askPx)/2:0}}];
+const SILVER_WS=[
+  {name:'OKX XAG',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'tickers',instId:'XAG-USDT-SWAP'}]},ping:'ping',
+   parse:m=>{const d=m?.data?.[0];return d&&+d.bidPx&&+d.askPx?(+d.bidPx+ +d.askPx)/2:0}}];
 const BTC_WS=[
   {name:'Coinbase',url:'wss://ws-feed.exchange.coinbase.com',sub:{type:'subscribe',product_ids:['BTC-USD'],channels:['ticker']},
    parse:m=>m?.type==='ticker'&&+m.best_bid&&+m.best_ask?(+m.best_bid+ +m.best_ask)/2:0},
@@ -1331,7 +1336,7 @@ const BTC_WS=[
    parse:m=>{const d=m?.data?.[0];return d&&+d.bidPx&&+d.askPx?(+d.bidPx+ +d.askPx)/2:0}}];
 const FX_WS=[{name:'GMO FX',url:'wss://forex-api.coin.z.com/ws/public/v1',sub:{command:'subscribe',channel:'ticker',symbol:'USD_JPY'},
    parse:m=>m?.symbol==='USD_JPY'&&+m.bid?+m.bid:0}];
-function liveFresh(){return !mktClosed&&LIVE.raw&&Date.now()-LIVE.rawAt<15000&&(!IS_GOLD||LIVE.offs.length)}  // BTCは補正なし（配信がそのまま米ドル建ての現物）
+function liveFresh(){return !mktClosed&&LIVE.raw&&Date.now()-LIVE.rawAt<15000&&(!(IS_GOLD||IS_SILVER)||LIVE.offs.length)}  // BTCは補正なし（配信がそのまま米ドル建ての現物）。ゴールド・シルバーは現物への補正が付くまで配信を使わない
 function liveOffset(){
   if(IS_FX)return n(siteCache.d?.instruments?.usdjpy?.liveOffsetGmo);
   if(IS_BTC||IS_OIL)return 0;  // BTC・原油はそのままの値（原油はパーペチュアルの値を出す）
@@ -1339,15 +1344,14 @@ function liveOffset(){
 }
 // 30秒ごとの現物価格が来たら、そのときの配信値との差を記録（最新20件の中央値で補正）
 function liveCalibrate(spot){
-  if(!IS_GOLD||!LIVE.raw||Date.now()-LIVE.rawAt>10000||!spot)return;
-  const d=LIVE.raw-spot;if(Math.abs(d)>40)return;
+  if(!(IS_GOLD||IS_SILVER)||!LIVE.raw||Date.now()-LIVE.rawAt>10000||!spot)return;
+  const d=LIVE.raw-spot;if(Math.abs(d)>(IS_GOLD?40:0.6))return;
   LIVE.offs.push(d);if(LIVE.offs.length>20)LIVE.offs.shift();
 }
 function startLive(){
-  if(IS_SILVER)return;  // シルバーはリアルタイム配信を使わない（30秒ごとの現物取得＋サイトの足で判定する。FX_WSはドル円用なので流用しない）
   if(sheetHidden()&&!IS_OIL)return;  // デスクの裏ではリアルタイム配信をつながない（デスク自身が配信を受けている。判定は30秒ごとの価格で十分）。
   // 原油だけはデスクが自分で配信を受けていないので、裏でもつなぎ、ホームのオイルのカードに1秒ごとに渡す
-  const list=IS_GOLD?GOLD_WS:IS_BTC?BTC_WS:IS_OIL?OIL_WS:FX_WS,src=list[LIVE.tries%list.length];
+  const list=IS_GOLD?GOLD_WS:IS_SILVER?SILVER_WS:IS_BTC?BTC_WS:IS_OIL?OIL_WS:FX_WS,src=list[LIVE.tries%list.length];
   let ws,ping=0,got=false;
   try{ws=new WebSocket(src.url)}catch{return retryLive()}
   LIVE.ws=ws;
@@ -1357,7 +1361,7 @@ function startLive(){
     const px=src.parse(m);if(!px)return;
     got=true;LIVE.tries=0;LIVE.raw=px;LIVE.rawAt=Date.now();LIVE.src=src.name;
     // 最初の補正：直前1分以内に取った現物価格があれば、それとの差で始める
-    if(IS_GOLD&&!LIVE.offs.length&&state.spot&&!String(state.src.spot).startsWith('サイト')&&Date.now()-state.spot.asof<60000)liveCalibrate(state.spot.price);
+    if((IS_GOLD||IS_SILVER)&&!LIVE.offs.length&&state.spot&&!String(state.src.spot).startsWith('サイト')&&Date.now()-state.spot.asof<60000)liveCalibrate(state.spot.price);
     onLiveTick();
   };
   ws.onclose=ws.onerror=()=>{clearInterval(ping);if(LIVE.ws!==ws)return;LIVE.ws=null;if(!got)LIVE.tries++;retryLive()};
@@ -1366,10 +1370,10 @@ function retryLive(){clearTimeout(LIVE.timer);LIVE.timer=setTimeout(startLive,Ma
 function onLiveTick(){
   if(mktClosed||!liveFresh()||!state.spot)return;
   const sc=IS_FX?1000:100,px=Math.round((LIVE.raw-liveOffset())*sc)/sc;
-  if(Math.abs(px-state.spot.price)>(IS_GOLD?30:IS_BTC?state.spot.price*0.02:IS_OIL?state.spot.price*0.04:0.5))return;  // 補正前の大きな食い違いは使わない（原油は先物との差があるので4%）
+  if(Math.abs(px-state.spot.price)>(IS_GOLD?30:IS_SILVER?0.6:IS_BTC?state.spot.price*0.02:IS_OIL?state.spot.price*0.04:0.5))return;  // 補正前の大きな食い違いは使わない（原油は先物との差があるので4%）
   state.prevPrice=state.spot.price;
   state.spot={...state.spot,price:px,asof:Date.now(),freshness:'fresh'};
-  state.src.spot='リアルタイム（'+LIVE.src+(IS_GOLD?'・現物に補正':IS_FX?'・売値':'')+'）';if(IS_OIL)oilLive=true;
+  state.src.spot='リアルタイム（'+LIVE.src+((IS_GOLD||IS_SILVER)?'・現物に補正':IS_FX?'・売値':'')+'）';if(IS_OIL)oilLive=true;
   if(IS_FX)state.fx=px;else if(state.fx)state.goldJpy=px*state.fx;
   updateRolling(px);mergeSpotAll(px,Date.now());
   // 配信の値を1分足として1時間分覚えておく（サイトの足は約9分遅れなので、読み直したときにこの分を重ね直す）
@@ -1424,7 +1428,7 @@ async function refreshSpotBtc(){
   return {px,asof,src};
 }
 // シルバー：現物（XAG/USD）を Gold API → Swissquote の順に直接取り、だめならサイトの定期取得（SI=F を現物に換算した値）。
-// サイト側（analyze.py）と同じ出どころ・同じ順番。WebSocket のリアルタイム配信は使わない
+// サイト側（analyze.py）と同じ出どころ・同じ順番。取れた現物は、WebSocket のリアルタイム配信（OKX XAG）の現物への補正にも使う
 async function refreshSpotSilver(){
   let px=0,asof=Date.now(),src='';
   try{const g=await getJSON(URLS.silverApi,8000);px=n(g.price);asof=toMs(g.updatedAt)||Date.now();if(px)src='Gold API'}catch{}
@@ -1560,6 +1564,11 @@ async function refreshSpot(){
     try{
       const fx=await refreshFx();
       const {px,asof,src}=await refreshSpotSilver();
+      if(!src.startsWith('サイト'))liveCalibrate(px);
+      if(liveFresh()&&state.spot){  // リアルタイム配信が生きている間は、補正だけして配信の値を使い続ける
+        if(fx)state.goldJpy=state.spot.price*fx;
+        state.health.spot=true;state.lastOk=Date.now();state.nextSpot=Date.now()+INTERVALS.spot;setStatus('live','LIVE');showError('');return;
+      }
       state.src.spot=src;
       state.prevPrice=state.spot?.price??null;
       state.spot={price:px,asof,freshness:Date.now()-asof>10*60000?'stale':'fresh',age:0};
