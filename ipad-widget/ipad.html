@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="9b0c62afe4">
+<meta name="build" content="857829b29e">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1306,6 +1306,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     </div>
     <div class="dash-open">
       <button class="gold-open" data-sheet="gold" type="button" aria-haspopup="dialog" aria-label="GOLD分析を開く">GOLD <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+      <button class="gold-open" data-sheet="silver" type="button" aria-haspopup="dialog" aria-label="シルバー分析を開く">SILVER <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
       <button class="gold-open" data-sheet="usdjpy" type="button" aria-haspopup="dialog" aria-label="ドル円分析を開く">ドル円 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
       <button class="gold-open" data-sheet="btc" type="button" aria-haspopup="dialog" aria-label="BTC分析を開く">BTC <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
       <button class="gold-open" data-sheet="oil" type="button" aria-haspopup="dialog" aria-label="オイル分析（USオイル・OILCash 補正表示）を開く">オイル <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
@@ -1843,10 +1844,11 @@ window.TD_THEME = (function () {
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=5b3cd1c118", title: "GOLD分析" },
-    usdjpy: { src: "usdjpy.html?v=50f6a0130d", title: "ドル円分析" },
-    btc: { src: "btc.html?v=839162d2f6", title: "BTC分析" },
-    oil: { src: "oil.html?v=47033d3498", title: "オイル分析" }
+    gold: { src: "gold.html?v=21dd9c2e75", title: "GOLD分析" },
+    silver: { src: "silver.html?v=6cc5f45638", title: "シルバー分析" },
+    usdjpy: { src: "usdjpy.html?v=94ff64f69c", title: "ドル円分析" },
+    btc: { src: "btc.html?v=09a7dc123b", title: "BTC分析" },
+    oil: { src: "oil.html?v=f9dcc94a49", title: "オイル分析" }
   };
   var openSheet = null, sheetOpener = null;
   /* ステータスバーの分：iframe の中では端末の値（safe-area）が届かないので、デスクで測った --safe-top を各ダッシュボードに渡す */
