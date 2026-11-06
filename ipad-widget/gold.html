@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="cadf3f030a">
+<meta name="build" content="63ed3667b4">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1315,24 +1315,24 @@ function checkClosed(){
 }
 const LIVE={raw:0,rawAt:0,src:'',offs:[],ws:null,tries:0,lastDraw:0,timer:0,mins:[],born:0};
 const GOLD_WS=[
-  {name:'OKX XAUT',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'tickers',instId:'XAUT-USDT'}]},ping:'ping',
+  {name:'OKX XAUT',url:'wss://ws.okx.com/ws/v5/public',sub:{op:'subscribe',args:[{channel:'tickers',instId:'XAUT-USDT'}]},ping:'ping',
    parse:m=>{const d=m?.data?.[0];return d&&+d.bidPx&&+d.askPx?(+d.bidPx+ +d.askPx)/2:0}},
   {name:'Bitfinex XAUT',url:'wss://api-pub.bitfinex.com/ws/2',sub:{event:'subscribe',channel:'ticker',symbol:'tXAUT:USD'},
    parse:m=>Array.isArray(m)&&Array.isArray(m[1])?(m[1][0]+m[1][2])/2:0},
   {name:'Kraken PAXG',url:'wss://ws.kraken.com/v2',sub:{method:'subscribe',params:{channel:'ticker',symbol:['PAXG/USD']}},
    parse:m=>m?.channel==='ticker'&&m.data?.[0]?(m.data[0].bid+m.data[0].ask)/2:0}];
 const OIL_WS=[
-  {name:'OKX CL（WTI連動パーペチュアル）',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'tickers',instId:'CL-USDT-SWAP'}]},ping:'ping',
+  {name:'OKX CL（WTI連動パーペチュアル）',url:'wss://ws.okx.com/ws/v5/public',sub:{op:'subscribe',args:[{channel:'tickers',instId:'CL-USDT-SWAP'}]},ping:'ping',
    parse:m=>{const d=m?.data?.[0];return d&&+d.bidPx&&+d.askPx?(+d.bidPx+ +d.askPx)/2:0}}];
 const SILVER_WS=[
-  {name:'OKX XAG',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'tickers',instId:'XAG-USDT-SWAP'}]},ping:'ping',
+  {name:'OKX XAG',url:'wss://ws.okx.com/ws/v5/public',sub:{op:'subscribe',args:[{channel:'tickers',instId:'XAG-USDT-SWAP'}]},ping:'ping',
    parse:m=>{const d=m?.data?.[0];return d&&+d.bidPx&&+d.askPx?(+d.bidPx+ +d.askPx)/2:0}}];
 const BTC_WS=[
   {name:'Coinbase',url:'wss://ws-feed.exchange.coinbase.com',sub:{type:'subscribe',product_ids:['BTC-USD'],channels:['ticker']},
    parse:m=>m?.type==='ticker'&&+m.best_bid&&+m.best_ask?(+m.best_bid+ +m.best_ask)/2:0},
   {name:'Kraken',url:'wss://ws.kraken.com/v2',sub:{method:'subscribe',params:{channel:'ticker',symbol:['BTC/USD']}},
    parse:m=>m?.channel==='ticker'&&m.data?.[0]?(m.data[0].bid+m.data[0].ask)/2:0},
-  {name:'OKX',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'tickers',instId:'BTC-USDT'}]},ping:'ping',
+  {name:'OKX',url:'wss://ws.okx.com/ws/v5/public',sub:{op:'subscribe',args:[{channel:'tickers',instId:'BTC-USDT'}]},ping:'ping',
    parse:m=>{const d=m?.data?.[0];return d&&+d.bidPx&&+d.askPx?(+d.bidPx+ +d.askPx)/2:0}}];
 const FX_WS=[{name:'GMO FX',url:'wss://forex-api.coin.z.com/ws/public/v1',sub:{command:'subscribe',channel:'ticker',symbol:'USD_JPY'},
    parse:m=>m?.symbol==='USD_JPY'&&+m.bid?+m.bid:0}];
