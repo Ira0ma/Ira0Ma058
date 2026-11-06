@@ -3268,6 +3268,10 @@ window.TD_THEME = (function () {
       [[140.9,41.5],[141.5,40.5],[141.9,39.6],[141.6,38.3],[141.0,38.0],[141.0,37.0],[140.6,36.2],[140.9,35.7],[140.3,35.1],[139.8,35.0],[139.7,35.4],[139.2,35.2],[138.8,34.6],[138.2,34.6],[137.0,34.6],[136.9,34.3],[136.2,33.9],[135.8,33.5],[135.1,33.9],[135.0,34.4],[134.0,34.6],[133.0,34.4],[132.2,34.0],[131.0,34.0],[130.9,34.4],[131.4,34.6],[132.4,35.4],[133.5,35.6],[134.5,35.6],[135.4,35.7],[135.9,35.7],[136.0,36.2],[136.7,36.8],[137.3,36.8],[137.0,37.1],[137.4,37.5],[138.5,37.4],[139.2,38.0],[139.6,38.8],[140.0,39.8],[139.9,40.6],[140.3,41.2]],
       [[132.0,33.2],[132.6,33.9],[133.5,34.3],[134.6,34.2],[134.7,33.8],[134.2,33.3],[133.6,33.5],[133.0,32.8],[132.4,32.9]],
       [[129.6,33.3],[130.3,33.6],[130.9,33.9],[131.6,33.6],[131.8,32.8],[131.4,31.5],[130.7,31.0],[130.2,31.3],[130.2,32.0],[129.8,32.7]]];
+    /* 台風番号は、気象庁が数字で出すときにだけ使う。熱帯低気圧には番号がなく（台風情報では "a" と表される）、
+       そのときは番号を付けず「熱帯低気圧」と出す（NaN や台風番号でない数字を出さない） */
+    var tyNum = function (ty) { var d = String(ty.number == null ? "" : ty.number).replace(/\D/g, ""); return d ? +d.slice(-2) : NaN; };
+    var tyLabel = function (ty) { var n = tyNum(ty); return isFinite(n) ? "台風第" + n + "号" : (ty.category || "熱帯低気圧"); };
     function tyMap(items) {
       var L0 = 115, L1 = 160, B0 = 5, B1 = 50, W = 360, H = 360, x = function (lon) { return (lon - L0) / (L1 - L0) * W; }, y = function (lat) { return (B1 - lat) / (B1 - B0) * H; };
       var g = "";
@@ -3283,7 +3287,7 @@ window.TD_THEME = (function () {
         g += pts.slice(1).map(function (p) { return p.r ? '<circle cx="' + x(p.lon) + '" cy="' + y(p.lat) + '" r="' + (p.r / 111 / (L1 - L0) * W) + '" class="hz-circle"/>' : ''; }).join("");
         g += '<polyline points="' + pts.map(function (p) { return x(p.lon) + "," + y(p.lat); }).join(" ") + '" class="hz-track"/>';
         g += pts.slice(1).map(function (p) { return '<circle cx="' + x(p.lon) + '" cy="' + y(p.lat) + '" r="2.5" fill="#fff"/>'; }).join("");
-        g += '<circle cx="' + x(pts[0].lon) + '" cy="' + y(pts[0].lat) + '" r="7" fill="#ff5a4a" stroke="#fff" stroke-width="1.5"/><text x="' + (x(pts[0].lon) + 10) + '" y="' + (y(pts[0].lat) + 4) + '" class="hz-tyno">' + esc(ty.number ? "第" + (+String(ty.number).slice(-2)) + "号" : "") + '</text>';
+        g += '<circle cx="' + x(pts[0].lon) + '" cy="' + y(pts[0].lat) + '" r="7" fill="#ff5a4a" stroke="#fff" stroke-width="1.5"/><text x="' + (x(pts[0].lon) + 10) + '" y="' + (y(pts[0].lat) + 4) + '" class="hz-tyno">' + esc(isFinite(tyNum(ty)) ? "第" + tyNum(ty) + "号" : (ty.category || "熱帯低気圧")) + '</text>';
       });
       return '<svg class="hz-map" viewBox="0 0 ' + W + ' ' + H + '">' + g + '</svg>';
     }
@@ -3293,8 +3297,8 @@ window.TD_THEME = (function () {
         var up = j.updated ? '<p class="hz-src">気象庁の台風情報（' + hm(j.updated * 1000) + ' 取得）　' + link("https://www.jma.go.jp/bosai/map.html#contents=typhoon", "気象庁の台風情報") + '</p>' : '';
         if (!items.length) { body.innerHTML = '<div class="hz-calm">🌀<b>現在、台風は発生していません</b><span>日本の周辺で台風が発生すると、ここに位置と予報の進路が出ます。</span></div>' + up; return; }
         body.innerHTML = '<div class="hz-ty">' + tyMap(items) + '<div class="hz-tylist">' + items.map(function (ty) {
-          var a = ty.track[0], n = ty.number ? +String(ty.number).slice(-2) : "";
-          return '<div class="hz-tycard"><b>台風第' + n + '号' + (ty.name ? '（' + esc(ty.name) + '）' : '') + '</b><span class="hz-tycat">' + esc([ty.size, ty.strength, ty.category].filter(Boolean).join("・")) + '</span>' +
+          var a = ty.track[0];
+          return '<div class="hz-tycard"><b>' + esc(tyLabel(ty)) + (ty.name ? '（' + esc(ty.name) + '）' : (!isFinite(tyNum(ty)) && a.loc ? '（' + esc(a.loc) + '）' : '')) + '</b><span class="hz-tycat">' + esc([ty.size, ty.strength, ty.category].filter(Boolean).join("・")) + '</span>' +
             '<dl><dt>位置</dt><dd>' + esc(a.loc || (a.pos ? "北緯" + a.pos[0] + "°・東経" + a.pos[1] + "°" : "--")) + '</dd>' +
             '<dt>中心気圧</dt><dd>' + (a.pressure ? esc(a.pressure) + ' hPa' : '--') + '</dd><dt>最大風速</dt><dd>' + (a.wind ? esc(a.wind) + ' m/s' : '--') + '</dd>' +
             '<dt>進路・速さ</dt><dd>' + esc(a.course || "--") + (a.speed ? '　' + esc(a.speed) + ' km/h' : '') + '</dd></dl>' +
@@ -3354,13 +3358,13 @@ window.TD_THEME = (function () {
         flag("eq", hit, hit ? pref + "で震度" + ((SC[sc] || [])[0] || "") + "の地震（" + hm(eqTime(hit.earthquake.time)) + "）" : "", hit ? (sc >= 50 ? "強い揺れ" : "震度" + ((SC[sc] || [])[0] || "")) : "なし");
       }).catch(function () { flag("eq", false, "", "取得失敗"); });
       getJson("typhoon.json").then(function (j) {
-        var near = null;
+        var near = null, anyTy = (j.items || []).some(function (ty) { return (ty.track || []).length; });  // パネルに出る台風・熱帯低気圧があるか（ボタンの表示と食い違わせない）
         (j.items || []).forEach(function (ty) { (ty.track || []).forEach(function (p, k) {
           var t = Date.parse(p.t); if (!p.pos || (k && isFinite(t) && t - Date.now() > 48 * 3600e3)) return;  // 今の位置と48時間先までの予報
           var d = km(me.lat, me.lon, parseFloat(p.pos[0]), parseFloat(p.pos[1])), lim = Math.max(300, parseFloat(p.circle) || 0);
-          if (d <= lim && (!near || d < near.d)) near = { d: d, n: ty.number ? +String(ty.number).slice(-2) : "" };
+          if (d <= lim && (!near || d < near.d)) near = { d: d, label: tyLabel(ty) };
         }); });
-        flag("ty", near, near ? "台風第" + near.n + "号が" + (me.name || "天気の場所") + "に近づくおそれ（約" + Math.round(near.d / 10) * 10 + "km）" : "", near ? "接近" : "なし");
+        flag("ty", near, near ? near.label + "が" + (me.name || "天気の場所") + "に近づくおそれ（約" + Math.round(near.d / 10) * 10 + "km）" : "", near ? "接近" : (anyTy ? "発生中" : "なし"));
       }).catch(function () { flag("ty", false, "", "取得失敗"); });
       getJson("pollen.json").then(function (j) {
         if (!j.season || !(j.cities || []).length) { flag("pl", false, "", "季節外"); return; }
