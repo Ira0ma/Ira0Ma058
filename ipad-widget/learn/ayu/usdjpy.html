@@ -883,7 +883,7 @@ const state = {
 };
 
 // サイト（GitHub Pages）のデータ：GitHub Actionsが定期取得した金のH1/M15足・ドル円・経済指標
-const SITE = location.protocol.startsWith('http') && location.hostname.endsWith('github.io') ? '../' : 'https://ira0ma.github.io/Ira0Ma058/';
+const SITE = location.protocol.startsWith('http') && location.hostname.endsWith('github.io') ? '/Ira0Ma058/' : 'https://ira0ma.github.io/Ira0Ma058/';
 const URLS = {
   coinbase:'https://api.coinbase.com/v2/exchange-rates?currency=USD',
   siteMarket:SITE+'market.json',
