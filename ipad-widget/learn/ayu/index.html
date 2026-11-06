@@ -1247,7 +1247,7 @@ html:not(.phone) #pager, html:not(.phone) #pdots { display: none; }
 .flow #fit { display: none; }
 html:not(.flow) #flow { display: none; }
 #flow { position: fixed; inset: 0; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
-  padding: max(10px, var(--safe-top)) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 16px) max(12px, env(safe-area-inset-left, 0px)); }
+  padding: max(10px, var(--safe-top)) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 64px) max(12px, env(safe-area-inset-left, 0px)); }  /* 末尾のカードが下端の固定ドック（1段で約40px）に隠れないよう、flow の末尾に余白を取る */
 .fsizer { position: relative; margin: 0 auto; }
 .fstage { position: absolute; left: 0; top: 0; display: flex; gap: 14px; align-items: flex-start; transform-origin: 0 0; }
 .flow .card { position: relative !important; left: auto !important; top: auto !important; width: 340px !important; flex: none; }
@@ -1282,7 +1282,7 @@ html:not(.beginner) .step-note { display: none; }
 .dk-theme-btn:hover, .dk-theme-btn:focus-visible { background: var(--gold); color: var(--on-accent); outline: none; }
 @media (pointer: coarse) { .dk-theme-btn { min-height: 36px; padding: 6px 14px; } }
 /* 狭い画面（iPhone SE級・縦375px）：ドックは5ボタン化（2026-11-06）で幅が増えたため、詰めて折り返し、右下のテーマボタンと重ならないようにする */
-@media (max-width: 640px) { .dk-dock { gap: 4px; left: calc(env(safe-area-inset-left, 0px) + 6px); flex-wrap: wrap; max-width: calc(100vw - 176px); } .dk-dock #layout-toggle, #tools-toggle, .dk-dock .dk-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; } .dk-theme-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; right: calc(env(safe-area-inset-right, 0px) + 6px); max-width: 164px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
+@media (max-width: 640px) { .dk-dock { gap: 4px; left: calc(env(safe-area-inset-left, 0px) + 6px); flex-wrap: wrap; max-width: calc(100vw - 176px); } .dk-dock #layout-toggle, #tools-toggle, .dk-dock .dk-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; } .dk-theme-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; right: calc(env(safe-area-inset-right, 0px) + 6px); max-width: 164px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #flow { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 140px); } }  /* 狭幅ではドックが3段（約104px＋下端4px）に折り返すため、末尾の章カードとヒント行がドックの上までスクロールできる余白 */
 .dk-theme-pop { position: fixed; z-index: 60; right: calc(env(safe-area-inset-right, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 48px); width: 228px; background: rgba(var(--panel-rgb),.97); border: 1px solid rgba(var(--gold-rgb),.55); border-radius: 14px; padding: 8px; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
 .dk-theme-pop h4 { margin: 2px 6px 6px; font-size: 11px; color: var(--ink-3); font-weight: 700; letter-spacing: .04em; }
 .dk-theme-pop button { display: flex; width: 100%; align-items: center; gap: 8px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); background: none; border: 0; border-radius: 9px; padding: 7px 8px; cursor: pointer; text-align: left; }
