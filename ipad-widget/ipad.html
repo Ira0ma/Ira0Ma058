@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="c69365be03">
+<meta name="build" content="31231658dd">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1864,11 +1864,11 @@ window.TD_THEME = (function () {
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=cadf3f030a", title: "GOLD分析" },
-    silver: { src: "learn/silver.html?v=3dd9b2469e", title: "シルバー分析" },
-    usdjpy: { src: "usdjpy.html?v=8c37f69c63", title: "ドル円分析" },
-    btc: { src: "btc.html?v=40a5145c85", title: "BTC分析" },
-    oil: { src: "oil.html?v=18712648f9", title: "オイル分析" }
+    gold: { src: "gold.html?v=63ed3667b4", title: "GOLD分析" },
+    silver: { src: "learn/silver.html?v=1abca1ff01", title: "シルバー分析" },
+    usdjpy: { src: "usdjpy.html?v=6f011aabf0", title: "ドル円分析" },
+    btc: { src: "btc.html?v=ec02122814", title: "BTC分析" },
+    oil: { src: "oil.html?v=2dd0d7f427", title: "オイル分析" }
   };
   var openSheet = null, sheetOpener = null;
   /* ステータスバーの分：iframe の中では端末の値（safe-area）が届かないので、デスクで測った --safe-top を各ダッシュボードに渡す */
@@ -2593,13 +2593,13 @@ window.TD_THEME = (function () {
   var LIVE_SRC = {
     usdjpy: [{ name: "GMOコイン FX", url: "wss://forex-api.coin.z.com/ws/public/v1", sub: { command: "subscribe", channel: "ticker", symbol: "USD_JPY" },
       parse: function (m) { return m && m.symbol === "USD_JPY" ? +m.bid : 0; } }],
-    gold: [{ name: "OKX XAUT", url: "wss://ws.okx.com:8443/ws/v5/public", sub: { op: "subscribe", args: [{ channel: "tickers", instId: "XAUT-USDT" }] }, ping: "ping",
+    gold: [{ name: "OKX XAUT", url: "wss://ws.okx.com/ws/v5/public", sub: { op: "subscribe", args: [{ channel: "tickers", instId: "XAUT-USDT" }] }, ping: "ping",
       parse: function (m) { var d = m && m.data && m.data[0]; return d && +d.bidPx && +d.askPx ? (+d.bidPx + +d.askPx) / 2 : 0; } },
       { name: "Bitfinex XAUT", url: "wss://api-pub.bitfinex.com/ws/2", sub: { event: "subscribe", channel: "ticker", symbol: "tXAUT:USD" },
       parse: function (m) { return m && m[1] && m[1].length > 2 ? (m[1][0] + m[1][2]) / 2 : 0; } },
       { name: "Kraken PAXG", url: "wss://ws.kraken.com/v2", sub: { method: "subscribe", params: { channel: "ticker", symbol: ["PAXG/USD"] } },
       parse: function (m) { var d = m && m.channel === "ticker" && m.data && m.data[0]; return d ? (d.bid + d.ask) / 2 : 0; } }],
-    silver: [{ name: "OKX XAG", url: "wss://ws.okx.com:8443/ws/v5/public", sub: { op: "subscribe", args: [{ channel: "tickers", instId: "XAG-USDT-SWAP" }] }, ping: "ping",
+    silver: [{ name: "OKX XAG", url: "wss://ws.okx.com/ws/v5/public", sub: { op: "subscribe", args: [{ channel: "tickers", instId: "XAG-USDT-SWAP" }] }, ping: "ping",
       parse: function (m) { var d = m && m.data && m.data[0]; return d && +d.bidPx && +d.askPx ? (+d.bidPx + +d.askPx) / 2 : 0; } }],
     btc: [{ name: "Coinbase", url: "wss://ws-feed.exchange.coinbase.com", sub: { type: "subscribe", product_ids: ["BTC-USD"], channels: ["ticker"] },
       parse: function (m) { return m && m.type === "ticker" && +m.best_bid && +m.best_ask ? (+m.best_bid + +m.best_ask) / 2 : 0; } },
