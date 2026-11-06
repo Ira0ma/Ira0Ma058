@@ -40,11 +40,21 @@ oil_build = hashlib.sha1(oil.encode()).hexdigest()[:10]
 oil = oil.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name="build" content="%s">\n' % oil_build, 1)
 here.joinpath("oil.html").write_text(oil, encoding="utf-8")
 
+# silver.html: the same page again, as XAG/USD (silver take-profit rules come from the COMEX SI=F measurements)
+sv = re.sub(r'<meta name="build" content="[^"]*">\n', "", gold)
+sv = sv.replace("<title>GOLD Trade Dashboard</title>", "<title>SILVER Trade Dashboard</title>", 1)
+sv = sv.replace('<meta name="apple-mobile-web-app-title" content="GOLD">', '<meta name="apple-mobile-web-app-title" content="SILVER">', 1)
+sv = sv.replace("<script>\nconst $ = id =>", "<script>window.INSTR_KEY='silver';</script>\n<script>\nconst $ = id =>", 1)
+sv_build = hashlib.sha1(sv.encode()).hexdigest()[:10]
+sv = sv.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name="build" content="%s">\n' % sv_build, 1)
+here.joinpath("silver.html").write_text(sv, encoding="utf-8")
+
 body = here.joinpath("index.html").read_text(encoding="utf-8").split("\n", 2)[2]  # drop <title> and claude meta
 # the sheets always open the current GOLD / USDJPY / BTCUSD / OIL pages, and a new one also refreshes the desk
 body = body.replace('src: "gold.html"', 'src: "gold.html?v=%s"' % gold_build).replace('src: "usdjpy.html"', 'src: "usdjpy.html?v=%s"' % fx_build)
 body = body.replace('src: "btc.html"', 'src: "btc.html?v=%s"' % bt_build).replace('src: "oil.html"', 'src: "oil.html?v=%s"' % oil_build)
-build = hashlib.sha1((body + gold_build + fx_build + bt_build + oil_build).encode()).hexdigest()[:10]
+body = body.replace('src: "silver.html"', 'src: "silver.html?v=%s"' % sv_build)
+build = hashlib.sha1((body + gold_build + fx_build + bt_build + oil_build + sv_build).encode()).hexdigest()[:10]
 head = """<!doctype html>
 <html lang="ja">
 <head>

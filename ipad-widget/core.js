@@ -581,7 +581,8 @@
     usdjpy: { unit: "yen", caution: [[5, 0.50]], emergency: [[5, 1.00], [15, 1.50]] },
     gold: { unit: "pct", caution: [[15, 0.7]], emergency: [[15, 1.2]] },
     btc: { unit: "pct", caution: [[15, 1.0]], emergency: [[15, 2.0]] },
-    usoil: { unit: "pct", caution: [[15, 1.0]], emergency: [[15, 2.0]] }
+    usoil: { unit: "pct", caution: [[15, 1.0]], emergency: [[15, 2.0]] },
+    silver: { unit: "pct", caution: [[15, 1.0]], emergency: [[15, 2.0]] }
   };
   var SURGE_GAP = 90 * 1000, SURGE_KEEP = 15 * MIN, SURGE_COOL = 30 * MIN, SURGE_SHOW = 30 * MIN;
   var SURGE_RANK = { caution: 1, emergency: 2 };
@@ -638,7 +639,7 @@
     return { alert: true, state: state };
   }
   // the words for a detection: never says the move is an intervention, never names a price level
-  var SURGE_NAME = { usdjpy: "ドル円", gold: "ゴールド", btc: "BTC", usoil: "USオイル" };
+  var SURGE_NAME = { usdjpy: "ドル円", gold: "ゴールド", btc: "BTC", usoil: "USオイル", silver: "シルバー" };
   function surgeText(res) {
     var name = SURGE_NAME[res.key] || res.key, sign = res.delta >= 0 ? "+" : "−", mag = Math.abs(res.delta);
     var size = res.unit === "yen" ? sign + mag.toFixed(2) + "円" : sign + Math.abs(res.pct).toFixed(2) + "%";
