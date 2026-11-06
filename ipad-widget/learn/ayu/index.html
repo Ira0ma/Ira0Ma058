@@ -362,7 +362,7 @@ html[data-theme="aurora"] .card {
 #clock .note { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); margin-top: 12px; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
 
 /* markets */
-#markets { left: 281px; top: 35px; width: 903px; height: 276px; display: grid; grid-template-columns: 1fr 1px 1fr 1px 1fr; }  /* ゴールド・ドル円・BTC（＋横にずらすとオイル） */
+#markets { left: 281px; top: 35px; width: 903px; height: 276px; display: grid; grid-template-columns: 1fr 1px 1fr 1px 1fr; }  /* 選べる3枚（初期はゴールド・ドル円・BTC）＋横にずらすとオイル・シルバー */
 /* 横向きの画面：3枚を少しだけ詰めて（300→288px）4枚目（オイル）の端をのぞかせ、カードの列を横にずらすと全部出る。右端の「›」とフェードも目印（端まで行くと消える） */
 html:not(.flow) #markets { --mk-peek: 36px; --mkw: calc((903px - 2px - var(--mk-peek)) / 3); display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; scrollbar-width: none; overscroll-behavior-x: contain; }
 html:not(.flow) #markets::-webkit-scrollbar { display: none; }
@@ -371,12 +371,17 @@ html:not(.flow) #markets > .sep { flex: 0 0 1px; }
 .mk-cue { display: none; }
 html:not(.flow) .mk-cue { display: flex; position: sticky; right: 0; flex: 0 0 34px; margin-left: -34px; align-self: stretch; align-items: center; justify-content: flex-end; padding: 0 6px 0 0; border: 0; font: inherit; font-size: 22px; line-height: 1; color: var(--ink-2); background: linear-gradient(90deg, rgba(10,12,18,0), rgba(10,12,18,.72) 70%); cursor: pointer; z-index: 2; }
 html:not(.flow) #markets.at-end .mk-cue { visibility: hidden; }
+.mk-idx { display: none; }
+html:not(.flow) .mk-idx { display: flex; position: sticky; left: 0; flex: 0 0 100%; margin-right: -100%; align-self: flex-end; height: 26px; z-index: 3; align-items: center; justify-content: center; gap: 6px; padding: 0 42px 0 12px; background: rgba(8,10,15,.85); border-top: 1px solid var(--glass-line); }
+.mk-chip { font: inherit; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: var(--ink-3); background: rgba(255,255,255,.04); border: 1px solid transparent; border-radius: 999px; padding: 2px 10px; cursor: pointer; white-space: nowrap; }
+.mk-chip.in { color: var(--gold); border-color: rgba(var(--gold-rgb),.55); }
+.mk-chip:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 #markets .sep { background: var(--glass-line); margin: 22px 0; }
 .mkt { padding: 18px 20px 8px; display: flex; flex-direction: column; min-width: 0; }
 /* 高さが決まっているカード（横向きの画面）では、小さなチャートが残りの高さに合わせて伸び縮みする。
    画面の形や文字の大きさが違う端末（折りたたみスマホなど）でも、下の時間足のボタンと点滅の枠がカードに収まる */
 #markets { grid-template-rows: minmax(0, 1fr); }
-html:not(.flow) .mkt { min-height: 0; overflow: hidden; }
+html:not(.flow) .mkt { min-height: 0; overflow: hidden; padding-bottom: 38px; }  /* 目次バー（.mk-idx、26px）の分だけ下を空け、期間タブが隠れないように */
 html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px; }
 .mkt { position: relative; }
 .mkt .head { display: flex; align-items: center; gap: 12px; font: inherit; color: inherit; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; border-radius: 10px; }
@@ -1291,7 +1296,7 @@ html:not(.flow) #flow { display: none; }
 .fsizer { position: relative; margin: 0 auto; }
 .fstage { position: absolute; left: 0; top: 0; display: flex; gap: 14px; align-items: flex-start; transform-origin: 0 0; }
 .flow .card { position: relative !important; left: auto !important; top: auto !important; width: 340px !important; flex: none; }
-.flow #markets { height: auto; grid-template-columns: 1fr; grid-template-rows: auto 1px auto 1px auto 1px auto; }
+.flow #markets { height: auto; grid-template-columns: 1fr; grid-template-rows: auto 1px auto 1px auto 1px auto 1px auto; }
 .flow #markets .sep { margin: 0 22px; }
 .flow #cal { height: auto; grid-template-columns: 1fr; grid-template-rows: none; }
 .flow #xfeed { height: auto; min-height: 202px; }
@@ -1398,6 +1403,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 
   <!-- markets -->
   <section class="card" id="markets" aria-label="相場">
+    <div class="mk-idx" role="group" aria-label="相場パネルの目次"></div>
     <div class="mkt" id="m-0">
       <button class="head" type="button" aria-label="銘柄を変える">
         <span class="badge"></span>
@@ -1457,7 +1463,21 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <canvas class="chart"></canvas>
       <div class="tabs" role="group" aria-label="期間"></div>
     </div>
-    <button type="button" class="mk-cue" aria-label="横にずらすとオイル（OILCash）のカードがあります。タップで表示">›</button>
+    <div class="sep"></div>
+    <div class="mkt mkt-silver" id="m-4">
+      <button class="head" type="button" aria-label="シルバーのダッシュボードを開く">
+        <span class="badge"></span>
+        <span class="names"><span class="sym"></span><span class="jp"></span></span>
+        <svg class="chev" width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      </button>
+      <div class="price num" data-f="price"></div>
+      <div class="chg num" data-f="chg"></div>
+      <div class="klv num" data-f="klv" hidden></div>
+      <div class="mscore" data-f="score" hidden></div>
+      <canvas class="chart"></canvas>
+      <div class="tabs" role="group" aria-label="期間"></div>
+    </div>
+    <button type="button" class="mk-cue" aria-label="横にずらすとオイル（OILCash）とシルバーのカードがあります。タップで表示">›</button>
   </section>
 
   <!-- indicators -->
@@ -2670,7 +2690,7 @@ window.TD_THEME = (function () {
     }
   };
   /* Real quote from the network. The change is measured against the last price seen on an earlier day (kept on this device). */
-  Market.prototype.applyLive = function (p) {
+  Market.prototype.applyLive = function (p, quiet) {  // quiet: 値と足だけ進めて描き直さない（横スクロールの外にあるパネル用。戻ってきたときに1回描く）
     if (this.key === "btc" && typeof btcRef === "function" && !btcAgree(p, btcRef())) {  // どの経路から来ても、サイトの値と5%以上違う BTC は出さない
       srcMark("btc-check", false, "表示しようとした値 " + Math.round(p) + " がサイトの値 " + Math.round(btcRef()) + " と5%以上違うため出しません");
       this.held = ["BTCの値がサイトの値と大きく違います"]; this.chip = null; if (this.live) this.render(); return;
@@ -2679,7 +2699,7 @@ window.TD_THEME = (function () {
       var first0 = !this.live, dir0 = Math.sign(p - this.price);
       this.live = true; this.o.prev = this.prevClose; this.price = p;
       if (first0) { this.gen(); } else this.placePrice(p, this.asOf);
-      this.render(dir0); this.drawSoon(); return;
+      if (!quiet) { this.render(dir0); this.drawSoon(); } return;
     }
     var k = "ayu_quote-" + this.el.id, today = new Date().toDateString(), st = null;
     try { st = JSON.parse(localStorage.getItem(k)); } catch (e) {}
@@ -2689,7 +2709,7 @@ window.TD_THEME = (function () {
     var first = !this.live, dir = Math.sign(p - this.price);
     this.live = true; this.o.prev = st.prev; this.price = p;
     if (first) { this.gen(); } else this.placePrice(p, this.asOf);
-    this.render(dir); this.drawSoon();
+    if (!quiet) { this.render(dir); this.drawSoon(); }
   };
   // 軽量化：配信の値が続けて届いても、チャートの描き直しは画面の1コマに1回まで
   Market.prototype.drawSoon = function () {
@@ -2758,7 +2778,10 @@ window.TD_THEME = (function () {
       if (mk.key !== key || !mk.price || Math.abs(px - mk.price) > (key === "gold" ? 30 : key === "btc" ? mk.price * 0.02 : 0.5)) return;
       mk.asOf = Date.now() / 1000;
       mk.prov = { src: "リアルタイム配信（" + (L.name || "") + "）", type: key === "usdjpy" ? "売値（GMOの配信から、測った差を引いた補正値）" : key === "gold" ? "推定値（金連動トークンXAUTの仲値を現物価格に補正）" : "仲値（Bid・Askの中間）" };
-      mk.applyLive(px);
+      // 帯の外に完全に出ているパネルは描き直さない（値は進める。急変検知は上の surgeSample が別に受けている）。
+      // 戻ってきたときの描き直しは目次チップの paint が行う
+      if (mkOffStrip(mk)) { mk.applyLive(px, true); mk._quietLive = true; }
+      else mk.applyLive(px);
     });
   }
   function liveConnect(key) {
@@ -2964,7 +2987,7 @@ window.TD_THEME = (function () {
       b.innerHTML = INST[k].label + "<small>" + (INST[k].pickName || INST[k].name) + "</small>";
       b.addEventListener("click", function () {
         picks[i] = k; if (k === "btc") ensureSheet("btc"); try { localStorage.setItem(PICK_KEY, JSON.stringify(picks)); } catch (e) {}
-        picker.hidden = true; mk.setInst(k); refreshPoints(); loadPrices();
+        picker.hidden = true; mk.setInst(k); refreshPoints(); loadPrices(); if (window.__mkIdxPaint) window.__mkIdxPaint();
       });
       list.appendChild(b);
     });
@@ -3028,6 +3051,10 @@ window.TD_THEME = (function () {
   oilMk.feed(null);
   oilMk.el.querySelector(".head").addEventListener("click", function () { openDash("oil", this); });
   oilMk.el.addEventListener("click", function (e) { var b = e.target.closest("[data-oil-open]"); if (b) { e.stopPropagation(); openDash("oil", b); } });
+  /* 5th card: シルバー。オイルと同じ専用パネルで、価格・足・水準は通常の経路（market.json と XAG の定期取得）から受ける。見出しタップでダッシュボードを開く */
+  var silverMk = new Market(document.getElementById("m-4"), "silver");
+  silverMk.cv.__mkt = silverMk; if (chartRO) chartRO.observe(silverMk.cv);
+  silverMk.el.querySelector(".head").addEventListener("click", function () { openDash("silver", this); });
   var oilFedFor = "", oilBase = "";
   var oilRefeed = function () {  // only when the price or the correction changed (moving every candle costs)
     var m = market && (market.instruments || market).usoil; if (!m) return;
@@ -3041,12 +3068,61 @@ window.TD_THEME = (function () {
   window.addEventListener("storage", function (e) { if (e.key === OIL_KEY || e.key === "ayu_usoil_auto_cache_final" || e.key === "ayu_usoil_live_spot") oilRefeed(); });  // saved by the oil dashboard
   setInterval(oilRefeed, 30000);  // freshness and the 35 days
   markets.push(oilMk);
+  markets.push(silverMk);
   window.__mkts = markets;  // 時間足の連動（setSharedTf）用
-  (function () {  // the ›: shows that the row scrolls to the oil card; tapping it goes there, at the end it hides
+  (function () {  // the ›: shows that the row scrolls on to the oil and silver cards; tapping it goes to the end, at the end it hides
     var row = document.getElementById("markets"), cue = row.querySelector(".mk-cue");
     var mark = function () { row.classList.toggle("at-end", row.scrollLeft + row.clientWidth >= row.scrollWidth - 4); };
     row.addEventListener("scroll", mark, { passive: true }); window.addEventListener("resize", mark); mark();
     cue.addEventListener("click", function () { row.scrollTo({ left: row.scrollWidth, behavior: reduce ? "auto" : "smooth" }); });
+  })();
+  function mkChipLabel(key) {  // 目次チップの短い名前（承認済みプレビューの形）。無い銘柄は銘柄表の名前を使う
+    var s = { gold: "金", usdjpy: "ドル円", btc: "BTC", usoil: "オイル", silver: "銀" }[key];
+    return s || (INST[key] ? (INST[key].pickName || INST[key].name) : key);
+  }
+  function mkVisIn(p, r) {  // パネルの横幅の半分以上が見えていれば「表示中」
+    var w = Math.min(p.right, r.right) - Math.max(p.left, r.left);
+    return w >= (p.right - p.left) * 0.5;
+  }
+  function mkOffStrip(mk) {  // パネルが横スクロールの帯から完全に出ているか（配信の描き直しを止める判定）。
+    // 縦並び表示では帯（#markets）全体が容器でパネルはその中にあるため、常に出ていない扱いになる
+    var row = document.getElementById("markets"); if (!row || !mk || !mk.el) return false;
+    var r = row.getBoundingClientRect(), p = mk.el.getBoundingClientRect();
+    return Math.min(p.right, r.right) - Math.max(p.left, r.left) <= 0;
+  }
+  (function () {  // 目次チップ：横にずらすと出てくるパネルが分かるように（表示中は金色）。タップでそのパネルまでずらす
+    var row = document.getElementById("markets"), bar = row.querySelector(".mk-idx");
+    if (!bar) return;
+    var els = [markets[0].el, markets[1].el, markets[2].el, oilMk.el, silverMk.el];
+    var mks = [markets[0], markets[1], markets[2], oilMk, silverMk];
+    var chips = els.map(function (el) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "mk-chip";
+      b.addEventListener("click", function () {
+        var rr = row.getBoundingClientRect(), tr = el.getBoundingClientRect();
+        row.scrollTo({ left: row.scrollLeft + (tr.left - rr.left), behavior: reduce ? "auto" : "smooth" });
+      });
+      bar.appendChild(b); return b;
+    });
+    var paint = function () {
+      var ks = [picks[0], picks[1], picks[2], "usoil", "silver"], rr = row.getBoundingClientRect();
+      var rects = els.map(function (el) { return el.getBoundingClientRect(); });  // 先に全部読んでから書く（読み書きを混ぜると再計算が繰り返される）
+      chips.forEach(function (b, i) {
+        b.textContent = mkChipLabel(ks[i]);
+        b.classList.toggle("in", mkVisIn(rects[i], rr));
+      });
+      // 帯の外で描き直しを止めていたパネルが戻ってきたら、最新の値で1回だけ描く
+      mks.forEach(function (mk, i) {
+        if (mk._quietLive && Math.min(rects[i].right, rr.right) - Math.max(rects[i].left, rr.left) > 0) {
+          mk._quietLive = false; mk.render(); mk.drawSoon();
+        }
+      });
+    };
+    var queued = false;
+    row.addEventListener("scroll", function () { if (!queued) { queued = true; requestAnimationFrame(function () { queued = false; paint(); }); } }, { passive: true });
+    window.addEventListener("resize", paint);
+    window.__mkIdxPaint = paint;
+    paint();
   })();
 
   /* ---------- weather ---------- */
