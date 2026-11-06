@@ -707,6 +707,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 #verse .vs-ja { font-size: 14.5px; line-height: 1.65; margin: 8px 0 4px; }
 #verse .vs-en { font-size: 12px; line-height: 1.55; color: var(--ink-2); font-style: italic; margin: 0 0 4px; }
 #verse .vs-ref { font-size: 11.5px; color: var(--gold); margin: 0; }
+#verse .vs-credit { font-size: 10px; color: var(--ink-2); margin: 3px 0 0; }
 #verse .vs-btns { margin-top: auto; padding-top: 8px; display: flex; gap: 8px; flex: none; }
 #verse .vs-btn { font: inherit; font-size: 12px; font-weight: 700; color: var(--gold); background: rgba(var(--panel-rgb),.85); border: 1px solid rgba(var(--gold-rgb),.5); border-radius: 999px; padding: 4px 12px; line-height: 1.5; cursor: pointer; text-decoration: none; }
 #verse .vs-btn:hover, #verse .vs-btn:focus-visible { background: var(--gold); color: var(--on-accent); outline: none; }
@@ -1486,6 +1487,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <p class="vs-ja" id="vs-ja"></p>
       <p class="vs-en" id="vs-en"></p>
       <p class="vs-ref" id="vs-ref"></p>
+      <p class="vs-credit">日本語：口語訳（1955年・日本聖書協会）</p>
     </div>
     <div class="vs-btns">
       <a class="vs-btn" href="https://apps.apple.com/app/id6474954895" target="_blank" rel="noopener" data-i18n="prsBtn">聖書を聴く（PRS）</a>
@@ -6779,9 +6781,13 @@ window.TD_THEME = (function () {
 <script>
 /* ===== Desk of Ayu: verse of the day / bible checklist / greeting / JA-EN =====
    Verse texts are transcribed character-for-character from public-domain
-   sources: Japanese = Wikisource 文語訳 (OT: 明治元訳 1887, NT: 大正改訳 1917;
-   the Taisho revision covers the NT only, so OT slots use the Meiji text of
-   the same combined 文語訳聖書), English = KJV via bible-api.com.
+   sources: Japanese = 口語訳 (NT 1954 / OT 1955 first edition, Japan Bible
+   Society; its copyright term has expired in Japan, per the JBS), taken from
+   the seven1m/open-bibles jpn-kougo OSIS text (titled 1954/1955 edition)
+   and cross-checked against the wordproject.org Japanese text. The 口語訳
+   text is used verbatim - never modernized or corrected. (Until 2026-11-06
+   the Japanese text was the 文語訳: OT 明治元訳 / NT 大正改訳, via Wikisource.)
+   English = KJV via bible-api.com.
    Slot 26 was 第一ペテロ5:7 in the plan; its Taisho text could not be reached
    (Wikisource 403), so it is substituted with verified 詩篇121:2. */
 (function () {
@@ -6789,37 +6795,37 @@ window.TD_THEME = (function () {
   function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { window.localStorage.setItem(k, v); } catch (e) {} }
   var VERSES31 = [
-    { ref_ja: "創世記 1:1", ref_en: "Genesis 1:1", tr: "明治元訳", ja: "元始に神天地を創造たまへり", en: "In the beginning God created the heaven and the earth." },
-    { ref_ja: "詩篇 23:1", ref_en: "Psalms 23:1", tr: "明治元訳", ja: "ヱホバは我が牧者なり われ乏しきことあらじ", en: "The LORD is my shepherd; I shall not want." },
-    { ref_ja: "詩篇 46:1", ref_en: "Psalms 46:1", tr: "明治元訳", ja: "神はわれらの避所また力なり なやめるときの最ちかき助なり", en: "God is our refuge and strength, a very present help in trouble." },
-    { ref_ja: "詩篇 118:24", ref_en: "Psalms 118:24", tr: "明治元訳", ja: "これヱホバの設けたまへる日なり われらはこの日によろこびたのしまん", en: "This is the day which the LORD hath made; we will rejoice and be glad in it." },
-    { ref_ja: "箴言 3:5", ref_en: "Proverbs 3:5", tr: "明治元訳", ja: "汝こころを盡してヱホバに倚頼め おのれの聰明に倚ることなかれ", en: "Trust in the LORD with all thine heart; and lean not unto thine own understanding." },
-    { ref_ja: "イザヤ書 40:31", ref_en: "Isaiah 40:31", tr: "明治元訳", ja: "然はあれどヱホバを俟望むものは新なる力をえん また鷲のごとく翼をはりてのぼらん 走れどもつかれず歩めども倦ざるべし", en: "But they that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint." },
-    { ref_ja: "イザヤ書 41:10", ref_en: "Isaiah 41:10", tr: "明治元訳", ja: "おそるるなかれ 我なんぢとともにあり 驚くなかれ我なんぢの神なり われなんぢを強くせん 誠になんぢを助けん 誠にわがただしき右手なんぢを支へん", en: "Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee; yea, I will uphold thee with the right hand of my righteousness." },
-    { ref_ja: "エレミヤ書 29:11", ref_en: "Jeremiah 29:11", tr: "明治元訳", ja: "ヱホバいひたまふ我が汝らにむかひて懷くところの念は我これを知るすなはち災をあたへんとにあらず平安を與へんとおもひ又汝らに後と望をあたへんとおもふなり", en: "For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end." },
-    { ref_ja: "ヨシュア記 1:9", ref_en: "Joshua 1:9", tr: "明治元訳", ja: "我なんぢに命ぜしにあらずや心を強くしかつ勇め汝の凡て往く處にて汝の神ヱホバ偕に在せば懼るる勿れ戰慄なかれ", en: "Have not I commanded thee? Be strong and of a good courage; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest." },
-    { ref_ja: "マタイ 6:33", ref_en: "Matthew 6:33", tr: "大正改訳", ja: "まづ神の國と神の義とを求めよ、さらば凡てこれらの物は汝らに加へらるべし。", en: "But seek ye first the kingdom of God, and his righteousness; and all these things shall be added unto you." },
-    { ref_ja: "マタイ 11:28", ref_en: "Matthew 11:28", tr: "大正改訳", ja: "凡て勞する者・重荷を負ふ者、われに來れ、われ汝らを休ません。", en: "Come unto me, all ye that labour and are heavy laden, and I will give you rest." },
-    { ref_ja: "ヨハネ 1:1", ref_en: "John 1:1", tr: "大正改訳", ja: "太初に言あり、言は神と偕にあり、言は神なりき。", en: "In the beginning was the Word, and the Word was with God, and the Word was God." },
-    { ref_ja: "ヨハネ 3:16", ref_en: "John 3:16", tr: "大正改訳", ja: "それ神はその獨子を賜ふほどに世を愛し給へり、すべて彼を信ずる者の亡びずして、永遠の生命を得んためなり。", en: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life." },
-    { ref_ja: "ヨハネ 8:12", ref_en: "John 8:12", tr: "大正改訳", ja: "われは世の光なり、我に從ふ者は暗き中を歩まず、生命の光を得べし", en: "Then spake Jesus again unto them, saying, I am the light of the world: he that followeth me shall not walk in darkness, but shall have the light of life." },
-    { ref_ja: "ヨハネ 14:6", ref_en: "John 14:6", tr: "大正改訳", ja: "われは道なり、眞理なり、生命なり、我に由らでは誰にても父の御許にいたる者なし。", en: "Jesus saith unto him, I am the way, the truth, and the life: no man cometh unto the Father, but by me." },
-    { ref_ja: "ヨハネ 15:5", ref_en: "John 15:5", tr: "大正改訳", ja: "我は葡萄の樹、なんぢらは枝なり。人もし我にをり、我また彼にをらば、多くの果を結ぶべし。汝ら我を離るれば、何事をも爲し能はず。", en: "I am the vine, ye are the branches: He that abideth in me, and I in him, the same bringeth forth much fruit: for without me ye can do nothing." },
-    { ref_ja: "ローマ 8:28", ref_en: "Romans 8:28", tr: "大正改訳", ja: "神を愛する者、すなはち御旨によりて召されたる者の爲には、凡てのこと相働きて益となるを我らは知る。", en: "And we know that all things work together for good to them that love God, to them who are the called according to his purpose." },
-    { ref_ja: "ローマ 12:2", ref_en: "Romans 12:2", tr: "大正改訳", ja: "又この世に效ふな、神の御意の善にして悦ぶべく、かつ全きことを辨へ知らんために、心を更へて新にせよ。", en: "And be not conformed to this world: but be ye transformed by the renewing of your mind, that ye may prove what is that good, and acceptable, and perfect, will of God." },
-    { ref_ja: "第一コリント 13:4", ref_en: "1 Corinthians 13:4", tr: "大正改訳", ja: "愛は寛容にして慈悲あり。愛は妬まず、愛は誇らず、驕らず、", en: "Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself, is not puffed up," },
-    { ref_ja: "第一コリント 16:14", ref_en: "1 Corinthians 16:14", tr: "大正改訳", ja: "一切のこと愛をもて行へ。", en: "Let all your things be done with charity." },
-    { ref_ja: "ガラテヤ 5:22", ref_en: "Galatians 5:22", tr: "大正改訳", ja: "されど御靈の果は愛・喜悦・平和・寛容・仁慈・善良・忠信・柔和・節制なり。", en: "But the fruit of the Spirit is love, joy, peace, longsuffering, gentleness, goodness, faith," },
-    { ref_ja: "エペソ 2:8", ref_en: "Ephesians 2:8", tr: "大正改訳", ja: "汝らは恩惠により、信仰によりて救はれたり、是おのれに由るにあらず、神の賜物なり。", en: "For by grace are ye saved through faith; and that not of yourselves: it is the gift of God:" },
-    { ref_ja: "ピリピ 4:6", ref_en: "Philippians 4:6", tr: "大正改訳", ja: "何事をも思ひ煩ふな、ただ事ごとに祈をなし、願をなし、感謝して汝らの求を神に告げよ。", en: "Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God." },
-    { ref_ja: "ピリピ 4:13", ref_en: "Philippians 4:13", tr: "大正改訳", ja: "我を強くし給ふ者によりて、凡ての事をなし得るなり。", en: "I can do all things through Christ which strengtheneth me." },
-    { ref_ja: "ヘブル 11:1", ref_en: "Hebrews 11:1", tr: "大正改訳", ja: "それ信仰は望むところを確信し、見ぬ物を眞實とするなり。", en: "Now faith is the substance of things hoped for, the evidence of things not seen." },
-    { ref_ja: "詩篇 121:2", ref_en: "Psalms 121:2", tr: "明治元訳", ja: "わがたすけは天地をつくりたまへるヱホバよりきたる", en: "My help cometh from the LORD, which made heaven and earth." },
-    { ref_ja: "ヤコブ 1:5", ref_en: "James 1:5", tr: "大正改訳", ja: "汝らの中もし智慧の缺くる者あらば、咎むることなくまた惜む事なく、凡ての人に與ふる神に求むべし、さらば與へられん。", en: "If any of you lack wisdom, let him ask of God, that giveth to all men liberally, and upbraideth not; and it shall be given him." },
-    { ref_ja: "第一ヨハネ 4:8", ref_en: "1 John 4:8", tr: "大正改訳", ja: "愛なき者は、神を知らず、神は愛なればなり。", en: "He that loveth not knoweth not God; for God is love." },
-    { ref_ja: "哀歌 3:23", ref_en: "Lamentations 3:23", tr: "明治元訳", ja: "これは朝ごとに新なり なんぢの誠實はおほいなるかな", en: "They are new every morning: great is thy faithfulness." },
-    { ref_ja: "ミカ書 6:8", ref_en: "Micah 6:8", tr: "明治元訳", ja: "人よ彼さきに善事の何なるを汝に告たり ヱホバの汝に要めたまふ事は唯正義を行ひ憐憫を愛し謙遜りて汝の神とともに歩む事ならずや", en: "He hath shewed thee, O man, what is good; and what doth the LORD require of thee, but to do justly, and to love mercy, and to walk humbly with thy God?" },
-    { ref_ja: "黙示録 21:4", ref_en: "Revelation 21:4", tr: "大正改訳", ja: "かれらの目の涙をことごとく拭ひ去り給はん。今よりのち死もなく、悲歎も號叫も苦痛もなかるべし。前のもの既に過ぎ去りたればなり", en: "And God shall wipe away all tears from their eyes; and there shall be no more death, neither sorrow, nor crying, neither shall there be any more pain: for the former things are passed away." }
+    { ref_ja: "創世記 1:1", ref_en: "Genesis 1:1", tr: "明治元訳", ja: "はじめに神は天と地とを創造された。", en: "In the beginning God created the heaven and the earth." },
+    { ref_ja: "詩篇 23:1", ref_en: "Psalms 23:1", tr: "明治元訳", ja: "主はわたしの牧者であって、わたしには乏しいことがない。", en: "The LORD is my shepherd; I shall not want." },
+    { ref_ja: "詩篇 46:1", ref_en: "Psalms 46:1", tr: "明治元訳", ja: "神はわれらの避け所また力である。悩める時のいと近き助けである。", en: "God is our refuge and strength, a very present help in trouble." },
+    { ref_ja: "詩篇 118:24", ref_en: "Psalms 118:24", tr: "明治元訳", ja: "これは主が設けられた日であって、われらはこの日に喜び楽しむであろう。", en: "This is the day which the LORD hath made; we will rejoice and be glad in it." },
+    { ref_ja: "箴言 3:5", ref_en: "Proverbs 3:5", tr: "明治元訳", ja: "心をつくして主に信頼せよ、自分の知識にたよってはならない。", en: "Trust in the LORD with all thine heart; and lean not unto thine own understanding." },
+    { ref_ja: "イザヤ書 40:31", ref_en: "Isaiah 40:31", tr: "明治元訳", ja: "しかし主を待ち望む者は新たなる力を得、わしのように翼をはって、のぼることができる。走っても疲れることなく、歩いても弱ることはない。", en: "But they that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint." },
+    { ref_ja: "イザヤ書 41:10", ref_en: "Isaiah 41:10", tr: "明治元訳", ja: "恐れてはならない、わたしはあなたと共にいる。驚いてはならない、わたしはあなたの神である。わたしはあなたを強くし、あなたを助け、わが勝利の右の手をもって、あなたをささえる。", en: "Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee; yea, I will uphold thee with the right hand of my righteousness." },
+    { ref_ja: "エレミヤ書 29:11", ref_en: "Jeremiah 29:11", tr: "明治元訳", ja: "主は言われる、わたしがあなたがたに対していだいている計画はわたしが知っている。それは災を与えようというのではなく、平安を与えようとするものであり、あなたがたに将来を与え、希望を与えようとするものである。", en: "For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end." },
+    { ref_ja: "ヨシュア記 1:9", ref_en: "Joshua 1:9", tr: "明治元訳", ja: "わたしはあなたに命じたではないか。強く、また雄々しくあれ。あなたがどこへ行くにも、あなたの神、主が共におられるゆえ、恐れてはならない、おののいてはならない」。", en: "Have not I commanded thee? Be strong and of a good courage; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest." },
+    { ref_ja: "マタイ 6:33", ref_en: "Matthew 6:33", tr: "大正改訳", ja: "まず神の国と神の義とを求めなさい。そうすれば、これらのものは、すべて添えて与えられるであろう。", en: "But seek ye first the kingdom of God, and his righteousness; and all these things shall be added unto you." },
+    { ref_ja: "マタイ 11:28", ref_en: "Matthew 11:28", tr: "大正改訳", ja: "すべて重荷を負うて苦労している者は、わたしのもとにきなさい。あなたがたを休ませてあげよう。", en: "Come unto me, all ye that labour and are heavy laden, and I will give you rest." },
+    { ref_ja: "ヨハネ 1:1", ref_en: "John 1:1", tr: "大正改訳", ja: "初めに言があった。言は神と共にあった。言は神であった。", en: "In the beginning was the Word, and the Word was with God, and the Word was God." },
+    { ref_ja: "ヨハネ 3:16", ref_en: "John 3:16", tr: "大正改訳", ja: "神はそのひとり子を賜わったほどに、この世を愛して下さった。それは御子を信じる者がひとりも滅びないで、永遠の命を得るためである。", en: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life." },
+    { ref_ja: "ヨハネ 8:12", ref_en: "John 8:12", tr: "大正改訳", ja: "イエスは、また人々に語ってこう言われた、「わたしは世の光である。わたしに従って来る者は、やみのうちを歩くことがなく、命の光をもつであろう」。", en: "Then spake Jesus again unto them, saying, I am the light of the world: he that followeth me shall not walk in darkness, but shall have the light of life." },
+    { ref_ja: "ヨハネ 14:6", ref_en: "John 14:6", tr: "大正改訳", ja: "イエスは彼に言われた、「わたしは道であり、真理であり、命である。だれでもわたしによらないでは、父のみもとに行くことはできない。", en: "Jesus saith unto him, I am the way, the truth, and the life: no man cometh unto the Father, but by me." },
+    { ref_ja: "ヨハネ 15:5", ref_en: "John 15:5", tr: "大正改訳", ja: "わたしはぶどうの木、あなたがたはその枝である。もし人がわたしにつながっており、またわたしがその人とつながっておれば、その人は実を豊かに結ぶようになる。わたしから離れては、あなたがたは何一つできないからである。", en: "I am the vine, ye are the branches: He that abideth in me, and I in him, the same bringeth forth much fruit: for without me ye can do nothing." },
+    { ref_ja: "ローマ 8:28", ref_en: "Romans 8:28", tr: "大正改訳", ja: "神は、神を愛する者たち、すなわち、ご計画に従って召された者たちと共に働いて、万事を益となるようにして下さることを、わたしたちは知っている。", en: "And we know that all things work together for good to them that love God, to them who are the called according to his purpose." },
+    { ref_ja: "ローマ 12:2", ref_en: "Romans 12:2", tr: "大正改訳", ja: "あなたがたは、この世と妥協してはならない。むしろ、心を新たにすることによって、造りかえられ、何が神の御旨であるか、何が善であって、神に喜ばれ、かつ全きことであるかを、わきまえ知るべきである。", en: "And be not conformed to this world: but be ye transformed by the renewing of your mind, that ye may prove what is that good, and acceptable, and perfect, will of God." },
+    { ref_ja: "第一コリント 13:4", ref_en: "1 Corinthians 13:4", tr: "大正改訳", ja: "愛は寛容であり、愛は情深い。また、ねたむことをしない。愛は高ぶらない、誇らない、", en: "Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself, is not puffed up," },
+    { ref_ja: "第一コリント 16:14", ref_en: "1 Corinthians 16:14", tr: "大正改訳", ja: "いっさいのことを、愛をもって行いなさい。", en: "Let all your things be done with charity." },
+    { ref_ja: "ガラテヤ 5:22", ref_en: "Galatians 5:22", tr: "大正改訳", ja: "しかし、御霊の実は、愛、喜び、平和、寛容、慈愛、善意、忠実、", en: "But the fruit of the Spirit is love, joy, peace, longsuffering, gentleness, goodness, faith," },
+    { ref_ja: "エペソ 2:8", ref_en: "Ephesians 2:8", tr: "大正改訳", ja: "あなたがたの救われたのは、実に、恵みにより、信仰によるのである。それは、あなたがた自身から出たものではなく、神の賜物である。", en: "For by grace are ye saved through faith; and that not of yourselves: it is the gift of God:" },
+    { ref_ja: "ピリピ 4:6", ref_en: "Philippians 4:6", tr: "大正改訳", ja: "何事も思い煩ってはならない。ただ、事ごとに、感謝をもって祈と願いとをささげ、あなたがたの求めるところを神に申し上げるがよい。", en: "Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God." },
+    { ref_ja: "ピリピ 4:13", ref_en: "Philippians 4:13", tr: "大正改訳", ja: "わたしを強くして下さるかたによって、何事でもすることができる。", en: "I can do all things through Christ which strengtheneth me." },
+    { ref_ja: "ヘブル 11:1", ref_en: "Hebrews 11:1", tr: "大正改訳", ja: "さて、信仰とは、望んでいる事がらを確信し、まだ見ていない事実を確認することである。", en: "Now faith is the substance of things hoped for, the evidence of things not seen." },
+    { ref_ja: "詩篇 121:2", ref_en: "Psalms 121:2", tr: "明治元訳", ja: "わが助けは、天と地を造られた主から来る。", en: "My help cometh from the LORD, which made heaven and earth." },
+    { ref_ja: "ヤコブ 1:5", ref_en: "James 1:5", tr: "大正改訳", ja: "あなたがたのうち、知恵に不足している者があれば、その人は、とがめもせずに惜しみなくすべての人に与える神に、願い求めるがよい。そうすれば、与えられるであろう。", en: "If any of you lack wisdom, let him ask of God, that giveth to all men liberally, and upbraideth not; and it shall be given him." },
+    { ref_ja: "第一ヨハネ 4:8", ref_en: "1 John 4:8", tr: "大正改訳", ja: "愛さない者は、神を知らない。神は愛である。", en: "He that loveth not knoweth not God; for God is love." },
+    { ref_ja: "哀歌 3:23", ref_en: "Lamentations 3:23", tr: "明治元訳", ja: "これは朝ごとに新しく、あなたの真実は大きい。", en: "They are new every morning: great is thy faithfulness." },
+    { ref_ja: "ミカ書 6:8", ref_en: "Micah 6:8", tr: "明治元訳", ja: "人よ、彼はさきによい事のなんであるかをあなたに告げられた。主のあなたに求められることは、ただ公義をおこない、いつくしみを愛し、へりくだってあなたの神と共に歩むことではないか。", en: "He hath shewed thee, O man, what is good; and what doth the LORD require of thee, but to do justly, and to love mercy, and to walk humbly with thy God?" },
+    { ref_ja: "黙示録 21:4", ref_en: "Revelation 21:4", tr: "大正改訳", ja: "人の目から涙を全くぬぐいとって下さる。もはや、死もなく、悲しみも、叫びも、痛みもない。先のものが、すでに過ぎ去ったからである」。", en: "And God shall wipe away all tears from their eyes; and there shall be no more death, neither sorrow, nor crying, neither shall there be any more pain: for the former things are passed away." }
   ];
   var BIBLE66 = [
     ["創世記", "Genesis"], ["出エジプト記", "Exodus"], ["レビ記", "Leviticus"], ["民数記", "Numbers"], ["申命記", "Deuteronomy"],
