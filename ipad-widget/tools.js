@@ -138,6 +138,23 @@
     ".tdt .kb-w3-life{color:#7fb2c9}",
     ".tdt .kb-w3-biz{color:#e3b867}",
     ".tdt .kb-w3-trade{color:#b48ede}",
+    /* 住宅ローン控除の申請ガイド：あなたの場合は（金の枠）、ルート選択、手順の番号、書類チェック */
+    ".tdt .hc-box{border:1px solid rgba(227,184,103,.55);background:rgba(227,184,103,.10);border-radius:14px;padding:10px 12px;margin:8px 0}",
+    ".tdt .hc-box>b{color:#e3b867}",
+    ".tdt .hc-big{font-size:16px;font-weight:700;margin:2px 0}",
+    ".tdt .hc-routes{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:6px 0 10px}",
+    ".tdt .hc-routes button{min-height:48px;padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:#181b24;color:#cfc8ba;font-weight:700;cursor:pointer;text-align:left}",
+    ".tdt .hc-routes button[aria-pressed=true]{background:#e3b867;border-color:#e3b867;color:#14100a}",
+    ".tdt .hc-routes button small{display:block;font-weight:400;font-size:12px;opacity:.85}",
+    ".tdt .hc-step{display:flex;gap:10px;margin:10px 0}",
+    ".tdt .hc-n{flex:none;width:26px;height:26px;border-radius:50%;background:#e3b867;color:#14100a;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px}",
+    ".tdt .hc-step b{color:#f4f1ea}",
+    ".tdt .hc-step .note{margin:2px 0}",
+    ".tdt .hc-prog{color:#e3b867;font-weight:700}",
+    ".tdt .hc-doc{display:flex;gap:10px;align-items:flex-start;min-height:44px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer}",
+    ".tdt .hc-doc input{width:24px;height:24px;flex:none;margin-top:2px}",
+    ".tdt .hc-doc .hc-formal{display:block;font-size:12px;color:#b9b2a3}",
+    ".tdt .hc-doc .note{display:block;margin:2px 0}",
     "@media (max-width:520px){.tdt .pl-cal button{min-height:54px;padding:3px}.tdt .pl-cal em{font-size:11px}.tdt .pl-cal small{font-size:9px}.tdt .pl-big b{font-size:28px}.tdt .pl-head{grid-template-columns:1fr}}",
     ".tdt .skiprow{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.tdt .skiprow label.f{flex:1;min-width:200px}",
     "@media (max-width:600px){.tdt{padding:var(--safe-top,env(safe-area-inset-top,0px)) 0 0}.tdt-box{border-radius:0}.tdt-body{padding:12px}}"  /* スマホは全画面。上だけステータスバーの分を空ける */
@@ -367,6 +384,76 @@
   var kbDepForYear = function (asset, year) {
     var d = kbDepSchedule(asset)[year] || 0;
     return { total: d, biz: Math.round(d * asset.bizRatio / 100) };
+  };
+  /* ---------- 住宅ローン控除の申請ガイド：ルート・手順・書類の定義と、チェック状態の形。保存形式は { "<年>": { route: "A"|"B"|"C", checks: { "<書類ID>": true } } } ---------- */
+  var KAKEIBO_HCGUIDE = "td_kakeibo_hcguide_v1";
+  // 書類：ふだんの言葉の名前を先に、正式な名前は formal に。note は「どこでもらえるか・いつ届くか」
+  var KB_HC_DOCS = {
+    balance: { name: "年末残高証明書", formal: "", note: "その年末にローンがいくら残っているかの証明です。金融機関から郵送で届きます。届かないときは金融機関へ連絡してください。" },
+    calc: { name: "計算明細書", formal: "（特定増改築等）住宅借入金等特別控除額の計算明細書", note: "控除額を計算する紙です。e-Taxで申告すれば、画面の入力がそのまま計算になります。" },
+    registry: { name: "登記事項証明書", formal: "", note: "家と土地の記録です。法務局の窓口か、オンラインで取れます。" },
+    contract: { name: "売買契約書（請負契約書）の写し", formal: "", note: "買ったときの契約書のコピーです。家を建てた人は、建てたときの請負契約書の写しです。" },
+    withholding: { name: "源泉徴収票", formal: "", note: "会社から年末ごろにもらう、給与の証明です。給与がある人だけ必要です。" },
+    performance: { name: "性能を証明する書類", formal: "", note: "認定長期優良住宅・低炭素住宅・ZEH水準・省エネ基準適合の家だけ必要です。認定通知書や住宅用家屋証明書、建設住宅性能評価書の写しなど。ふつうの家は不要です。" },
+    cert: { name: "控除証明書", formal: "給与所得者の住宅借入金等特別控除申告書", note: "税務署から届く、年末調整用の紙です。入居の翌年の秋ごろ、残りの年数分がまとめて届きます。なくしたら税務署で再発行できます。" }
+  };
+  var KB_HC_ROUTES = {
+    A: { label: "入居して1年目", sub: "確定申告をします", docs: ["balance", "calc", "registry", "contract", "withholding", "performance"], steps: [
+      { title: "書類をそろえる", note: "年末残高証明書は10〜11月ごろ、金融機関から届きます。下のチェックリストで、そろったものに印を付けましょう。調書方式に対応した金融機関では、年末残高証明書がマイナポータル連携で代わりになる場合があります。" },
+      { title: "計算明細書を作る", note: "控除額を計算する紙です。e-Taxなら、画面の入力がそのまま計算になります。" },
+      { title: "確定申告をする", note: "翌年の2月16日〜3月15日に、e-Taxか税務署で申告します。会社員でも、1年目だけは確定申告が必要です。" },
+      { title: "還付を受ける", note: "申告から1か月〜1か月半ごろに、指定した口座へ戻ります（目安）。" }] },
+    B: { label: "2年目以降・会社員", sub: "年末調整で受けます", docs: ["balance", "cert"], steps: [
+      { title: "控除証明書を確認する", note: "10月ごろ、税務署から届きます。残りの年数分がまとめて届いているので、今年の分を使います。" },
+      { title: "年末残高証明書を受け取る", note: "11月ごろ、金融機関から届きます。" },
+      { title: "会社の年末調整へ提出する", note: "年末調整の書類といっしょに、この2つを勤務先へ出します。締切は会社の指示どおりです（多くは11〜12月）。" }] },
+    C: { label: "自営業・副業などの所得がある", sub: "毎年、確定申告をします", docs: ["balance", "calc", "registry", "contract", "withholding", "performance"], steps: [
+      { title: "書類をそろえる", note: "1年目（ルートA）と同じ書類です。年末残高証明書は10〜11月ごろ、金融機関から届きます。調書方式に対応した金融機関では、年末残高証明書がマイナポータル連携で代わりになる場合があります。" },
+      { title: "計算明細書を作る", note: "控除額を計算する紙です。e-Taxなら、画面の入力がそのまま計算になります。" },
+      { title: "毎年、確定申告をする", note: "翌年の2月16日〜3月15日に申告します。上の「事業の収支」と同じ確定申告の中で受けます。" },
+      { title: "還付を受ける", note: "申告から1か月〜1か月半ごろに、指定した口座へ戻ります（目安）。" }] }
+  };
+  var KB_HC_ROUTE_ORDER = ["A", "B", "C"];
+  var KB_HC_FAILS = [
+    "1年目は、会社員でも年末調整だけでは受けられません。確定申告が必要です。",
+    "控除証明書をなくしたら、税務署で再発行できます。",
+    "年末残高証明書が届かないときは、金融機関へ連絡してください。",
+    "中古住宅・増改築は、条件と書類が少し違います。当てはまる人は、税務署で確認してください。"
+  ];
+  // 保存されたガイド状態を正しい形に直す（壊れた値・知らない年や書類IDは捨てる）
+  var kbHcGuideNorm = function (raw) {
+    var out = {};
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+    Object.keys(raw).forEach(function (y) {
+      if (!/^\d{4}$/.test(y)) return;
+      var e = raw[y]; if (!e || typeof e !== "object") return;
+      var checks = {};
+      if (e.checks && typeof e.checks === "object") Object.keys(e.checks).forEach(function (id) { if (KB_HC_DOCS[id] && e.checks[id] === true) checks[id] = true; });
+      out[y] = { route: KB_HC_ROUTES[e.route] ? e.route : null, checks: checks };
+    });
+    return out;
+  };
+  // あなたの場合は：登録された住宅の借入のうち、表示中の年で控除の目安が出る最初の1件。なければ null
+  var kbHcPersonal = function (loans, year) {
+    var homes = (loans || []).filter(function (l) { return l.purpose === "住宅"; });
+    for (var i = 0; i < homes.length; i++) {
+      var yr = kbAmortize(homes[i]).years[year];
+      if (!yr) continue;
+      var hc = kbHomeCredit(homes[i], year, yr.endBalance);
+      if (hc.ok) return { nth: hc.nth, years: hc.years, limit: hc.limit, credit: hc.credit, route: hc.nth === 1 ? "A" : "B" };
+    }
+    return null;
+  };
+  var kbHcDefaultRoute = function (personal) { return personal ? personal.route : "B"; };
+  // 表示中の年のガイド入力状態（保存がなければ、あなたの場合はから決めた初期ルートと、空のチェック）
+  var kbHcYearEntry = function (state, year, personal) {
+    var e = (state || {})[String(year)];
+    return { route: e && e.route ? e.route : kbHcDefaultRoute(personal), checks: e && e.checks ? e.checks : {} };
+  };
+  var kbHcProgress = function (route, checks) {
+    var docs = (KB_HC_ROUTES[route] || KB_HC_ROUTES.B).docs, done = 0;
+    docs.forEach(function (id) { if (checks && checks[id]) done++; });
+    return { total: docs.length, done: done };
   };
   // [kb-pure-end]
   // [hub-pure-begin] 日誌ハブと「3つの財布」の集計（テストで切り出して検証できるよう、C（TDCore）・kbTotals・kbCatSums・uid だけに依存する形に保つ）
@@ -994,6 +1081,31 @@
         loanCalc.forEach(function (c) { if (c.loan.purpose === "事業") { var yr = c.am.years[year]; if (yr) intAuto += Math.round(yr.interest * c.loan.bizRatio / 100); } });
         var biz = kbBizSummary(all, year, depAuto, intAuto), bizInCats = kbCatSums(yl.filter(function (e) { return e.scope === "biz"; }), "in");
         var lnEd = kbLoanEdit, asEd = kbAssetEdit;
+        /* --- 住宅ローン控除の申請ガイド：あなたの場合は＋ルート別の手順と書類チェック（チェック状態は端末に保存） --- */
+        var hcPersonal = kbHcPersonal(loans, year);
+        var hcState = kbHcGuideNorm(get(KAKEIBO_HCGUIDE, {}));
+        var hcEntry = kbHcYearEntry(hcState, year, hcPersonal);
+        var hcGuideInner = function () {
+          var r = KB_HC_ROUTES[hcEntry.route] || KB_HC_ROUTES.B, prog = kbHcProgress(hcEntry.route, hcEntry.checks);
+          var s = '<h3>住宅ローン控除の申請ガイド</h3>' +
+            '<p class="note">住宅ローン控除（住宅借入金等特別控除）を受けるための手続きを、状況に合わせて案内します。金額は目安です。個別の判断は税務署・税理士に確認してください。</p>';
+          if (hcPersonal) s += '<div class="hc-box"><b>あなたの場合は</b><div class="hc-big">あなたは ' + hcPersonal.nth + '年目です。今年は' + (hcPersonal.nth === 1 ? "確定申告" : "年末調整") + 'で受けられます。</div>' +
+            '<p class="note">控除額の目安 ¥' + fmt(hcPersonal.credit, 0) + '（控除期間' + hcPersonal.years + '年のうちの' + hcPersonal.nth + '年目）。給与以外の所得がある人は、毎年、確定申告で受けます。当てはまる人は、下のルートCを選んでください。</p></div>';
+          s += '<p class="note"><b>あなたはどっち？</b> 当てはまるものを選ぶと、その手順と書類だけが出ます。</p>' +
+            '<div class="hc-routes" role="group" aria-label="申請のルートを選ぶ">' + KB_HC_ROUTE_ORDER.map(function (k) { var rt = KB_HC_ROUTES[k]; return '<button type="button" data-hcroute="' + k + '" aria-pressed="' + (k === hcEntry.route) + '">' + esc(rt.label) + "<small>" + esc(rt.sub) + "</small></button>"; }).join("") + "</div>" +
+            r.steps.map(function (st, i) { return '<div class="hc-step"><span class="hc-n">' + (i + 1) + '</span><div><b>' + esc(st.title) + '</b><p class="note">' + esc(st.note) + "</p></div></div>"; }).join("") +
+            '<p class="note"><b>そろえる書類</b>　<span class="hc-prog">' + prog.total + "つのうち " + prog.done + 'つ そろいました</span>（印はこの端末に保存されます）</p>' +
+            r.docs.map(function (id) { var doc = KB_HC_DOCS[id]; return '<label class="hc-doc"><input type="checkbox" data-hcdoc="' + id + '"' + (hcEntry.checks[id] ? " checked" : "") + '><span><b>' + esc(doc.name) + "</b>" + (doc.formal ? '<span class="hc-formal">正式な名前：' + esc(doc.formal) + "</span>" : "") + '<span class="note">' + esc(doc.note) + "</span></span></label>"; }).join("") +
+            '<p class="note"><b>よくある失敗</b></p><ul class="steps">' + KB_HC_FAILS.map(function (f) { return "<li>" + esc(f) + "</li>"; }).join("") + "</ul>" +
+            '<p class="note">令和6・7年入居の制度での目安です。最新は国税庁で確認を。</p>';
+          return s;
+        };
+        var wireGuide = function () {
+          var g = $("#kb-hcguide"); if (!g) return;
+          g.querySelectorAll("[data-hcroute]").forEach(function (b) { b.addEventListener("click", function () { hcEntry.route = b.getAttribute("data-hcroute"); hcState[String(year)] = hcEntry; put(KAKEIBO_HCGUIDE, hcState, "家計簿"); paintGuide(); }); });
+          g.querySelectorAll("[data-hcdoc]").forEach(function (cb) { cb.addEventListener("change", function () { var id = cb.getAttribute("data-hcdoc"); if (cb.checked) hcEntry.checks[id] = true; else delete hcEntry.checks[id]; hcState[String(year)] = hcEntry; put(KAKEIBO_HCGUIDE, hcState, "家計簿"); paintGuide(); }); });
+        };
+        var paintGuide = function () { var g = $("#kb-hcguide"); if (g) { g.innerHTML = hcGuideInner(); wireGuide(); } };
         var bizHtml = '<h3>事業の収支（' + year + '年）</h3>' +
           '<p class="note">月別で「事業」を選んだ記録を、収支内訳表の科目の並びでまとめました。減価償却費と利子割引料の（自動計算）は、下の資産・借入から計算した分です。手入力の分と重ねて入れないでください。</p>' +
           ((biz.inc || biz.lines.length) ? '<div class="tw"><table><tr><th>区分</th><th>科目</th><th>金額</th></tr>' +
@@ -1026,6 +1138,7 @@
             else s += '<p class="note">' + year + "年の返済記録はありません" + (am.paidOff && year > startYear ? "（完済済み）" : year < startYear ? "（借入を始める前）" : "") + "。</p>";
             if (l.guarantee > 0 && startYear === year) s += '<p class="note">保証料 ¥' + fmt(l.guarantee, 0) + "（借りた年に記録）</p>";
             if (am.stuck) s += '<p class="warn">毎月の返済額が利息以下のため、元本が減りません。返済額を見直してください。</p>';
+            var hcJump = "";
             if (l.purpose === "住宅") {
               if (!yr) s += '<p class="note">住宅ローン控除：' + (year < startYear ? "借入を始める前の年です。" : "この年の年末残高がないため、目安は出せません。") + "</p>";
               else {
@@ -1034,24 +1147,14 @@
                 else s += '<p class="note"><b>住宅ローン控除の目安</b>（' + hc.nth + "年目／" + hc.years + "年）</p>" +
                   '<div class="pl-kv"><span>年末残高<b>¥' + fmt(yr.endBalance, 0) + '</b></span><span>借入限度額<b>¥' + fmt(hc.limit, 0) + '</b></span><span>控除額の目安<b class="pl-up">¥' + fmt(hc.credit, 0) + "</b></span></div>" +
                   '<p class="note">年末残高と借入限度額の小さいほう × 0.7%です。入居した年は、返済を始めた年で代用しています。要件には、控除を受ける年の合計所得金額が2,000万円以下、床面積が原則50㎡以上などがあります。</p>';
+                hcJump = ' <button type="button" class="btn" data-hcgo="1">申請の手順は下の申請ガイドへ</button>';
               }
               s += '<p class="note">令和6・7年入居の制度での目安です。最新は国税庁で確認を。</p>';
             }
-            s += '<div class="btns"><button type="button" class="btn" data-lned="' + esc(l.id) + '">編集</button> <button type="button" class="btn danger" data-lndel="' + esc(l.id) + '">削除</button></div></div>';
+            s += '<div class="btns"><button type="button" class="btn" data-lned="' + esc(l.id) + '">編集</button> <button type="button" class="btn danger" data-lndel="' + esc(l.id) + '">削除</button>' + hcJump + "</div></div>";
             return s;
           }).join("") : '<p class="note">借入はまだ登録がありません。上の欄から足せます。</p>') + "</div>" +
-          '<details><summary>住宅ローン控除の申請の仕方</summary>' +
-          '<p class="note">1年目（入居した年）は、会社員でも確定申告が必要です。そろえる書類は次のとおりです。</p>' +
-          '<ul class="steps">' +
-          "<li>（特定増改築等）住宅借入金等特別控除額の計算明細書</li>" +
-          "<li>金融機関の年末残高証明書（調書方式に対応した金融機関では、マイナポータル連携で代わりになる場合があります）</li>" +
-          "<li>建物（と土地）の登記事項証明書</li>" +
-          "<li>売買契約書（請負契約書）の写し</li>" +
-          "<li>源泉徴収票（給与所得のある人）</li>" +
-          "<li>認定長期優良住宅・低炭素住宅・ZEH水準・省エネ基準適合の家は、認定通知書や住宅用家屋証明書、建設住宅性能評価書の写しなど、性能を証明する書類</li>" +
-          "</ul>" +
-          '<p class="note">2年目以降は年末調整で受けられます。税務署から届く控除証明書（給与所得者の住宅借入金等特別控除申告書）と金融機関の年末残高証明書を、勤務先へ出します。給与以外の所得がある人・自営業の人は、毎年、確定申告で受けます。</p>' +
-          "</details>";
+          '<div id="kb-hcguide">' + hcGuideInner() + "</div>";
         var assetHtml = '<h3>減価償却の資産</h3>' +
           '<p class="note">10万円以上の備品や建物などは、耐用年数に分けて少しずつ経費にします（定額法）。登録すると、その年の償却費のうち事業に使う割合分を、事業の収支へ自動で入れます。</p>' +
           '<div class="pl-in"><b>' + (asEd ? "資産を直す" : "資産を足す") + '</b>' +
@@ -1093,6 +1196,7 @@
           '<h3>カテゴリ別の合計（' + year + '年）</h3><div id="kb-ycats"></div>' +
           '<div class="btns"><button type="button" class="btn" id="kb-ancsv">年間収支をCSVで書き出す</button></div>' + bizHtml + loanHtml + assetHtml;
         wireMode();
+        wireGuide();
         $("#kb-ycats").innerHTML = catsHtml(yl, "年");
         $("#kb-yprev").addEventListener("click", function () { kbYear = year - 1; VIEWS.kakeibo(); });
         $("#kb-ynext").addEventListener("click", function () { kbYear = year + 1; VIEWS.kakeibo(); });
@@ -1134,6 +1238,8 @@
         });
         var lnCancel = $("#kb-lncancel"); if (lnCancel) lnCancel.addEventListener("click", function () { kbLoanEdit = null; VIEWS.kakeibo(); });
         $("#kb-lnlist").addEventListener("click", function (e) {
+          var go = e.target.closest("[data-hcgo]");
+          if (go) { var gel = $("#kb-hcguide"); if (gel) gel.scrollIntoView({ block: "start", behavior: "smooth" }); return; }
           var del = e.target.closest("[data-lndel]"), edb = e.target.closest("[data-lned]");
           if (del) { var did = del.getAttribute("data-lndel"); if (confirm("この借入を削除しますか？（元に戻せません）") && put(KAKEIBO_LOANS, kbLoans().filter(function (x) { return x.id !== did; }), "家計簿")) { if (kbLoanEdit && kbLoanEdit.id === did) kbLoanEdit = null; VIEWS.kakeibo(); } return; }
           if (edb) { kbLoanEdit = kbLoans().filter(function (x) { return x.id === edb.getAttribute("data-lned"); })[0] || null; VIEWS.kakeibo(); }
