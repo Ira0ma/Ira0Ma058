@@ -710,6 +710,45 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 #verse .vs-btns { margin-top: auto; padding-top: 8px; display: flex; gap: 8px; flex: none; }
 #verse .vs-btn { font: inherit; font-size: 12px; font-weight: 700; color: var(--gold); background: rgba(var(--panel-rgb),.85); border: 1px solid rgba(var(--gold-rgb),.5); border-radius: 999px; padding: 4px 12px; line-height: 1.5; cursor: pointer; text-decoration: none; }
 #verse .vs-btn:hover, #verse .vs-btn:focus-visible { background: var(--gold); color: var(--on-accent); outline: none; }
+/* ===== Desk of Ayu: arrangement settings (verse mode / verse card / font size) ===== */
+html[data-ayuvm="ja"] #verse .vs-en { display: none; }
+html[data-ayuvm="en"] #verse .vs-ja { display: none; }
+html.ayu-no-verse #verse { display: none; }
+html.ayu-no-verse:not(.flow):not(.phone) #points { height: 477px; }
+html[data-ayufs="l"] #verse .vs-ja { font-size: 16.7px; }
+html[data-ayufs="l"] #verse .vs-en { font-size: 13.8px; }
+html[data-ayufs="l"] #verse .vs-ref { font-size: 13.2px; }
+html[data-ayufs="l"] #verse .vs-btn { font-size: 13.8px; }
+html[data-ayufs="xl"] #verse .vs-ja { font-size: 18.9px; }
+html[data-ayufs="xl"] #verse .vs-en { font-size: 15.6px; }
+html[data-ayufs="xl"] #verse .vs-ref { font-size: 15px; }
+html[data-ayufs="xl"] #verse .vs-btn { font-size: 15.6px; }
+html[data-ayufs="l"] .gb-term p { font-size: 15.5px; }
+html[data-ayufs="l"] .gb-term h3 { font-size: 18.4px; }
+html[data-ayufs="l"] .gb-term h3 span { font-size: 13.2px; }
+html[data-ayufs="l"] .gb-pts, html[data-ayufs="l"] .gb-table, html[data-ayufs="l"] .gb-chhead p { font-size: 14.4px; }
+html[data-ayufs="l"] .gb-note { font-size: 12.1px; }
+html[data-ayufs="xl"] .gb-term p { font-size: 17.6px; }
+html[data-ayufs="xl"] .gb-term h3 { font-size: 20.8px; }
+html[data-ayufs="xl"] .gb-term h3 span { font-size: 15px; }
+html[data-ayufs="xl"] .gb-pts, html[data-ayufs="xl"] .gb-table, html[data-ayufs="xl"] .gb-chhead p { font-size: 16.3px; }
+html[data-ayufs="xl"] .gb-note { font-size: 13.7px; }
+html[data-ayufs="l"] .pt-list p { font-size: 13.8px; }
+html[data-ayufs="l"] .pt-list h3 { font-size: 15.5px; }
+html[data-ayufs="l"] .pt-next .pn-l1 { font-size: 16.1px; }
+html[data-ayufs="l"] .pt-next .pn-l2 { font-size: 13.8px; }
+html[data-ayufs="l"] .ind-list .t, html[data-ayufs="l"] .ind-list .n { font-size: 16.1px; }
+html[data-ayufs="l"] .ind-list .s { font-size: 13.2px; }
+html[data-ayufs="l"] .wx-desc { font-size: 14.4px; }
+html[data-ayufs="xl"] .pt-list p { font-size: 15.6px; }
+html[data-ayufs="xl"] .pt-list h3 { font-size: 17.6px; }
+html[data-ayufs="xl"] .pt-next .pn-l1 { font-size: 18.2px; }
+html[data-ayufs="xl"] .pt-next .pn-l2 { font-size: 15.6px; }
+html[data-ayufs="xl"] .ind-list .t, html[data-ayufs="xl"] .ind-list .n { font-size: 18.2px; }
+html[data-ayufs="xl"] .ind-list .s { font-size: 15px; }
+html[data-ayufs="xl"] .wx-desc { font-size: 16.3px; }
+html[data-ayufs="l"] #layout-toggle, html[data-ayufs="l"] #tools-toggle, html[data-ayufs="l"] .dk-dock .dk-btn { font-size: 13.8px; }
+html[data-ayufs="xl"] #layout-toggle, html[data-ayufs="xl"] #tools-toggle, html[data-ayufs="xl"] .dk-dock .dk-btn { font-size: 15.6px; }
 #bc-body { padding: 6px 22px 30px; }
 .bc-group { font-weight: 700; color: var(--gold); margin: 16px 0 4px; font-size: 15px; }
 .bc-row { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 4px 2px; border-bottom: 1px solid rgba(255,255,255,.06); cursor: pointer; }
@@ -6804,13 +6843,24 @@ window.TD_THEME = (function () {
   };
   function lang() { return lsGet("ayu_td_lang") === "en" ? "en" : "ja"; }
   function todayVerse() { return VERSES31[(new Date().getDate() - 1) % VERSES31.length]; }
+  /* arrangement settings (tools: settings -> Ayu's Arrangement): verse mode / verse card / font size */
+  var VM_KEY = "ayu_verse_mode", VC_KEY = "ayu_verse_card", FS_KEY = "ayu_font_size";
+  function verseMode() { var m = lsGet(VM_KEY); return m === "ja" || m === "en" ? m : "both"; }
   function renderVerse() {
     var v = todayVerse(); if (!v) return;
     var ja = document.getElementById("vs-ja"), en = document.getElementById("vs-en"), rf = document.getElementById("vs-ref");
     if (ja) ja.textContent = v.ja;
     if (en) en.textContent = v.en;
-    if (rf) rf.textContent = v.ref_ja + " / " + v.ref_en;
+    if (rf) { var m = verseMode(); rf.textContent = m === "ja" ? v.ref_ja : m === "en" ? v.ref_en : v.ref_ja + " / " + v.ref_en; }
   }
+  window.TDAyuPrefApply = function () {
+    var de = document.documentElement;
+    de.setAttribute("data-ayuvm", verseMode());
+    de.classList.toggle("ayu-no-verse", lsGet(VC_KEY) === "off");
+    var fs = lsGet(FS_KEY);
+    de.setAttribute("data-ayufs", fs === "l" || fs === "xl" ? fs : "std");
+    renderVerse();
+  };
   var CHECK_KEY = "ayu_bible_check_v1";
   function readCheck() { try { var o = JSON.parse(lsGet(CHECK_KEY) || "{}"); return o && typeof o === "object" ? o : {}; } catch (e) { return {}; } }
   function renderCheckHead() {
@@ -6857,7 +6907,7 @@ window.TD_THEME = (function () {
     renderCheckHead();
   };
   /* verse card */
-  renderVerse();
+  window.TDAyuPrefApply();
   var chkBtn = document.getElementById("vs-check"), overlay = document.getElementById("bible-check");
   if (chkBtn && overlay) chkBtn.addEventListener("click", function () { renderChecklist(); overlay.hidden = false; });
   var bcClose = document.getElementById("bc-close");
