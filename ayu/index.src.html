@@ -2694,9 +2694,10 @@ window.TD_THEME = (function () {
       s[tf] = s[tf].map(function (r) { return [r[0], r[1] + gap, r[2] + gap, r[3] + gap, r[4] + gap]; });
     });
   };
-  /* Real-time ticks over WebSocket for panels showing GOLD or USD/JPY, as on the dashboards:
+  /* Real-time ticks over WebSocket for panels showing GOLD, USD/JPY or SILVER, as on the dashboards:
      USD/JPY from GMO Coin's FX feed less the site's measured gap to the XS bid; gold from XAUT
-     (OKX, then Bitfinex, then Kraken's PAXG) less its median gap to the spot price polled every minute.
+     (OKX, then Bitfinex, then Kraken's PAXG) less its median gap to the spot price polled every minute;
+     silver from XAG-USDT-SWAP (OKX's silver-linked perpetual) less its median gap to the same spot.
      A panel repaints at most twice a second. */
   var LIVE_SRC = {
     usdjpy: [{ name: "GMOコイン FX", url: "wss://forex-api.coin.z.com/ws/public/v1", sub: { command: "subscribe", channel: "ticker", symbol: "USD_JPY" },
@@ -2707,6 +2708,8 @@ window.TD_THEME = (function () {
       parse: function (m) { return m && m[1] && m[1].length > 2 ? (m[1][0] + m[1][2]) / 2 : 0; } },
       { name: "Kraken PAXG", url: "wss://ws.kraken.com/v2", sub: { method: "subscribe", params: { channel: "ticker", symbol: ["PAXG/USD"] } },
       parse: function (m) { var d = m && m.channel === "ticker" && m.data && m.data[0]; return d ? (d.bid + d.ask) / 2 : 0; } }],
+    silver: [{ name: "OKX XAG", url: "wss://ws.okx.com/ws/v5/public", sub: { op: "subscribe", args: [{ channel: "tickers", instId: "XAG-USDT-SWAP" }] }, ping: "ping",
+      parse: function (m) { var d = m && m.data && m.data[0]; return d && +d.bidPx && +d.askPx ? (+d.bidPx + +d.askPx) / 2 : 0; } }],
     btc: [{ name: "Coinbase", url: "wss://ws-feed.exchange.coinbase.com", sub: { type: "subscribe", product_ids: ["BTC-USD"], channels: ["ticker"] },
       parse: function (m) { return m && m.type === "ticker" && +m.best_bid && +m.best_ask ? (+m.best_bid + +m.best_ask) / 2 : 0; } },
       { name: "Kraken", url: "wss://ws.kraken.com/v2", sub: { method: "subscribe", params: { channel: "ticker", symbol: ["BTC/USD"] } },
@@ -2719,7 +2722,7 @@ window.TD_THEME = (function () {
   var live = {};
   function liveFresh(key) {
     var L = live[key];
-    return !!(L && L.raw && !marketClosed(key) && Date.now() - L.at < 15000 && (key !== "gold" || L.offs.length));
+    return !!(L && L.raw && !marketClosed(key) && Date.now() - L.at < 15000 && ((key !== "gold" && key !== "silver") || L.offs.length));
   }
   function liveOffset(key) {
     var L = live[key];
@@ -2728,9 +2731,9 @@ window.TD_THEME = (function () {
     var o = L.offs.slice().sort(function (a, b) { return a - b; });
     return o.length ? o[o.length >> 1] : 0;
   }
-  function liveCalibrate(key, spot) {  // gold: the feed against the spot price polled at the same time
+  function liveCalibrate(key, spot) {  // gold/silver: the feed against the spot price polled at the same time
     var L = live[key];
-    if (key !== "gold" || !L || !L.raw || Date.now() - L.at > 10000 || !spot || Math.abs(L.raw - spot) > 40) return;
+    if ((key !== "gold" && key !== "silver") || !L || !L.raw || Date.now() - L.at > 10000 || !spot || Math.abs(L.raw - spot) > (key === "gold" ? 40 : 0.6)) return;
     L.offs.push(L.raw - spot); if (L.offs.length > 20) L.offs.shift();
   }
   function liveTick(key) {
@@ -2739,9 +2742,9 @@ window.TD_THEME = (function () {
     L.drawn = Date.now();
     var sc = key === "usdjpy" ? 1000 : 100, px = Math.round((L.raw - liveOffset(key)) * sc) / sc;
     markets.forEach(function (mk) {
-      if (mk.key !== key || !mk.price || Math.abs(px - mk.price) > (key === "gold" ? 30 : key === "btc" ? mk.price * 0.02 : 0.5)) return;
+      if (mk.key !== key || !mk.price || Math.abs(px - mk.price) > (key === "gold" ? 30 : key === "silver" ? 0.6 : key === "btc" ? mk.price * 0.02 : 0.5)) return;
       mk.asOf = Date.now() / 1000;
-      mk.prov = { src: "リアルタイム配信（" + (L.name || "") + "）", type: key === "usdjpy" ? "売値（GMOの配信から、測った差を引いた補正値）" : key === "gold" ? "推定値（金連動トークンXAUTの仲値を現物価格に補正）" : "仲値（Bid・Askの中間）" };
+      mk.prov = { src: "リアルタイム配信（" + (L.name || "") + "）", type: key === "usdjpy" ? "売値（GMOの配信から、測った差を引いた補正値）" : key === "gold" ? "推定値（金連動トークンXAUTの仲値を現物価格に補正）" : key === "silver" ? "推定値（銀連動パーペチュアルXAG-USDT-SWAPの仲値を現物価格に補正）" : "仲値（Bid・Askの中間）" };
       // 帯の外に完全に出ているパネルは描き直さない（値は進める。急変検知は上の surgeSample が別に受けている）。
       // 戻ってきたときの描き直しは目次チップの paint が行う
       if (mkOffStrip(mk)) { mk.applyLive(px, true); mk._quietLive = true; }
@@ -2751,6 +2754,7 @@ window.TD_THEME = (function () {
   function liveConnect(key) {
     var L = live[key] || (live[key] = { raw: 0, at: 0, offs: [], drawn: 0, tries: 0, ws: null, timer: 0 });
     if (L.ws || !window.WebSocket) return;
+    L.born = Date.now();  // the watchdog in liveWatch recycles a socket that stays silent
     var src = LIVE_SRC[key][L.tries % LIVE_SRC[key].length], ws, ping = 0, got = false;
     try { ws = new WebSocket(src.url); } catch (e) { L.tries++; return; }
     L.ws = ws;
@@ -2760,7 +2764,7 @@ window.TD_THEME = (function () {
       var px = src.parse(m); if (!px) return;
       got = true; L.tries = 0; L.raw = px; L.at = Date.now(); L.name = src.name; srcMark("ws-" + key, true);
       surgeSample(key, px - liveOffset(key), L.at, "ws-" + src.name);  // 急変検知：表示の異常値よけを通さない生のティック
-      if (key === "gold" && !L.offs.length && L.spot && Date.now() - L.spotAt < 60000) liveCalibrate(key, L.spot);
+      if ((key === "gold" || key === "silver") && !L.offs.length && L.spot && Date.now() - L.spotAt < 60000) liveCalibrate(key, L.spot);
       liveTick(key);
     };
     ws.onclose = ws.onerror = function () {
@@ -2768,9 +2772,20 @@ window.TD_THEME = (function () {
       clearTimeout(L.timer); L.timer = setTimeout(liveWatch, Math.min(30000, 2000 * (1 + L.tries)));
     };
   }
-  function liveWatch() {  // keep a feed open for each of GOLD and USD/JPY while a panel shows it
-    ["gold", "usdjpy"].forEach(function (key) {
+  function liveWatch() {  // keep a feed open for each of GOLD, USD/JPY and SILVER while a panel shows it
+    ["gold", "usdjpy", "silver"].forEach(function (key) {
       var used = markets.some(function (mk) { return mk.key === key; }), L = live[key];
+      // Watchdog: a socket that never delivers a tick (stuck connecting, or the venue accepted the
+      // connection but pushes nothing) blocks every retry while it sits in L.ws, because liveConnect
+      // will not open a second one. Recycle it: a socket with no tick 12 s after it was made, or no
+      // tick for 30 s while the market is open, is closed and reconnected on this same pass. A socket
+      // that never ticked also counts as a failed try, so GOLD rotates to its next source as it does
+      // when a connection closes empty. Healthy feeds tick constantly and never trigger this.
+      if (L && L.ws && used && !document.hidden && !marketClosed(key) &&
+          ((!L.at && Date.now() - (L.born || 0) > 12000) || (L.at && Date.now() - L.at > 30000))) {
+        var dead = L.ws; L.ws = null; if (!L.at) L.tries++;
+        try { dead.close(); } catch (e) {}
+      }
       if (used && !document.hidden && !marketClosed(key)) liveConnect(key);
       else if (L && L.ws) { var ws = L.ws; L.ws = null; try { ws.close(); } catch (e) {} }
     });
@@ -2803,10 +2818,10 @@ window.TD_THEME = (function () {
       if (!spot) return;
       var use = function (price, asOf, prov) {
         if (!price || mk.key !== key) return;
-        if (key === "gold") {
-          var L = live.gold || (live.gold = { raw: 0, at: 0, offs: [], drawn: 0, tries: 0, ws: null, timer: 0 });
-          L.spot = price; L.spotAt = Date.now(); liveCalibrate("gold", price);
-          if (liveFresh("gold") && mk.price) return;  // the real-time feed is newer; this price only calibrates it
+        if (key === "gold" || key === "silver") {
+          var L = live[key] || (live[key] = { raw: 0, at: 0, offs: [], drawn: 0, tries: 0, ws: null, timer: 0 });
+          L.spot = price; L.spotAt = Date.now(); liveCalibrate(key, price);
+          if (liveFresh(key) && mk.price) return;  // the real-time feed is newer; this price only calibrates it
         }
         surgeSample(key, price, asOf ? asOf * 1000 : Date.now(), "spot");  // 配信がないときの急変検知は定期取得の値で
         mk.asOf = asOf; mk.prov = prov;
@@ -3015,7 +3030,7 @@ window.TD_THEME = (function () {
   oilMk.feed(null);
   oilMk.el.querySelector(".head").addEventListener("click", function () { openDash("oil", this); });
   oilMk.el.addEventListener("click", function (e) { var b = e.target.closest("[data-oil-open]"); if (b) { e.stopPropagation(); openDash("oil", b); } });
-  /* 5th card: シルバー。オイルと同じ専用パネルで、価格・足・水準は通常の経路（market.json と XAG の定期取得）から受ける。見出しタップでダッシュボードを開く */
+  /* 5th card: シルバー。オイルと同じ専用パネルで、価格・足・水準は通常の経路（market.json と XAG の配信）から受ける。見出しタップでダッシュボードを開く */
   var silverMk = new Market(document.getElementById("m-4"), "silver");
   silverMk.cv.__mkt = silverMk; if (chartRO) chartRO.observe(silverMk.cv);
   silverMk.el.querySelector(".head").addEventListener("click", function () { openDash("silver", this); });
