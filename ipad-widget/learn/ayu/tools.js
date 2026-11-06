@@ -1,0 +1,1557 @@
+/* Trade Desk tools (loaded the first time 🧰 is opened): position size and risk/reward, pre-trade checklist,
+   trade journal, signal history, market hours, data status and settings. Everything stays on this device
+   (localStorage); nothing is sent anywhere. The rules live in core.js (TDCore) and are tested there. */
+(function () {
+  "use strict";
+  var C = window.TDCore, D = window.TDDesk;
+  if (!C || !D) return;
+  var LS = window.localStorage;
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (m) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]; }); };
+  var get = function (k, d) { try { var v = LS.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
+  var put = function (k, v, what) { if (!C.safeSet(LS, k, JSON.stringify(v))) { D.saveFailed(what); return false; } return true; };
+  var fmt = function (x, d) { return isFinite(x) ? Number(x).toLocaleString("ja-JP", { minimumFractionDigits: d || 0, maximumFractionDigits: d == null ? 2 : d }) : "—"; };
+  var uid = function () { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); };
+  var INST = { gold: { name: "GOLD（XAU/USD）", contract: 100, quote: "USD", step: 0.01, min: 0.01, unit: "oz" },
+    usdjpy: { name: "ドル円（USD/JPY）", contract: 100000, quote: "JPY", step: 0.01, min: 0.01, unit: "通貨" },
+    btc: { name: "BTC/USD", contract: 1, quote: "USD", step: 0.01, min: 0.01, unit: "BTC" },
+    other: { name: "その他", contract: "", quote: "", step: "", min: "", unit: "" } };
+  var SIDE = { buy: "買い", sell: "売り" };
+
+  /* ---------- dialog ---------- */
+  var TABS = [["guide", "使い方"], ["money", "資金管理"], ["check", "取引前チェック"], ["journal", "日誌"], ["pnl", "トレード収支"], ["kakeibo", "家計簿"], ["signals", "シグナル履歴"], ["hours", "市場時間"], ["status", "データ状態"], ["settings", "設定"]];
+  var TABS_EN = { guide: "Guide", money: "Money", check: "Pre-trade Check", journal: "Journal", pnl: "P&L", kakeibo: "Kakeibo", signals: "Signals", hours: "Market Hours", status: "Data Status", settings: "Settings" };
+  function tdLang() { try { return LS.getItem("ayu_td_lang") === "en" ? "en" : "ja"; } catch (e) { return "ja"; } }
+  function tabLabel(t) { return tdLang() === "en" ? (TABS_EN[t[0]] || t[1]) : t[1]; }
+  function paintTabLabels() { document.querySelectorAll(".tdt-tabs [data-tab]").forEach(function (b) { var id = b.getAttribute("data-tab"); for (var i = 0; i < TABS.length; i++) if (TABS[i][0] === id) b.textContent = tabLabel(TABS[i]); }); }
+  var css = document.createElement("style");
+  css.textContent = [
+    ".tdt{position:fixed;inset:0;z-index:45;background:rgba(4,5,8,.72);display:flex;align-items:stretch;justify-content:center;padding:max(10px,var(--safe-top,env(safe-area-inset-top,0px))) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}",
+    ".tdt[hidden]{display:none}",
+    ".tdt-box{width:min(980px,100%);display:flex;flex-direction:column;background:#101219;border:1px solid rgba(227,184,103,.35);border-radius:18px;color:#f4f1ea;overflow:hidden;font-size:14px;line-height:1.6}",
+    ".tdt-top{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08)}",
+    ".tdt-top h2{margin:0 auto 0 4px;font-size:16px;color:#e3b867}",
+    ".tdt button,.tdt input,.tdt select,.tdt textarea{font:inherit;color:inherit}",
+    ".tdt-x{min-width:44px;min-height:44px;border-radius:999px;border:1px solid rgba(227,184,103,.5);background:#e3b867;color:#14100a!important;font-weight:800;padding:0 16px;cursor:pointer}",
+    ".tdt-tabs{display:flex;gap:4px;overflow-x:auto;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08);scrollbar-width:thin}",
+    ".tdt-tabs button{flex:none;min-height:44px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:none;cursor:pointer;font-weight:700;color:#cfc8ba}",
+    ".tdt-tabs button[aria-selected=true]{background:#e3b867;color:#14100a;border-color:#e3b867}",
+    ".tdt-body{flex:1;overflow:auto;padding:14px 16px 24px;-webkit-overflow-scrolling:touch}",
+    ".tdt h3{font-size:15px;margin:18px 0 8px;color:#e3b867}.tdt h3:first-child{margin-top:0}",
+    ".tdt .note{font-size:12.5px;color:#b9b2a3;margin:6px 0}",
+    ".tdt .warn{border:1px solid rgba(255,138,126,.5);background:rgba(255,138,126,.08);border-radius:10px;padding:8px 10px;margin:8px 0;color:#ffcfc8}",
+    ".tdt .ok{border:1px solid rgba(95,217,154,.45);background:rgba(95,217,154,.07);border-radius:10px;padding:8px 10px;margin:8px 0}",
+    ".tdt .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px 12px}",
+    ".tdt label.f{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:#cfc8ba}",
+    ".tdt label.f input,.tdt label.f select,.tdt label.f textarea{min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:#181b24;font-size:16px}",
+    ".tdt label.f textarea{min-height:70px}",
+    ".tdt .btns{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}",
+    ".tdt .btn{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid rgba(227,184,103,.55);background:none;color:#e3b867;font-weight:700;cursor:pointer}",
+    ".tdt .btn.pri{background:#e3b867;color:#14100a}",
+    ".tdt .btn.danger{border-color:rgba(255,138,126,.6);color:#ffb4a8}",
+    ".tdt button:focus-visible,.tdt input:focus-visible,.tdt select:focus-visible,.tdt textarea:focus-visible,.tdt summary:focus-visible{outline:2px solid #ffd166;outline-offset:2px}",
+    ".tdt .out{background:#181b24;border-radius:12px;padding:10px 12px;margin:8px 0;white-space:pre-wrap}",
+    ".tdt table{border-collapse:collapse;width:100%;font-size:12.5px}.tdt th,.tdt td{border-bottom:1px solid rgba(255,255,255,.08);padding:6px 6px;text-align:left;vertical-align:top}",
+    ".tdt th{color:#b9b2a3;font-weight:600}.tdt .tw{overflow-x:auto}",
+    ".tdt .lv{font-weight:700;white-space:nowrap}.tdt .lv-live,.tdt .lv-fresh{color:#5fd99a}.tdt .lv-delayed{color:#ffd166}.tdt .lv-stale,.tdt .lv-unknown,.tdt .lv-missing,.tdt .lv-held{color:#ff9d90}.tdt .lv-closed{color:#b9b2a3}",
+    ".tdt .chk{display:flex;gap:10px;align-items:flex-start;min-height:44px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)}.tdt .chk input{width:24px;height:24px;flex:none;margin-top:2px}",
+    ".tdt details{border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px 12px;margin:8px 0}.tdt summary{cursor:pointer;min-height:32px}",
+    ".tdt .tag{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:999px;border:1px solid currentColor;margin-right:6px}",
+    ".tdt .buy{color:#5fd99a}.tdt .sell{color:#ff9d90}",
+    ".tdt-tip{margin:0 0 12px;padding:8px 12px;border-radius:12px;background:rgba(227,184,103,.08);border:1px solid rgba(227,184,103,.3);font-size:13px;color:#e8dfcc}",
+    ".tdt-more{min-height:36px;margin-left:6px;padding:0 12px;border-radius:999px;border:1px solid rgba(227,184,103,.55);background:none;color:#e3b867;font-weight:700;cursor:pointer}",
+    ".tdt .steps{margin:6px 0 6px 1.2em;padding:0}.tdt .steps li{margin:4px 0}",
+    ".tdt .flow{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin:8px 0}",
+    ".tdt .flow div{border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px 10px;font-size:13px}.tdt .flow b{color:#e3b867;display:block}",
+    ".tdt-today{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px;color:#e8dfcc}",
+    ".tdt-today b{color:#e3b867}.tdt-today .go{min-height:32px;padding:0 10px;border-radius:999px;border:1px solid rgba(227,184,103,.55);background:none;color:#e3b867;font-weight:700;cursor:pointer;margin-left:4px}",
+    ".tdt .first{border:1px solid rgba(227,184,103,.55);background:rgba(227,184,103,.08);border-radius:12px;padding:10px 12px;margin:0 0 12px}",
+    ".tdt .first ol{margin:6px 0 4px 1.2em;padding:0}.tdt .first li{margin:4px 0}",
+    ".tdt .g-why{margin:6px 0;font-weight:700;color:#f4f1ea}",
+    ".tdt .chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}.tdt .chips button{min-height:36px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:#181b24;cursor:pointer;font-size:13px}",
+    ".tdt .pxrow{display:flex;flex-direction:column;gap:4px;min-width:0}.tdt .pxrow .btn{min-height:36px;padding:0 10px;font-size:12.5px;align-self:flex-start}",
+    ".tdt .btn:disabled{opacity:.4;cursor:default}",
+    ".tdt .jcal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;max-width:420px;text-align:center;font-size:12.5px}",
+    ".tdt .jcal b{color:#b9b2a3;font-weight:600}.tdt .jcal span{padding:5px 0;border-radius:8px;background:#181b24}.tdt .jcal span.t{background:rgba(227,184,103,.28);color:#fff}.tdt .jcal span.s{box-shadow:inset 0 0 0 1px rgba(227,184,103,.6)}.tdt .jcal span.now{outline:1px solid #e3b867}",
+    ".tdt .jcalh{display:flex;align-items:center;gap:8px;margin:6px 0}.tdt .jcalh button{min-height:36px;min-width:36px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:none;cursor:pointer}",
+    ".tdt .streak{font-size:15px;font-weight:700;color:#e3b867;margin:4px 0}",
+    /* 収支（A）：黒×金、数字は大きな細字・桁そろえ、罫線より余白。アニメーション・ぼかしなし */
+    ".tdt .pl-up{color:#5fd99a}.tdt .pl-dn{color:#ff9d90}",
+    ".tdt .pl-in{background:#14161e;border-radius:14px;padding:10px 12px;margin:4px 0 14px}.tdt .pl-in>b{color:#e3b867;font-size:14px}",
+    ".tdt .pl-head{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;align-items:end;margin:8px 0 6px}",
+    ".tdt .pl-big small{display:block;color:#b9b2a3;font-size:12px}.tdt .pl-big b{font-size:34px;font-weight:300;letter-spacing:.01em;font-variant-numeric:tabular-nums;line-height:1.15}.tdt .pl-big i{font-style:normal;font-size:14px;margin-left:3px;color:#b9b2a3}",
+    ".tdt .pl-kv{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:12px;color:#b9b2a3}.tdt .pl-kv b{display:block;font-size:17px;font-weight:300;color:#f4f1ea;font-variant-numeric:tabular-nums}",
+    ".tdt .pl-spark{grid-column:1/-1;width:100%;height:44px;display:block}",
+    ".tdt .pl-cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;font-variant-numeric:tabular-nums}",
+    ".tdt .pl-cal>b{font-size:11.5px;color:#b9b2a3;font-weight:600;text-align:center;padding:2px 0}.tdt .pl-cal>b.sat{color:#8fb4ff}.tdt .pl-cal>b.sun{color:#ff9d90}",
+    ".tdt .pl-cal button{min-height:62px;display:flex;flex-direction:column;align-items:flex-end;gap:1px;padding:4px 5px;border-radius:10px;border:0;background:#161922;cursor:pointer;text-align:right;overflow:hidden}",
+    ".tdt .pl-cal button>span{align-self:flex-start;font-size:11.5px;color:#b9b2a3}.tdt .pl-cal button.now{box-shadow:inset 0 0 0 1px #e3b867}.tdt .pl-cal button.now>span{color:#e3b867;font-weight:700}.tdt .pl-cal button.sel{background:#1f2330}",
+    ".tdt .pl-cal em{font-style:normal;font-size:13px;font-weight:400;white-space:nowrap}.tdt .pl-cal em.pl-skip{font-size:10.5px;color:#b9b2a3}.tdt .pl-cal small{font-size:10px;white-space:nowrap;color:#d9c08a}.tdt .pl-cal small.pl-wd{color:#b9b2a3}",
+    ".tdt .pl-dayd{margin:10px 0;padding:8px 12px;border-radius:12px;background:#14161e}",
+    ".tdt .pl-seg{display:inline-flex;gap:4px;margin:2px 0 6px}.tdt .pl-seg button{min-height:40px;min-width:56px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:none;cursor:pointer;font-weight:700;color:#cfc8ba}.tdt .pl-seg button[aria-pressed=true]{background:#e3b867;color:#14100a;border-color:#e3b867}",
+    ".tdt .pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px 16px;margin:6px 0 10px}.tdt .pl-grid span{display:block;font-size:12px;color:#b9b2a3}.tdt .pl-grid b{font-size:20px;font-weight:300;font-variant-numeric:tabular-nums}.tdt .pl-grid small{display:block;font-size:11px;color:#b9b2a3}",
+    ".tdt .pl-year td{font-variant-numeric:tabular-nums;white-space:nowrap}.tdt .pl-year tr.now td{background:rgba(227,184,103,.08)}.tdt .pl-barc{width:40%;min-width:120px}",
+    ".tdt .pl-bar{position:relative;display:block;height:10px;background:linear-gradient(90deg,transparent calc(50% - .5px),rgba(255,255,255,.25) calc(50% - .5px),rgba(255,255,255,.25) calc(50% + .5px),transparent calc(50% + .5px))}.tdt .pl-bar i{position:absolute;top:0;bottom:0;border-radius:2px}.tdt .pl-bar i.up{background:#5fd99a}.tdt .pl-bar i.dn{background:#ff9d90}",
+    /* 家計簿：カテゴリ別のバー（divのみ）と一覧 */
+    ".tdt .kb-cat{display:grid;grid-template-columns:minmax(64px,auto) 1fr auto;gap:4px 12px;align-items:center;margin:5px 0;font-variant-numeric:tabular-nums}",
+    ".tdt .kb-cat .kb-bar{display:block;height:8px;background:#181b24;border-radius:4px;overflow:hidden}",
+    ".tdt .kb-cat .kb-bar i{display:block;height:100%;background:#ff9d90;border-radius:4px}",
+    ".tdt .kb-amt{font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}",
+    /* 家計簿ニコイチ：入力の2段スイッチ（収支×区分で色が決まる）、月のまとめのペア表、一覧の区分バンド */
+    ".tdt .kb-pair{display:flex;flex-direction:column;gap:6px;margin:2px 0 8px}",
+    ".tdt .kb-pair-row{display:flex;align-items:center;gap:10px}",
+    ".tdt .kb-pair-lab{flex:none;width:34px;font-size:12.5px;color:#b9b2a3}",
+    ".tdt .kb-pair .pl-seg{flex:1;max-width:440px;margin:0;display:flex;gap:0}",
+    ".tdt .kb-pair .pl-seg button{flex:1;border-radius:0;margin-left:-1px}",
+    ".tdt .kb-pair .pl-seg button:first-child{border-radius:999px 0 0 999px;margin-left:0}",
+    ".tdt .kb-pair .pl-seg button:last-child{border-radius:0 999px 999px 0}",
+    ".tdt .kb-pair .pl-seg button[aria-pressed=true]{position:relative;z-index:1}",
+    ".tdt .kb-pair .kb-seg-t button[data-kt=in][aria-pressed=true]{background:#5fd99a;border-color:#5fd99a;color:#14100a}",
+    ".tdt .kb-pair .kb-seg-t button[data-kt=out][aria-pressed=true]{background:#a83a32;border-color:#a83a32;color:#fff}",
+    ".tdt .kb-pair .kb-seg-s button[data-ks=life][aria-pressed=true]{background:#7fb2c9;border-color:#7fb2c9;color:#14100a}",
+    ".tdt .kb-pair .kb-seg-s button[data-ks=biz][aria-pressed=true]{background:#e3b867;border-color:#e3b867;color:#14100a}",
+    ".tdt .kb-ps-h{font-size:15px;font-weight:700;color:#e3b867;margin:10px 0 4px}",
+    ".tdt .kb-ps{table-layout:fixed}",
+    ".tdt .kb-ps th:first-child{width:52px}",
+    ".tdt .kb-ps th.kb-ps-life,.tdt .kb-ps th.kb-ps-biz{text-align:center;font-size:14px;color:#f4f1ea}",
+    ".tdt .kb-ps th.kb-ps-life{border-bottom:3px solid #7fb2c9}",
+    ".tdt .kb-ps th.kb-ps-biz{border-bottom:3px solid #e3b867}",
+    ".tdt .kb-ps td.kb-amt{text-align:center}",
+    ".tdt .kb-ps td:first-child{color:#b9b2a3}",
+    ".tdt .kb-ps .kb-ps-bal{color:#e3b867}",
+    ".tdt .kb-ps tr.kb-ps-total td{border-top:1px solid rgba(227,184,103,.45);border-bottom:0;font-size:13px}",
+    ".tdt .kb-ps tr.kb-ps-total td[colspan]{text-align:center}",
+    ".tdt tr.kb-row-life td:first-child{box-shadow:inset 5px 0 0 #7fb2c9;padding-left:12px}",
+    ".tdt tr.kb-row-biz td:first-child{box-shadow:inset 5px 0 0 #e3b867;padding-left:12px}",
+    /* 日誌ハブ（その日の記録と数字）と、家計簿の月のまとめ「3つの財布」 */
+    ".tdt .jn-rec{padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)}",
+    ".tdt .jn-rec:last-child{border-bottom:0}",
+    ".tdt .jn-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:10px;margin:8px 0}",
+    ".tdt .jn-panel{background:#14161e;border-radius:14px;padding:10px 12px}",
+    ".tdt .jn-panel h4{margin:0 0 6px;font-size:14px;color:#e3b867}",
+    ".tdt .jn-prow{display:flex;justify-content:space-between;gap:12px;padding:3px 0;font-variant-numeric:tabular-nums}",
+    ".tdt .jn-prow>span{color:#cfc8ba}",
+    ".tdt .jn-prow>b{font-weight:600;white-space:nowrap}",
+    ".tdt .jn-prow.tot{border-top:1px solid rgba(255,255,255,.14);margin-top:4px;padding-top:7px}",
+    ".tdt .jn-week{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:6px 0 2px}",
+    ".tdt .jn-week>div{background:#161922;border-radius:10px;padding:6px 2px;text-align:center;font-size:12.5px;font-variant-numeric:tabular-nums;min-width:0}",
+    ".tdt .jn-week>div b{display:block;color:#b9b2a3;font-weight:600;font-size:11.5px;margin-bottom:2px}",
+    ".tdt .jn-week>div.sel{box-shadow:inset 0 0 0 1px #e3b867}",
+    ".tdt .jn-week>div.today b{color:#e3b867}",
+    ".tdt .kb-ps th.kb-ps-trade{text-align:center;font-size:14px;color:#f4f1ea;border-bottom:3px solid #b48ede}",
+    ".tdt .kb-ps th.kb-ps-all{text-align:center;font-size:14px;color:#f4f1ea;border-bottom:3px solid #f4f1ea}",
+    ".tdt .kb-w3-life{color:#7fb2c9}",
+    ".tdt .kb-w3-biz{color:#e3b867}",
+    ".tdt .kb-w3-trade{color:#b48ede}",
+    /* 住宅ローン控除の申請ガイド：あなたの場合は（金の枠）、ルート選択、手順の番号、書類チェック */
+    ".tdt .hc-box{border:1px solid rgba(227,184,103,.55);background:rgba(227,184,103,.10);border-radius:14px;padding:10px 12px;margin:8px 0}",
+    ".tdt .hc-box>b{color:#e3b867}",
+    ".tdt .hc-big{font-size:16px;font-weight:700;margin:2px 0}",
+    ".tdt .hc-routes{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:6px 0 10px}",
+    ".tdt .hc-routes button{min-height:48px;padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:#181b24;color:#cfc8ba;font-weight:700;cursor:pointer;text-align:left}",
+    ".tdt .hc-routes button[aria-pressed=true]{background:#e3b867;border-color:#e3b867;color:#14100a}",
+    ".tdt .hc-routes button small{display:block;font-weight:400;font-size:12px;opacity:.85}",
+    ".tdt .hc-step{display:flex;gap:10px;margin:10px 0}",
+    ".tdt .hc-n{flex:none;width:26px;height:26px;border-radius:50%;background:#e3b867;color:#14100a;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px}",
+    ".tdt .hc-step b{color:#f4f1ea}",
+    ".tdt .hc-step .note{margin:2px 0}",
+    ".tdt .hc-prog{color:#e3b867;font-weight:700}",
+    ".tdt .hc-doc{display:flex;gap:10px;align-items:flex-start;min-height:44px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer}",
+    ".tdt .hc-doc input{width:24px;height:24px;flex:none;margin-top:2px}",
+    ".tdt .hc-doc .hc-formal{display:block;font-size:12px;color:#b9b2a3}",
+    ".tdt .hc-doc .note{display:block;margin:2px 0}",
+    "@media (max-width:520px){.tdt .pl-cal button{min-height:54px;padding:3px}.tdt .pl-cal em{font-size:11px}.tdt .pl-cal small{font-size:9px}.tdt .pl-big b{font-size:28px}.tdt .pl-head{grid-template-columns:1fr}}",
+    ".tdt .skiprow{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.tdt .skiprow label.f{flex:1;min-width:200px}",
+    "@media (max-width:600px){.tdt{padding:var(--safe-top,env(safe-area-inset-top,0px)) 0 0}.tdt-box{border-radius:0}.tdt-body{padding:12px}}"  /* スマホは全画面。上だけステータスバーの分を空ける */
+  ].join("\n");
+  document.head.appendChild(css);
+  var box = document.createElement("div");
+  box.className = "tdt"; box.hidden = true;
+  box.innerHTML = '<div class="tdt-box" role="dialog" aria-modal="true" aria-labelledby="tdt-h"><div class="tdt-top"><h2 id="tdt-h">🧰 ツール</h2><button type="button" class="tdt-x">閉じる</button></div>' +
+    '<div class="tdt-today" aria-live="polite"></div><div class="tdt-tabs" role="tablist">' + TABS.map(function (t) { return '<button type="button" role="tab" data-tab="' + t[0] + '" aria-selected="false">' + tabLabel(t) + "</button>"; }).join("") + "</div>" +
+    '<div class="tdt-body" role="tabpanel" tabindex="-1"></div></div>';
+  document.body.appendChild(box);
+  var body = box.querySelector(".tdt-body"), opener = null, tab = "money", timer = 0;
+  try { tab = LS.getItem("ayu_td-tools-tab") || "guide"; } catch (e) { tab = "guide"; }  // the first time: how to use
+  function open(t, from) {
+    opener = from || document.activeElement; if (t) tab = t;
+    box.hidden = false; show(tab);
+    var b = box.querySelector('[data-tab="' + tab + '"]'); if (b) { b.focus(); b.scrollIntoView({ block: "nearest", inline: "nearest" }); }
+  }
+  function close() { box.hidden = true; clearInterval(timer); if (opener && opener.focus) opener.focus(); }
+  // 「今日」欄：今日の取引前チェック・日誌・連続記録日数。まだのものは、そのタブへのボタン（チェック → 取引 → 日誌の流れ）
+  function today() {
+    var el = box.querySelector(".tdt-today"), now = Date.now(), dk = C.dayKey(now);
+    var cs = (get(CHECKS, []) || []).filter(function (c) { return C.dayKey(Date.parse(c.time)) === dk; }), jd = C.journalDays(journal(), now);
+    var n = journal().filter(function (r) { return (r.day || C.dayKey(Date.parse(r.time))) === dk; }).length;
+    var c0 = cs[0], ck = c0 ? Object.keys(c0.items).filter(function (k) { return c0.items[k]; }).length + "/" + Object.keys(c0.items).length : "";
+    el.innerHTML = "<span><b>今日</b></span>" +
+      "<span>取引前チェック：" + (cs.length ? "済み（" + ck + "項目" + (cs.length > 1 ? "・" + cs.length + "回" : "") + "）" : 'まだ<button type="button" class="go" data-tab="check">チェックへ</button>') + "</span>" +
+      "<span>日誌：" + (n ? n + "件" : 'まだ<button type="button" class="go" data-tab="journal">日誌へ</button>') + "</span>" +
+      "<span>" + (jd.streak ? jd.streak + "日連続で記録中" : "連続記録はここから") + "</span>";
+  }
+  function show(t) {
+    tab = t; try { LS.setItem("ayu_td-tools-tab", t); } catch (e) {}
+    today();
+    box.querySelectorAll("[data-tab]").forEach(function (b) { b.setAttribute("aria-selected", b.getAttribute("data-tab") === t ? "true" : "false"); });
+    clearInterval(timer);
+    (VIEWS[t] || VIEWS.guide)();
+    var h = HELP[t];
+    if (h) {  // one line on top of each tab, and the full guide one tap away
+      body.insertAdjacentHTML("afterbegin", '<p class="tdt-tip">💡 ' + esc(h[0]) + ' <button type="button" class="tdt-more" data-help="' + t + '">くわしい使い方</button><button type="button" class="tdt-more tdt-words">英語・略語の意味</button></p>');
+      body.querySelector(".tdt-words").addEventListener("click", function () { show("guide"); var w = body.querySelector("#g-words-h"); if (w) { w.scrollIntoView({ block: "start" }); body.querySelector(".g-words summary").focus(); } });
+      body.querySelector(".tdt-more").addEventListener("click", function () { show("guide"); var a = body.querySelector("#g-" + t); if (a) { a.open = true; a.scrollIntoView({ block: "start" }); a.querySelector("summary").focus(); } });
+    }
+    body.scrollTop = 0;
+  }
+  box.querySelector(".tdt-x").addEventListener("click", close);
+  box.addEventListener("click", function (e) { if (e.target === box) close(); var b = e.target.closest("[data-tab]"); if (b) show(b.getAttribute("data-tab")); });
+  document.addEventListener("keydown", function (e) {
+    if (box.hidden) return;
+    if (e.key === "Escape") { e.stopPropagation(); close(); return; }
+    if (e.key === "Tab") {  // keep the focus inside the dialog
+      var f = [].filter.call(box.querySelectorAll("button,input,select,textarea,summary,a[href],[tabindex='0']"), function (x) { var d = x.closest("details:not([open])"); return !x.disabled && x.offsetParent && (!d || x.tagName === "SUMMARY" && x.parentNode === d); });  // nothing hidden in a closed section
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+  }, true);
+  var $ = function (s) { return body.querySelector(s); };
+  var field = function (id, label, val, type, extra) {
+    return '<label class="f">' + esc(label) + '<input id="' + id + '" type="' + (type || "text") + '"' + (type === "number" ? ' inputmode="decimal" step="any"' : "") + ' value="' + esc(val == null ? "" : val) + '"' + (extra || "") + "></label>";
+  };
+  var select = function (id, label, opts, val) {
+    return '<label class="f">' + esc(label) + '<select id="' + id + '">' + opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(o[0]) === String(val) ? " selected" : "") + ">" + esc(o[1]) + "</option>"; }).join("") + "</select></label>";
+  };
+  var download = function (name, text, type) {
+    var a = document.createElement("a"), url = URL.createObjectURL(new Blob([text], { type: type }));
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+  };
+  var pickFile = function (accept, cb) {
+    var i = document.createElement("input"); i.type = "file"; i.accept = accept;
+    i.onchange = function () { var f = i.files && i.files[0]; if (!f) return; if (f.size > 5e6) { alert("ファイルが大きすぎます（5MBまで）"); return; } var r = new FileReader(); r.onload = function () { cb(String(r.result)); }; r.readAsText(f); };
+    i.click();
+  };
+  var cardOf = function (k) { return D.cards().filter(function (c) { return c.key === k; })[0]; };
+  var usdjpyRef = function () {
+    var m = D.market(), u = m && m.instruments && m.instruments.usdjpy;
+    return u ? { rate: u.price, at: u.asOf * 1000 } : null;
+  };
+
+  /* ---------- money: position size, risk/reward, daily loss ---------- */
+  var JOURNAL = "ayu_td-journal-v1", RISK = "ayu_td-risk-v1", CHECKS = "ayu_td-checks-v1", DAILY = "ayu_td-daily-v1";
+  function journal() { var j = get(JOURNAL, []); return Array.isArray(j) ? j : []; }
+  // 日次入力（収支）：{ "YYYY-MM-DD": { pnl, dep, wd, at } }（円。空欄は null）
+  function dailyIn() { var d = get(DAILY, {}); return d && typeof d === "object" && !Array.isArray(d) ? d : {}; }
+  // [kb-pure-begin] 家計簿の保存読み出しと集計（テストで切り出して検証できるよう、この範囲は get と定数だけに依存する形に保つ）
+  var KAKEIBO = "ayu_td_kakeibo_v1";
+  var KAKEIBO_LOANS = "ayu_td_kakeibo_loans_v1";
+  var KAKEIBO_ASSETS = "ayu_td_kakeibo_assets_v1";
+  // 生活のカテゴリ（従来どおり）。KB_CATS は生活分を指す名前として残す
+  var KB_CATS = { "in": ["給料", "副業", "その他収入"], "out": ["食費", "住まい", "光熱費", "通信", "交通", "医療", "娯楽", "日用品", "その他"] };
+  // 事業のカテゴリ。支出は収支内訳表の科目の並び
+  var KB_BIZ_OUT = ["仕入", "給料賃金", "外注工賃", "減価償却費", "利子割引料", "地代家賃", "租税公課", "水道光熱費", "旅費交通費", "通信費", "広告宣伝費", "接待交際費", "損害保険料", "修繕費", "消耗品費", "福利厚生費", "雑費", "その他事業費"];
+  var KB_CATS_BIZ = { "in": ["売上", "雑収入", "その他事業収入"], "out": KB_BIZ_OUT };
+  var kbCats = function (scope, type) { return (scope === "biz" ? KB_CATS_BIZ : KB_CATS)[type] || []; };
+  var KB_MKINDS = ["診療・治療", "医薬品購入", "介護保険サービス", "その他の医療費"];
+  // 家計簿：[{ id, date: "YYYY-MM-DD", type: "in"|"out", scope: "life"|"biz", cat, amount, memo }]（円）。scope がなければ生活として扱う。医療の支出（生活）では任意で person（受けた人）・payee（支払先）・mkind（区分）・reimb（補填額）も持つ。日誌ハブから転記した記録は fromTrade（転記したトレード収支の日付）も持つ（二重転記の防止に使う）。壊れた・形の違うデータは捨て、空の一覧として扱う
+  function kakeibo() {
+    var a = get(KAKEIBO, []);
+    if (!Array.isArray(a)) return [];
+    return a.filter(function (e) { return e && typeof e.id === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.date || "") && (e.type === "in" || e.type === "out") && isFinite(e.amount) && e.amount > 0; }).map(function (e) {
+      var n = { id: e.id, date: e.date, type: e.type, scope: e.scope === "biz" ? "biz" : "life", cat: e.cat, amount: e.amount, memo: e.memo };
+      if (typeof e.person === "string" && e.person) n.person = e.person;
+      if (typeof e.payee === "string" && e.payee) n.payee = e.payee;
+      if (KB_MKINDS.indexOf(e.mkind) >= 0) n.mkind = e.mkind;
+      if (isFinite(e.reimb) && e.reimb > 0) n.reimb = +e.reimb;
+      if (typeof e.fromTrade === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.fromTrade)) n.fromTrade = e.fromTrade;
+      return n;
+    });
+  }
+  var kbMonthList = function (list, ym) { return list.filter(function (e) { return e.date.slice(0, 7) === ym; }); };
+  var kbTotals = function (list) { var inc = 0, out = 0; list.forEach(function (e) { if (e.type === "in") inc += e.amount; else out += e.amount; }); return { inc: inc, out: out, bal: inc - out }; };
+  var kbCatSums = function (list, type) { var m = {}; list.forEach(function (e) { if (e.type === type) m[e.cat] = (m[e.cat] || 0) + e.amount; }); return Object.keys(m).map(function (k) { return { cat: k, sum: m[k] }; }).sort(function (a, b) { return b.sum - a.sum; }); };
+  // 申告用（年単位）：選んだ年の記録、医療の明細、控除額の目安、月ごとの年間集計、CSVの材料
+  var kbYearList = function (list, year) { var y = String(year); return list.filter(function (e) { return e.date.slice(0, 4) === y; }); };
+  var kbMkind = function (e) { return KB_MKINDS.indexOf(e.mkind) >= 0 ? e.mkind : ""; };
+  var kbMedical = function (list, year) { return kbYearList(list, year).filter(function (e) { return e.type === "out" && e.scope !== "biz" && e.cat === "医療"; }).slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }); };
+  var kbMedTotals = function (meds) { var paid = 0, reimb = 0; meds.forEach(function (e) { paid += e.amount; reimb += e.reimb || 0; }); return { paid: paid, reimb: reimb, net: paid - reimb }; };
+  // 足切り額：総所得金額等があれば、その5%と10万円の低い方。なければ10万円。控除額の目安は差引から足切りを引き、上限200万円で止める
+  var kbDeduction = function (net, income) {
+    var ashikiri = 100000, basis = "10万円";
+    if (income != null && isFinite(income) && income >= 0) { var five = Math.floor(income * 0.05); if (five < ashikiri) { ashikiri = five; basis = "総所得金額等の5%"; } }
+    var raw = net - ashikiri;
+    return { ashikiri: ashikiri, basis: basis, est: Math.min(Math.max(0, raw), 2000000), capped: raw > 2000000 };
+  };
+  var kbMonthlyOfYear = function (list, year) {
+    var yl = kbYearList(list, year), res = [];
+    for (var m = 1; m <= 12; m++) { var ml = kbMonthList(yl, year + "-" + String(m).padStart(2, "0")), t = kbTotals(ml); res.push({ month: m, count: ml.length, inc: t.inc, out: t.out, bal: t.bal }); }
+    return res;
+  };
+  var kbCsvCell = function (v) {
+    if (v == null) return "";
+    var s = String(v);
+    if (typeof v !== "number" && /^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  var kbCsv = function (header, rows) { return "﻿" + [header].concat(rows).map(function (r) { return r.map(kbCsvCell).join(","); }).join("\r\n") + "\r\n"; };
+  var kbMedCSV = function (meds) { return kbCsv(["医療を受けた人", "病院・薬局などの名称", "医療費の区分", "支払った金額", "補填される金額"], meds.map(function (e) { return [e.person || "", e.payee || "", kbMkind(e), e.amount, e.reimb || 0]; })); };
+  var kbAnnualCSV = function (list, year) {
+    var yl = kbYearList(list, year), t = kbTotals(yl), rows = [];
+    kbCatSums(yl, "in").forEach(function (c) { rows.push(["収入", c.cat, c.sum]); });
+    kbCatSums(yl, "out").forEach(function (c) { rows.push(["支出", c.cat, c.sum]); });
+    rows.push(["収入", "合計", t.inc]); rows.push(["支出", "合計", t.out]); rows.push(["", "差額", t.bal]);
+    return kbCsv(["区分", "カテゴリ", "金額"], rows);
+  };
+  /* ---------- 事業の収支（申告用）：事業分の記録を収支内訳表の科目順にまとめ、減価償却費と利子割引料の自動計算分を足す ---------- */
+  var kbBizSummary = function (list, year, depAuto, intAuto) {
+    var yl = kbYearList(list, year).filter(function (e) { return e.scope === "biz"; });
+    var inc = kbTotals(yl.filter(function (e) { return e.type === "in"; })).inc;
+    var sums = {};
+    yl.forEach(function (e) { if (e.type === "out") sums[e.cat] = (sums[e.cat] || 0) + e.amount; });
+    var lines = [], exp = 0;
+    KB_BIZ_OUT.forEach(function (cat) {
+      if (sums[cat]) { lines.push({ cat: cat, sum: sums[cat], auto: false }); exp += sums[cat]; delete sums[cat]; }
+      if (cat === "減価償却費" && depAuto > 0) { lines.push({ cat: "減価償却費（自動計算）", sum: depAuto, auto: true }); exp += depAuto; }
+      if (cat === "利子割引料" && intAuto > 0) { lines.push({ cat: "利子割引料（自動計算）", sum: intAuto, auto: true }); exp += intAuto; }
+    });
+    Object.keys(sums).forEach(function (cat) { lines.push({ cat: cat, sum: sums[cat], auto: false }); exp += sums[cat]; });
+    return { inc: inc, lines: lines, exp: exp, bal: inc - exp };
+  };
+  var kbBizCSV = function (list, year, biz) {
+    var yl = kbYearList(list, year).filter(function (e) { return e.scope === "biz"; }), rows = [];
+    kbCatSums(yl, "in").forEach(function (c) { rows.push(["収入", c.cat, c.sum]); });
+    biz.lines.forEach(function (l) { rows.push(["支出", l.cat, l.sum]); });
+    rows.push(["収入", "合計", biz.inc]); rows.push(["支出", "合計", biz.exp]); rows.push(["", "差額", biz.bal]);
+    return kbCsv(["区分", "科目", "金額"], rows);
+  };
+  /* ---------- 借入：[{ id, name, purpose: "住宅"|"事業"|"その他", principal, ratePct, monthly, startYm: "YYYY-MM", guarantee, bizRatio, homeType }] ---------- */
+  var KB_LOAN_PURPOSES = ["住宅", "事業", "その他"];
+  var KB_HOME_TYPES = ["一般（新築）", "認定長期優良・低炭素", "ZEH水準", "省エネ基準適合", "一般（中古）", "認定等（中古）"];
+  // 住宅ローン控除の借入限度額と控除期間（令和6・7年入居の制度、国税庁タックスアンサーNo.1211-1・1211-3で確認。一般の新築は令和5年末までに建築確認を受けた住宅の額と期間）
+  var KB_HOME_LIMITS = { "一般（新築）": { limit: 20000000, years: 10 }, "認定長期優良・低炭素": { limit: 45000000, years: 13 }, "ZEH水準": { limit: 35000000, years: 13 }, "省エネ基準適合": { limit: 30000000, years: 13 }, "一般（中古）": { limit: 20000000, years: 10 }, "認定等（中古）": { limit: 30000000, years: 10 } };
+  var KB_HOME_RATE = 0.007;
+  var kbBizRatioDef = function (purpose) { return purpose === "住宅" ? 0 : 100; };
+  function kbLoans() {
+    var a = get(KAKEIBO_LOANS, []);
+    if (!Array.isArray(a)) return [];
+    return a.filter(function (e) { return e && typeof e.id === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(e.startYm || "") && isFinite(e.principal) && e.principal > 0 && isFinite(e.monthly) && e.monthly > 0; }).map(function (e) {
+      var purpose = KB_LOAN_PURPOSES.indexOf(e.purpose) >= 0 ? e.purpose : "その他";
+      var n = { id: e.id, name: typeof e.name === "string" ? e.name : "", purpose: purpose, principal: +e.principal, ratePct: isFinite(e.ratePct) && e.ratePct >= 0 ? +e.ratePct : 0, monthly: +e.monthly, startYm: e.startYm, guarantee: isFinite(e.guarantee) && e.guarantee > 0 ? +e.guarantee : 0, bizRatio: isFinite(e.bizRatio) ? Math.min(100, Math.max(0, +e.bizRatio)) : kbBizRatioDef(purpose) };
+      if (purpose === "住宅") n.homeType = KB_HOME_TYPES.indexOf(e.homeType) >= 0 ? e.homeType : "一般（新築）";
+      return n;
+    });
+  }
+  // 元利均等の返済を月ごとに進め、年ごとの元本・利息・年末残高を出す。毎月の利息は円未満を四捨五入。返済額が利息以下のときは stuck で止める
+  var kbAmortize = function (loan) {
+    var bal = loan.principal, rate = loan.ratePct / 100 / 12, y = +loan.startYm.slice(0, 4), m = +loan.startYm.slice(5, 7);
+    var years = {}, total = 0, stuck = false;
+    for (var i = 0; i < 720 && bal > 0; i++) {
+      var interest = Math.round(bal * rate), pp = loan.monthly - interest;
+      if (pp <= 0) { stuck = true; break; }
+      if (pp > bal) pp = bal;
+      bal -= pp; total++;
+      var key = String(y), rec = years[key] || (years[key] = { principal: 0, interest: 0, endBalance: bal, months: 0 });
+      rec.principal += pp; rec.interest += interest; rec.endBalance = bal; rec.months++;
+      m++; if (m > 12) { m = 1; y++; }
+    }
+    return { years: years, months: total, stuck: stuck, paidOff: bal <= 0 };
+  };
+  // 住宅ローン控除の目安：年末残高と借入限度額の小さいほう × 0.7%（100円未満切り捨て）。入居年は借入開始年で代用する
+  var kbHomeCredit = function (loan, year, endBalance) {
+    var t = KB_HOME_LIMITS[loan.homeType] || KB_HOME_LIMITS["一般（新築）"], startYear = +loan.startYm.slice(0, 4), nth = year - startYear + 1;
+    if (nth < 1) return { ok: false, reason: "借入を始める前の年です。" };
+    if (nth > t.years) return { ok: false, reason: "控除期間（" + t.years + "年）を過ぎています。", years: t.years, limit: t.limit };
+    var base = Math.min(endBalance, t.limit);
+    return { ok: true, nth: nth, years: t.years, limit: t.limit, base: base, credit: Math.floor(base * KB_HOME_RATE / 100) * 100 };
+  };
+  /* ---------- 減価償却の資産：[{ id, name, date: "YYYY-MM-DD", price, life, bizRatio }]。定額法、1年目は取得月から12月までの月割り、残存簿価1円まで ---------- */
+  var KB_DEP_RATES = { 2: .500, 3: .334, 4: .250, 5: .200, 6: .167, 7: .143, 8: .125, 9: .112, 10: .100, 11: .091, 12: .084, 13: .077, 14: .072, 15: .067, 16: .063, 17: .059, 18: .056, 19: .053, 20: .050, 22: .046, 25: .040, 30: .034, 35: .029, 40: .025, 47: .022 };
+  var kbDepRate = function (life) { return KB_DEP_RATES[life] || Math.ceil(1000 / life) / 1000; };
+  function kbAssets() {
+    var a = get(KAKEIBO_ASSETS, []);
+    if (!Array.isArray(a)) return [];
+    return a.filter(function (e) { return e && typeof e.id === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.date || "") && isFinite(e.price) && e.price > 0 && isFinite(e.life) && e.life >= 2; }).map(function (e) {
+      return { id: e.id, name: typeof e.name === "string" ? e.name : "", date: e.date, price: +e.price, life: Math.round(+e.life), bizRatio: isFinite(e.bizRatio) ? Math.min(100, Math.max(0, +e.bizRatio)) : 100 };
+    });
+  }
+  var kbDepSchedule = function (asset) {
+    var ay = +asset.date.slice(0, 4), am = +asset.date.slice(5, 7), full = Math.round(asset.price * kbDepRate(asset.life));
+    var book = asset.price, out = {}, y = ay, guard = 0;
+    while (book > 1 && guard < 100) {
+      var d = y === ay ? Math.round(full * (13 - am) / 12) : full;
+      if (d > book - 1) d = book - 1;
+      if (d <= 0) break;
+      out[y] = d; book -= d; y++; guard++;
+    }
+    return out;
+  };
+  var kbDepForYear = function (asset, year) {
+    var d = kbDepSchedule(asset)[year] || 0;
+    return { total: d, biz: Math.round(d * asset.bizRatio / 100) };
+  };
+  /* ---------- 住宅ローン控除の申請ガイド：ルート・手順・書類の定義と、チェック状態の形。保存形式は { "<年>": { route: "A"|"B"|"C", checks: { "<書類ID>": true } } } ---------- */
+  var KAKEIBO_HCGUIDE = "ayu_td_kakeibo_hcguide_v1";
+  // 書類：ふだんの言葉の名前を先に、正式な名前は formal に。note は「どこでもらえるか・いつ届くか」
+  var KB_HC_DOCS = {
+    balance: { name: "年末残高証明書", formal: "", note: "その年末にローンがいくら残っているかの証明です。金融機関から郵送で届きます。届かないときは金融機関へ連絡してください。" },
+    calc: { name: "計算明細書", formal: "（特定増改築等）住宅借入金等特別控除額の計算明細書", note: "控除額を計算する紙です。e-Taxで申告すれば、画面の入力がそのまま計算になります。" },
+    registry: { name: "登記事項証明書", formal: "", note: "家と土地の記録です。法務局の窓口か、オンラインで取れます。" },
+    contract: { name: "売買契約書（請負契約書）の写し", formal: "", note: "買ったときの契約書のコピーです。家を建てた人は、建てたときの請負契約書の写しです。" },
+    withholding: { name: "源泉徴収票", formal: "", note: "会社から年末ごろにもらう、給与の証明です。給与がある人だけ必要です。" },
+    performance: { name: "性能を証明する書類", formal: "", note: "認定長期優良住宅・低炭素住宅・ZEH水準・省エネ基準適合の家だけ必要です。認定通知書や住宅用家屋証明書、建設住宅性能評価書の写しなど。ふつうの家は不要です。" },
+    cert: { name: "控除証明書", formal: "給与所得者の住宅借入金等特別控除申告書", note: "税務署から届く、年末調整用の紙です。入居の翌年の秋ごろ、残りの年数分がまとめて届きます。なくしたら税務署で再発行できます。" }
+  };
+  var KB_HC_ROUTES = {
+    A: { label: "入居して1年目", sub: "確定申告をします", docs: ["balance", "calc", "registry", "contract", "withholding", "performance"], steps: [
+      { title: "書類をそろえる", note: "年末残高証明書は10〜11月ごろ、金融機関から届きます。下のチェックリストで、そろったものに印を付けましょう。調書方式に対応した金融機関では、年末残高証明書がマイナポータル連携で代わりになる場合があります。" },
+      { title: "計算明細書を作る", note: "控除額を計算する紙です。e-Taxなら、画面の入力がそのまま計算になります。" },
+      { title: "確定申告をする", note: "翌年の2月16日〜3月15日に、e-Taxか税務署で申告します。会社員でも、1年目だけは確定申告が必要です。" },
+      { title: "還付を受ける", note: "申告から1か月〜1か月半ごろに、指定した口座へ戻ります（目安）。" }] },
+    B: { label: "2年目以降・会社員", sub: "年末調整で受けます", docs: ["balance", "cert"], steps: [
+      { title: "控除証明書を確認する", note: "10月ごろ、税務署から届きます。残りの年数分がまとめて届いているので、今年の分を使います。" },
+      { title: "年末残高証明書を受け取る", note: "11月ごろ、金融機関から届きます。" },
+      { title: "会社の年末調整へ提出する", note: "年末調整の書類といっしょに、この2つを勤務先へ出します。締切は会社の指示どおりです（多くは11〜12月）。" }] },
+    C: { label: "自営業・副業などの所得がある", sub: "毎年、確定申告をします", docs: ["balance", "calc", "registry", "contract", "withholding", "performance"], steps: [
+      { title: "書類をそろえる", note: "1年目（ルートA）と同じ書類です。年末残高証明書は10〜11月ごろ、金融機関から届きます。調書方式に対応した金融機関では、年末残高証明書がマイナポータル連携で代わりになる場合があります。" },
+      { title: "計算明細書を作る", note: "控除額を計算する紙です。e-Taxなら、画面の入力がそのまま計算になります。" },
+      { title: "毎年、確定申告をする", note: "翌年の2月16日〜3月15日に申告します。上の「事業の収支」と同じ確定申告の中で受けます。" },
+      { title: "還付を受ける", note: "申告から1か月〜1か月半ごろに、指定した口座へ戻ります（目安）。" }] }
+  };
+  var KB_HC_ROUTE_ORDER = ["A", "B", "C"];
+  var KB_HC_FAILS = [
+    "1年目は、会社員でも年末調整だけでは受けられません。確定申告が必要です。",
+    "控除証明書をなくしたら、税務署で再発行できます。",
+    "年末残高証明書が届かないときは、金融機関へ連絡してください。",
+    "中古住宅・増改築は、条件と書類が少し違います。当てはまる人は、税務署で確認してください。"
+  ];
+  // 保存されたガイド状態を正しい形に直す（壊れた値・知らない年や書類IDは捨てる）
+  var kbHcGuideNorm = function (raw) {
+    var out = {};
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+    Object.keys(raw).forEach(function (y) {
+      if (!/^\d{4}$/.test(y)) return;
+      var e = raw[y]; if (!e || typeof e !== "object") return;
+      var checks = {};
+      if (e.checks && typeof e.checks === "object") Object.keys(e.checks).forEach(function (id) { if (KB_HC_DOCS[id] && e.checks[id] === true) checks[id] = true; });
+      out[y] = { route: KB_HC_ROUTES[e.route] ? e.route : null, checks: checks };
+    });
+    return out;
+  };
+  // あなたの場合は：登録された住宅の借入のうち、表示中の年で控除の目安が出る最初の1件。なければ null
+  var kbHcPersonal = function (loans, year) {
+    var homes = (loans || []).filter(function (l) { return l.purpose === "住宅"; });
+    for (var i = 0; i < homes.length; i++) {
+      var yr = kbAmortize(homes[i]).years[year];
+      if (!yr) continue;
+      var hc = kbHomeCredit(homes[i], year, yr.endBalance);
+      if (hc.ok) return { nth: hc.nth, years: hc.years, limit: hc.limit, credit: hc.credit, route: hc.nth === 1 ? "A" : "B" };
+    }
+    return null;
+  };
+  var kbHcDefaultRoute = function (personal) { return personal ? personal.route : "B"; };
+  // 表示中の年のガイド入力状態（保存がなければ、あなたの場合はから決めた初期ルートと、空のチェック）
+  var kbHcYearEntry = function (state, year, personal) {
+    var e = (state || {})[String(year)];
+    return { route: e && e.route ? e.route : kbHcDefaultRoute(personal), checks: e && e.checks ? e.checks : {} };
+  };
+  var kbHcProgress = function (route, checks) {
+    var docs = (KB_HC_ROUTES[route] || KB_HC_ROUTES.B).docs, done = 0;
+    docs.forEach(function (id) { if (checks && checks[id]) done++; });
+    return { total: docs.length, done: done };
+  };
+  // [kb-pure-end]
+  // [hub-pure-begin] 日誌ハブと「3つの財布」の集計（テストで切り出して検証できるよう、C（TDCore）・kbTotals・kbCatSums・uid だけに依存する形に保つ）
+  // 日誌の銘柄の並びと表示名（日誌の銘柄キー。オイルは日誌では「その他」として記録される）
+  var JN_INSTS = [["gold", "ゴールド"], ["usdjpy", "ドル円"], ["btc", "BTC"], ["other", "その他"]];
+  var jnDayOf = function (r) { return r.day || (isFinite(Date.parse(r.time)) ? C.dayKey(Date.parse(r.time)) : ""); };
+  // 取引の記録（見送りは除く）から銘柄ごとの損益を集める。損益の入っていない記録は件数だけ数える（has が false のとき金額は出さない）
+  var jnInstAgg = function (recs) {
+    var order = JN_INSTS.map(function (x) { return x[0]; }), names = {};
+    JN_INSTS.forEach(function (x) { names[x[0]] = x[1]; });
+    var m = {};
+    (recs || []).forEach(function (r) {
+      var k = r.key || "other";
+      if (!m[k]) { m[k] = { key: k, name: names[k] || k, trades: 0, inc: 0, out: 0, bal: 0, has: false }; if (order.indexOf(k) < 0) order.push(k); }
+      var a = m[k]; a.trades++;
+      if (r.pnl !== null && r.pnl !== "" && isFinite(+r.pnl)) { a.has = true; if (+r.pnl > 0) a.inc += +r.pnl; else if (+r.pnl < 0) a.out += -r.pnl; a.bal += +r.pnl; }
+    });
+    return order.map(function (k) { return m[k] || { key: k, name: names[k], trades: 0, inc: 0, out: 0, bal: 0, has: false }; });
+  };
+  // その日の材料：日誌の記録と、その日の確定損益（日次入力が正というルールは C.dailyBook に任せ、日誌の合計とは足さない）
+  var tradeDayDetail = function (rows, daily, day) {
+    var recs = (rows || []).filter(function (r) { return r && jnDayOf(r) === day; }).slice().sort(function (a, b) { return Date.parse(a.time) - Date.parse(b.time); });
+    var trades = recs.filter(function (r) { return r.kind !== "skip"; }), wins = 0, losses = 0;
+    trades.forEach(function (r) { if (r.pnl !== null && r.pnl !== "" && isFinite(+r.pnl)) { if (+r.pnl > 0) wins++; else if (+r.pnl < 0) losses++; } });
+    var bd = (C.dailyBook(rows, daily) || {})[day] || { pnl: null, src: null };
+    return { day: day, recs: recs, trades: trades.length, wins: wins, losses: losses, skip: recs.some(function (r) { return r.kind === "skip"; }), insts: jnInstAgg(trades), total: bd.pnl, src: bd.src };
+  };
+  // 今週の流れ：day を含む週（月曜はじまり、C.weekOf）の7日分の確定損益と見送り
+  var tradeWeekStrip = function (rows, daily, day) {
+    var wk = C.weekOf(day), book = C.dailyBook(rows, daily) || {}, names = ["月", "火", "水", "木", "金", "土", "日"], out = [];
+    var t = Date.parse(wk.from + "T00:00:00Z");
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(t + i * 864e5), k = d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
+      var b = book[k] || { pnl: null, skip: false };
+      out.push({ key: k, name: names[i], pnl: b.pnl, skip: !!b.skip });
+    }
+    return out;
+  };
+  // 月のトレード集計：収入（プラスの日の合計）・支出（マイナスの日の合計の絶対値）・差額と勝ち日・負け日・見送り日は日ごとの確定損益（C.dailyBook）から、銘柄別の内訳は日誌の取引ごとから数える
+  var tradeMonthAgg = function (rows, daily, ym) {
+    var book = C.dailyBook(rows, daily) || {}, inc = 0, out = 0, win = 0, loss = 0, skipDays = 0, hasDaily = false;
+    Object.keys(book).forEach(function (k) {
+      if (k.slice(0, 7) !== ym) return;
+      var d = book[k];
+      if (d.src === "daily") hasDaily = true;
+      if (d.pnl === null) { if (d.skip) skipDays++; return; }
+      if (d.pnl > 0) { inc += d.pnl; win++; } else if (d.pnl < 0) { out += -d.pnl; loss++; }
+    });
+    var mrecs = (rows || []).filter(function (r) { return r && r.kind !== "skip" && jnDayOf(r).slice(0, 7) === ym; });
+    return { inc: inc, out: out, bal: inc - out, winDays: win, lossDays: loss, skipDays: skipDays, hasDaily: hasDaily, insts: jnInstAgg(mrecs), any: !!(inc || out || skipDays || mrecs.length) };
+  };
+  // その日の家計簿（事業分）：カテゴリ別の収入・支出と差額
+  var kbDayBiz = function (list, date) {
+    var dl = (list || []).filter(function (e) { return e.date === date && e.scope === "biz"; }), t = kbTotals(dl);
+    return { incCats: kbCatSums(dl, "in"), outCats: kbCatSums(dl, "out"), inc: t.inc, out: t.out, bal: t.bal, count: dl.length };
+  };
+  // トレード収支の転記：手で押したときだけ、その日の損益を家計簿の事業分へ1件写す。作った記録には fromTrade（その日の日付）を持たせ、同じ日は二度作らない
+  var kbTransferred = function (list, day) { return (list || []).some(function (e) { return e && e.fromTrade === day; }); };
+  var kbTransferTrade = function (list, day, total) {
+    if (!isFinite(total) || !total) return { created: null, reason: "zero" };
+    if (kbTransferred(list, day)) return { created: null, reason: "done" };
+    var e = { id: uid(), date: day, type: total > 0 ? "in" : "out", scope: "biz", cat: total > 0 ? "雑収入" : "雑費", amount: Math.abs(total), memo: "トレード収支から転記（" + day + "分）", fromTrade: day };
+    return { created: e, reason: "ok" };
+  };
+  // [hub-pure-end]
+  var HELP = {
+    money: ["口座の条件と損切り価格を入れると、許容損失に収まる数量が出ます。足りない項目があると数量は出しません。", "money"],
+    check: ["入る前に7つの項目を確かめて「記録する」。次の重要指標と今日の損失も自動で表示します。"],
+    journal: ["取引のあとに、まずは4項目だけで1件。くわしくは「詳しく書く」から。取引しなかった日は「見送り」も残せます。"],
+    pnl: ["日ごとの確定損益と入出金をカレンダーで見て、週・月・年でまとめます。「今日のトレード収支を入れる」で1日分をまとめて入れられます。"],
+    kakeibo: ["給料や食費など、家の収入と支出を月ごとに記録します。生活と事業を分けて記録でき、過去の日付でも入れられます。トレード収支とは別に、この端末の中だけに保存します。「申告用」では医療費控除・事業の収支・年間の収支まとめの目安とCSVの書き出し、借入の返済内訳と住宅ローン控除の目安、減価償却の計算もできます。"],
+    signals: ["ダッシュボードの判定（買い候補・売り候補・見送り）と、その時点の根拠の記録です。売買の指示ではありません。"],
+    hours: ["東京・ロンドン・ニューヨークの時間と、銘柄ごとの取引時間（目安）を日本時間で表示します。"],
+    status: ["価格・ローソク足・自動分析が、いつ・どこから届いたかを確かめる画面です。数字がおかしいと思ったらまずここ。"],
+    settings: ["省電力、通知の注意点、バックアップ（書き出し・読み込み）、初期化です。"]
+  };
+  var GUIDE = [
+    ["money", "資金管理（ポジションサイズ・リスクリワード・損失上限）", "損切りしても許容内に収まる数量を計算する道具です。取引に入る前に開きます。", [
+      "「銘柄」と「口座通貨」を選び、「銘柄の一般的な値を入れる」を押す（契約サイズ・刻み・最小数量が入ります）。",
+      "入った値が自分の口座の条件と同じか確かめ、違えば直す（業者・口座で違います）。",
+      "口座残高と許容リスク（％）、または許容損失額を入れる。",
+      "エントリー価格と損切り価格を入れると、数量（lot）と、損切りでの損失・取引金額が出ます。",
+      "円口座でゴールドやBTCを計算するときは換算レート（1ドル＝何円）が必要です。「デスクのドル円を換算レートに使う」で参考値を入れられます。"],
+      "数量は刻みで切り下げます。最小数量に届かないときは「見送り」と表示します（切り上げると許容損失を超えるため）。リスクリワードは向き・エントリー・損切り・利確を入れ、コストを入れると「コスト込み」も出ます。1日の損失上限を入れると、日誌の今日の損益と比べて注意を出します。",
+      "例：口座残高10万円、許容リスク1％なら、1回の取引で失ってよいのは1,000円まで。ドル円で損切り幅が20pips（0.20円）のとき、数量は 1,000円 ÷ 0.20円 ＝ 5,000通貨（1lot＝10万通貨の口座なら0.05lot）になります。",
+      "これは計算の仕組みを示す例です。どのくらいリスクを取るかの判断は、ご自身の計画に合わせてください。"],
+    ["check", "取引前チェック", "入る前の最終確認です。7つの項目を確かめて記録します。", [
+      "銘柄と向きを選ぶ。上の枠に、次の重要指標までの時間・その銘柄のデータの鮮度・今日の損失が出ます。",
+      "7つの項目を確かめてチェックを入れる。",
+      "取引の理由を一文で書き、「記録する」。",
+      "そのまま取引した場合は「記録して日誌を書く」で、日誌に銘柄・向き・理由が入った状態で移れます。"],
+      "枠が赤いとき（損失上限に達した・データが古い）は、入る前に理由を確かめてください。チェックがそろっても利益を保証するものではありません。"],
+    ["journal", "トレード日誌", "取引の理由・結果・反省を残す場所です。取引が終わったら開きます。", [
+      "銘柄・向き・確定損益（手数料込み）・ルールを守れたかを入れて「記録する」（これだけでも1件になります）。",
+      "くわしく残すときは「詳しく書く」を開き、日時・価格・数量・理由・結果・反省を書く。価格は「今のデスク価格を入れる」でも入れられます。",
+      "取引しなかった日は「見送りを記録」で1件残せます（成績のまとめには入りません）。",
+      "下の「その日の記録と数字」では、日を選ぶとその日の日誌・トレード収支・家計簿の事業分が並びます。「トレード収支を事業へ転記」は手で押したときだけ働く機能で、その日の損益を家計簿の事業分へ1日につき1件だけ写します。あとからトレードの記録を消しても、転記した家計簿の記録は消えません。要らなければ家計簿で削除してください。",
+      "下の一覧の「編集」で直せます。「削除」は元に戻せません。",
+      "「CSVに書き出す」で表計算ソフトに、「CSVを読み込む」で別の端末から取り込めます（同じ記録は二重に入りません）。"],
+      "成績のまとめは日誌に入れた実際の取引だけで計算します（見送りは含みません）。20件未満の区分は勝ちの割合を出しません。連続記録とカレンダーには見送りも数えます。"],
+    ["pnl", "トレード収支（カレンダーと集計）", "日ごとの確定損益と入金・出金を見る場所です。", [
+      "「今日のトレード収支を入れる」で、日付・確定損益・入金・出金を入れて保存します（空欄でも保存できます。あとから同じ日付で直せます）。",
+      "カレンダーには、日ごとの確定損益（＋は緑、−は赤）と、入金・出金が出ます。日をタップすると、その日の内訳と記録の編集へ進めます。",
+      "上には月の合計・入金・出金・勝ち日と負け日・損益の積み上がり。下の「期間のまとめ」で週・月・年を切り替えられます（週は月曜はじまり）。"],
+      "その日の損益は、日次入力に確定損益があればそれを使い、日誌の取引ごとの損益とは足しません。日次入力がない日は、日誌の取引ごとの損益の合計です。入金・出金は日次入力だけから数えます。"],
+    ["kakeibo", "家計簿", "家の収入と支出を月ごとに記録する場所です。トレード収支とは別の、暮らしのお金の記録です。生活のお金と事業のお金を分けて記録でき、確定申告の準備にも使えます。", [
+      "日付・収入か支出か・生活か事業か・カテゴリ・金額を入れて「追加する」（メモは任意）。日付は過去の日も選べて、保存するとその月の画面に移ります。続けて入れるときは、前回と同じ日付が残ります（「今日」ボタンで今日に戻せます）。",
+      "上の合計で、その月の収入・支出・差額が見られます。事業分がある月は「うち事業分」も出ます。前月・次月で月を切り替えます。",
+      "下の一覧で記録をタップすると直せます。事業の記録には「事業」の札が付きます。「削除」は元に戻せません。",
+      "支出でカテゴリ「医療」（生活）を選ぶと、受けた人・支払先（病院や薬局）・医療費の区分・補填される金額（保険などで戻る分）も入れられます。",
+      "上の「申告用」に切り替えると、選んだ年の医療費控除の目安と明細、年間の収支まとめが見られます。どちらもCSVで書き出せます。",
+      "「申告用」の事業の収支では、事業の記録が収支内訳表の科目の並びでまとまります。減価償却費と利子割引料は、下の資産・借入から自動計算した分が入ります（手入力と重ねないでください）。差額は事業所得の目安です。",
+      "「借入と返済の内訳」に借入を登録すると、元利均等返済として年ごとの元本・利息・年末残高が出ます。住宅の借入では、住宅ローン控除の控除額の目安と、申請の仕方（1年目は確定申告、2年目以降は年末調整）も見られます。",
+      "「減価償却の資産」に備品や建物を登録すると、定額法でその年の償却費を計算し、事業に使う割合分を事業の収支へ入れます。耐用年数は目安からも選べます。"],
+      "カテゴリ別の合計は、表示している月の記録だけを集計します。ほかの月の記録は消えずに残ります。医療費控除・住宅ローン控除・事業所得の金額はすべて目安です。個別の税務判断は税務署・税理士に確認してください。医療費控除はセルフメディケーション税制と併用できません。領収書を保管し、最終的な計算と申告はe-Taxや税務署で確かめてください。住宅ローン控除の目安は令和6・7年入居の制度（国税庁）で計算しています。入居年は返済を始めた年で代用しているため、実際の入居年と違うときは目安も変わります。"],
+    ["signals", "シグナル履歴", "アプリの判定がいつ・なぜ出たかの記録です。判定を振り返るときに開きます。", [
+      "「いまの判定」で、各銘柄が買い候補・売り候補・見送りのどれかと、その理由が分かります。",
+      "履歴の行をタップすると、成立した条件・足りなかった条件・判定時の価格と時刻・有効期限・取り消しになった理由が見られます。",
+      "「CSVに書き出す」で全イベントを保存できます。"],
+      "判定は形成中の1時間足を使った暫定判定で、その足が終わると期限切れになります。同じ判定は30分以内に重ねて鳴らしません。デスクを開いている間に届いた分だけ記録されます。"],
+    ["hours", "市場時間", "いま、どの市場が開いているか、取引できる時間かを確認します。", [
+      "3つの市場の今日の時間（日本時間）と、開いているか・重なっているかを見る。",
+      "下の表で、銘柄ごとに今が取引時間内か・休場か・休止中かを見る。"],
+      "夏時間は自動で計算します。祝日・短縮取引は含めていないので、平日の「取引時間内」は目安です。"],
+    ["status", "データ状態", "価格や分析が新しいか、どこから届いたかの点検です。数字がおかしいと思ったら、まずここを開きます。", [
+      "上の表で、表示中の3銘柄の価格の時刻・提供元・価格の種類・ローソク足と自動分析の時刻を確かめる。",
+      "「データの取得元」で、どのデータがいつ最後に届いたか、失敗していればその理由を見る。",
+      "古いものがあれば、下の「再読み込み」ボタンでそのデータだけ取り直せます。"],
+      "価格カードの札をタップしてもこの画面が開きます。"],
+    ["settings", "設定・バックアップ", "省電力・バックアップ・初期化です。端末を替えるときは、先にここで書き出します。", [
+      "iPadが熱いとき・電池を持たせたいときは「省電力モード」をオン。",
+      "端末を替える前やブラウザのデータを消す前に「すべて書き出す（JSON）」。新しい端末では「読み込む」。",
+      "表示だけ・通知だけ・資金管理と日誌だけ、など分けて初期化できます（元に戻せません）。"],
+      "データはこの端末のブラウザの中だけに保存しています。音や通知は、このページを開いている間だけ届きます。"]
+  ];
+  // English words and abbreviations that appear in the tools: [word, reading, meaning]
+  var WORDS = [
+    ["銘柄・通貨", [
+      ["GOLD・XAU/USD", "ゴールド・エックスエーユー ドル", "金（ゴールド）の米ドル建ての価格。1トロイオンス（約31.1グラム）が何ドルか。XAUは金を表す記号"],
+      ["USD/JPY", "ドル円", "1米ドルが何円か。USD＝米ドル、JPY＝日本円"],
+      ["BTC/USD", "ビットコイン ドル", "1ビットコイン（BTC）が何米ドルか"],
+      ["USD・JPY", "ユーエスディー・ジェーピーワイ", "通貨の略号。USD＝米ドル、JPY＝日本円（口座通貨の選択にも出ます）"],
+      ["DXY", "ドル指数", "主要6通貨に対する米ドルの強さを表す指数"],
+      ["VIX", "ビックス", "米国株の値動きの荒さの予想を表す指数。「恐怖指数」とも呼ばれる"],
+      ["XAUT・PAXG", "テザーゴールド・パックスゴールド", "金と連動するように作られた暗号資産。週末も動くので、金のリアルタイム価格の目安に補正して使う"]]],
+    ["取引の言葉", [
+      ["lot（ロット）", "ロット", "取引する量のまとまり。1lotの大きさ（契約サイズ）は業者・銘柄で違う。例：ゴールド1lot＝100oz、ドル円1lot＝10万通貨が多い"],
+      ["oz", "オンス", "トロイオンス。金の重さの単位（約31.1グラム）"],
+      ["pips", "ピップス", "値動きを数える小さな単位。ドル円は1pips＝0.01円、このアプリのゴールドは1pips＝0.1ドル"],
+      ["Bid・Ask", "ビッド・アスク", "Bid＝売るときの値段、Ask＝買うときの値段。その差がスプレッド"],
+      ["仲値（Mid）", "なかね", "BidとAskのちょうど真ん中の値段"],
+      ["RR（リスクリワード）", "アールアール", "損切りまでの幅に対して、利確までの幅が何倍か。2なら「損1に対して利益2を狙う」"],
+      ["SMA", "エスエムエー", "単純移動平均線。決まった本数の終値の平均をつないだ線。120SMA＝120本の平均"],
+      ["H1・H4・M15・M5", "エイチワン ほか", "時間足の略。H1＝1時間足、H4＝4時間足、M15＝15分足、M5＝5分足"],
+      ["CAUTION", "コーション", "「注意」。重要な経済指標の発表前後で、判定を見送る時間帯"],
+      ["CSV", "シーエスブイ", "表のデータをカンマで区切った文字のファイル。Excel・Numbers・Googleスプレッドシートで開ける"]]],
+    ["時間・市場", [
+      ["JST", "ジェイエスティー", "日本標準時（日本時間）。ツールの時刻はすべて日本時間"],
+      ["NY", "ニューヨーク", "ニューヨーク。為替・金の1日の区切りは、ニューヨーク時間の17時が基準"],
+      ["夏時間（DST）", "サマータイム", "夏の間、時計を1時間進める制度。ロンドン・ニューヨークにあり、日本にはない。市場の開く時刻が日本時間で1時間ずれる"],
+      ["CME", "シーエムイー", "シカゴの先物取引所。金・銀・原油の先物の取引時間の基準"],
+      ["ICE", "アイス", "米国の取引所。ドル指数（DXY）の先物の取引時間の基準"]]],
+    ["データ・保存", [
+      ["API", "エーピーアイ", "アプリがほかのサービスからデータを受け取るための窓口"],
+      ["JSON", "ジェイソン", "データを保存・受け渡しするための文字の形式。設定のバックアップはこの形式"],
+      ["market.json など", "マーケット ジェイソン", "このサイトが5分ごとに作る相場データのファイル（strategy.json＝本日の戦略、holidays.json＝祝日）"],
+      ["localStorage", "ローカルストレージ", "ブラウザの中の保存場所。日誌や設定はここに保存され、この端末の外には出ない"],
+      ["WebSocket", "ウェブソケット", "つないだままにして、価格を次々に受け取る通信の方法（リアルタイム配信）"]]],
+    ["データの提供元", [
+      ["Yahoo Finance", "ヤフーファイナンス", "ローソク足（チャート）の元データ。サイトが定期的に取得"],
+      ["Gold API", "ゴールドエーピーアイ", "金・銀の現在値を配信するサービス"],
+      ["Swissquote", "スイスクオート", "スイスの金融機関。公開している金のBid・Askを、Gold APIの代わりや点検に使う"],
+      ["Coinbase", "コインベース", "米国の暗号資産取引所。ドル円のレートとBTCの価格に使う"],
+      ["GMO", "ジーエムオー", "GMOコインの外国為替FX。ドル円のリアルタイム配信に使う"],
+      ["OKX・Bitfinex・Kraken", "オーケーエックス ほか", "海外の暗号資産取引所。XAUT・PAXG・BTCのリアルタイム配信に使う"],
+      ["Forex Factory", "フォレックスファクトリー", "経済指標カレンダーのサイト。指標の予定・予想・結果の元データ"],
+      ["Open-Meteo", "オープンメテオ", "天気予報のデータを配信するサービス"]]]
+  ];
+  // タブごとの難しい言葉（意味は上の WORDS の文をそのまま使う）
+  var TAB_WORDS = { money: ["lot（ロット）", "pips", "RR（リスクリワード）"], check: ["CAUTION", "JST"], journal: ["CSV", "localStorage"],
+    signals: ["H1・H4・M15・M5", "SMA"], hours: ["JST", "夏時間（DST）", "CME"], status: ["API", "WebSocket", "market.json など"], settings: ["JSON", "localStorage"] };
+  var wordOf = function (name) { for (var i = 0; i < WORDS.length; i++) for (var j = 0; j < WORDS[i][1].length; j++) if (WORDS[i][1][j][0] === name) return WORDS[i][1][j]; return null; };
+  var QA = [["価格が止まっている・古い", "価格カードの札を確認してください。『停止』なら、データ状態を開いて再読み込みを試せます。『休場中』なら故障ではありません。"],
+    ["日誌が消えてしまった？", "日誌や設定は、この端末のブラウザの中だけに保存されています。ブラウザのデータを消したり端末を替えたりする前に、『設定』から書き出しておいてください。"],
+    ["判定（買い優勢など）が古い気がする", "数字に取り消し線が出ているときは、自動分析が古いので参考にしないでください。データ状態で自動分析の時刻を確かめられます。"],
+    ["チェックを記録したのに、結局取引しなかった", "それで問題ありません。日誌に『見送り』として残しておくと、あとで振り返りに使えます。"]];
+  var bullets = function (t) { return '<ul class="steps">' + String(t).split("。").filter(function (x) { return x.trim(); }).map(function (x) { return "<li>" + esc(x.trim()) + "。</li>"; }).join("") + "</ul>"; };
+  var VIEWS = {
+    guide: function () {
+      body.innerHTML = '<div class="first"><b>はじめての人へ：まずこの3つだけ</b><p class="note" style="margin:4px 0">最初はこの3つだけで大丈夫です。①データ状態で価格が新しいか見る → ②取引前チェックを記録する → ③取引のあと日誌を書く。他のタブは、慣れてから少しずつで構いません。</p>' +
+        '<div class="btns" style="margin:6px 0 0"><button type="button" class="btn" data-gtab="status">① データ状態</button><button type="button" class="btn" data-gtab="check">② 取引前チェック</button><button type="button" class="btn" data-gtab="journal">③ 日誌</button></div></div>' +
+        '<h3>🧰 ツールの使い方</h3><p class="note">デスクの数字を確かめ、入る前の準備と、あとからの振り返りに使う道具です。売買をすすめるものではありません。入力した内容はこの端末の中だけに保存され、どこにも送信しません。</p>' +
+        '<div class="btns"><button type="button" class="btn" id="g-jump-words">英語・略語の意味へ</button></div>' +
+        '<h3>おすすめの使い方（1回の取引の流れ）</h3><div class="flow">' +
+        [["① 確かめる", "データ状態で、価格と分析が新しいか"], ["② 時間を見る", "市場時間・取引前チェックで、指標や休場が近くないか"], ["③ 数量を決める", "資金管理で、損切りまでの損失が許容内の数量"],
+          ["④ チェックする", "取引前チェックで7項目を確かめて記録"], ["⑤ 記録する", "取引のあと日誌に結果と反省"], ["⑥ 振り返る", "日誌の成績のまとめ・シグナル履歴を見直す"]]
+          .map(function (x) { return "<div><b>" + esc(x[0]) + "</b>" + esc(x[1]) + "</div>"; }).join("") + "</div>" +
+        '<h3>価格カードの札の読み方</h3><div class="tw"><table><tr><th>札</th><th>意味</th><th>見たらどうする</th></tr>' +
+        [["● ライブ", "20秒以内に届いた価格", "そのまま使って大丈夫です"], ["● 最新", "2分以内", "そのまま使って大丈夫です"], ["◔ 遅延", "15分以内。少し古い", "少し古い表示です。大きな判断の前に、データ状態で確かめてください"],
+          ["⚠ 停止", "15分より前のまま更新されていない（通信や提供元の問題）", "データ状態を開いて『再読み込み』を試してください。それでも直らなければ、時間を置いてください"],
+          ["☾ 休場中", "市場が閉まっている間の最後の価格（故障ではありません）", "故障ではありません。市場が開くまで待ってください"], ["⏸ 確認中", "届いたデータに不自然な点があり、前の値を表示している", "前の値を表示しています。この価格での判断は避けてください"]]
+          .map(function (x) { return "<tr><td>" + esc(x[0]) + "</td><td>" + esc(x[1]) + "</td><td>" + esc(x[2]) + "</td></tr>"; }).join("") +
+        '</table></div><p class="note">札の時刻は日本時間です。札をタップするとデータ状態の画面が開きます。一致度（例「買い優勢 97」）に取り消し線が出ているときは、自動分析が古いので参考にしないでください。一致度は勝率や確率ではありません。</p>' +
+        // 各ダッシュボード共通：「リスク・ロット計算」パネルの読み方（数字は見通しで、売買をすすめるものではありません）
+        '<h3>リスク・ロット計算の使い方</h3><details id="g-riskcalc"><summary><b>ダッシュボードの「リスク・ロット計算」の読み方</b></summary><p class="g-why">ゴールド・ドル円・BTC・USオイルの各ダッシュボードにある計算パネルの読み方です。ここで出る数字は目安で、売買をすすめるものではありません。</p>' +
+        [["目安ロットと最大損失", "目安ロットは、損切り（SL）に達したときの損失が、口座設定の許容リスクに収まる数量です（0.01lot刻み）。最大損失は、そのロットで損切りに達したときの損失の上限の目安です。ロットを自分で入力したときは「想定損失」として、そのロットの損失を出します。"],
+          ["実質RR（スプレッド込み）", "RRは、利確の幅 ÷ 損切りの幅です。カッコの中の実質RRは、スプレッドを差し引いたあとの比率（利確の幅−スプレッド）÷（損切りの幅＋スプレッド）で、実際の取引に近い見方です。1を下回ると、損切りの幅の方が大きいことを表します。"],
+          ["証拠金維持率の言葉", "口座資金 ÷ 必要証拠金 で計算します。1000%以上は「十分」、300%以上は「余裕あり」、100%以上は「注意（余裕が少ない）」、100%未満は「危険（ロスカットに近い）」と表示します。"],
+          ["合計リスクの見方", "同じ端末・同じブラウザで、ほかの銘柄のダッシュボードも計算していると、結果の下に「全銘柄の合計」が出ます。全部のポジションがそろって損切りに達した場合の損失と、必要な証拠金の合計の目安です。15分より古い計算は合計に入れず、許容リスクを超えると警告の見た目になります。"],
+          ["連敗の行の見方", "「このロットで連敗したら」の行は、毎回、残った資金に対して同じ割合を失う計算で、3・5・10連敗のあとに資金がどれだけ減るかの目安です。ロットを大きくする前に、減り方を確かめるために見ます。"],
+          ["円で指定するとき", "口座設定の「リスクの指定」で、%と円を切り替えられます。%は資金に対する割合で、資金が増減すると1回の損失額も変わります。円は1回で失ってよい上限を金額で決める方法で、資金が変わっても額は固定です。表示される%は、入力した円を口座資金で割った値です。"]]
+          .map(function (x) { return '<p class="note"><b>' + esc(x[0]) + "</b>　" + esc(x[1]) + "</p>"; }).join("") + "</details>" +
+        "<h3>タブごとの使い方</h3>" + GUIDE.map(function (g) {
+          var tw = (TAB_WORDS[g[0]] || []).map(wordOf).filter(Boolean);
+          return '<details id="g-' + g[0] + '"><summary><b>' + esc(g[1]) + '</b></summary><p class="g-why">' + esc(g[2]) + '</p><ol class="steps">' + g[3].map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") +
+            '</ol>' + bullets(g[4]) + (g[5] ? '<p class="note"><b>計算の例</b>　' + esc(g[5]) + "</p>" + (g[6] ? '<p class="note">' + esc(g[6]) + "</p>" : "") : "") +
+            (tw.length ? '<div class="tw"><table><tr><th>このタブの言葉</th><th>意味</th></tr>' + tw.map(function (w) { return "<tr><td><b>" + esc(w[0]) + "</b></td><td>" + esc(w[2]) + "</td></tr>"; }).join("") + "</table></div>" : "") +
+            '<div class="btns"><button type="button" class="btn" data-gtab="' + g[0] + '">このタブを開く</button></div></details>';
+        }).join("") +
+        '<h3 id="g-words-h">英語・略語の意味</h3><p class="note">ツールやデスクに出てくる英語・略語です。くわしい解説は「学ぶ」パネルのFX用語集でも引けます。</p>' +
+        WORDS.map(function (grp) {
+          return '<details class="g-words" open><summary><b>' + esc(grp[0]) + '</b></summary><div class="tw"><table><tr><th>ことば</th><th>読み</th><th>意味</th></tr>' +
+            grp[1].map(function (w) { return "<tr><td><b>" + esc(w[0]) + "</b></td><td>" + esc(w[1]) + "</td><td>" + esc(w[2]) + "</td></tr>"; }).join("") + "</table></div></details>";
+        }).join("") +
+        '<h3>操作のヒント</h3><p class="note">閉じるは右上の「閉じる」かEscキー。キーボードではTabで移動し、Enterで押せます。最後に開いたタブは次回も開きます。この「使い方」はいつでも左端のタブから開けます。</p>' +
+        '<h3>困ったとき</h3>' + QA.map(function (q) { return '<details><summary><b>Q. ' + esc(q[0]) + '</b></summary><p class="note">A. ' + esc(q[1]) + "</p></details>"; }).join("");
+      $("#g-jump-words").addEventListener("click", function () { var h = $("#g-words-h"); h.scrollIntoView({ block: "start" }); var s1 = body.querySelector(".g-words summary"); if (s1) s1.focus(); });
+      body.querySelectorAll("[data-gtab]").forEach(function (b) { b.addEventListener("click", function () { show(b.getAttribute("data-gtab")); }); });
+    },
+    money: function () {
+      var r = get(RISK, {}) || {}, ref = usdjpyRef();
+      body.innerHTML = '<h3>ポジションサイズ</h3><p class="note">許容損失と損切り幅から数量を出します。契約サイズ・数量の刻み・最小数量・通貨換算は業者や口座で違うため、<b>自分の口座の条件を入れてください</b>。足りない項目があるときは数量を出しません。</p>' +
+        '<div class="grid">' + select("ps-inst", "銘柄", Object.keys(INST).map(function (k) { return [k, INST[k].name]; }), r.inst || "gold") +
+        select("ps-ccy", "口座通貨", [["JPY", "円"], ["USD", "米ドル"]], r.ccy || "JPY") +
+        field("ps-bal", "口座残高（口座通貨）", r.bal, "number") + field("ps-pct", "許容リスク（残高の％）", r.pct == null ? 1 : r.pct, "number") +
+        field("ps-amt", "または許容損失額（入れるとこちらを優先）", r.amt, "number") +
+        field("ps-entry", "エントリー価格", r.entry, "number") + field("ps-stop", "損切り価格", r.stop, "number") +
+        field("ps-contract", "1lotの契約サイズ", r.contract, "number") + field("ps-conv", "換算レート（建値通貨1単位＝口座通貨いくら）", r.conv, "number") +
+        field("ps-step", "数量の刻み（lot）", r.step, "number") + field("ps-min", "最小数量（lot）", r.min, "number") + field("ps-max", "最大数量（lot・任意）", r.max, "number") +
+        field("ps-lev", "レバレッジ（任意・証拠金の目安）", r.lev, "number") + field("ps-cost", "コスト（価格単位・スプレッドなど・任意）", r.cost, "number") + field("ps-com", "手数料（1lotあたり口座通貨・任意）", r.com, "number") +
+        '</div><div class="btns"><button type="button" class="btn" id="ps-fill">銘柄の一般的な値を入れる</button><button type="button" class="btn" id="ps-ref">デスクのドル円を換算レートに使う</button></div>' +
+        '<p class="note" id="ps-refnote">' + (ref ? "デスクのドル円（参考値）：" + fmt(ref.rate, 3) + "（" + C.jst(ref.at) + "）。実際の換算は業者のレートで確かめてください。" : "デスクのドル円はまだ取得できていません。") + "</p>" +
+        '<div class="out" id="ps-out" aria-live="polite"></div>' +
+        '<h3>リスクリワード</h3><div class="grid">' + select("rr-side", "向き", [["1", "買い"], ["-1", "売り"]], r.side || "1") +
+        field("rr-entry", "エントリー", r.rentry, "number") + field("rr-stop", "損切り", r.rstop, "number") + field("rr-target", "利確", r.target, "number") +
+        field("rr-cost", "往復コスト（価格単位・任意）", r.rcost, "number") + field("rr-units", "数量（通貨・oz・BTC単位・任意）", r.units, "number") + field("rr-conv", "換算レート（任意・既定1）", r.rconv, "number") +
+        '</div><div class="out" id="rr-out" aria-live="polite"></div>' +
+        '<h3>今日の損失と上限</h3><div class="grid">' + field("dl-limit", "1日の損失上限（口座通貨）", r.daily, "number") + '</div><div class="out" id="dl-out" aria-live="polite"></div>' +
+        '<p class="note">今日（日本時間）の確定損益は「日誌」に記録した取引から計算します。記録していない取引は含まれません。</p>';
+      var ids = ["ps-inst", "ps-ccy", "ps-bal", "ps-pct", "ps-amt", "ps-entry", "ps-stop", "ps-contract", "ps-conv", "ps-step", "ps-min", "ps-max", "ps-lev", "ps-cost", "ps-com", "rr-side", "rr-entry", "rr-stop", "rr-target", "rr-cost", "rr-units", "rr-conv", "dl-limit"];
+      var keys = ["inst", "ccy", "bal", "pct", "amt", "entry", "stop", "contract", "conv", "step", "min", "max", "lev", "cost", "com", "side", "rentry", "rstop", "target", "rcost", "units", "rconv", "daily"];
+      var calc = function () {
+        var v = {}; ids.forEach(function (id, i) { v[keys[i]] = $("#" + id).value; });
+        put(RISK, v, "資金管理の入力");
+        var NEED = { entry: "エントリー価格", stop: "損切り価格", contract: "契約サイズ", conv: "換算レート", step: "数量の刻み", min: "最小数量", riskAmount: "許容損失額（または残高と％）", riskPct: "許容リスク％" };
+        var res = C.positionSize({ balance: v.bal, riskPct: v.pct, riskAmount: v.amt, entry: v.entry, stop: v.stop, contract: v.contract, conv: v.conv, step: v.step, min: v.min, max: v.max, cost: v.cost, commission: v.com, leverage: v.lev });
+        var o = $("#ps-out"), cc = v.ccy === "USD" ? "ドル" : "円";
+        if (!res.ok) o.textContent = res.need && res.need.length ? "数量は出していません。入力が必要：" + res.need.map(function (k) { return NEED[k] || k; }).join("・") : "⚠ " + res.errors.join("／");
+        else if (res.skip) o.textContent = res.message + "\n1lotあたりの損失：" + fmt(res.perLot) + cc;
+        else o.textContent = "数量：" + res.lots + " lot（" + fmt(res.units) + " 単位）　計算上 " + res.raw.toFixed(4) + " lot を刻みで切り下げ\n" +
+          "損切りでの損失：約 " + fmt(res.actualRisk, 0) + cc + (isFinite(res.riskPctActual) ? "（残高の " + res.riskPctActual.toFixed(2) + "％）" : "") + "　許容：" + fmt(res.risk, 0) + cc + "\n" +
+          "取引金額：約 " + fmt(res.notional, 0) + cc + (isFinite(res.margin) ? "　必要証拠金の目安：約 " + fmt(res.margin, 0) + cc + "（業者の証拠金率で変わります）" : "") +
+          ((+v.cost || +v.com) ? "\nコスト・手数料を損失に含めています" : "\nコスト・手数料は含めていません") + (res.notes.length ? "\n※" + res.notes.join("\n※") : "") +
+          "\n滑り（スリッページ）や窓開けで損失が計算より大きくなることがあります。";
+        var rr = C.riskReward({ side: v.side, entry: v.rentry, stop: v.rstop, target: v.target, cost: v.rcost, units: v.units, conv: v.rconv || 1 });
+        $("#rr-out").textContent = !rr.ok ? rr.errors.join("／") :
+          "リスクリワード " + rr.rr.toFixed(2) + "（コストなし）" + (rr.costIncluded ? "／ " + rr.rrNet.toFixed(2) + "（往復コスト込み）" : "") + "\n損切り幅 " + fmt(rr.risk, 5) + "・利確幅 " + fmt(rr.reward, 5) +
+          "\n損益が0になる勝率の目安：" + rr.breakEvenWin.toFixed(1) + "％（この比率で勝ち負けした場合の計算。実際の勝率を示すものではありません）" +
+          (rr.loss != null ? "\n想定損益：損切り " + fmt(rr.loss, 0) + "／利確 +" + fmt(rr.gain, 0) + (rr.costIncluded ? "（コスト込み）" : "（コストなし）") : "");
+        var dl = C.dailyLoss(journal(), C.dayKey(Date.now()), v.daily);
+        $("#dl-out").innerHTML = (dl.set ? (dl.exceeded ? '<div class="warn">⚠ 今日の損失が上限に達しました（' + fmt(dl.loss, 0) + " ／ 上限 " + fmt(dl.limit, 0) + "）。今日は取引を休むことを考えてください。</div>"
+          : dl.near ? '<div class="warn">今日の損失が上限の8割を超えました（残り ' + fmt(dl.remaining, 0) + "）。</div>" : "") : "") +
+          esc("今日の確定損益：" + (dl.pnl >= 0 ? "+" : "") + fmt(dl.pnl, 0) + "（日誌 " + dl.trades + "件）" + (dl.set ? "　上限まで残り " + fmt(dl.remaining, 0) : "　上限は未設定"));
+      };
+      body.querySelectorAll("input,select").forEach(function (el) { el.addEventListener("input", calc); el.addEventListener("change", calc); });
+      $("#ps-fill").addEventListener("click", function () {
+        var k = $("#ps-inst").value, I = INST[k], ccy = $("#ps-ccy").value, ref2 = usdjpyRef();
+        $("#ps-contract").value = I.contract; $("#ps-step").value = I.step; $("#ps-min").value = I.min;
+        $("#ps-conv").value = I.quote === ccy ? 1 : I.quote === "USD" && ccy === "JPY" && ref2 ? ref2.rate : I.quote === "JPY" && ccy === "USD" && ref2 ? +(1 / ref2.rate).toFixed(6) : "";
+        D.toast("一般的な値を入れました（契約サイズ " + I.contract + " など）。自分の口座の条件と同じか確認してください。"); calc();
+      });
+      $("#ps-ref").addEventListener("click", function () { var r2 = usdjpyRef(); if (!r2) { D.toast("ドル円をまだ取得できていません"); return; } $("#ps-conv").value = $("#ps-ccy").value === "USD" ? +(1 / r2.rate).toFixed(6) : r2.rate; calc(); });
+      calc();
+    },
+
+    /* ---------- pre-trade checklist ---------- */
+    check: function () {
+      var ITEMS = [["news", "重要指標・要人発言の時間を確認した（指標の直前直後は見送りも選択肢）"], ["stop", "損切りの位置を決めた（入る前に）"], ["reason", "取引する理由を一文で言える"],
+        ["size", "数量を許容損失から計算した（資金管理タブ）"], ["daily", "今日の損失上限に達していない"], ["data", "使う価格・判定のデータが古くない（データ状態タブ）"], ["plan", "利確・撤退の条件を決めた"]];
+      var cal = D.calendar(), now = Date.now(), next = (cal.events || []).filter(function (e) { return e.stars === 3 && +e.t > now; }).sort(function (a, b) { return a.t - b.t; })[0];
+      var r = get(RISK, {}) || {}, dl = C.dailyLoss(journal(), C.dayKey(now), r.daily);
+      body.innerHTML = '<h3>取引前チェック</h3><p class="note">入る前に確かめて、記録に残します。チェックがそろっても売買の判断を保証するものではありません。</p>' +
+        '<div class="grid">' + select("ck-key", "銘柄", [["gold", "GOLD"], ["usdjpy", "ドル円"], ["btc", "BTC/USD"], ["other", "その他"]], "gold") + select("ck-side", "向き", [["buy", "買い"], ["sell", "売り"]], "buy") +
+        field("ck-risk", "許容損失（口座通貨）", r.amt || "", "number") + "</div>" +
+        '<div class="ok" id="ck-info"></div>' +
+        ITEMS.map(function (it) { return '<label class="chk"><input type="checkbox" data-ck="' + it[0] + '"><span>' + esc(it[1]) + "</span></label>"; }).join("") +
+        '<label class="f" style="margin-top:8px">取引の理由<textarea id="ck-reason" maxlength="2000"></textarea></label>' +
+        '<div class="btns"><button type="button" class="btn pri" id="ck-save">記録する</button><button type="button" class="btn" id="ck-journal">記録して日誌を書く</button></div><div id="ck-msg" class="note" aria-live="polite"></div>' +
+        '<h3>最近のチェック</h3><div id="ck-list"></div>';
+      var info = function () {
+        var k = $("#ck-key").value, card = cardOf(k), lines = [];
+        lines.push(next ? "次の重要指標：" + C.jst(+next.t) + "（" + C.ago(next.t - Date.now()).replace("前", "後") + "）" + next.title : cal.events ? "これからの重要指標（★3）は見つかりません" : "経済指標を取得できていません");
+        lines.push(card ? "デスクの" + card.name + "：" + card.price.label + "（" + C.jst(card.at) + "・" + card.prov.src + "）" : "この銘柄はデスクのカードに表示されていません（鮮度を確認できません）");
+        lines.push(dl.set ? "今日の損失：" + fmt(dl.loss, 0) + " ／ 上限 " + fmt(dl.limit, 0) + (dl.exceeded ? "（上限に達しています）" : "") : "今日の損失上限は未設定（資金管理タブ）");
+        $("#ck-info").textContent = lines.join("\n"); $("#ck-info").style.whiteSpace = "pre-wrap";
+        $("#ck-info").className = (dl.exceeded || (card && /stale|unknown/.test(card.price.level))) ? "warn" : "ok";
+      };
+      $("#ck-key").addEventListener("change", info); info();
+      var list = function () {
+        var cs = get(CHECKS, []);
+        $("#ck-list").innerHTML = cs.length ? '<div class="tw"><table><tr><th>日時</th><th>銘柄・向き</th><th>確認</th><th>理由</th></tr>' + cs.slice(0, 30).map(function (c) {
+          var n = Object.keys(c.items).filter(function (k) { return c.items[k]; }).length;
+          return "<tr><td>" + esc(C.jst(Date.parse(c.time))) + "</td><td>" + esc(c.key) + " " + esc(SIDE[c.side] || "") + "</td><td>" + n + "/" + Object.keys(c.items).length + "</td><td>" + esc(c.reason) + "</td></tr>";
+        }).join("") + "</table></div>" : '<p class="note">まだ記録がありません。</p>';
+      };
+      var save = function () {
+        var items = {}; body.querySelectorAll("[data-ck]").forEach(function (x) { items[x.getAttribute("data-ck")] = x.checked; });
+        var rec = { id: uid(), time: new Date().toISOString(), key: $("#ck-key").value, side: $("#ck-side").value, risk: $("#ck-risk").value, reason: $("#ck-reason").value.trim(), items: items };
+        var cs = get(CHECKS, []); cs.unshift(rec); if (cs.length > 500) cs.length = 500;
+        if (put(CHECKS, cs, "取引前チェック")) $("#ck-msg").textContent = "記録しました（" + Object.keys(items).filter(function (k) { return items[k]; }).length + "/" + ITEMS.length + " 項目を確認）"; list();
+        return rec;
+      };
+      $("#ck-save").addEventListener("click", save);
+      $("#ck-journal").addEventListener("click", function () { var rec = save(); draft = { key: rec.key, side: rec.side, reason: rec.reason, checkId: rec.id }; show("journal"); });
+      list();
+    },
+
+    /* ---------- journal ---------- */
+    journal: function () {
+      var d = draft || {}; draft = null;
+      var rows = journal(), isSkip = d.kind === "skip";
+      var todayK = C.dayKey(Date.now()), hday = jnDay || todayK;  // 日誌ハブで表示する日（既定は今日）
+      var more = !!(d.id || d.reason || d.entry != null || d.exit != null);  // 編集中・チェックから来たときは詳しい欄を開いておく
+      var px = function (id, label, val) { return '<div class="pxrow">' + field(id, label, val, "number") + '<button type="button" class="btn" data-px="' + id + '">今のデスク価格を入れる</button></div>'; };
+      var chips = function (target, list) { return '<div class="chips" data-for="' + target + '">' + list.map(function (c) { return '<button type="button" data-chip="' + esc(c) + '">' + esc(c) + "</button>"; }).join("") + "</div>"; };
+      body.innerHTML = '<h3>トレード日誌</h3><p class="note">判断の理由・取引内容・結果・反省を残します。端末の中だけに保存し、どこにも送信しません（「設定」からファイルに書き出せます）。</p>' +
+        '<div id="jn-streak"></div>' +
+        (isSkip ? '<div class="ok">見送りの記録を編集しています。</div>' : "") +
+        '<h3>' + (d.id ? "記録を直す" : "クイック記録") + '</h3><div class="grid">' +
+        select("jn-key", "銘柄", [["gold", "GOLD"], ["usdjpy", "ドル円"], ["btc", "BTC/USD"], ["other", "その他"]], d.key || "gold") + select("jn-side", "向き", [["buy", "買い"], ["sell", "売り"]], d.side || "buy") +
+        field("jn-pnl", "確定損益（口座通貨・手数料込み）", d.pnl, "number") + select("jn-rules", "ルールを守れたか", [["", "—"], ["yes", "守れた"], ["no", "守れなかった"]], d.rules || "") + "</div>" +
+        '<details id="jn-more"' + (more ? " open" : "") + '><summary><b>詳しく書く</b>（日時・価格・数量・理由・結果・反省）</summary>' +
+        '<div class="grid">' + field("jn-time", "日時", toLocal(d.time || new Date().toISOString()), "datetime-local") +
+        px("jn-entry", "エントリー価格", d.entry) + px("jn-exit", "決済価格", d.exit) + field("jn-lots", "数量（lot）", d.lots, "number") + field("jn-chart", "チャートのURL・メモ（任意）", d.chart) + "</div>" +
+        '<p class="note" id="jn-pxnote"></p>' +
+        '<label class="f">判断の理由<textarea id="jn-reason" maxlength="4000">' + esc(d.reason || "") + "</textarea></label>" +
+        chips("jn-reason", ["ルール通りの形だった", "サポート／レジスタンス際", "指標後の動きを見て", "流れに乗る形"]) +
+        '<label class="f">結果<textarea id="jn-result" maxlength="4000">' + esc(d.result || "") + "</textarea></label>" +
+        '<label class="f">反省・次に活かすこと<textarea id="jn-reflect" maxlength="4000">' + esc(d.reflection || "") + "</textarea></label>" +
+        chips("jn-reflect", ["ルール通りできた", "損切りが遅れた", "利確が早すぎた", "数量が大きすぎた", "見送りが正解だった", "感情で入ってしまった"]) + "</details>" +
+        '<div class="btns"><button type="button" class="btn pri" id="jn-save">' + (d.id ? "更新する" : "記録する") + "</button></div>" +
+        (d.id ? "" : '<h3>取引しなかった日</h3><div class="skiprow"><label class="f">一言メモ（任意）<input id="jn-skipmemo" maxlength="400"></label><button type="button" class="btn" id="jn-skip">見送りを記録</button></div>') +
+        '<h3>トレード収支のカレンダー</h3><p class="note">記録した日の確定損益・入出金は「トレード収支」に、日ごとのカレンダーと週・月・年のまとめで出ます。</p><div class="btns"><button type="button" class="btn" data-tab="pnl" id="jn-topnl">トレード収支（カレンダーと集計）を開く</button></div>' +
+        '<div class="btns"><button type="button" class="btn" id="jn-csv">CSVに書き出す</button><button type="button" class="btn" id="jn-imp">CSVを読み込む</button></div>' +
+        '<div id="jn-msg" class="note" aria-live="polite"></div>' +
+        '<h3>その日の記録と数字</h3><div class="jcalh"><button type="button" id="jn-dprev" aria-label="前の日">‹</button><b id="jn-dname"></b><button type="button" id="jn-dnext" aria-label="次の日">›</button><button type="button" class="btn" id="jn-dtoday">今日</button></div><div id="jn-hub"></div>' +
+        '<h3>成績のまとめ</h3><div id="jn-stats"></div><h3>記録</h3><div id="jn-list"></div>';
+      // 記録した日のカレンダーは「収支」の金額のカレンダーに統合（A）。ここは連続記録だけ
+      var drawCal = function () {
+        var jd = C.journalDays(journal(), Date.now());
+        $("#jn-streak").innerHTML = '<p class="streak">' + (jd.streak ? jd.streak + "日連続で記録中" : "今日から記録を始めましょう") + "・今週は" + jd.week + "日記録</p>";
+      };
+      $("#jn-topnl").addEventListener("click", function () { show("pnl"); });
+      // 今のデスク価格を入れる：その銘柄のデスクの表示価格（出典・時刻つき）。「その他」や価格がないときは押せない
+      var pxState = function () {
+        var k = $("#jn-key").value, card = k === "other" ? null : cardOf(k), ok = !!(card && isFinite(card.value) && card.value);
+        body.querySelectorAll("[data-px]").forEach(function (b) { b.disabled = !ok; b.title = ok ? "" : k === "other" ? "「その他」では使えません" : "この銘柄のデスクの価格がありません"; });
+        return ok ? card : null;
+      };
+      $("#jn-key").addEventListener("change", pxState); pxState();
+      body.querySelectorAll("[data-px]").forEach(function (b) { b.addEventListener("click", function () {
+        var card = pxState(); if (!card) return;
+        $("#" + b.getAttribute("data-px")).value = Number(card.value).toFixed(card.dp == null ? 2 : card.dp);
+        $("#jn-pxnote").textContent = "入れた価格：デスクの" + card.name + "（" + C.jst(card.at) + "・" + card.prov.src + "・" + card.price.label + "）";
+      }); });
+      // 定型文：タップでその欄の最後に足す（上書きしない）
+      body.querySelectorAll(".chips").forEach(function (c) { c.addEventListener("click", function (e) {
+        var b = e.target.closest("[data-chip]"); if (!b) return; var ta = $("#" + c.getAttribute("data-for")), t = b.getAttribute("data-chip");
+        ta.value = ta.value ? ta.value.replace(/\s+$/, "") + (/[。、\n]$/.test(ta.value.trim()) ? "" : "。") + t : t; ta.focus();
+      }); });
+      /* ---------- 日誌ハブ：選んだ日の記録・トレード収支・家計簿（事業分）と今週の流れ ---------- */
+      var dayName = function (k) { var p = k.split("-").map(Number), w = "日月火水木金土"[new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay()]; return p[1] + "/" + p[2] + "（" + w + "）"; };
+      var yen = function (v, sign) { return v == null ? "—" : (sign && v > 0 ? "+" : v < 0 ? "−" : "") + "¥" + fmt(Math.abs(v), 0); };
+      var keyShift = function (k, dd) { var p = k.split("-").map(Number), t = Date.UTC(p[0], p[1] - 1, p[2]) + dd * 864e5, x = new Date(t); return x.getUTCFullYear() + "-" + String(x.getUTCMonth() + 1).padStart(2, "0") + "-" + String(x.getUTCDate()).padStart(2, "0"); };
+      var JN_NAMES = {}; JN_INSTS.forEach(function (x) { JN_NAMES[x[0]] = x[1]; });
+      var paintHub = function () {
+        var host = $("#jn-hub"); if (!host) return;
+        $("#jn-dname").textContent = dayName(hday) + (hday === todayK ? "（今日）" : "");
+        var det = tradeDayDetail(journal(), dailyIn(), hday), kb = kakeibo(), biz = kbDayBiz(kb, hday);
+        // その日の記録（文章）。数字は手入力の記録から自動で集めるだけ
+        var txt = det.recs.length ? det.recs.map(function (r) {
+          if (r.kind === "skip") return '<div class="jn-rec"><span class="tag">見送り</span>' + esc(r.reason || "") + "</div>";
+          return '<div class="jn-rec"><b>' + esc(JN_NAMES[r.key] || r.key || "") + " " + esc(SIDE[r.side] || "") + "</b> " +
+            (r.pnl !== null && r.pnl !== "" && isFinite(+r.pnl) ? '<span class="' + (+r.pnl > 0 ? "pl-up" : +r.pnl < 0 ? "pl-dn" : "") + '">' + yen(+r.pnl, true) + "</span>" : "") +
+            (r.reason || r.result || r.reflection ? "<br>" + esc([r.reason, r.result, r.reflection].filter(Boolean).join(" ／ ")) : "") + "</div>";
+        }).join("") : '<p class="note">この日の記録はまだありません。</p>';
+        // その日のトレード収支（見るだけ）
+        var trows = det.insts.map(function (a) {
+          return '<div class="jn-prow"><span>' + esc(a.name) + "</span><b>" + (!a.trades ? "なし" : a.has ? '<span class="' + (a.bal > 0 ? "pl-up" : a.bal < 0 ? "pl-dn" : "") + '">' + yen(a.bal, true) + "</span>" : "―") + "</b></div>";
+        }).join("");
+        var foot = [];
+        if (det.trades) { foot.push("トレード回数 " + det.trades + "回"); if (det.wins || det.losses) foot.push("勝ち" + det.wins + " 負け" + det.losses); }
+        if (det.skip && !det.trades) foot.push("見送りの日");
+        var tpanel = '<div class="jn-panel"><h4>その日のトレード収支</h4>' + trows +
+          '<div class="jn-prow tot"><span>合計</span><b>' + (det.total === null ? "―" : '<span class="' + (det.total > 0 ? "pl-up" : det.total < 0 ? "pl-dn" : "") + '">' + yen(det.total, true) + "</span>") + "</b></div>" +
+          (det.src === "daily" ? '<p class="note">合計は日次入力の額です。' + (det.trades ? "銘柄別の金額は日誌の取引ごとの集計で、合計とは合わないことがあります。" : "") + "</p>" : "") +
+          (foot.length ? '<p class="note">' + esc(foot.join("・")) + "</p>" : "") + "</div>";
+        // その日の家計簿（事業分）と転記ボタン
+        var brows = biz.incCats.map(function (c) { return '<div class="jn-prow"><span>' + esc(c.cat) + '</span><b class="pl-up">' + yen(c.sum, true) + "</b></div>"; }).join("") +
+          biz.outCats.map(function (c) { return '<div class="jn-prow"><span>' + esc(c.cat) + "</span><b>−¥" + fmt(c.sum, 0) + "</b></div>"; }).join("");
+        var btn;
+        if (kbTransferred(kb, hday)) btn = '<div class="btns"><button type="button" class="btn" disabled>転記済み</button></div><p class="note">この日のトレード収支は、家計簿の事業分へ転記済みです。</p>';
+        else if (det.total === null) btn = '<div class="btns"><button type="button" class="btn" disabled>トレード収支を事業へ転記</button></div><p class="note">この日のトレード収支がないため、転記できません。</p>';
+        else if (!det.total) btn = '<div class="btns"><button type="button" class="btn" disabled>トレード収支を事業へ転記</button></div><p class="note">差額が0円の日は転記できません。</p>';
+        else btn = '<div class="btns"><button type="button" class="btn" data-jtr="' + esc(hday) + '">トレード収支を事業へ転記</button></div><p class="note">押したときだけ、その日の損益を家計簿の事業分に移ります。</p>';
+        var bpanel = '<div class="jn-panel"><h4>その日の家計簿（事業分）</h4>' +
+          (biz.count ? brows + '<div class="jn-prow tot"><span>差額</span><b><span class="' + (biz.bal > 0 ? "pl-up" : biz.bal < 0 ? "pl-dn" : "") + '">' + yen(biz.bal, true) + "</span></b></div>" : '<p class="note">この日の事業の記録はありません。</p>') +
+          btn + '<div class="note" id="jn-hubmsg" aria-live="polite"></div></div>';
+        // 今週の流れ
+        var wk = tradeWeekStrip(journal(), dailyIn(), hday);
+        var week = '<p class="kb-ps-h">今週の流れ</p><div class="jn-week">' + wk.map(function (c) {
+          return '<div class="' + (c.key === hday ? "sel" : "") + (c.key === todayK ? " today" : "") + '"><b>' + c.name + "</b>" +
+            (c.pnl !== null ? '<span class="' + (c.pnl > 0 ? "pl-up" : c.pnl < 0 ? "pl-dn" : "") + '">' + (c.pnl > 0 ? "+" : c.pnl < 0 ? "−" : "") + fmt(Math.abs(c.pnl), 0) + "</span>" : c.skip ? "見送り" : "―") + "</div>";
+        }).join("") + "</div>";
+        host.innerHTML = '<div class="pl-dayd">' + txt + '<p class="note">自動で集まった数字は下に並びます。数字は手入力のまま、ここでは見るだけです。</p></div>' +
+          '<div class="jn-panels">' + tpanel + bpanel + "</div>" + week;
+      };
+      var paint = function () {
+        rows = journal();
+        $("#jn-list").innerHTML = rows.length ? '<div class="tw"><table><tr><th>日時</th><th>銘柄</th><th>向き</th><th>損益</th><th>理由・反省</th><th></th></tr>' + rows.slice(0, 200).map(function (r) {
+          var sk = r.kind === "skip";
+          return "<tr><td>" + esc(C.jst(Date.parse(r.time))) + "</td><td>" + esc(sk ? "—" : r.key) + '</td><td class="' + esc(r.side) + '">' + (sk ? '<span class="tag">見送り</span>' : esc(SIDE[r.side] || r.side)) + "</td><td>" + (!sk && isFinite(r.pnl) && r.pnl !== null ? (r.pnl >= 0 ? "+" : "") + fmt(r.pnl, 0) : "—") +
+            "</td><td>" + esc((r.reason || "") + (r.reflection ? " ／ " + r.reflection : "")).slice(0, 300) + '</td><td><button type="button" class="btn" data-ed="' + esc(r.id) + '">編集</button> <button type="button" class="btn danger" data-del="' + esc(r.id) + '">削除</button></td></tr>';
+        }).join("") + "</table></div>" : '<p class="note">まだ記録がありません。</p>';
+        $("#jn-stats").innerHTML = stats(rows);
+        drawCal(); today(); paintHub();
+      };
+      var store = function (rec, msg) {
+        var all = journal().filter(function (x) { return x.id !== rec.id; }); all.unshift(rec);
+        all.sort(function (a, b) { return Date.parse(b.time) - Date.parse(a.time); });
+        if (put(JOURNAL, all, "日誌")) { draft = null; VIEWS.journal(); $("#jn-msg").textContent = msg; }
+      };
+      $("#jn-save").addEventListener("click", function () {
+        var t = Date.parse($("#jn-time").value);
+        if (!isFinite(t)) { $("#jn-more").open = true; $("#jn-msg").textContent = "日時を入れてください（「詳しく書く」の中）"; return; }
+        var pnl = $("#jn-pnl").value === "" ? NaN : Number($("#jn-pnl").value);
+        if ($("#jn-pnl").value !== "" && !isFinite(pnl)) { $("#jn-msg").textContent = "損益は数字で入れてください"; return; }
+        var rec = { id: d.id || uid(), time: new Date(t).toISOString(), day: C.dayKey(t), key: $("#jn-key").value, side: isSkip ? "" : $("#jn-side").value,
+          entry: num($("#jn-entry").value), exit: num($("#jn-exit").value), lots: num($("#jn-lots").value), pnl: isFinite(pnl) && !isSkip ? pnl : null, ccy: (get(RISK, {}) || {}).ccy || "JPY",
+          rules: $("#jn-rules").value, chart: $("#jn-chart").value.trim(), reason: $("#jn-reason").value.trim(), result: $("#jn-result").value.trim(), reflection: $("#jn-reflect").value.trim(), checkId: d.checkId || "" };
+        if (isSkip) rec.kind = "skip";
+        store(rec, "保存しました。");
+      });
+      var sk = $("#jn-skip");
+      if (sk) sk.addEventListener("click", function () {
+        var now = Date.now(), rec = { id: uid(), time: new Date(now).toISOString(), day: C.dayKey(now), kind: "skip", key: "other", side: "", pnl: null, rules: "", reason: $("#jn-skipmemo").value.trim(), result: "", reflection: "", checkId: "" };
+        store(rec, "見送りを記録しました（成績のまとめには入りません）。");
+      });
+      $("#jn-list").addEventListener("click", function (e) {
+        var ed = e.target.closest("[data-ed]"), del = e.target.closest("[data-del]");
+        if (ed) { draft = journal().filter(function (x) { return x.id === ed.getAttribute("data-ed"); })[0]; VIEWS.journal(); }
+        if (del && confirm("この記録を削除しますか？（元に戻せません）")) { put(JOURNAL, journal().filter(function (x) { return x.id !== del.getAttribute("data-del"); }), "日誌"); paint(); }
+      });
+      $("#jn-csv").addEventListener("click", function () { download("trade-journal-" + C.dayKey(Date.now()) + ".csv", C.toCSV(journal(), JCOLS), "text/csv"); });
+      $("#jn-imp").addEventListener("click", function () {
+        pickFile(".csv,text/csv", function (text) {
+          var r = C.importCSV(text, JCOLS, journal().map(function (x) { return x.id; }));
+          if (r.records.length) {
+            var all = journal().concat(r.records.map(function (x) { x.day = C.dayKey(Date.parse(x.time)); if (x.pnl == null) x.pnl = null; return x; }));
+            all.sort(function (a, b) { return Date.parse(b.time) - Date.parse(a.time); }); put(JOURNAL, all, "日誌");
+          }
+          $("#jn-msg").textContent = "読み込み：追加 " + r.records.length + "件・重複でスキップ " + r.skipped + "件" + (r.errors.length ? "・読めなかった行 " + r.errors.length + "件（" + r.errors.slice(0, 3).join("／") + "）" : "");
+          paint();
+        });
+      });
+      $("#jn-dprev").addEventListener("click", function () { jnDay = keyShift(hday, -1); VIEWS.journal(); });
+      $("#jn-dnext").addEventListener("click", function () { jnDay = keyShift(hday, 1); VIEWS.journal(); });
+      $("#jn-dtoday").addEventListener("click", function () { jnDay = todayK; VIEWS.journal(); });
+      // 転記：確認してから、家計簿の事業分へ1件だけ写す（同じ日は kbTransferTrade が二重に作らない）
+      $("#jn-hub").addEventListener("click", function (e) {
+        var b = e.target.closest("[data-jtr]"); if (!b) return;
+        var day = b.getAttribute("data-jtr"), total = tradeDayDetail(journal(), dailyIn(), day).total;
+        if (total === null || !total || kbTransferred(kakeibo(), day)) { paintHub(); return; }
+        if (!confirm(dayName(day) + "のトレード収支（" + yen(total, true) + "）を家計簿の事業分へ転記します。よろしいですか？")) return;
+        var all = kakeibo(), r = kbTransferTrade(all, day, total);
+        if (!r.created) { paintHub(); return; }
+        all.unshift(r.created);
+        if (put(KAKEIBO, all, "家計簿")) { VIEWS.journal(); var m = $("#jn-hubmsg"); if (m) m.textContent = "転記しました（家計簿の事業分に1件）。"; }
+      });
+      paint();
+    },
+
+    /* ---------- 収支（A）：日ごとの確定損益と入出金のカレンダー、週・月・年のまとめ、1日分の入力 ---------- */
+    pnl: function () {
+      var todayK = C.dayKey(Date.now()), sel = pnlSel || todayK, mode = pnlMode || "month";
+      var ym = (pnlMonth || todayK).slice(0, 7);
+      var yen = function (v, sign) { return v == null ? "—" : (sign && v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v), 0); };
+      var cls = function (v) { return v > 0 ? "pl-up" : v < 0 ? "pl-dn" : ""; };
+      // カレンダーの中は幅が狭いので、スマホでは1万以上を「万」で（例：+1.2万）。合計や一覧は円まで出す
+      var wide = body.clientWidth >= 640;  // iPad など広い画面では円まで、スマホでは1万以上を「万」で
+      var short = function (v, sign) { var a = Math.abs(v); return (sign && v > 0 ? "+" : v < 0 ? "−" : "") + (a >= (wide ? 1e6 : 1e4) ? (a / 1e4).toFixed(a >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "万" : fmt(a, 0)); };
+      var dayName = function (k) { var p = k.split("-").map(Number), w = "日月火水木金土"[new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay()]; return p[1] + "/" + p[2] + "（" + w + "）"; };
+      var di = dailyIn(), cur = di[sel] || {};
+      body.innerHTML = '<h3>トレード収支</h3>' +
+        '<div class="pl-head" id="pl-head"></div><div class="jcalh"><button type="button" id="pl-prev" aria-label="前の月">‹</button><b id="pl-title"></b><button type="button" id="pl-next" aria-label="次の月">›</button><button type="button" class="btn" id="pl-today">今日</button></div>' +
+        '<div class="pl-cal" id="pl-cal"></div><div id="pl-day" class="pl-dayd"></div>' +
+        '<div class="pl-in"><b>今日のトレード収支を入れる</b><div class="grid">' +
+        field("pl-dayin", "日付", sel, "date") + field("pl-pnl", "確定損益（円・手数料込み）", cur.pnl, "number") + field("pl-dep", "入金（円）", cur.dep, "number") + field("pl-wd", "出金（円）", cur.wd, "number") + "</div>" +
+        '<div class="btns"><button type="button" class="btn pri" id="pl-save">保存する</button><button type="button" class="btn danger" id="pl-clear">この日の入力を消す</button></div>' +
+        '<p class="note">空欄は「なし」。この日の確定損益を入れると、日誌の取引ごとの損益の合計ではなく、この数字をその日の損益にします（足しません）。入金・出金はここだけから数えます。</p><div class="note" id="pl-msg" aria-live="polite"></div></div>' +
+        '<h3>期間のまとめ</h3><div class="pl-seg" role="group" aria-label="期間">' + [["week", "週"], ["month", "月"], ["year", "年"]].map(function (x) { return '<button type="button" data-pm="' + x[0] + '" aria-pressed="' + (x[0] === mode) + '">' + x[1] + "</button>"; }).join("") + "</div>" +
+        '<div id="pl-sum"></div>';
+      var book = function () { return C.dailyBook(journal(), dailyIn()); };
+      var paintCal = function () {
+        var b = book(), y = +ym.slice(0, 4), mo = +ym.slice(5, 7), n = new Date(Date.UTC(y, mo, 0)).getUTCDate(), first = (new Date(Date.UTC(y, mo - 1, 1)).getUTCDay() + 6) % 7;
+        var z = function (x) { return String(x).padStart(2, "0"); }, cells = "";
+        ["月", "火", "水", "木", "金", "土", "日"].forEach(function (w, i) { cells += '<b class="' + (i === 5 ? "sat" : i === 6 ? "sun" : "") + '">' + w + "</b>"; });
+        for (var i = 0; i < first; i++) cells += "<i></i>";
+        var cum = 0, pts = [];
+        for (var dd = 1; dd <= n; dd++) {
+          var k = ym + "-" + z(dd), d = b[k] || {};
+          if (d.pnl != null) cum += d.pnl; pts.push(k <= todayK ? cum : null);
+          var lines = (d.pnl != null ? '<em class="' + cls(d.pnl) + '">' + short(d.pnl, true) + "</em>" : d.skip ? '<em class="pl-skip">見送り</em>' : "") +
+            (d.dep ? '<small class="pl-dep">入 ' + short(d.dep) + "</small>" : "") + (d.wd ? '<small class="pl-wd">出 ' + short(d.wd) + "</small>" : "");
+          cells += '<button type="button" data-pd="' + k + '" class="' + (k === todayK ? "now" : "") + (k === sel ? " sel" : "") + '" aria-label="' + esc(dayName(k) + (d.pnl != null ? " 損益 " + yen(d.pnl, true) + "円" : "")) + '"><span>' + dd + "</span>" + lines + "</button>";
+        }
+        $("#pl-cal").innerHTML = cells; $("#pl-title").textContent = y + "年" + mo + "月";
+        var s = C.periodSummary(b, ym + "-01", ym + "-" + z(n));
+        // 損益の積み上がり（月の初めから。今日より先は描かない）
+        var vals = pts.filter(function (v) { return v != null; }), lo = Math.min.apply(null, [0].concat(vals)), hi = Math.max.apply(null, [0].concat(vals)), W = 300, H = 44;
+        var X = function (i) { return 4 + i * (W - 8) / Math.max(1, n - 1); }, Y = function (v) { return hi === lo ? H / 2 : 4 + (hi - v) * (H - 8) / (hi - lo); };
+        var path = pts.map(function (v, i) { return v == null ? "" : X(i).toFixed(1) + "," + Y(v).toFixed(1); }).filter(Boolean).join(" ");
+        var spark = vals.length ? '<svg class="pl-spark" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" role="img" aria-label="月の損益の積み上がり"><line x1="0" x2="' + W + '" y1="' + Y(0).toFixed(1) + '" y2="' + Y(0).toFixed(1) + '" stroke="rgba(255,255,255,.18)" stroke-dasharray="3 3"/><polyline points="' + path + '" fill="none" stroke="' + (cum >= 0 ? "#5fd99a" : "#ff9d90") + '" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>' : "";
+        $("#pl-head").innerHTML = '<div class="pl-big"><small>' + mo + "月の確定損益</small><b class=\"" + cls(s.pnl) + '">' + (s.days ? yen(s.pnl, true) : "—") + '<i>円</i></b></div>' +
+          '<div class="pl-kv"><span>入金<b>' + yen(s.dep) + "</b></span><span>出金<b>" + yen(s.wd) + "</b></span><span>勝ち日<b>" + s.win + "</b></span><span>負け日<b>" + s.loss + "</b></span></div>" + spark;
+      };
+      var paintDay = function () {
+        var b = book(), d = b[sel] || {}, di2 = dailyIn()[sel], rows = journal().filter(function (r) { return (r.day || C.dayKey(Date.parse(r.time))) === sel; });
+        var h = "<b>" + dayName(sel) + "</b>　" + (d.pnl != null ? '損益 <span class="' + cls(d.pnl) + '">' + yen(d.pnl, true) + "円</span>（" + (d.src === "daily" ? "日次入力" : "日誌の取引の合計") + "）" : "損益の記録なし");
+        if (d.src === "daily" && d.trades) h += '<p class="note">この日は日次入力を正としています。日誌の取引 ' + d.trades + "件の損益は足していません。</p>";
+        if (di2) h += '<p class="note">日次入力：損益 ' + yen(di2.pnl == null || di2.pnl === "" ? null : +di2.pnl, true) + "・入金 " + yen(di2.dep) + "・出金 " + yen(di2.wd) + '　<button type="button" class="btn" id="pl-editday">入力欄で直す</button></p>';
+        h += rows.length ? '<div class="tw"><table><tr><th>時刻</th><th>銘柄</th><th>向き</th><th>損益</th><th></th></tr>' + rows.map(function (r) {
+          var sk = r.kind === "skip";
+          return "<tr><td>" + esc(C.jst(Date.parse(r.time), false)) + "</td><td>" + esc(sk ? "—" : r.key) + "</td><td>" + (sk ? '<span class="tag">見送り</span>' : esc(SIDE[r.side] || r.side || "")) + '</td><td class="' + cls(r.pnl) + '">' + (!sk && r.pnl != null && isFinite(r.pnl) ? yen(r.pnl, true) : "—") +
+            '</td><td><button type="button" class="btn" data-jed="' + esc(r.id) + '">日誌で編集</button></td></tr>';
+        }).join("") + "</table></div>" : '<p class="note">この日の日誌の記録はありません。</p>';
+        $("#pl-day").innerHTML = h;
+        var e = $("#pl-editday"); if (e) e.addEventListener("click", function () { pnlSel = sel; VIEWS.pnl(); $("#pl-pnl").focus(); });
+      };
+      var paintSum = function () {
+        var b = book(), z = function (x) { return String(x).padStart(2, "0"); }, y = +ym.slice(0, 4), mo = +ym.slice(5, 7), html = "";
+        var rng = mode === "week" ? C.weekOf(sel) : mode === "month" ? { from: ym + "-01", to: ym + "-" + z(new Date(Date.UTC(y, mo, 0)).getUTCDate()) } : { from: y + "-01-01", to: y + "-12-31" };
+        var s = C.periodSummary(b, rng.from, rng.to);
+        var label = mode === "week" ? dayName(rng.from) + "〜" + dayName(rng.to) + "（月曜はじまり）" : mode === "month" ? y + "年" + mo + "月" : y + "年";
+        html += '<p class="note">' + esc(label) + "</p>" + '<div class="pl-grid">' +
+          [["確定損益の合計", s.days ? '<b class="' + cls(s.pnl) + '">' + yen(s.pnl, true) + "円</b>" : "<b>—</b>"], ["勝ち日／負け日", "<b>" + s.win + "／" + s.loss + "</b>"], ["取引した日数", "<b>" + s.days + "日</b>"],
+           ["最大の勝ち日", s.best && s.best.pnl > 0 ? '<b class="pl-up">' + yen(s.best.pnl, true) + "</b><small>" + dayName(s.best.day) + "</small>" : "<b>—</b>"],
+           ["最大の負け日", s.worst && s.worst.pnl < 0 ? '<b class="pl-dn">' + yen(s.worst.pnl, true) + "</b><small>" + dayName(s.worst.day) + "</small>" : "<b>—</b>"],
+           ["入金／出金", "<b>" + yen(s.dep) + "／" + yen(s.wd) + "</b>"]].map(function (x) { return "<div><span>" + x[0] + "</span>" + x[1] + "</div>"; }).join("") + "</div>";
+        if (mode === "year") {
+          var ms = []; for (var m = 1; m <= 12; m++) { var n = new Date(Date.UTC(y, m, 0)).getUTCDate(); ms.push(C.periodSummary(b, y + "-" + z(m) + "-01", y + "-" + z(m) + "-" + z(n))); }
+          var mx = Math.max.apply(null, ms.map(function (x) { return Math.abs(x.pnl); }).concat([1])), nowYm = todayK.slice(0, 7);
+          html += '<div class="tw"><table class="pl-year"><tr><th>月</th><th>確定損益</th><th class="pl-barh">月ごとの損益</th><th>勝ち／負け</th><th>入金／出金</th></tr>' + ms.map(function (x, i) {
+            var k = y + "-" + z(i + 1), w = (Math.abs(x.pnl) / mx * 50).toFixed(1);
+            return '<tr class="' + (k === nowYm ? "now" : "") + '"><td>' + (i + 1) + "月" + (k === nowYm ? '<span class="tag">今月</span>' : "") + '</td><td class="' + cls(x.pnl) + '">' + (x.days ? yen(x.pnl, true) : "—") +
+              '</td><td class="pl-barc"><span class="pl-bar"><i class="' + (x.pnl >= 0 ? "up" : "dn") + '" style="' + (x.pnl >= 0 ? "left:50%" : "right:50%") + ";width:" + (x.days ? w : 0) + '%"></i></span></td><td>' + x.win + "／" + x.loss + "</td><td>" + yen(x.dep) + "／" + yen(x.wd) + "</td></tr>";
+          }).join("") + "</table></div>";
+        }
+        $("#pl-sum").innerHTML = html;
+        body.querySelectorAll("[data-pm]").forEach(function (bt) { bt.setAttribute("aria-pressed", bt.getAttribute("data-pm") === mode ? "true" : "false"); });
+      };
+      var paint = function () { paintCal(); paintDay(); paintSum(); };
+      var shift = function (dm) { var y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1 + dm; y += Math.floor(m / 12); m = ((m % 12) + 12) % 12; ym = y + "-" + String(m + 1).padStart(2, "0"); pnlMonth = ym + "-01"; paint(); };
+      $("#pl-prev").addEventListener("click", function () { shift(-1); });
+      $("#pl-next").addEventListener("click", function () { shift(1); });
+      $("#pl-today").addEventListener("click", function () { sel = todayK; pnlSel = sel; ym = todayK.slice(0, 7); pnlMonth = todayK; $("#pl-dayin").value = sel; load(); paint(); });
+      $("#pl-cal").addEventListener("click", function (e) { var b = e.target.closest("[data-pd]"); if (!b) return; sel = pnlSel = b.getAttribute("data-pd"); $("#pl-dayin").value = sel; load(); paint(); });
+      body.querySelectorAll("[data-pm]").forEach(function (bt) { bt.addEventListener("click", function () { mode = pnlMode = bt.getAttribute("data-pm"); paintSum(); }); });
+      var load = function () { var v = dailyIn()[$("#pl-dayin").value] || {}; $("#pl-pnl").value = v.pnl == null ? "" : v.pnl; $("#pl-dep").value = v.dep == null ? "" : v.dep; $("#pl-wd").value = v.wd == null ? "" : v.wd; };
+      $("#pl-dayin").addEventListener("change", function () { if (/^\d{4}-\d\d-\d\d$/.test(this.value)) { sel = pnlSel = this.value; ym = sel.slice(0, 7); pnlMonth = sel; load(); paint(); } });
+      var numOrNull = function (id) { var v = $(id).value.trim(); if (v === "") return null; var x = Number(v); return isFinite(x) ? x : NaN; };
+      $("#pl-save").addEventListener("click", function () {
+        var k = $("#pl-dayin").value, v = { pnl: numOrNull("#pl-pnl"), dep: numOrNull("#pl-dep"), wd: numOrNull("#pl-wd") };
+        if (!/^\d{4}-\d\d-\d\d$/.test(k)) { $("#pl-msg").textContent = "日付を入れてください。"; return; }
+        if ([v.pnl, v.dep, v.wd].some(function (x) { return x !== null && !isFinite(x); })) { $("#pl-msg").textContent = "金額は数字で入れてください。"; return; }
+        if ((v.dep !== null && v.dep < 0) || (v.wd !== null && v.wd < 0)) { $("#pl-msg").textContent = "入金・出金は0以上の数字で入れてください（出金は出金の欄へ）。"; return; }
+        var all = dailyIn();
+        if (v.pnl === null && v.dep === null && v.wd === null) delete all[k]; else { v.at = new Date().toISOString(); all[k] = v; }
+        if (put(DAILY, all, "トレード収支")) { sel = pnlSel = k; ym = k.slice(0, 7); pnlMonth = k; paint(); $("#pl-msg").textContent = dayName(k) + "のトレード収支を保存しました。"; }
+      });
+      $("#pl-clear").addEventListener("click", function () {
+        var k = $("#pl-dayin").value, all = dailyIn(); if (!all[k]) { $("#pl-msg").textContent = "この日の日次入力はありません。"; return; }
+        if (!confirm(dayName(k) + "の日次入力（損益・入金・出金）を消します。日誌の取引の記録は消えません。よろしいですか？")) return;
+        delete all[k]; if (put(DAILY, all, "トレード収支")) { load(); paint(); $("#pl-msg").textContent = "消しました。"; }
+      });
+      paint();
+      $("#pl-day").addEventListener("click", function (e) { var b = e.target.closest("[data-jed]"); if (!b) return; draft = journal().filter(function (x) { return x.id === b.getAttribute("data-jed"); })[0]; show("journal"); });
+    },
+
+    /* ---------- 家計簿：家の収入と支出を月ごとに（トレード収支とは別。この端末の中だけに保存） ---------- */
+    kakeibo: function () {
+      var todayK = C.dayKey(Date.now()), ym = kbYm || todayK.slice(0, 7), ed = kbEdit;
+      var yen = function (v, sign) { return (sign && v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v), 0); };
+      var dayName = function (k) { var p = k.split("-").map(Number), w = "日月火水木金土"[new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay()]; return p[1] + "/" + p[2] + "（" + w + "）"; };
+      var modeSeg = '<div class="pl-seg" role="group" aria-label="月別と申告用の切り替え">' + [["month", "月別"], ["tax", "申告用"]].map(function (x) { return '<button type="button" data-km="' + x[0] + '" aria-pressed="' + (x[0] === kbMode) + '">' + x[1] + "</button>"; }).join("") + "</div>";
+      var wireMode = function () { body.querySelectorAll("[data-km]").forEach(function (b) { b.addEventListener("click", function () { kbMode = b.getAttribute("data-km"); kbEdit = null; VIEWS.kakeibo(); }); }); };
+      var dl = function (name, text) { try { download(name, text, "text/csv"); } catch (e) { /* 書き出しが止められても画面はそのままにする */ } };
+      var catsHtml = function (list, unit) {
+        var outs = kbCatSums(list, "out"), ins = kbCatSums(list, "in"), mx = outs.length ? outs[0].sum : 0;
+        return '<p class="note"><b>支出</b></p>' + (outs.length ? outs.map(function (c) {
+          return '<div class="kb-cat"><span>' + esc(c.cat) + '</span><span class="kb-bar"><i style="width:' + (mx ? Math.max(2, c.sum / mx * 100) : 0) + '%"></i></span><span class="kb-amt pl-dn">¥' + fmt(c.sum, 0) + "</span></div>";
+        }).join("") : '<p class="note">この' + unit + 'の支出はまだありません。</p>') +
+          '<p class="note"><b>収入</b></p>' + (ins.length ? '<div class="tw"><table>' + ins.map(function (c) { return "<tr><td>" + esc(c.cat) + '</td><td class="kb-amt pl-up">¥' + fmt(c.sum, 0) + "</td></tr>"; }).join("") + "</table></div>" : '<p class="note">この' + unit + 'の収入はまだありません。</p>');
+      };
+      /* ---------- 申告用：医療費控除の目安と年間の収支まとめ ---------- */
+      if (kbMode === "tax") {
+        var year = kbYear || +todayK.slice(0, 4);
+        var all = kakeibo(), yl = kbYearList(all, year), yt = kbTotals(yl);
+        var meds = kbMedical(all, year), mt = kbMedTotals(meds);
+        /* --- 事業の収支・借入・減価償却の材料（自動計算分は資産と借入から） --- */
+        var loans = kbLoans(), assets = kbAssets();
+        var loanCalc = loans.map(function (l) { return { loan: l, am: kbAmortize(l) }; });
+        var depAuto = 0, intAuto = 0;
+        assets.forEach(function (a) { depAuto += kbDepForYear(a, year).biz; });
+        loanCalc.forEach(function (c) { if (c.loan.purpose === "事業") { var yr = c.am.years[year]; if (yr) intAuto += Math.round(yr.interest * c.loan.bizRatio / 100); } });
+        var biz = kbBizSummary(all, year, depAuto, intAuto), bizInCats = kbCatSums(yl.filter(function (e) { return e.scope === "biz"; }), "in");
+        var lnEd = kbLoanEdit, asEd = kbAssetEdit;
+        /* --- 住宅ローン控除の申請ガイド：あなたの場合は＋ルート別の手順と書類チェック（チェック状態は端末に保存） --- */
+        var hcPersonal = kbHcPersonal(loans, year);
+        var hcState = kbHcGuideNorm(get(KAKEIBO_HCGUIDE, {}));
+        var hcEntry = kbHcYearEntry(hcState, year, hcPersonal);
+        var hcGuideInner = function () {
+          var r = KB_HC_ROUTES[hcEntry.route] || KB_HC_ROUTES.B, prog = kbHcProgress(hcEntry.route, hcEntry.checks);
+          var s = '<h3>住宅ローン控除の申請ガイド</h3>' +
+            '<p class="note">住宅ローン控除（住宅借入金等特別控除）を受けるための手続きを、状況に合わせて案内します。金額は目安です。個別の判断は税務署・税理士に確認してください。</p>';
+          if (hcPersonal) s += '<div class="hc-box"><b>あなたの場合は</b><div class="hc-big">あなたは ' + hcPersonal.nth + '年目です。今年は' + (hcPersonal.nth === 1 ? "確定申告" : "年末調整") + 'で受けられます。</div>' +
+            '<p class="note">控除額の目安 ¥' + fmt(hcPersonal.credit, 0) + '（控除期間' + hcPersonal.years + '年のうちの' + hcPersonal.nth + '年目）。給与以外の所得がある人は、毎年、確定申告で受けます。当てはまる人は、下のルートCを選んでください。</p></div>';
+          s += '<p class="note"><b>あなたはどっち？</b> 当てはまるものを選ぶと、その手順と書類だけが出ます。</p>' +
+            '<div class="hc-routes" role="group" aria-label="申請のルートを選ぶ">' + KB_HC_ROUTE_ORDER.map(function (k) { var rt = KB_HC_ROUTES[k]; return '<button type="button" data-hcroute="' + k + '" aria-pressed="' + (k === hcEntry.route) + '">' + esc(rt.label) + "<small>" + esc(rt.sub) + "</small></button>"; }).join("") + "</div>" +
+            r.steps.map(function (st, i) { return '<div class="hc-step"><span class="hc-n">' + (i + 1) + '</span><div><b>' + esc(st.title) + '</b><p class="note">' + esc(st.note) + "</p></div></div>"; }).join("") +
+            '<p class="note"><b>そろえる書類</b>　<span class="hc-prog">' + prog.total + "つのうち " + prog.done + 'つ そろいました</span>（印はこの端末に保存されます）</p>' +
+            r.docs.map(function (id) { var doc = KB_HC_DOCS[id]; return '<label class="hc-doc"><input type="checkbox" data-hcdoc="' + id + '"' + (hcEntry.checks[id] ? " checked" : "") + '><span><b>' + esc(doc.name) + "</b>" + (doc.formal ? '<span class="hc-formal">正式な名前：' + esc(doc.formal) + "</span>" : "") + '<span class="note">' + esc(doc.note) + "</span></span></label>"; }).join("") +
+            '<p class="note"><b>よくある失敗</b></p><ul class="steps">' + KB_HC_FAILS.map(function (f) { return "<li>" + esc(f) + "</li>"; }).join("") + "</ul>" +
+            '<p class="note">令和6・7年入居の制度での目安です。最新は国税庁で確認を。</p>';
+          return s;
+        };
+        var wireGuide = function () {
+          var g = $("#kb-hcguide"); if (!g) return;
+          g.querySelectorAll("[data-hcroute]").forEach(function (b) { b.addEventListener("click", function () { hcEntry.route = b.getAttribute("data-hcroute"); hcState[String(year)] = hcEntry; put(KAKEIBO_HCGUIDE, hcState, "家計簿"); paintGuide(); }); });
+          g.querySelectorAll("[data-hcdoc]").forEach(function (cb) { cb.addEventListener("change", function () { var id = cb.getAttribute("data-hcdoc"); if (cb.checked) hcEntry.checks[id] = true; else delete hcEntry.checks[id]; hcState[String(year)] = hcEntry; put(KAKEIBO_HCGUIDE, hcState, "家計簿"); paintGuide(); }); });
+        };
+        var paintGuide = function () { var g = $("#kb-hcguide"); if (g) { g.innerHTML = hcGuideInner(); wireGuide(); } };
+        var bizHtml = '<h3>事業の収支（' + year + '年）</h3>' +
+          '<p class="note">月別で「事業」を選んだ記録を、収支内訳表の科目の並びでまとめました。減価償却費と利子割引料の（自動計算）は、下の資産・借入から計算した分です。手入力の分と重ねて入れないでください。</p>' +
+          ((biz.inc || biz.lines.length) ? '<div class="tw"><table><tr><th>区分</th><th>科目</th><th>金額</th></tr>' +
+            bizInCats.map(function (c) { return '<tr><td>収入</td><td>' + esc(c.cat) + '</td><td class="kb-amt pl-up">¥' + fmt(c.sum, 0) + "</td></tr>"; }).join("") +
+            biz.lines.map(function (l) { return '<tr><td>支出</td><td>' + esc(l.cat) + '</td><td class="kb-amt pl-dn">¥' + fmt(l.sum, 0) + "</td></tr>"; }).join("") + "</table></div>" : '<p class="note">この年の事業の記録はまだありません。月別で「事業」を選んで記録すると、ここに並びます。</p>') +
+          '<div class="pl-kv"><span>収入合計<b class="pl-up">¥' + fmt(biz.inc, 0) + '</b></span><span>経費合計<b class="pl-dn">¥' + fmt(biz.exp, 0) + '</b></span><span>差額<b>¥' + fmt(biz.bal, 0) + "</b></span></div>" +
+          '<p class="note">差額は事業所得の目安です（青色申告特別控除・専従者給与などは含みません）。</p>' +
+          '<div class="btns"><button type="button" class="btn" id="kb-bizcsv">事業収支をCSVで書き出す</button></div>';
+        var loanHtml = '<h3>借入と返済の内訳</h3>' +
+          '<p class="note">借入を登録すると、元利均等返済として年ごとの元本と利息、年末残高を計算します。保証料は返済の計算には含めず、借りた年にメモとして出します（経費になるかは契約内容によります）。</p>' +
+          '<div class="pl-in"><b>' + (lnEd ? "借入を直す" : "借入を足す") + '</b>' +
+          '<div class="grid">' +
+          field("kb-ln-name", "名前", lnEd ? lnEd.name : "", "text", ' placeholder="例：住宅ローン"') +
+          select("kb-ln-purpose", "使いみち", KB_LOAN_PURPOSES.map(function (p) { return [p, p]; }), lnEd ? lnEd.purpose : "住宅") +
+          field("kb-ln-principal", "借入額（円）", lnEd ? lnEd.principal : "", "number") +
+          field("kb-ln-rate", "金利（年・%）", lnEd ? lnEd.ratePct : "", "number") +
+          field("kb-ln-monthly", "毎月の返済額（円）", lnEd ? lnEd.monthly : "", "number") +
+          field("kb-ln-start", "返済を始めた月", lnEd ? lnEd.startYm : "", "month") +
+          field("kb-ln-guarantee", "保証料（円・任意）", lnEd && lnEd.guarantee ? lnEd.guarantee : "", "number") +
+          field("kb-ln-biz", "事業に使う割合（%）", lnEd ? lnEd.bizRatio : "", "number", ' placeholder="空欄なら住宅0・事業100"') +
+          '<span id="kb-ln-homewrap">' + select("kb-ln-home", "住宅の種類（住宅ローン控除）", KB_HOME_TYPES.map(function (t) { return [t, t]; }), lnEd && lnEd.homeType ? lnEd.homeType : "一般（新築）") + "</span>" +
+          "</div>" +
+          '<div class="btns"><button type="button" class="btn pri" id="kb-lnsave">' + (lnEd ? "更新する" : "追加する") + "</button>" + (lnEd ? '<button type="button" class="btn" id="kb-lncancel">編集をやめる</button>' : "") + "</div>" +
+          '<div class="note" id="kb-lnmsg" aria-live="polite"></div></div>' +
+          '<div id="kb-lnlist">' + (loanCalc.length ? loanCalc.map(function (c) {
+            var l = c.loan, am = c.am, yr = am.years[year], startYear = +l.startYm.slice(0, 4), s = "";
+            s += '<div class="pl-in"><b>' + esc(l.name || (l.purpose + "の借入")) + '</b> <span class="tag">' + esc(l.purpose) + "</span>" +
+              '<div class="pl-kv"><span>借入額<b>¥' + fmt(l.principal, 0) + '</b></span><span>金利<b>' + fmt(l.ratePct, 2) + '%</b></span><span>毎月の返済<b>¥' + fmt(l.monthly, 0) + '</b></span><span>返済開始<b>' + esc(l.startYm.replace("-", "年")) + "月</b></span>" + (l.bizRatio ? '<span>事業の割合<b>' + fmt(l.bizRatio, 0) + "%</b></span>" : "") + "</div>";
+            if (yr) s += '<p class="note">' + year + '年の内訳：元本 ¥' + fmt(yr.principal, 0) + " ・ 利息 ¥" + fmt(yr.interest, 0) + " ・ 年末残高 ¥" + fmt(yr.endBalance, 0) + "（" + yr.months + "か月分）</p>";
+            else s += '<p class="note">' + year + "年の返済記録はありません" + (am.paidOff && year > startYear ? "（完済済み）" : year < startYear ? "（借入を始める前）" : "") + "。</p>";
+            if (l.guarantee > 0 && startYear === year) s += '<p class="note">保証料 ¥' + fmt(l.guarantee, 0) + "（借りた年に記録）</p>";
+            if (am.stuck) s += '<p class="warn">毎月の返済額が利息以下のため、元本が減りません。返済額を見直してください。</p>';
+            var hcJump = "";
+            if (l.purpose === "住宅") {
+              if (!yr) s += '<p class="note">住宅ローン控除：' + (year < startYear ? "借入を始める前の年です。" : "この年の年末残高がないため、目安は出せません。") + "</p>";
+              else {
+                var hc = kbHomeCredit(l, year, yr.endBalance);
+                if (!hc.ok) s += '<p class="note">住宅ローン控除：' + esc(hc.reason) + "</p>";
+                else s += '<p class="note"><b>住宅ローン控除の目安</b>（' + hc.nth + "年目／" + hc.years + "年）</p>" +
+                  '<div class="pl-kv"><span>年末残高<b>¥' + fmt(yr.endBalance, 0) + '</b></span><span>借入限度額<b>¥' + fmt(hc.limit, 0) + '</b></span><span>控除額の目安<b class="pl-up">¥' + fmt(hc.credit, 0) + "</b></span></div>" +
+                  '<p class="note">年末残高と借入限度額の小さいほう × 0.7%です。入居した年は、返済を始めた年で代用しています。要件には、控除を受ける年の合計所得金額が2,000万円以下、床面積が原則50㎡以上などがあります。</p>';
+                hcJump = ' <button type="button" class="btn" data-hcgo="1">申請の手順は下の申請ガイドへ</button>';
+              }
+              s += '<p class="note">令和6・7年入居の制度での目安です。最新は国税庁で確認を。</p>';
+            }
+            s += '<div class="btns"><button type="button" class="btn" data-lned="' + esc(l.id) + '">編集</button> <button type="button" class="btn danger" data-lndel="' + esc(l.id) + '">削除</button>' + hcJump + "</div></div>";
+            return s;
+          }).join("") : '<p class="note">借入はまだ登録がありません。上の欄から足せます。</p>') + "</div>" +
+          '<div id="kb-hcguide">' + hcGuideInner() + "</div>";
+        var assetHtml = '<h3>減価償却の資産</h3>' +
+          '<p class="note">10万円以上の備品や建物などは、耐用年数に分けて少しずつ経費にします（定額法）。登録すると、その年の償却費のうち事業に使う割合分を、事業の収支へ自動で入れます。</p>' +
+          '<div class="pl-in"><b>' + (asEd ? "資産を直す" : "資産を足す") + '</b>' +
+          '<div class="grid">' +
+          field("kb-as-name", "名前", asEd ? asEd.name : "", "text", ' placeholder="例：パソコン"') +
+          field("kb-as-date", "買った日", asEd ? asEd.date : todayK, "date") +
+          field("kb-as-price", "買った金額（円）", asEd ? asEd.price : "", "number") +
+          field("kb-as-life", "耐用年数（年）", asEd ? asEd.life : "", "number") +
+          select("kb-as-pick", "耐用年数の目安", [["", "目安から選ぶ（任意）"], ["4", "パソコン（4年）"], ["6", "普通自動車（6年）"], ["6", "エアコン（6年）"], ["6", "冷蔵庫（6年）"], ["8", "家具・応接セットなど（8年）"], ["22", "木造の住宅（22年）"], ["47", "鉄骨鉄筋コンクリートの住宅（47年）"]].map(function (o) { return o; }), "") +
+          field("kb-as-biz", "事業に使う割合（%）", asEd ? asEd.bizRatio : "", "number", ' placeholder="空欄なら100"') +
+          "</div>" +
+          '<div class="btns"><button type="button" class="btn pri" id="kb-assave">' + (asEd ? "更新する" : "追加する") + "</button>" + (asEd ? '<button type="button" class="btn" id="kb-ascancel">編集をやめる</button>' : "") + "</div>" +
+          '<div class="note" id="kb-asmsg" aria-live="polite"></div></div>' +
+          (assets.length ? '<div class="tw"><table><tr><th>名前</th><th>買った日</th><th>金額</th><th>耐用年数</th><th>事業の割合</th><th>' + year + '年の償却費（事業分）</th><th></th></tr>' + assets.map(function (a) {
+            var d = kbDepForYear(a, year);
+            return "<tr><td>" + esc(a.name || "資産") + "</td><td>" + esc(dayName(a.date)) + '</td><td class="kb-amt">¥' + fmt(a.price, 0) + "</td><td>" + a.life + '年</td><td>' + fmt(a.bizRatio, 0) + '%</td><td class="kb-amt pl-dn">¥' + fmt(d.biz, 0) + (d.total !== d.biz ? "（全体 ¥" + fmt(d.total, 0) + "）" : "") + '</td><td><button type="button" class="btn" data-ased="' + esc(a.id) + '">編集</button> <button type="button" class="btn danger" data-asdel="' + esc(a.id) + '">削除</button></td></tr>';
+          }).join("") + "</table></div>" +
+          '<div class="pl-kv"><span>' + year + '年の償却費の合計（事業分）<b class="pl-dn">¥' + fmt(depAuto, 0) + "</b></span></div>" : '<p class="note">資産はまだ登録がありません。上の欄から足せます。</p>');
+        body.innerHTML = '<h3>家計簿</h3><p class="note">確定申告の準備に使う、年単位のまとめです。記録そのものは月別と同じ家計簿のデータで、この端末の中だけに保存します。</p>' + modeSeg +
+          '<div class="jcalh"><button type="button" id="kb-yprev" aria-label="前の年">‹</button><b>' + year + '年</b><button type="button" id="kb-ynext" aria-label="次の年">›</button><button type="button" class="btn" id="kb-ythis">今年</button></div>' +
+          '<h3>医療費控除（' + year + '年）</h3>' +
+          (meds.length ? '<div class="tw"><table><tr><th>日付</th><th>受けた人</th><th>支払先</th><th>区分</th><th>支払額</th><th>補填額</th></tr>' + meds.map(function (e) {
+            return "<tr><td>" + esc(dayName(e.date)) + "</td><td>" + esc(e.person || "") + "</td><td>" + esc(e.payee || "") + "</td><td>" + esc(kbMkind(e) || "—") + '</td><td class="kb-amt pl-dn">¥' + fmt(e.amount, 0) + '</td><td class="kb-amt">' + (e.reimb > 0 ? "−¥" + fmt(e.reimb, 0) : "¥0") + "</td></tr>";
+          }).join("") + "</table></div>" : '<p class="note">' + year + '年の医療の支出はまだ記録がありません。月別で、支出・カテゴリ「医療」として記録すると、ここに並びます。</p>') +
+          '<div class="pl-kv"><span>支払った医療費の合計<b class="pl-dn">¥' + fmt(mt.paid, 0) + '</b></span><span>補填される金額の合計<b>¥' + fmt(mt.reimb, 0) + '</b></span><span>差引<b>¥' + fmt(mt.net, 0) + "</b></span></div>" +
+          '<div class="grid">' + field("kb-inc", "総所得金額等（任意・円）", kbIncome, "number") + "</div>" +
+          '<div id="kb-medcalc"></div>' +
+          '<p class="note">これは目安です。実際の控除額は、ほかの条件でも変わります。</p>' +
+          '<p class="note">セルフメディケーション税制とは併用できません。どちらか一方を選ぶ制度です。</p>' +
+          '<p class="note">領収書の保管が必要です。明細は領収書をもとに記録してください。</p>' +
+          '<p class="note">最終的な計算と申告は、e-Taxや税務署で確かめてください。</p>' +
+          '<div class="btns"><button type="button" class="btn" id="kb-medcsv">医療費の明細をCSVで書き出す</button></div>' +
+          '<h3>年間収支まとめ（' + year + '年）</h3>' +
+          '<div class="pl-head"><div class="pl-big"><small>' + year + '年の差額（収入−支出）</small><b class="' + (yt.bal < 0 ? "pl-dn" : "") + '">' + (yl.length ? yen(yt.bal, true) : "—") + '<i>円</i></b></div>' +
+          '<div class="pl-kv"><span>収入合計<b class="pl-up">' + yen(yt.inc) + '</b></span><span>支出合計<b class="pl-dn">' + yen(yt.out) + '</b></span><span>記録<b>' + yl.length + "件</b></span></div></div>" +
+          '<div class="tw"><table><tr><th>月</th><th>収入</th><th>支出</th><th>差額</th></tr>' + kbMonthlyOfYear(all, year).map(function (m) {
+            return "<tr><td>" + m.month + "月</td>" + (m.count ? '<td class="kb-amt pl-up">¥' + fmt(m.inc, 0) + '</td><td class="kb-amt pl-dn">¥' + fmt(m.out, 0) + '</td><td class="kb-amt">' + yen(m.bal, true) + "円</td>" : '<td colspan="3" class="note">—</td>') + "</tr>";
+          }).join("") + "</table></div>" +
+          '<h3>カテゴリ別の合計（' + year + '年）</h3><div id="kb-ycats"></div>' +
+          '<div class="btns"><button type="button" class="btn" id="kb-ancsv">年間収支をCSVで書き出す</button></div>' + bizHtml + loanHtml + assetHtml;
+        wireMode();
+        wireGuide();
+        $("#kb-ycats").innerHTML = catsHtml(yl, "年");
+        $("#kb-yprev").addEventListener("click", function () { kbYear = year - 1; VIEWS.kakeibo(); });
+        $("#kb-ynext").addEventListener("click", function () { kbYear = year + 1; VIEWS.kakeibo(); });
+        $("#kb-ythis").addEventListener("click", function () { kbYear = +todayK.slice(0, 4); VIEWS.kakeibo(); });
+        var paintMedCalc = function () {
+          var raw = $("#kb-inc") ? $("#kb-inc").value : "";
+          kbIncome = raw;
+          var inc = raw === "" ? null : Number(raw);
+          if (inc !== null && (!isFinite(inc) || inc < 0)) inc = null;
+          var d = kbDeduction(mt.net, inc);
+          $("#kb-medcalc").innerHTML = '<div class="pl-kv"><span>足切り額<b>¥' + fmt(d.ashikiri, 0) + "</b>（" + esc(d.basis) + '）</span><span>控除額の目安<b class="pl-up">¥' + fmt(d.est, 0) + "</b></span></div>" +
+            '<p class="note">計算の仕方：控除額の目安 ＝ 差引（¥' + fmt(mt.net, 0) + "）− 足切り額（" + (inc === null ? "10万円" : "総所得金額等の5%と10万円のうち低い方") + "）。" + (d.capped ? "目安が大きいため、上限の200万円で止めています。" : "") + "</p>";
+        };
+        var incEl = $("#kb-inc"); if (incEl) incEl.addEventListener("input", paintMedCalc);
+        paintMedCalc();
+        $("#kb-medcsv").addEventListener("click", function () { dl("iryouhi-" + year + ".csv", kbMedCSV(meds)); });
+        $("#kb-ancsv").addEventListener("click", function () { dl("nenkanshushi-" + year + ".csv", kbAnnualCSV(all, year)); });
+        $("#kb-bizcsv").addEventListener("click", function () { dl("jigyoshushi-" + year + ".csv", kbBizCSV(all, year, biz)); });
+        /* --- 借入の登録・編集・削除 --- */
+        var lnPurpose = $("#kb-ln-purpose"), lnHomeWrap = $("#kb-ln-homewrap");
+        var syncLnHome = function () { if (lnHomeWrap) lnHomeWrap.style.display = lnPurpose && lnPurpose.value === "住宅" ? "" : "none"; };
+        if (lnPurpose) lnPurpose.addEventListener("change", syncLnHome);
+        syncLnHome();
+        $("#kb-lnsave").addEventListener("click", function () {
+          var msg = $("#kb-lnmsg"), purpose = lnPurpose.value;
+          var principal = Number($("#kb-ln-principal").value), rate = Number($("#kb-ln-rate").value), monthly = Number($("#kb-ln-monthly").value), startYm = $("#kb-ln-start").value;
+          var guarantee = Number($("#kb-ln-guarantee").value), bizRaw = $("#kb-ln-biz").value, bizR = bizRaw === "" ? kbBizRatioDef(purpose) : Number(bizRaw);
+          if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(startYm)) { msg.textContent = "返済を始めた月を入れてください。"; return; }
+          if (!isFinite(principal) || principal <= 0) { msg.textContent = "借入額は0より大きい数字で入れてください。"; return; }
+          if (!isFinite(monthly) || monthly <= 0) { msg.textContent = "毎月の返済額は0より大きい数字で入れてください。"; return; }
+          if (!isFinite(rate) || rate < 0) rate = 0;
+          if (!isFinite(guarantee) || guarantee < 0) guarantee = 0;
+          if (!isFinite(bizR)) bizR = kbBizRatioDef(purpose);
+          bizR = Math.min(100, Math.max(0, bizR));
+          var rec = { id: lnEd ? lnEd.id : uid(), name: $("#kb-ln-name").value.trim() || (purpose + "の借入"), purpose: purpose, principal: principal, ratePct: rate, monthly: monthly, startYm: startYm, guarantee: guarantee, bizRatio: bizR };
+          if (purpose === "住宅") rec.homeType = $("#kb-ln-home").value;
+          var arr = kbLoans().filter(function (x) { return x.id !== rec.id; }); arr.unshift(rec);
+          if (put(KAKEIBO_LOANS, arr, "家計簿")) { kbLoanEdit = null; VIEWS.kakeibo(); }
+        });
+        var lnCancel = $("#kb-lncancel"); if (lnCancel) lnCancel.addEventListener("click", function () { kbLoanEdit = null; VIEWS.kakeibo(); });
+        $("#kb-lnlist").addEventListener("click", function (e) {
+          var go = e.target.closest("[data-hcgo]");
+          if (go) { var gel = $("#kb-hcguide"); if (gel) gel.scrollIntoView({ block: "start", behavior: "smooth" }); return; }
+          var del = e.target.closest("[data-lndel]"), edb = e.target.closest("[data-lned]");
+          if (del) { var did = del.getAttribute("data-lndel"); if (confirm("この借入を削除しますか？（元に戻せません）") && put(KAKEIBO_LOANS, kbLoans().filter(function (x) { return x.id !== did; }), "家計簿")) { if (kbLoanEdit && kbLoanEdit.id === did) kbLoanEdit = null; VIEWS.kakeibo(); } return; }
+          if (edb) { kbLoanEdit = kbLoans().filter(function (x) { return x.id === edb.getAttribute("data-lned"); })[0] || null; VIEWS.kakeibo(); }
+        });
+        /* --- 減価償却の資産の登録・編集・削除 --- */
+        var asPick = $("#kb-as-pick");
+        if (asPick) asPick.addEventListener("change", function () { if (asPick.value) $("#kb-as-life").value = asPick.value; });
+        $("#kb-assave").addEventListener("click", function () {
+          var msg = $("#kb-asmsg"), date = $("#kb-as-date").value, price = Number($("#kb-as-price").value), life = Math.round(Number($("#kb-as-life").value));
+          var bizRaw = $("#kb-as-biz").value, bizR = bizRaw === "" ? 100 : Number(bizRaw);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { msg.textContent = "買った日を入れてください。"; return; }
+          if (!isFinite(price) || price <= 0) { msg.textContent = "買った金額は0より大きい数字で入れてください。"; return; }
+          if (!isFinite(life) || life < 2) { msg.textContent = "耐用年数は2年以上の数字で入れてください（目安からも選べます）。"; return; }
+          if (!isFinite(bizR)) bizR = 100;
+          bizR = Math.min(100, Math.max(0, bizR));
+          var rec = { id: asEd ? asEd.id : uid(), name: $("#kb-as-name").value.trim() || "資産", date: date, price: price, life: life, bizRatio: bizR };
+          var arr = kbAssets().filter(function (x) { return x.id !== rec.id; }); arr.unshift(rec);
+          if (put(KAKEIBO_ASSETS, arr, "家計簿")) { kbAssetEdit = null; VIEWS.kakeibo(); }
+        });
+        var asCancel = $("#kb-ascancel"); if (asCancel) asCancel.addEventListener("click", function () { kbAssetEdit = null; VIEWS.kakeibo(); });
+        body.querySelectorAll("[data-ased], [data-asdel]").forEach(function (b) { b.addEventListener("click", function () {
+          var delId = b.getAttribute("data-asdel"), edId = b.getAttribute("data-ased");
+          if (delId) { if (confirm("この資産を削除しますか？（元に戻せません）") && put(KAKEIBO_ASSETS, kbAssets().filter(function (x) { return x.id !== delId; }), "家計簿")) { if (kbAssetEdit && kbAssetEdit.id === delId) kbAssetEdit = null; VIEWS.kakeibo(); } return; }
+          if (edId) { kbAssetEdit = kbAssets().filter(function (x) { return x.id === edId; })[0] || null; VIEWS.kakeibo(); }
+        }); });
+        return;
+      }
+      /* ---------- 月別：家の収入と支出を月ごとに（従来の画面） ---------- */
+      var formType = ed ? ed.type : "out";
+      var formScope = ed ? ed.scope : kbScopeLast;
+      var catSel = function (scope, type, val) { return select("kb-cat", "カテゴリ", kbCats(scope, type).map(function (c) { return [c, c]; }), val); };
+      var medHtml = function (e) {
+        return '<div class="grid">' +
+          field("kb-person", "医療を受けた人（任意）", e ? e.person || "" : "", "text", ' placeholder="例：本人"') +
+          field("kb-payee", "支払先（病院・薬局）", e ? e.payee || "" : "", "text", ' placeholder="例：〇〇病院"') +
+          select("kb-mkind", "医療費の区分", KB_MKINDS.map(function (k) { return [k, k]; }), e && e.mkind ? e.mkind : "診療・治療") +
+          field("kb-reimb", "補填される金額（円）", e && e.reimb ? e.reimb : "", "number") + "</div>";
+      };
+      var syncMed = function () {
+        var w = $("#kb-medwrap"); if (!w) return;
+        var cat = $("#kb-cat") ? $("#kb-cat").value : "";
+        var show = formType === "out" && formScope === "life" && cat === "医療";
+        w.innerHTML = show ? medHtml(ed && ed.type === "out" && ed.scope !== "biz" && ed.cat === "医療" ? ed : null) : "";
+      };
+      body.innerHTML = '<h3>家計簿</h3><p class="note">家の収入と支出を月ごとに記録します。トレード収支とは別の記録で、この端末の中だけに保存し、どこにも送信しません。</p>' + modeSeg +
+        '<div id="kb-head"></div><div id="kb-w3"></div>' +
+        '<div class="jcalh"><button type="button" id="kb-prev" aria-label="前の月">‹</button><b id="kb-title"></b><button type="button" id="kb-next" aria-label="次の月">›</button><button type="button" class="btn" id="kb-this">今月</button></div>' +
+        '<div class="pl-in"><b>' + (ed ? "記録を直す" : "記録を足す") + '</b>' +
+        '<div class="kb-pair">' +
+        '<div class="kb-pair-row"><span class="kb-pair-lab">収支</span><div class="pl-seg kb-seg-t" role="group" aria-label="収入か支出か">' + [["in", "収入"], ["out", "支出"]].map(function (x) { return '<button type="button" data-kt="' + x[0] + '" aria-pressed="' + (x[0] === formType) + '">' + x[1] + "</button>"; }).join("") + "</div></div>" +
+        '<div class="kb-pair-row"><span class="kb-pair-lab">区分</span><div class="pl-seg kb-seg-s" role="group" aria-label="生活か事業か">' + [["life", "生活"], ["biz", "事業"]].map(function (x) { return '<button type="button" data-ks="' + x[0] + '" aria-pressed="' + (x[0] === formScope) + '">' + x[1] + "</button>"; }).join("") + "</div></div>" +
+        "</div>" +
+        '<div class="grid"><span>' + field("kb-date", "日付", ed ? ed.date : (kbLastDate || todayK), "date") + '<button type="button" class="btn" id="kb-today">今日</button></span>' + '<span id="kb-catwrap">' + catSel(formScope, formType, ed ? ed.cat : kbCats(formScope, formType)[0]) + "</span>" +
+        field("kb-amt", "金額（円）", ed ? ed.amount : "", "number") + field("kb-memo", "メモ（任意）", ed ? ed.memo : "") + "</div>" +
+        '<div id="kb-medwrap"></div>' +
+        '<div class="btns"><button type="button" class="btn pri" id="kb-save">' + (ed ? "更新する" : "追加する") + "</button>" + (ed ? '<button type="button" class="btn" id="kb-cancel">編集をやめる</button>' : "") + "</div>" +
+        '<div class="note" id="kb-msg" aria-live="polite"></div>' +
+        '<p class="note">過去の日付も選べます。保存すると、その月の画面に移動します。</p></div>' +
+        '<h3>この月の記録</h3><div id="kb-list"></div>' +
+        '<h3>カテゴリ別の合計</h3><div id="kb-cats"></div>';
+      wireMode();
+      var rebuildCat = function () {
+        var cur = $("#kb-cat") ? $("#kb-cat").value : "", set = kbCats(formScope, formType);
+        $("#kb-catwrap").innerHTML = catSel(formScope, formType, set.indexOf(cur) >= 0 ? cur : set[0]);
+        syncMed();
+      };
+      body.querySelectorAll("[data-kt]").forEach(function (b) { b.addEventListener("click", function () {
+        formType = b.getAttribute("data-kt");
+        body.querySelectorAll("[data-kt]").forEach(function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-kt") === formType ? "true" : "false"); });
+        rebuildCat();
+      }); });
+      body.querySelectorAll("[data-ks]").forEach(function (b) { b.addEventListener("click", function () {
+        formScope = b.getAttribute("data-ks"); kbScopeLast = formScope;
+        body.querySelectorAll("[data-ks]").forEach(function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-ks") === formScope ? "true" : "false"); });
+        rebuildCat();
+      }); });
+      $("#kb-today").addEventListener("click", function () { $("#kb-date").value = todayK; });
+      $("#kb-catwrap").addEventListener("change", syncMed);
+      syncMed();
+      var paint = function () {
+        var list = kbMonthList(kakeibo(), ym).slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+        var t = kbTotals(list);
+        $("#kb-title").textContent = ym.slice(0, 4) + "年" + (+ym.slice(5, 7)) + "月";
+        var lt = kbTotals(list.filter(function (e) { return e.scope !== "biz"; })), bt = kbTotals(list.filter(function (e) { return e.scope === "biz"; }));
+        var kyen = function (v) { return (v < 0 ? "−¥" : "¥") + fmt(Math.abs(v), 0); };
+        $("#kb-head").innerHTML = '<div class="kb-ps-h">' + (+ym.slice(5, 7)) + '月のまとめ ― ニコイチ表</div>' +
+          '<div class="tw"><table class="kb-ps"><tr><th></th><th class="kb-ps-life">生活</th><th class="kb-ps-biz">事業</th></tr>' +
+          '<tr><td>収入</td><td class="kb-amt">¥' + fmt(lt.inc, 0) + '</td><td class="kb-amt">¥' + fmt(bt.inc, 0) + "</td></tr>" +
+          '<tr><td>支出</td><td class="kb-amt">¥' + fmt(lt.out, 0) + '</td><td class="kb-amt">¥' + fmt(bt.out, 0) + "</td></tr>" +
+          '<tr><td>差額</td><td class="kb-amt kb-ps-bal">' + kyen(lt.bal) + '</td><td class="kb-amt kb-ps-bal">' + kyen(bt.bal) + "</td></tr>" +
+          '<tr class="kb-ps-total"><td>合計</td><td colspan="2">収入 ¥' + fmt(t.inc, 0) + " ・ 支出 ¥" + fmt(t.out, 0) + ' ・ 差額 <b class="kb-ps-bal">' + kyen(t.bal) + "</b></td></tr></table></div>" +
+          '<p class="note">事業の差額は、そのまま事業所得の目安になります。</p>';
+        /* ---------- 月のまとめ「3つの財布」：生活・事業は家計簿から、トレードは日誌と日次入力から（同じ月） ---------- */
+        var allKb = kakeibo(), jr = journal(), di = dailyIn();
+        var tm = tradeMonthAgg(jr, di, ym);
+        var pym = (function () { var y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 2; y += Math.floor(m / 12); m = ((m % 12) + 12) % 12; return y + "-" + String(m + 1).padStart(2, "0"); })();
+        var lt2 = kbTotals(kbMonthList(allKb, pym).filter(function (e) { return e.scope !== "biz"; })), bt2 = kbTotals(kbMonthList(allKb, pym).filter(function (e) { return e.scope === "biz"; })), tm2 = tradeMonthAgg(jr, di, pym);
+        var w3yen = function (v) { return "¥" + fmt(v, 0); }, w3bal = function (v) { return (v < 0 ? "−¥" : "¥") + fmt(Math.abs(v), 0); };
+        var tot3 = { inc: lt.inc + bt.inc + tm.inc, out: lt.out + bt.out + tm.out, bal: lt.bal + bt.bal + tm.bal };
+        var w3 = '<div class="kb-ps-h">お金の流れ ― 月のまとめ</div>' +
+          '<div class="tw"><table class="kb-ps"><tr><th></th><th class="kb-ps-life">生活</th><th class="kb-ps-biz">事業</th><th class="kb-ps-trade">トレード</th><th class="kb-ps-all">合計</th></tr>' +
+          '<tr><td>収入</td><td class="kb-amt">' + w3yen(lt.inc) + '</td><td class="kb-amt">' + w3yen(bt.inc) + '</td><td class="kb-amt">' + w3yen(tm.inc) + '</td><td class="kb-amt">' + w3yen(tot3.inc) + "</td></tr>" +
+          '<tr><td>支出</td><td class="kb-amt">' + w3yen(lt.out) + '</td><td class="kb-amt">' + w3yen(bt.out) + '</td><td class="kb-amt">' + w3yen(tm.out) + '</td><td class="kb-amt">' + w3yen(tot3.out) + "</td></tr>" +
+          '<tr><td>差額</td><td class="kb-amt kb-w3-life">' + w3bal(lt.bal) + '</td><td class="kb-amt kb-w3-biz">' + w3bal(bt.bal) + '</td><td class="kb-amt kb-w3-trade">' + w3bal(tm.bal) + '</td><td class="kb-amt kb-ps-bal">' + w3bal(tot3.bal) + "</td></tr></table></div>" +
+          '<p class="note">トレードの収入は利益の合計、支出は損失の合計です（手入力の記録から自動集計）</p>' +
+          '<div class="kb-ps-h">トレードの内訳</div>' +
+          (tm.any ? '<div class="tw"><table><tr><th>銘柄</th><th>利益</th><th>損失</th><th>差額</th></tr>' + tm.insts.map(function (a) {
+            if (!a.trades) return "<tr><td>" + esc(a.name) + '</td><td colspan="3" class="note">取引なし</td></tr>';
+            return "<tr><td>" + esc(a.name) + '</td><td class="kb-amt pl-up">' + (a.inc ? "+" + w3yen(a.inc) : "―") + '</td><td class="kb-amt pl-dn">' + (a.out ? "−" + w3yen(a.out) : "―") + '</td><td class="kb-amt">' + (a.has ? w3bal(a.bal) : "―") + "</td></tr>";
+          }).join("") + "</table></div>" +
+            '<p class="note">勝ち日 ' + tm.winDays + "日 ・ 負け日 " + tm.lossDays + "日 ・ 見送り日 " + tm.skipDays + "日</p>" +
+            (tm.hasDaily ? '<p class="note">日次入力のある日は、上の「トレード」欄では日次入力の額を正としています。銘柄別の内訳は日誌の取引ごとの集計です。</p>' : "")
+            : '<p class="note">この月のトレード記録はまだありません。</p>');
+        var prow = function (label, cls, now, prev) {
+          var dd = now - prev, arrow = dd > 0 ? '<span class="pl-up">▲</span> ' : dd < 0 ? '<span class="pl-dn">▼</span> ' : "";
+          return "<span>" + arrow + '<span class="' + cls + '">' + label + "</span><b>" + w3bal(now) + "</b>（先月 " + w3bal(prev) + "）</span>";
+        };
+        w3 += '<div class="kb-ps-h">先月との差額の変化</div><div class="pl-kv">' + prow("生活", "kb-w3-life", lt.bal, lt2.bal) + prow("事業", "kb-w3-biz", bt.bal, bt2.bal) + prow("トレード", "kb-w3-trade", tm.bal, tm2.bal) + "</div>";
+        $("#kb-w3").innerHTML = w3;
+        $("#kb-list").innerHTML = list.length ? '<div class="tw"><table><tr><th>日付</th><th>カテゴリ</th><th>メモ</th><th>金額</th><th></th></tr>' + list.map(function (e) {
+          return '<tr data-krow="' + esc(e.id) + '" class="kb-row-' + (e.scope === "biz" ? "biz" : "life") + '"><td>' + esc(dayName(e.date)) + '</td><td><span class="tag">' + esc(e.cat) + '</span></td><td>' + esc(e.memo || "") + '</td><td class="kb-amt' + (e.type === "in" ? " pl-up" : "") + '">' + (e.type === "in" ? "+" : "−") + "¥" + fmt(e.amount, 0) + '</td><td><button type="button" class="btn" data-ked="' + esc(e.id) + '">編集</button> <button type="button" class="btn danger" data-kdel="' + esc(e.id) + '">削除</button></td></tr>';
+        }).join("") + "</table></div>" : '<p class="note">まだ記録がありません。上の欄から最初の1件を足せます。</p>';
+        $("#kb-cats").innerHTML = catsHtml(list, "月");
+      };
+      var shift = function (dm) { var y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1 + dm; y += Math.floor(m / 12); m = ((m % 12) + 12) % 12; kbYm = y + "-" + String(m + 1).padStart(2, "0"); kbEdit = null; VIEWS.kakeibo(); };
+      $("#kb-prev").addEventListener("click", function () { shift(-1); });
+      $("#kb-next").addEventListener("click", function () { shift(1); });
+      $("#kb-this").addEventListener("click", function () { kbYm = todayK.slice(0, 7); kbEdit = null; VIEWS.kakeibo(); });
+      $("#kb-save").addEventListener("click", function () {
+        var date = $("#kb-date").value, amt = Number($("#kb-amt").value);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { $("#kb-msg").textContent = "日付を入れてください。"; return; }
+        if (!isFinite(amt) || amt <= 0) { $("#kb-msg").textContent = "金額は0より大きい数字で入れてください。"; return; }
+        var rec = { id: ed ? ed.id : uid(), date: date, type: formType, scope: formScope, cat: $("#kb-cat").value, amount: amt, memo: $("#kb-memo").value.trim() };
+        if (ed && ed.fromTrade) rec.fromTrade = ed.fromTrade;  // 転記の印は編集しても引き継ぐ（消すと二重転記できてしまう）
+        if (formType === "out" && formScope === "life" && rec.cat === "医療") {
+          var person = $("#kb-person") ? $("#kb-person").value.trim() : "", payee = $("#kb-payee") ? $("#kb-payee").value.trim() : "", mkind = $("#kb-mkind") ? $("#kb-mkind").value : "", reimb = Number($("#kb-reimb") ? $("#kb-reimb").value : "");
+          if (person) rec.person = person;
+          if (payee) rec.payee = payee;
+          if (KB_MKINDS.indexOf(mkind) >= 0) rec.mkind = mkind;
+          if (isFinite(reimb) && reimb > 0) rec.reimb = reimb;
+        }
+        var all = kakeibo().filter(function (x) { return x.id !== rec.id; }); all.unshift(rec);
+        if (put(KAKEIBO, all, "家計簿")) { kbEdit = null; kbLastDate = date; kbYm = date.slice(0, 7); VIEWS.kakeibo(); $("#kb-msg").textContent = "保存しました。"; }
+      });
+      var cancel = $("#kb-cancel"); if (cancel) cancel.addEventListener("click", function () { kbEdit = null; VIEWS.kakeibo(); });
+      $("#kb-list").addEventListener("click", function (e) {
+        var del = e.target.closest("[data-kdel]"), edb = e.target.closest("[data-ked]"), row = e.target.closest("[data-krow]");
+        if (del) { var did = del.getAttribute("data-kdel"); if (confirm("この記録を削除しますか？（元に戻せません）") && put(KAKEIBO, kakeibo().filter(function (x) { return x.id !== did; }), "家計簿")) { if (kbEdit && kbEdit.id === did) kbEdit = null; VIEWS.kakeibo(); } return; }
+        var id = edb ? edb.getAttribute("data-ked") : row ? row.getAttribute("data-krow") : "";
+        if (id) { kbEdit = kakeibo().filter(function (x) { return x.id === id; })[0] || null; VIEWS.kakeibo(); var a = $("#kb-amt"); if (a) a.focus(); }
+      });
+      paint();
+    },
+
+    /* ---------- signal history ---------- */
+    signals: function () {
+      var st = D.signals(), hist = st.history, now = Date.now();
+      var cur = Object.keys(st.current || {}).map(function (k) {
+        var s = st.current[k], a = st.active[k];
+        return "<tr><td>" + esc(D.instName(k)) + "</td><td>" + (a ? '<span class="tag ' + a.dir + '">' + SIDE[a.dir] + "候補</span>有効期限 " + esc(C.jst(a.expiresAt, false)) : '<span class="tag">見送り</span>' + esc(s.reason || (s.unmet.length ? "未成立：" + s.unmet.join("・") : ""))) +
+          "</td><td>" + esc(C.jst(s.at)) + "</td></tr>";
+      }).join("");
+      body.innerHTML = '<h3>いまの判定</h3><p class="note">各ダッシュボード（1時間足のセットアップ判定）が最後に報告した状態です。判定は<b>形成中の1時間足を使った暫定判定</b>で、その足が終わると期限切れになります。売買を勧めるものではありません。</p>' +
+        (cur ? '<div class="tw"><table><tr><th>銘柄</th><th>状態</th><th>最終報告</th></tr>' + cur + "</table></div>" : '<p class="note">まだ報告がありません（デスクを開いてしばらくすると届きます）。</p>') +
+        '<h3>履歴</h3><p class="note">発生・条件の変化・継続・取り消し・期限切れを、その時点の内容のまま残しています（後から書き換えません）。この端末で記録したものだけで、勝率や成績の集計には使っていません。</p>' +
+        '<div class="btns"><button type="button" class="btn" id="sg-csv">CSVに書き出す</button></div>' +
+        (hist.length ? hist.slice(0, 100).map(function (r) {
+          var first = r.events[0], lastEv = r.events[r.events.length - 1], data = first.snap.data || {};
+          return '<details><summary><span class="tag ' + r.dir + '">' + SIDE[r.dir] + "候補</span>" + esc(D.instName(r.key)) + " " + esc(r.tf) + "・" + esc(C.jst(r.created)) + "・" +
+            esc({ active: "有効", cancelled: "取り消し", expired: "期限切れ" }[r.status] || r.status) + (r.repeat ? "（30分以内の再発生・音なし）" : "") + "</summary>" +
+            "<p>成立した条件：" + esc(first.snap.met.join("・") || "—") + "<br>未成立：" + esc(first.snap.unmet.join("・") || "なし") +
+            "<br>判定時の価格：" + esc(first.snap.price != null ? first.snap.price : "—") + "（" + esc(C.jst(data.priceAt)) + "・" + esc(data.priceSrc || "—") + "）　判定した足：" + esc(C.jst(data.barAt)) +
+            "<br>暫定（形成中の足）：" + (first.snap.provisional ? "はい" : "いいえ") + "　有効期限：" + esc(C.jst(r.expiresAt)) +
+            "<br>取り消し条件：" + esc(r.cancelIf || "—") + "</p><ol>" + r.events.map(function (ev) {
+              return "<li>" + esc(C.jst(ev.at)) + " " + esc({ created: "発生", changed: "条件が変化", renewed: "次の足でも継続", cancelled: "取り消し", expired: "期限切れ" }[ev.type] || ev.type) +
+                (ev.reason ? "：" + esc(ev.reason) : "") + (ev.type === "changed" ? "（成立：" + esc(ev.snap.met.join("・")) + "）" : "") + "</li>";
+            }).join("") + "</ol></details>";
+        }).join("") : '<p class="note">まだ記録がありません。</p>');
+      $("#sg-csv").addEventListener("click", function () {
+        var rows = []; hist.forEach(function (r) { r.events.forEach(function (ev) { rows.push({ id: r.id, key: r.key, dir: r.dir, tf: r.tf, event: ev.type, time: new Date(ev.at).toISOString(), reason: ev.reason || "", met: ev.snap.met.join(" / "), unmet: ev.snap.unmet.join(" / "), price: ev.snap.price, expiresAt: new Date(r.expiresAt).toISOString() }); }); });
+        download("signal-history-" + C.dayKey(now) + ".csv", C.toCSV(rows, ["id", "key", "dir", "tf", "event", "time", "reason", "met", "unmet", "price", "expiresAt"].map(function (n) { return { name: n }; })), "text/csv");
+      });
+    },
+
+    /* ---------- market hours ---------- */
+    hours: function () {
+      var paint = function () {
+        var now = Date.now(), s = C.sessions(now);
+        body.innerHTML = '<h3>市場セッション（' + esc(C.jst(now)) + '）</h3><p class="note">' + esc(s.note) + " 時刻は日本時間です。夏時間は各都市の時計から自動で計算しています。</p>" +
+          '<div class="tw"><table><tr><th>市場</th><th>今日の時間（日本時間）</th><th>状態</th><th>夏時間</th></tr>' + s.list.map(function (x) {
+            return "<tr><td>" + esc(x.name) + "</td><td>" + esc(C.jst(x.start, false).replace(" JST", "")) + "〜" + esc(C.jst(x.end, false).replace(" JST", "")) + "</td><td>" + (x.open ? "● 開いている" : "○ 時間外") + "</td><td>" + (x.zone === "Asia/Tokyo" ? "なし" : x.dst ? "夏時間" : "冬時間") + "</td></tr>";
+          }).join("") + "</table></div>" + (s.weekend ? '<p class="ok">週末のため為替市場は休場中です。</p>' : s.overlap.length ? '<p class="ok">重なっている時間：' + esc(s.overlap.join("・")) + "（取引が集まりやすい時間帯）</p>" : "") +
+          '<h3>銘柄ごとの取引時間</h3><div class="tw"><table><tr><th>銘柄</th><th>今の状態</th><th>取引時間（日本時間）</th></tr>' + ["gold", "usdjpy", "btc", "silver", "usoil", "dxy", "vix"].map(function (k) {
+            var m = C.marketState(k, now);
+            return "<tr><td>" + esc(D.instName(k)) + "</td><td>" + esc({ open: "取引時間内", closed: "休場", "break": "休止中" }[m.state]) + (m.certain ? "" : "（目安）") + "</td><td>" + esc(m.note) + "</td></tr>";
+          }).join("") + "</table></div>";
+      };
+      paint(); timer = setInterval(paint, 30000);
+    },
+
+    /* ---------- data status / diagnostics ---------- */
+    status: function () {
+      var paint = function () {
+        var now = Date.now(), cards = D.cards(), m = D.market(), chk = D.check(), src = D.sources(), lv = function (f, txt) { return '<span class="lv lv-' + f.level + '">' + esc(txt || f.label) + "</span>"; };
+        // 予備の取得先（ふだんは使わない）と、休場中に止めている配信は「待機中」。障害に見えないように
+        var SPARE = { swissquote: "待機中（通常は未使用・予備）" }, WAIT_CLOSED = { "ws-gold": "gold", "ws-usdjpy": "usdjpy", coinbase: "usdjpy" };
+        var idle = function (id) { return SPARE[id] || (WAIT_CLOSED[id] && C.marketState(WAIT_CLOSED[id], now).state !== "open" ? "待機中（休場中は止めています）" : "読み込み中"); };
+        var srcRow = function (id, name, kind, at) {
+          var s = src[id] || {}, f = kind ? C.freshness(kind, at || s.ok, now) : null;
+          return "<tr><td>" + esc(name) + "</td><td>" + (s.ok ? esc(C.jst(s.ok)) + "（" + esc(C.ago(now - s.ok)) + "）" : "—") + "</td><td>" + (!s.tries ? "" : f ? lv(f) : s.ok ? "成功" : "") +
+            (s.fail && (!s.ok || s.fail > s.ok) ? ' <span class="lv lv-stale">取得失敗：' + esc(s.err) + "（" + esc(C.jst(s.fail, false)) + "）</span>" : "") + (!s.tries ? '<span class="lv lv-closed">' + esc(idle(id)) + "</span>" : "") + "</td></tr>";
+        };
+        body.innerHTML = '<h3>表示中の銘柄（' + esc(C.jst(now)) + '）</h3><p class="note">時刻はすべて日本時間（JST）。価格の種類は提供元の公開情報から分かる範囲で示しています。休場中の古い価格は「休場中」で、通信の問題（「停止」「取得失敗」）とは分けて表示します。</p>' +
+          '<div class="tw"><table><tr><th>銘柄</th><th>価格の時刻・状態</th><th>提供元・価格の種類</th><th>ローソク足（' + esc(cards[0] ? "表示中の期間" : "") + '）</th><th>自動分析の計算</th><th>市場</th></tr>' + cards.map(function (c) {
+            return "<tr><td>" + esc(c.name) + "</td><td>" + esc(C.jst(c.at)) + "<br>" + (c.held ? '<span class="lv lv-held">確認中：' + esc(c.held.join("・")) + "</span>" : lv(c.price)) + "<br>" + esc(isFinite(c.price.age) ? C.ago(c.price.age) : "") + "</td><td>" + esc(c.prov.src) + "<br><small>" + esc(c.prov.type) + "</small></td><td>" + esc(c.tf) + "：" +
+              (c.noData ? '<span class="lv lv-missing">データ未取得</span>' : esc(C.jst(c.bar)) + "<br>" + lv(c.candle)) + "</td><td>" + esc(C.jst(c.an)) + "<br>" + lv(c.analysis) +
+              (c.analysis.level === "stale" && c.price.level !== "stale" ? '<br><small class="lv-stale">価格は新しいが分析は古い</small>' : "") + "</td><td>" + esc({ open: "取引時間内", closed: "休場", "break": "休止中" }[c.market.state]) + (c.market.certain ? "" : "（目安）") + "</td></tr>";
+          }).join("") + "</table></div>" +
+          '<h3>データの取得元</h3><div class="tw"><table><tr><th>データ</th><th>最終成功</th><th>状態</th></tr>' +
+          srcRow("market", "相場データ・自動分析（サイトの market.json）", "analysis", m && Date.parse(m.updated)) + srcRow("goldapi", "金・銀の現在値（Gold API）", "price") + srcRow("swissquote", "金・銀の代替（Swissquote）", "price") +
+          srcRow("coinbase", "ドル円の現在値（Coinbase）", "price") + srcRow("ws-gold", "金のリアルタイム配信（XAUT）", "price") + srcRow("ws-usdjpy", "ドル円のリアルタイム配信（GMO）", "price") +
+          srcRow("calendar", "経済指標（Forex Factory 経由）", "calendar") + srcRow("report", "本日のトレード戦略（strategy.json）", "report") + srcRow("weather", "天気（Open-Meteo）", "weather", D.weatherAt()) + srcRow("holidays", "祝日（holidays.json）") + srcRow("news", "要人発言ニュース（news.json）") +
+          (D.surge && D.surge() ? "<tr><td>急変検知</td><td>—</td><td>" + esc(Object.keys(D.surge()).map(function (k) { return D.instName(k) + " " + D.surge()[k]; }).join("・")) + "</td></tr>" : "") +
+          "</table></div>" +
+          (chk && Object.keys(chk.problems).some(function (k) { return chk.problems[k].length; }) ? '<div class="warn">確認中の銘柄（データの検査で問題があり、前回の値を表示中または非表示）：' +
+            esc(Object.keys(chk.problems).filter(function (k) { return chk.problems[k].length; }).map(function (k) { return D.instName(k) + "（" + chk.problems[k].join("・") + "）"; }).join("、")) + "</div>" : "") +
+          '<div class="btns"><button type="button" class="btn" data-rf="market">相場データを再読み込み</button><button type="button" class="btn" data-rf="prices">現在値を再読み込み</button><button type="button" class="btn" data-rf="calendar">経済指標を再読み込み</button><button type="button" class="btn" data-rf="weather">天気を再読み込み</button></div>' +
+          "<h3>すべての銘柄（サイトの定期取得）</h3>" + (m ? '<div class="tw"><table><tr><th>銘柄</th><th>価格の時刻</th><th>分析の計算</th><th>状態</th></tr>' + Object.keys(m.instruments).map(function (k) {
+            var x = m.instruments[k], ms = C.marketState(k, now), f = C.freshness("price", x.asOf * 1000, now, { closed: ms.state !== "open" });
+            return "<tr><td>" + esc(D.instName(k)) + "</td><td>" + esc(C.jst(x.asOf * 1000)) + "</td><td>" + esc(C.jst(Date.parse(x.updated))) + "</td><td>" + lv(f) + "</td></tr>";
+          }).join("") + "</table></div>" : '<p class="note">まだ取得できていません。</p>') +
+          '<h3>この画面について</h3><div class="tw"><table>' +
+          "<tr><td>アプリの版</td><td>" + esc(D.build || "（開発版）") + (D.newBuild ? "（新しい版 " + esc(D.newBuild) + " があります）" : "") + "</td></tr>" +
+          "<tr><td>通信</td><td>" + (navigator.onLine === false ? '<span class="lv lv-stale">オフライン</span>' : "オンライン（端末の判定）") + "</td></tr>" +
+          "<tr><td>端末のタイムゾーン</td><td>" + esc(Intl.DateTimeFormat().resolvedOptions().timeZone || "不明") + "（画面の時刻は日本時間で表示）</td></tr>" +
+          "<tr><td>リアルタイム配信</td><td>" + esc(Object.keys(D.live()).map(function (k) { var L = D.live()[k]; return D.instName(k) + "：" + (L.open ? "接続中" : "切断（再接続待ち・休場中・非表示）") + (L.at ? "・最終受信 " + C.jst(L.at, false) : ""); }).join("／") || "なし") + "</td></tr>" +
+          "<tr><td>表示モード</td><td>" + (D.preview ? '<span class="lv lv-held">プレビュー（サンプルの値を含みます）</span>' : "本番（実データのみ。取得できない値は空欄・未取得と表示）") + "</td></tr></table></div>" +
+          '<h3>鮮度の基準</h3><p class="note">価格：20秒以内＝ライブ、2分以内＝最新、15分以内＝遅延、それより前＝停止（休場中は「休場中」）。ローソク足：期間＋20分（または1期間）以内＝最新。自動分析：15分以内＝最新、60分まで遅延、それより前＝停止（そのときカードの一致度は取り消し線で参考外）。経済指標：30分／3時間。天気：90分／3時間。祝日・年末年始・短縮取引は判定に含めていないため、平日の「取引時間内」は目安です。</p>';
+        body.querySelectorAll("[data-rf]").forEach(function (b) { b.addEventListener("click", function () { D.refresh(b.getAttribute("data-rf")); D.toast("再読み込みしています…"); setTimeout(paint, 2500); }); });
+      };
+      paint(); timer = setInterval(paint, 15000);
+    },
+
+    /* ---------- settings ---------- */
+    settings: function () {
+      var nt = D.notify(), low = document.documentElement.classList.contains("lowpower");
+      var themeNow = "grace"; try { themeNow = LS.getItem("ayu_td_theme") || "grace"; } catch (e) {}
+      var langNow = "ja"; try { langNow = LS.getItem("ayu_td_lang") === "en" ? "en" : "ja"; } catch (e) {}
+      body.innerHTML = '<h3>テーマ（見た目）</h3>' + select("st-theme", "ホーム画面のテーマ", [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["grace", tdLang() === "en" ? "Grace Light" : "恵みの光"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"], ["shippu", "利確の炎🔥"], ["aurora", "🌌 安らぎのオーロラ"]], themeNow) +
+        '<p class="note">季節の割り当て：春 3〜5月／夏 6〜8月／秋 9〜11月／クリスマス 12月／正月 12月29日〜1月3日／冬 1〜2月。テーマはこの端末のブラウザに保存されます（端末ごとに別です）。舞う飾り（桜・落ち葉・雪・金粉）は、ページを開き直すと切り替わります。</p>' +
+        '<h3>言語 / Language</h3>' + select("st-lang", "表示言語 / Display language", [["ja", "日本語"], ["en", "English"]], langNow) +
+        '<p class="note">ドックのボタン・カードの見出し・ツールのタブ名・聖書コーナーの表示が切り替わります。学ぶの本の本文や長い説明文は日本語のままです。</p>' +
+        '<h3>省電力</h3><label class="chk"><input type="checkbox" id="st-low"' + (low ? " checked" : "") + '><span>省電力モード（背景の動き・光・ぼかし・点滅を止めます。iPadの発熱や電池の消費を抑えたいときに）</span></label>' +
+        '<h3>通知について</h3><div class="out">' + esc("端末の通知：" + ({ granted: "許可済み", denied: "拒否（端末の設定から変更）", default: "未設定（通知のボタンを押したときに確認します）", unsupported: "この環境では使えません" }[nt.permission] || nt.permission) +
+          "\n通知音：" + ({ high: "大", mid: "中", low: "小", off: "オフ" }[nt.sound] || "中") + "（ホームの右上のスピーカーのボタンと同じ。エントリー・ダッシュボードのアラート・急変・地震の音量）" +
+          "\n・音と通知は、このページを開いている間だけ届きます。ブラウザやアプリを閉じている間のプッシュ通知には対応していません。" +
+          "\n・iPhone・iPadは、ホーム画面に追加したアプリから開いた場合に限り端末の通知が使えます。" +
+          "\n・価格アラートの条件（価格到達など）は各ダッシュボードの「アラート」で設定します。同じエントリー判定は30分以内に重ねて鳴らしません。") + "</div>" +
+        '<h3>保存とバックアップ</h3><p class="note">設定・日誌・チェック・シグナル履歴は、すべてこの端末のブラウザの中（localStorage）に保存しています。サーバーには保存していないため、端末を替えるときやブラウザのデータを消す前には書き出してください。</p>' +
+        '<div class="btns"><button type="button" class="btn pri" id="st-exp">すべて書き出す（JSON）</button><button type="button" class="btn" id="st-imp">読み込む</button></div><div id="st-msg" class="note" aria-live="polite"></div>' +
+        '<h3>初期化</h3><p class="note">分けて初期化できます。元に戻せないので、先に書き出しておくと安心です。</p><div class="btns">' +
+        '<button type="button" class="btn danger" data-rs="display">表示の設定</button><button type="button" class="btn danger" data-rs="notify">通知・アラート</button><button type="button" class="btn danger" data-rs="trading">資金管理・日誌・履歴</button><button type="button" class="btn danger" data-rs="all">すべて</button></div>';
+      $("#st-theme").addEventListener("change", function () { try { LS.setItem("ayu_td_theme", this.value); } catch (e) {} if (window.TDThemeApply) window.TDThemeApply(); });
+      $("#st-lang").addEventListener("change", function () { try { LS.setItem("ayu_td_lang", this.value); } catch (e) {} var go = $("#st-theme option[value=\"grace\"]"); if (go) go.textContent = this.value === "en" ? "Grace Light" : "恵みの光"; paintTabLabels(); if (window.TDLangApply) window.TDLangApply(); });
+      $("#st-low").addEventListener("change", function () { D.setPower(this.checked); });
+      $("#st-exp").addEventListener("click", function () { download("desk-of-ayu-backup-" + C.dayKey(Date.now()) + ".json", JSON.stringify(C.exportSettings(LS, Date.now()), null, 1), "application/json"); });
+      $("#st-imp").addEventListener("click", function () {
+        pickFile(".json,application/json", function (text) {
+          var obj; try { obj = JSON.parse(text); } catch (e) { $("#st-msg").textContent = "JSONとして読めませんでした"; return; }
+          if (!confirm("書き出したファイルの内容で、この端末の同じ項目を上書きします。よろしいですか？")) return;
+          var r = C.importSettings(obj, LS);
+          $("#st-msg").textContent = r.errors.length ? "⚠ " + r.errors.join("／") : "読み込みました：" + r.written + "項目" + (r.ignored.length ? "（対象外として無視：" + r.ignored.length + "項目）" : "") + "。反映には再読み込みが必要な項目があります。";
+        });
+      });
+      body.querySelectorAll("[data-rs]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var g = b.getAttribute("data-rs");
+          if (!confirm(b.textContent + "を初期化します。元に戻せません。よろしいですか？")) return;
+          var n = C.resetGroup(LS, g); $("#st-msg").textContent = n + "項目を初期化しました。ページを再読み込みすると反映されます。";
+        });
+      });
+    }
+  };
+  var draft = null, pnlSel = "", pnlMonth = "", pnlMode = "", kbYm = "", kbEdit = null, kbMode = "month", kbYear = 0, kbIncome = "", kbLastDate = "", kbScopeLast = "life", kbLoanEdit = null, kbAssetEdit = null, jnDay = "";
+  var num = function (v) { var x = Number(v); return v === "" || !isFinite(x) ? null : x; };
+  var toLocal = function (iso) { var t = new Date(iso), z = function (x) { return String(x).padStart(2, "0"); }; return t.getFullYear() + "-" + z(t.getMonth() + 1) + "-" + z(t.getDate()) + "T" + z(t.getHours()) + ":" + z(t.getMinutes()); };
+  var JCOLS = [{ name: "id", type: "string", required: true }, { name: "time", type: "time", required: true }, { name: "key", type: "string", required: true },
+    { name: "side", type: "enum", values: ["buy", "sell"] }, { name: "entry", type: "number" }, { name: "exit", type: "number" }, { name: "lots", type: "number" },
+    { name: "pnl", type: "number" }, { name: "ccy", type: "string" }, { name: "rules", type: "enum", values: ["yes", "no"] }, { name: "chart", type: "string" },
+    { name: "reason", type: "string" }, { name: "result", type: "string" }, { name: "reflection", type: "string" }, { name: "checkId", type: "string" },
+    { name: "kind", type: "enum", values: ["trade", "skip"] }];  // 最後の列に追加：見送り（skip）。古いCSV（この列なし）は取引として読む
+  // results by instrument, side and Japan hour: counts first, and too few trades are called too few
+  function stats(rows) {
+    var done = rows.filter(function (r) { return r.kind !== "skip" && isFinite(r.pnl) && r.pnl !== null; });  // 見送りは入れない
+    if (!done.length) return '<p class="note">損益を入れた記録がまだありません。</p>';
+    var t0 = Math.min.apply(null, done.map(function (r) { return Date.parse(r.time); })), t1 = Math.max.apply(null, done.map(function (r) { return Date.parse(r.time); }));
+    var group = function (f) {
+      var g = {}; done.forEach(function (r) { var k = f(r); (g[k] = g[k] || []).push(r); });
+      return Object.keys(g).map(function (k) {
+        var a = g[k], win = a.filter(function (r) { return r.pnl > 0; }).length, sum = a.reduce(function (s, r) { return s + r.pnl; }, 0);
+        return "<tr><td>" + esc(k) + "</td><td>" + a.length + "</td><td>" + (a.length >= 20 ? (win / a.length * 100).toFixed(0) + "％" : "件数不足") + "</td><td>" + (sum >= 0 ? "+" : "") + fmt(sum, 0) + "</td></tr>";
+      }).join("");
+    };
+    var head = '<tr><th>区分</th><th>件数</th><th>勝ちの割合</th><th>損益合計</th></tr>';
+    return '<p class="note">対象：' + esc(C.jst(t0)) + "〜" + esc(C.jst(t1)) + "・" + done.length + "件（日誌に手入力した実際の取引のみ。損益は入力値＝手数料などの扱いは入力どおり。シミュレーションは含みません）。20件未満の区分は割合を出していません。</p>" +
+      '<div class="tw"><table>' + head + group(function (r) { return "銘柄：" + r.key; }) + group(function (r) { return "向き：" + (SIDE[r.side] || r.side); }) +
+      group(function (r) { return "ルール：" + ({ yes: "守れた", no: "守れなかった" }[r.rules] || "未記入"); }) +
+      group(function (r) { var h = C.partsIn("Asia/Tokyo", Date.parse(r.time)).h; return "時間帯（日本）：" + (h < 9 ? "0〜9時" : h < 16 ? "9〜16時" : h < 21 ? "16〜21時" : "21〜24時"); }) + "</table></div>";
+  }
+  window.TDTools = { open: open, close: close };
+})();
