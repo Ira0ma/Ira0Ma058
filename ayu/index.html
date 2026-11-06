@@ -2264,8 +2264,10 @@ window.TD_THEME = (function () {
       { base: 0.90, amp: 0.20, col: [26, 24, 25, 1] },
       { base: 1.02, amp: 0.18, col: [10, 10, 12, 1] }
     ];
+    var layerPts = [];
     layers.forEach(function (L) {
       var pts = ridge(r, w, h * L.base, h * L.amp, 0.45);
+      layerPts.push(pts);
       c.beginPath(); c.moveTo(0, h);
       pts.forEach(function (q) { c.lineTo(q[0], q[1]); });
       c.lineTo(w, h); c.closePath();
@@ -2280,6 +2282,25 @@ window.TD_THEME = (function () {
     var shade = c.createLinearGradient(0, 0, 0, h * 0.55);
     shade.addColorStop(0, "rgba(6,7,11,.75)"); shade.addColorStop(1, "rgba(6,7,11,0)");
     c.fillStyle = shade; c.fillRect(0, 0, w, h * 0.55);
+    if (kind === "sunrise" && window.TD_THEME && TD_THEME.id === "grace" && layerPts.length > 2) {
+      // 恵みの光（Desk of Ayu 専用）：太陽に近い右寄りの稜線でいちばん高いところに、光を背負う十字架を立てる
+      var cp = null;
+      [layerPts[1], layerPts[2]].forEach(function (pts2) {
+        pts2.forEach(function (q) { if (q[0] > w * 0.52 && q[0] < w * 0.95 && (!cp || q[1] < cp[1])) cp = q; });
+      });
+      if (cp) {
+        var chh = Math.max(30, Math.min(60, h * 0.19)), cbw = chh * 0.115, caw = chh * 0.54, cat2 = chh * 0.105, cad2 = chh * 0.30, crm = Math.max(1.2, chh * 0.035), ccx = cp[0], cgy = cp[1] + 2;
+        var cg2 = c.createRadialGradient(ccx, cgy - chh * 0.52, 0, ccx, cgy - chh * 0.52, chh * 1.25);
+        cg2.addColorStop(0, "rgba(255,222,160,0.42)"); cg2.addColorStop(1, "rgba(255,222,160,0)");
+        c.fillStyle = cg2; c.fillRect(ccx - chh * 1.25, cgy - chh * 0.52 - chh * 1.25, chh * 2.5, chh * 2.5);
+        c.fillStyle = "rgba(255,228,175,0.6)";
+        c.fillRect(ccx - cbw / 2 - crm, cgy - chh - crm, cbw + crm * 2, chh + crm);
+        c.fillRect(ccx - caw / 2 - crm, cgy - chh + cad2 - crm, caw + crm * 2, cat2 + crm * 2);
+        c.fillStyle = "#07070c";
+        c.fillRect(ccx - cbw / 2, cgy - chh, cbw, chh);
+        c.fillRect(ccx - caw / 2, cgy - chh + cad2, caw, cat2);
+      }
+    }
   }
   function drawScenes() { document.querySelectorAll("canvas.scene").forEach(drawScene); }
 
@@ -3386,7 +3407,7 @@ window.TD_THEME = (function () {
       return '<svg class="hz-map" viewBox="0 0 ' + W + ' ' + H + '">' + g + '</svg>';
     }
     function typhoons() {
-      getJson("typhoon.json").then(function (j) {
+      getJson("../typhoon.json").then(function (j) {
         var items = (j.items || []).filter(function (t) { return (t.track || []).length; });
         var up = j.updated ? '<p class="hz-src">気象庁の台風情報（' + hm(j.updated * 1000) + ' 取得）　' + link("https://www.jma.go.jp/bosai/map.html#contents=typhoon", "気象庁の台風情報") + '</p>' : '';
         if (!items.length) { body.innerHTML = '<div class="hz-calm">🌀<b>現在、台風は発生していません</b><span>日本の周辺で台風が発生すると、ここに位置と予報の進路が出ます。</span></div>' + up; return; }
@@ -3414,7 +3435,7 @@ window.TD_THEME = (function () {
     }
     var LV = function (v) { return v == null ? ["--", ""] : v < 10 ? ["少ない", "#3a8fd6"] : v < 30 ? ["やや多い", "#d7b52e"] : v < 100 ? ["多い", "#e8692f"] : ["非常に多い", "#b3262b"]; };
     function pollen() {
-      getJson("pollen.json").then(function (j) {
+      getJson("../pollen.json").then(function (j) {
         var links = '<p class="hz-src">' + link("https://tenki.jp/pollen/", "tenki.jp 花粉情報") + '　' + link("https://weathernews.jp/s/pollen/", "ウェザーニュース 花粉") + '</p>';
         if (!j.season || !(j.cities || []).length) { body.innerHTML = '<p class="hz-lead">今は花粉の観測期間（2〜5月）の外です。季節になると、天気の場所に近い観測地点の飛散数がここに出ます。</p>' + pollenCal() + links; return; }
         var me = (window.wxLoc && wxLoc()) || { lat: 35.68, lon: 139.76 }, near = j.cities.slice().sort(function (a, b) { return (Math.pow(a.lat - me.lat, 2) + Math.pow(a.lon - me.lon, 2)) - (Math.pow(b.lat - me.lat, 2) + Math.pow(b.lon - me.lon, 2)); })[0];
@@ -3451,7 +3472,7 @@ window.TD_THEME = (function () {
         var sc = hit && Math.max.apply(null, hit.points.filter(function (p) { return p.pref === pref; }).map(function (p) { return p.scale; }));
         flag("eq", hit, hit ? pref + "で震度" + ((SC[sc] || [])[0] || "") + "の地震（" + hm(eqTime(hit.earthquake.time)) + "）" : "", hit ? (sc >= 50 ? "強い揺れ" : "震度" + ((SC[sc] || [])[0] || "")) : "なし");
       }).catch(function () { flag("eq", false, "", "取得失敗"); });
-      getJson("typhoon.json").then(function (j) {
+      getJson("../typhoon.json").then(function (j) {
         var near = null;
         (j.items || []).forEach(function (ty) { (ty.track || []).forEach(function (p, k) {
           var t = Date.parse(p.t); if (!p.pos || (k && isFinite(t) && t - Date.now() > 48 * 3600e3)) return;  // 今の位置と48時間先までの予報
@@ -3460,7 +3481,7 @@ window.TD_THEME = (function () {
         }); });
         flag("ty", near, near ? "台風第" + near.n + "号が" + (me.name || "天気の場所") + "に近づくおそれ（約" + Math.round(near.d / 10) * 10 + "km）" : "", near ? "接近" : "なし");
       }).catch(function () { flag("ty", false, "", "取得失敗"); });
-      getJson("pollen.json").then(function (j) {
+      getJson("../pollen.json").then(function (j) {
         if (!j.season || !(j.cities || []).length) { flag("pl", false, "", "季節外"); return; }
         var c = j.cities.slice().sort(function (a, b) { return km(me.lat, me.lon, a.lat, a.lon) - km(me.lat, me.lon, b.lat, b.lon); })[0];
         flag("pl", c.max != null && c.max >= 30, c.name + "の花粉が" + LV(c.max)[0] + "（1時間" + c.max + "個）", c.max == null ? "データなし" : LV(c.max)[0]);
@@ -4123,11 +4144,17 @@ window.TD_THEME = (function () {
           var gmist = x.createLinearGradient(0, GY(636), 0, GY(706));
           gmist.addColorStop(0, "rgba(255,225,170,0)"); gmist.addColorStop(0.5, "rgba(255,225,170,0.13)"); gmist.addColorStop(1, "rgba(255,225,170,0)");
           x.fillStyle = gmist; x.fillRect(0, GY(636), w, GY(706) - GY(636));
-          // 十字架のシルエット（丘の頂き・光の中心）
+          // 十字架のシルエット（丘の頂き・光の中心）。大きくし、背後の光と縁の光で輪郭を立てる
+          var ghalo = x.createRadialGradient(GX(605), GY(630), 0, GX(605), GY(630), 185 * gsc);
+          ghalo.addColorStop(0, "rgba(255,232,175,0.50)"); ghalo.addColorStop(1, "rgba(255,232,175,0)");
+          x.fillStyle = ghalo; x.fillRect(GX(605) - 185 * gsc, GY(630) - 185 * gsc, 370 * gsc, 370 * gsc);
+          var gbx = GX(605), gby = GY(674), gch2 = 124 * gsc, gbw = 15 * gsc, gaw = 80 * gsc, gat = 13 * gsc, gad = 34 * gsc, grm = 2.6 * gsc;
+          x.fillStyle = "rgba(255,226,170,0.55)";  // 縁の光（逆光で輪郭が光る）
+          x.fillRect(gbx - gbw / 2 - grm, gby - gch2 - grm, gbw + 2 * grm, gch2 + grm);
+          x.fillRect(gbx - gaw / 2 - grm, gby - gch2 + gad - grm, gaw + 2 * grm, gat + 2 * grm);
           x.fillStyle = "#04050d";
-          var gcw = 7 * gsc, gch = 56 * gsc, gbx = GX(605), gby = GY(672);
-          x.fillRect(gbx - gcw / 2, gby - gch, gcw, gch);
-          x.fillRect(gbx - 17 * gsc, gby - gch + 15 * gsc, 34 * gsc, 6 * gsc);
+          x.fillRect(gbx - gbw / 2, gby - gch2, gbw, gch2);
+          x.fillRect(gbx - gaw / 2, gby - gch2 + gad, gaw, gat);
           // 下端の影（画面を締める）
           var gvig = x.createLinearGradient(0, GY(700), 0, GY(841));
           gvig.addColorStop(0, "rgba(3,4,10,0)"); gvig.addColorStop(1, "rgba(3,4,10,0.42)");
@@ -6704,6 +6731,7 @@ window.TD_THEME = (function () {
     clubLightSync();
     var pl = document.querySelector(".td-particles"); if (pl) pl.remove();  // 舞う飾りは開き直したときに切り替わる
     bg.resize();
+    drawScenes();  // 時計カードの景色もテーマに追随させる（恵みの光の十字架など）
     (window.__mkts || []).forEach(function (mk) { if (mk.draw) mk.draw(); });
     if (window.TDThemeBtnPaint) window.TDThemeBtnPaint();
   };
