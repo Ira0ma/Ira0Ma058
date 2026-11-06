@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="026496dfec">
+<meta name="build" content="cadf3f030a">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1313,7 +1313,7 @@ function checkClosed(){
   const was=mktClosed;mktClosed=c;reopenText=findReopen();
   if(c!==was){setStatus('live','LIVE');renderAll()}else if(c){setStatus('live','LIVE')}
 }
-const LIVE={raw:0,rawAt:0,src:'',offs:[],ws:null,tries:0,lastDraw:0,timer:0,mins:[]};
+const LIVE={raw:0,rawAt:0,src:'',offs:[],ws:null,tries:0,lastDraw:0,timer:0,mins:[],born:0};
 const GOLD_WS=[
   {name:'OKX XAUT',url:'wss://ws.okx.com:8443/ws/v5/public',sub:{op:'subscribe',args:[{channel:'tickers',instId:'XAUT-USDT'}]},ping:'ping',
    parse:m=>{const d=m?.data?.[0];return d&&+d.bidPx&&+d.askPx?(+d.bidPx+ +d.askPx)/2:0}},
@@ -1354,7 +1354,7 @@ function startLive(){
   const list=IS_GOLD?GOLD_WS:IS_SILVER?SILVER_WS:IS_BTC?BTC_WS:IS_OIL?OIL_WS:FX_WS,src=list[LIVE.tries%list.length];
   let ws,ping=0,got=false;
   try{ws=new WebSocket(src.url)}catch{return retryLive()}
-  LIVE.ws=ws;
+  LIVE.ws=ws;LIVE.born=Date.now();  // the watchdog below recycles a socket that stays silent
   ws.onopen=()=>{ws.send(JSON.stringify(src.sub));if(src.ping)ping=setInterval(()=>{try{ws.send(src.ping)}catch{}},20000)};
   ws.onmessage=ev=>{
     let m;try{m=JSON.parse(ev.data)}catch{return}
@@ -1367,6 +1367,20 @@ function startLive(){
   ws.onclose=ws.onerror=()=>{clearInterval(ping);if(LIVE.ws!==ws)return;LIVE.ws=null;if(!got)LIVE.tries++;retryLive()};
 }
 function retryLive(){clearTimeout(LIVE.timer);LIVE.timer=setTimeout(startLive,Math.min(30000,2000*(1+LIVE.tries)))}
+// Watchdog: a socket that never delivers a tick (stuck connecting, or the venue accepted the connection
+// but pushes nothing) blocks every retry while it sits in LIVE.ws, because startLive is only re-run when
+// the sheet opens. Recycle it here: no tick 12 s after the socket was made, or no tick for 30 s while the
+// market is open, closes it and reconnects at once. A socket that never ticked counts as a failed try, so
+// GOLD rotates to its next source as it does when a connection closes empty. Healthy feeds tick constantly
+// and never trigger this.
+setInterval(()=>{
+  if(!LIVE.ws||mktClosed)return;
+  const now=Date.now(),dead=(!LIVE.rawAt&&now-(LIVE.born||0)>12000)||(LIVE.rawAt&&now-LIVE.rawAt>30000);
+  if(!dead)return;
+  const ws=LIVE.ws;LIVE.ws=null;clearTimeout(LIVE.timer);if(!LIVE.rawAt)LIVE.tries++;
+  try{ws.close()}catch{}
+  if(!sheetHidden()||IS_OIL)startLive();
+},5000);
 function onLiveTick(){
   if(mktClosed||!liveFresh()||!state.spot)return;
   const sc=IS_FX?1000:100,px=Math.round((LIVE.raw-liveOffset())*sc)/sc;
