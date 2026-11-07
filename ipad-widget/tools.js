@@ -1487,12 +1487,13 @@
     settings: function () {
       var nt = D.notify(), low = document.documentElement.classList.contains("lowpower");
       var themeNow = "auto"; try { themeNow = LS.getItem("td_theme") || "auto"; } catch (e) {}
-      var roomLink = false; try { roomLink = LS.getItem("td_room_link") === "1"; } catch (e) {}
+      var roomUrl = ""; try { roomUrl = LS.getItem("td_room_url") || ""; } catch (e) {}
       body.innerHTML = '<h3>テーマ（見た目）</h3>' + select("st-theme", "ホーム画面のテーマ", [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"], ["shippu", "利確の炎🔥"], ["aurora", "🌌 安らぎのオーロラ"]], themeNow) +
         '<p class="note">季節の割り当て：春 3〜5月／夏 6〜8月／秋 9〜11月／クリスマス 12月／正月 12月29日〜1月3日／冬 1〜2月。テーマはこの端末のブラウザに保存されます（端末ごとに別です）。舞う飾り（桜・落ち葉・雪・金粉）は、ページを開き直すと切り替わります。</p>' +
         '<h3>省電力</h3><label class="chk"><input type="checkbox" id="st-low"' + (low ? " checked" : "") + '><span>省電力モード（背景の動き・光・ぼかし・点滅を止めます。iPadの発熱や電池の消費を抑えたいときに）</span></label>' +
-        '<h3>ROOM進捗ボード</h3><label class="chk"><input type="checkbox" id="st-roomlink"' + (roomLink ? " checked" : "") + '><span>ROOM進捗ボード連携（オンにすると、この下にボードを開くボタンが出ます。この端末だけの設定です）</span></label>' +
-        (roomLink ? '<div class="btns"><button type="button" class="btn pri" id="st-roomopen">ROOM進捗ボードを開く</button></div>' : "") +
+        '<h3>ROOM進捗ボード</h3>' + (roomUrl ?
+          '<p class="note">この端末にはボードのリンクが登録済みです。リンクはこの端末の中だけに保存されています。</p><div class="btns"><button type="button" class="btn pri" id="st-roomopen">ROOM進捗ボードを開く</button><button type="button" class="btn" id="st-roomdel">登録を消す</button></div>' :
+          '<p class="note">ボードのリンクを登録した端末だけに、開くボタンが出ます（この下と、画面下のドックの家計簿の横）。リンクはこの端末の中だけに保存され、アプリのコードには含まれません。</p><div class="btns"><input type="url" id="st-roomurl" placeholder="ボードのリンクを貼り付け" style="flex:1;min-width:200px;font:inherit;font-size:12px;padding:6px 9px;border-radius:9px;border:1px solid rgba(227,184,103,.5);background:rgba(0,0,0,.25);color:inherit"><button type="button" class="btn" id="st-roomsave">登録する</button></div><div id="st-roommsg" class="note" aria-live="polite"></div>') +
         '<h3>通知について</h3><div class="out">' + esc("端末の通知：" + ({ granted: "許可済み", denied: "拒否（端末の設定から変更）", default: "未設定（通知のボタンを押したときに確認します）", unsupported: "この環境では使えません" }[nt.permission] || nt.permission) +
           "\n通知音：" + ({ high: "大", mid: "中", low: "小", off: "オフ" }[nt.sound] || "中") + "（ホームの右上のスピーカーのボタンと同じ。エントリー・ダッシュボードのアラート・急変・地震の音量）" +
           "\n・音と通知は、このページを開いている間だけ届きます。ブラウザやアプリを閉じている間のプッシュ通知には対応していません。" +
@@ -1504,8 +1505,9 @@
         '<button type="button" class="btn danger" data-rs="display">表示の設定</button><button type="button" class="btn danger" data-rs="notify">通知・アラート</button><button type="button" class="btn danger" data-rs="trading">資金管理・日誌・履歴</button><button type="button" class="btn danger" data-rs="all">すべて</button></div>';
       $("#st-theme").addEventListener("change", function () { try { LS.setItem("td_theme", this.value); } catch (e) {} if (window.TDThemeApply) window.TDThemeApply(); });
       $("#st-low").addEventListener("change", function () { D.setPower(this.checked); });
-      var roomTgl = $("#st-roomlink"); if (roomTgl) roomTgl.addEventListener("change", function () { try { if (this.checked) LS.setItem("td_room_link", "1"); else LS.removeItem("td_room_link"); } catch (e) {} VIEWS.settings(); });
-      var roomBtn = $("#st-roomopen"); if (roomBtn) roomBtn.addEventListener("click", function () { window.open("https://muse.ai/s/roomjin-bu-bodo-gxz6pueh1xnmxs/YwTM7WCtt9usoEIH9dGgwX2fpguWJn9Agq7psiBi5zg", "_blank", "noopener"); });
+      var roomSave = $("#st-roomsave"); if (roomSave) roomSave.addEventListener("click", function () { var v = (($("#st-roomurl").value || "") + "").trim(); if (!/^https:\/\/muse\.ai\/s\//.test(v)) { $("#st-roommsg").textContent = "⚠ ボードのリンク（https://muse.ai/s/ で始まるもの）を貼ってください"; return; } try { LS.setItem("td_room_url", v); } catch (e) {} if (window.TDRoomDockSync) window.TDRoomDockSync(); VIEWS.settings(); });
+      var roomOpen = $("#st-roomopen"); if (roomOpen) roomOpen.addEventListener("click", function () { var u = ""; try { u = LS.getItem("td_room_url") || ""; } catch (e) {} if (u) window.open(u, "_blank", "noopener"); });
+      var roomDel = $("#st-roomdel"); if (roomDel) roomDel.addEventListener("click", function () { try { LS.removeItem("td_room_url"); } catch (e) {} if (window.TDRoomDockSync) window.TDRoomDockSync(); VIEWS.settings(); });
       $("#st-exp").addEventListener("click", function () { download("trade-desk-backup-" + C.dayKey(Date.now()) + ".json", JSON.stringify(C.exportSettings(LS, Date.now()), null, 1), "application/json"); });
       $("#st-imp").addEventListener("click", function () {
         pickFile(".json,application/json", function (text) {
