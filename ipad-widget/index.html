@@ -1683,7 +1683,15 @@ window.TD_THEME = (function () {
   // A：日誌・収支も1タップで。当初はドックを「見る順番・ツール・日誌・収支」の4つまでと決めていたが、2026-11-06に収支→トレード収支へ改名し、家計簿を足して5つにすることを決定した
   var dockBtn = function (id, html, title, tab) { var b = document.createElement("button"); b.type = "button"; b.id = id; b.className = "dk-btn"; b.innerHTML = html; b.title = title; b.addEventListener("click", function () { openTools(tab, b); }); return b; };
   var jnBtn = dockBtn("journal-toggle", "📝 日誌", "取引の記録を入れる・一覧", "journal"), plBtn = dockBtn("pnl-toggle", "📅 トレード収支", "日ごとの確定損益・入出金のカレンダーと、週・月・年のまとめ", "pnl"), kbBtn = dockBtn("kakeibo-toggle", "🧾 家計簿", "家の収入と支出を月ごとに記録（この端末の中だけに保存）", "kakeibo");
-  paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn); dock.appendChild(jnBtn); dock.appendChild(plBtn); dock.appendChild(kbBtn); document.body.appendChild(dock);
+  // ROOM進捗ボードへのドア（2026-11-07追加・リンク端末登録方式）：リンクを登録した端末だけ、家計簿の横に表示する。リンク自体はコードに書かず、端末内（td_room_url）にだけある
+  var roomBtn = document.createElement("button"); roomBtn.type = "button"; roomBtn.id = "roomlink-toggle"; roomBtn.className = "dk-btn"; roomBtn.innerHTML = "🚪 ROOMボード";
+  roomBtn.title = "ROOM進捗ボードを新しいタブで開きます";
+  var roomUrlNow = function () { try { return localStorage.getItem("td_room_url") || ""; } catch (e) { return ""; } };
+  roomBtn.addEventListener("click", function () { var u = roomUrlNow(); if (u) window.open(u, "_blank", "noopener"); });
+  var paintRoomBtn = function () { roomBtn.style.display = roomUrlNow() ? "" : "none"; };
+  window.TDRoomDockSync = paintRoomBtn; paintRoomBtn();
+  window.addEventListener("storage", function (e) { if (e.key === "td_room_url") paintRoomBtn(); });
+  paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn); dock.appendChild(jnBtn); dock.appendChild(plBtn); dock.appendChild(kbBtn); dock.appendChild(roomBtn); document.body.appendChild(dock);
   /* theme switch (plan A: a button at the bottom-right with a list). The dock holds the five main buttons (four until 2026-11-06), so the theme lives on its own at the right. Same setting as the tools screen (td_theme). */
   var THEME_LABELS = [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"], ["shippu", "利確の炎🔥"], ["aurora", "🌌 安らぎのオーロラ"]];
   var THEME_NAMES = { current: "基本デザイン", neon: "アゲアゲ⭐︎ネオン", spring: "春", summer: "夏", autumn: "秋", xmas: "クリスマス", newyear: "正月", winter: "冬", shippu: "利確の炎🔥", aurora: "安らぎのオーロラ" };
