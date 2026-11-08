@@ -1449,7 +1449,7 @@
       var paint = function () {
         var now = Date.now(), cards = D.cards(), m = D.market(), chk = D.check(), src = D.sources(), lv = function (f, txt) { return '<span class="lv lv-' + f.level + '">' + esc(txt || f.label) + "</span>"; };
         // 予備の取得先（ふだんは使わない）と、休場中に止めている配信は「待機中」。障害に見えないように
-        var SPARE = { swissquote: "待機中（通常は未使用・予備）" }, WAIT_CLOSED = { "ws-gold": "gold", "ws-usdjpy": "usdjpy", coinbase: "usdjpy" };
+        var SPARE = { swissquote: "待機中（通常は未使用・予備）" }, WAIT_CLOSED = { "ws-gold": "gold", "ws-usdjpy": "usdjpy", coinbase: "usdjpy", goldapi: "gold" };
         var idle = function (id) { return SPARE[id] || (WAIT_CLOSED[id] && C.marketState(WAIT_CLOSED[id], now).state !== "open" ? "待機中（休場中は止めています）" : "読み込み中"); };
         var srcRow = function (id, name, kind, at) {
           var s = src[id] || {}, f = kind ? C.freshness(kind, at || s.ok, now) : null;
@@ -1495,6 +1495,10 @@
       var vmNow = "both"; try { var _vm = LS.getItem("ayu_verse_mode"); if (_vm === "ja" || _vm === "en") vmNow = _vm; } catch (e) {}
       var vcNow = "on"; try { if (LS.getItem("ayu_verse_card") === "off") vcNow = "off"; } catch (e) {}
       var fsNow = "std"; try { var _fs = LS.getItem("ayu_font_size"); if (_fs === "l" || _fs === "xl") fsNow = _fs; } catch (e) {}
+      var appsShow = true; try { appsShow = LS.getItem("ayu_apps_show") !== "0"; } catch (e) {}
+      var appXmtd = ""; try { appXmtd = LS.getItem("ayu_app_xmtd") || ""; } catch (e) {}
+      var appXs = ""; try { appXs = LS.getItem("ayu_app_xs") || ""; } catch (e) {}
+      var appMt5 = ""; try { appMt5 = LS.getItem("ayu_app_mt5") || ""; } catch (e) {}
       body.innerHTML = '<h3>テーマ（見た目）</h3>' + select("st-theme", "ホーム画面のテーマ", [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["grace", tdLang() === "en" ? "Grace Light" : "恵みの光"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"], ["shippu", "利確の炎🔥"], ["aurora", "🌌 安らぎのオーロラ"]], themeNow) +
         '<p class="note">季節の割り当て：春 3〜5月／夏 6〜8月／秋 9〜11月／クリスマス 12月／正月 12月29日〜1月3日／冬 1〜2月。テーマはこの端末のブラウザに保存されます（端末ごとに別です）。舞う飾り（桜・落ち葉・雪・金粉）は、ページを開き直すと切り替わります。</p>' +
         '<h3>言語 / Language</h3>' + select("st-lang", "表示言語 / Display language", [["ja", "日本語"], ["en", "English"]], langNow) +
@@ -1505,6 +1509,12 @@
         select("st-fsize", tdLang() === "en" ? "Text size" : "文字の大きさ", [["std", tdLang() === "en" ? "Standard" : "標準"], ["l", tdLang() === "en" ? "Large" : "大きい"], ["xl", tdLang() === "en" ? "Extra large" : "特大"]], fsNow) +
         '<p class="note">' + (tdLang() === "en" ? "Saved in this device's browser, like the theme. Hiding the verse card lets the Key Points card fill the space in the wide layout. Text size applies to the verse card, the Learn reader, the home cards and the dock buttons." : "テーマと同じく、この端末のブラウザに保存されます。みことばカードを隠すと、横長の画面では「今日の注目ポイント」のカードが空いた分だけ広がります。文字の大きさは、みことば・学ぶの本文・ホームのカード・下のボタンに効きます。") + '</p>' +
         '<h3>省電力</h3><label class="chk"><input type="checkbox" id="st-low"' + (low ? " checked" : "") + '><span>省電力モード（背景の動き・光・ぼかし・点滅を止めます。iPadの発熱や電池の消費を抑えたいときに）</span></label>' +
+        '<h3>取引アプリのボタン</h3><label class="chk"><input type="checkbox" id="st-appshow"' + (appsShow ? " checked" : "") + '><span>ドックの「開く」に取引アプリのボタン（XMTD TraderPro・XS アプリ・MetaTrader 5）を表示する</span></label>' +
+        '<p class="note">ボタンを押すとアプリの起動を試み、開けない場合は公式ストア／公式サイトへ切り替わります。飛び先は端末ごとに変えられます（空欄＝標準の飛び先）。リンクはこの端末の中だけに保存され、アプリのコードには含まれません。</p>' +
+        '<div class="btns"><span style="align-self:center;font-size:12px;min-width:104px">XMTD TraderPro</span><input type="url" id="st-app-xmtd" value="' + esc(appXmtd).replace(/"/g, "&quot;") + '" placeholder="標準の飛び先（空欄）" style="flex:1;min-width:200px;font:inherit;font-size:12px;padding:6px 9px;border-radius:9px;border:1px solid rgba(227,184,103,.5);background:rgba(0,0,0,.25);color:inherit" autocapitalize="off" autocomplete="off" spellcheck="false"></div>' +
+        '<div class="btns"><span style="align-self:center;font-size:12px;min-width:104px">XS アプリ</span><input type="url" id="st-app-xs" value="' + esc(appXs).replace(/"/g, "&quot;") + '" placeholder="標準の飛び先（空欄）" style="flex:1;min-width:200px;font:inherit;font-size:12px;padding:6px 9px;border-radius:9px;border:1px solid rgba(227,184,103,.5);background:rgba(0,0,0,.25);color:inherit" autocapitalize="off" autocomplete="off" spellcheck="false"></div>' +
+        '<div class="btns"><span style="align-self:center;font-size:12px;min-width:104px">MetaTrader 5</span><input type="url" id="st-app-mt5" value="' + esc(appMt5).replace(/"/g, "&quot;") + '" placeholder="標準の飛び先（空欄）" style="flex:1;min-width:200px;font:inherit;font-size:12px;padding:6px 9px;border-radius:9px;border:1px solid rgba(227,184,103,.5);background:rgba(0,0,0,.25);color:inherit" autocapitalize="off" autocomplete="off" spellcheck="false"></div>' +
+        '<div class="btns"><button type="button" class="btn" id="st-appsave">リンクを保存</button></div><div id="st-appmsg" class="note" aria-live="polite"></div>' +
         '<h3>通知について</h3><div class="out">' + esc("端末の通知：" + ({ granted: "許可済み", denied: "拒否（端末の設定から変更）", default: "未設定（通知のボタンを押したときに確認します）", unsupported: "この環境では使えません" }[nt.permission] || nt.permission) +
           "\n通知音：" + ({ high: "大", mid: "中", low: "小", off: "オフ" }[nt.sound] || "中") + "（ホームの右上のスピーカーのボタンと同じ。エントリー・ダッシュボードのアラート・急変・地震の音量）" +
           "\n・音と通知は、このページを開いている間だけ届きます。ブラウザやアプリを閉じている間のプッシュ通知には対応していません。" +
@@ -1520,6 +1530,14 @@
       $("#st-vcard").addEventListener("change", function () { try { LS.setItem("ayu_verse_card", this.value); } catch (e) {} if (window.TDAyuPrefApply) window.TDAyuPrefApply(); });
       $("#st-fsize").addEventListener("change", function () { try { LS.setItem("ayu_font_size", this.value); } catch (e) {} if (window.TDAyuPrefApply) window.TDAyuPrefApply(); });
       $("#st-low").addEventListener("change", function () { D.setPower(this.checked); });
+      var appShowEl = $("#st-appshow"); if (appShowEl) appShowEl.addEventListener("change", function () { try { LS.setItem("ayu_apps_show", this.checked ? "1" : "0"); } catch (e) {} if (window.TDAppDockSync) window.TDAppDockSync(); });
+      var appSave = $("#st-appsave"); if (appSave) appSave.addEventListener("click", function () {
+        var defs = [["#st-app-xmtd", "ayu_app_xmtd"], ["#st-app-xs", "ayu_app_xs"], ["#st-app-mt5", "ayu_app_mt5"]], bad = false;
+        defs.forEach(function (d) { var v = (($(d[0]).value || "") + "").trim(); if (v && !/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(v)) bad = true; });
+        if (bad) { $("#st-appmsg").textContent = "⚠ リンクは https:// などのURL（スキーム付き）で貼ってください"; return; }
+        defs.forEach(function (d) { var v = (($(d[0]).value || "") + "").trim().replace(/"/g, ""); try { if (v) LS.setItem(d[1], v); else LS.removeItem(d[1]); } catch (e) {} });
+        $("#st-appmsg").textContent = "保存しました（空欄のアプリは標準の飛び先です）";
+      });
       $("#st-exp").addEventListener("click", function () { download("desk-of-ayu-backup-" + C.dayKey(Date.now()) + ".json", JSON.stringify(C.exportSettings(LS, Date.now()), null, 1), "application/json"); });
       $("#st-imp").addEventListener("click", function () {
         pickFile(".json,application/json", function (text) {
