@@ -49,6 +49,68 @@
       .nav a:hover{border-color:#9db894}
       .nav a span{font-weight:900;margin-right:6px}
 
+      /* ---------- top banner ---------- */
+      .cb-banner{
+        background:#14532d;color:#fff;border-radius:12px;
+        padding:14px 18px;margin:14px 0 4px;
+        font-size:14.5px;font-weight:700;line-height:1.75;
+        display:flex;gap:12px;align-items:flex-start;
+      }
+      .cb-banner .cb-tag{
+        flex:none;background:#f2b705;color:#22301f;font-weight:900;font-size:12px;
+        border-radius:999px;padding:3px 11px;margin-top:2px;letter-spacing:.04em;white-space:nowrap;
+      }
+      .cb-banner b{color:#fbd34d}
+
+      /* ---------- guide cards (legend + cashback) ---------- */
+      .guide{
+        background:var(--card-bg);border:1px solid #e3eadf;border-radius:18px;
+        box-shadow:0 10px 30px rgba(46,74,40,.08);
+        padding:24px 26px 20px;margin-top:22px;
+      }
+      .guide h2{
+        font-family:"M PLUS Rounded 1c",sans-serif;
+        font-size:clamp(19px,3.6vw,23px);font-weight:800;margin:0 0 6px;line-height:1.4;
+      }
+      .guide h2 .gold{color:#a86e00}
+      .guide .lead{margin:0 0 14px;font-size:13.8px;line-height:1.85;color:var(--ink-soft)}
+      .guide .lead b{color:var(--ink)}
+      .legend-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+      .legend-item{
+        border:1.5px solid var(--line);border-radius:12px;padding:13px 14px 11px;background:#fbfdf9;
+      }
+      .legend-item .term{
+        font-weight:900;font-size:14.5px;display:flex;align-items:center;gap:8px;margin-bottom:5px;
+      }
+      .legend-item .dot{flex:none;width:10px;height:10px;border-radius:50%}
+      .legend-item p{margin:0;font-size:13px;line-height:1.75;color:var(--ink-soft)}
+      .legend-item p b{color:var(--ink)}
+      .cb-points{margin:0;padding:0;list-style:none}
+      .cb-points li{
+        position:relative;padding:7px 0 7px 22px;font-size:14px;line-height:1.8;color:var(--ink-soft);
+        border-bottom:1px dashed #e3eadf;
+      }
+      .cb-points li:last-child{border-bottom:none}
+      .cb-points li::before{
+        content:"";position:absolute;left:2px;top:16px;width:9px;height:9px;border-radius:50%;background:#e8a90c;
+      }
+      .cb-points li b{color:var(--ink)}
+      .cb-example{margin-top:18px;background:#fffbe9;border:1px solid #eed88a;border-radius:12px;padding:16px 16px 12px}
+      .cb-example h3{margin:0 0 4px;font-size:15.5px;font-weight:900;color:#6d5410}
+      .cb-example .ex-lead{margin:0 0 12px;font-size:12.8px;line-height:1.8;color:#6d5410}
+      .cb-month-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+      .cb-month-cell{
+        background:#fff;border:1.5px solid #eed88a;border-radius:10px;padding:9px 6px 8px;text-align:center;
+      }
+      .cb-month-cell.hot{border-color:#e8a90c;box-shadow:0 4px 12px rgba(214,164,32,.18)}
+      .cb-month-cell .lot{display:block;font-size:11.5px;font-weight:700;color:var(--ink-soft)}
+      .cb-month-cell .yen{
+        display:block;font-family:"M PLUS Rounded 1c",sans-serif;font-weight:800;
+        font-size:clamp(13.5px,2.6vw,16.5px);color:#a86e00;margin-top:2px;font-variant-numeric:tabular-nums;
+      }
+      .cb-example .ex-note{margin:10px 0 2px;font-size:12.3px;line-height:1.8;color:#6d5410}
+      .guide .src{margin:14px 0 0;font-size:12px;color:#7a8774;line-height:1.7}
+
       /* ---------- infographic card ---------- */
       .sheet{
         position:relative;
@@ -151,7 +213,8 @@
         padding:10px;font-size:clamp(13.5px,2.9vw,16.5px);text-align:right;font-variant-numeric:tabular-nums;
         border-top:1px solid #e7eee3;
       }
-      tbody td:first-child{text-align:left;font-weight:700;white-space:nowrap}
+      tbody td:first-child{text-align:left;font-weight:700;line-height:1.45}
+      tbody td .mg{display:block;font-size:.78em;font-weight:500;color:var(--ink-soft);overflow-wrap:anywhere}
       tbody tr:nth-child(even) td{background:#f7faf4}
       tbody td.m20{font-weight:900;color:var(--accent-dark)}
       tbody tr.key td{box-shadow:inset 5px 0 0 var(--accent)}
@@ -190,6 +253,10 @@
         .mascot{width:auto;align-self:flex-end;margin-top:-4px}
         .mascot img{width:84px}
         .bubble{font-size:12.5px;padding:9px 11px;max-width:180px}
+        .cb-banner{flex-direction:column;gap:6px;padding:13px 15px;font-size:13.8px}
+        .guide{padding:19px 16px 16px;border-radius:14px}
+        .legend-grid{grid-template-columns:1fr}
+        .cb-month-grid{grid-template-columns:repeat(2,1fr)}
         .summary{grid-template-columns:repeat(2,1fr)}
         .band div{white-space:normal;line-height:1.5}
         .leaf.tr{width:110px}
@@ -203,10 +270,14 @@
   </head>
   <body>
     <div class="wrap">
+      <div class="cb-banner" role="note">
+        <span class="cb-tag">この図説で分かること</span>
+        <span>この図説では、ロットごとの<b>利益</b>に加えて、<b>XM／XSの必要証拠金</b>と、バリバリ経由の<b>キャッシュバック（CB）</b>も一緒に確認できます。</span>
+      </div>
       <header class="intro">
         <h1>Desk One 5ペア<br />ロット別 利益シミュレーション<span class="hl">図説</span></h1>
         <p>同じ <b>1日 +10pips</b> でも、銘柄とロット数で金額は大きく変わります。Desk One の5銘柄（ゴールド／シルバー／ドル円／ビットコイン／オイル）について、ロットごとの利益を1枚ずつ図説にまとめました。</p>
-        <p>円換算は <b>1ドル = 155円</b> と仮定しています（ドル円は円建て計算）。いずれも仮定に基づく試算で、実際の損益を約束するものではありません。</p>
+        <p>円換算は <b>1ドル = 155円</b> と仮定しています（ドル円は円建て計算）。表の各ロットには、その数量を建てるのに必要な<b>証拠金の目安</b>を、<b>XM版とXS版の両方</b>で括弧に併記しました。XS版は有効証拠金ベースの最大レバレッジ（最初のティア）での試算です。あわせてXM版には、キャッシュバックサイト <b>Atelier de Balibari（バリバリ）</b> 経由のスタンダード口座での<b>キャッシュバック額</b>（1ロットあたり <b>$9.0</b>）も「CB XM」として併記しています（BTC・OILはコミッション総額の90%リベートで、固定額はありません）。いずれも仮定に基づく試算で、実際の損益を約束するものではありません。</p>
         <nav class="nav" aria-label="銘柄へのリンク">
           <a href="#gold"><span style="color:#b8860b">●</span>GOLD</a>
           <a href="#silver"><span style="color:#6b7280">●</span>SILVER</a>
@@ -215,6 +286,60 @@
           <a href="#oil"><span style="color:#0f766e">●</span>OIL</a>
         </nav>
       </header>
+
+      <section class="guide" aria-labelledby="legend-title">
+        <h2 id="legend-title">表の見方 — 数字の凡例</h2>
+        <p class="lead">各銘柄の表では、ロットごとに <b>4種類の数字</b> が並びます。利益だけでなく、建てるのに必要な資金と、取引ごとに戻るキャッシュバックまでを並べて比べられます。</p>
+        <div class="legend-grid">
+          <div class="legend-item">
+            <div class="term"><span class="dot" style="background:#15803d"></span>利益</div>
+            <p>同じ数量で勝ち負けを合算し、<b>1日 +10pips</b> を獲得した場合の試算です。1日・月20取引日（+200pips）・月22取引日（+220pips）の3列で表示します。</p>
+          </div>
+          <div class="legend-item">
+            <div class="term"><span class="dot" style="background:#707a86"></span>証拠金 XM</div>
+            <p>そのロットを <b>XMTrading</b> で建てるのに必要な証拠金の目安です。各ロットの行に「（証拠金 XM 約○円）」と括弧で併記しています。前提レバレッジ・価格は各表の注記をご覧ください。</p>
+          </div>
+          <div class="legend-item">
+            <div class="term"><span class="dot" style="background:#0f766e"></span>証拠金 XS</div>
+            <p>そのロットを <b>XS</b> で建てるのに必要な証拠金の目安です。「（証拠金 XS 約○円）」と併記しています。有効証拠金ベースの最大レバレッジ（最初のティア）での試算で、有効証拠金が増えるとレバレッジは段階的に下がります。</p>
+          </div>
+          <div class="legend-item">
+            <div class="term"><span class="dot" style="background:#e8a90c"></span>CB XM</div>
+            <p><b>取引のたびに戻ってくるキャッシュバック</b>です。バリバリ（Atelier de Balibari）経由のXMスタンダード口座が対象で、固定額がある銘柄（GOLD・SILVER・ドル円）には「（CB XM 約○円／取引）」と併記しています。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="guide" aria-labelledby="cb-title">
+        <h2 id="cb-title">キャッシュバック<span class="gold">とは</span></h2>
+        <p class="lead">キャッシュバック（CB）は、取引をするたびに、支払ったコストの一部が現金で戻ってくる仕組みです。この図説のCBは、キャッシュバックサイト <b>Atelier de Balibari（バリバリ）</b> 経由で開設した <b>XMTrading のスタンダード口座</b> が対象です。</p>
+        <ul class="cb-points">
+          <li>FX通貨ペア・貴金属は、<b>1ロットの取引ごとに $9.0</b>（この図説の換算では約1,395円、1ドル=155円）です。ロット数に比例します。</li>
+          <li>オートリベートでは、<b>取引の翌日に会員ウォレット（MyWallet）へ自動で入ります</b>。</li>
+          <li><b>5分以内に決済した取引も対象</b>です。</li>
+          <li>クレジットボーナスを利用した取引分にはリベートは発生せず、自己資金を入金していない口座（ボーナスのみ）での取引は対象外です。</li>
+          <li>BTC・OILなどのCFDは、<b>お取引コミッション総額の90%リベート</b>です。固定額ではないため、表には金額を載せていません。</li>
+        </ul>
+
+        <div class="cb-example">
+          <h3>月の実例 — そのロットで毎日1回取引すると</h3>
+          <p class="ex-lead">CB月額 ＝ 約1,395円 × ロット数 × 20日（1日1回・月20取引日）で計算した目安です。固定額CBがある <b>GOLD・SILVER・ドル円</b> の3銘柄が対象です。</p>
+          <div class="cb-month-grid">
+            <div class="cb-month-cell"><span class="lot">0.01ロット</span><span class="yen">約¥279／月</span></div>
+            <div class="cb-month-cell"><span class="lot">0.05ロット</span><span class="yen">約¥1,395／月</span></div>
+            <div class="cb-month-cell"><span class="lot">0.10ロット</span><span class="yen">約¥2,790／月</span></div>
+            <div class="cb-month-cell"><span class="lot">0.25ロット</span><span class="yen">約¥6,975／月</span></div>
+            <div class="cb-month-cell"><span class="lot">0.50ロット</span><span class="yen">約¥13,950／月</span></div>
+            <div class="cb-month-cell hot"><span class="lot">1.00ロット</span><span class="yen">約¥27,900／月</span></div>
+            <div class="cb-month-cell"><span class="lot">2.00ロット</span><span class="yen">約¥55,800／月</span></div>
+            <div class="cb-month-cell"><span class="lot">3.00ロット</span><span class="yen">約¥83,700／月</span></div>
+            <div class="cb-month-cell"><span class="lot">5.00ロット</span><span class="yen">約¥139,500／月</span></div>
+            <div class="cb-month-cell"><span class="lot">10.00ロット</span><span class="yen">約¥279,000／月</span></div>
+          </div>
+          <p class="ex-note">たとえば1.00ロットで毎日1回取引すると、利益とは別にCBが月約¥27,900戻る計算です。BTC・OILは固定額がない（コミッション総額の90%リベート）ため、この実例には含めていません。</p>
+        </div>
+        <p class="src">出典：<a href="https://atelierdebalibari.com/xm-com/" target="_blank" rel="noopener">Atelier de Balibari（バリバリ）XM詳細ページ</a>／金額は1ドル=155円換算の目安で、実際のリベート額は為替レート等で変わります。</p>
+      </section>
 
       <main id="sheets"></main>
 
@@ -236,6 +361,11 @@
             pipsWidth:"$1.00",
             contract:"1ロット = 100オンス ｜ 1pips = $0.10",
             baseYen:15500, baseLabel:"$100 ＝ 15,500円",
+            marginYen1:62000,
+            marginYen1XS:31000,
+            cashbackYen1:1395,
+            marginNote:"XM版の必要証拠金は、レバレッジ1,000倍・金価格 $4,000／オンス・1ドル=155円で計算した目安です。",
+            marginNoteXS:"XS版は、レバレッジ2,000倍（有効証拠金ベース・最初のティア、円建て口座 ¥0〜800,000）・金価格 $4,000／オンス・1ドル=155円で計算した目安です。",
             formula:"ロット数 × $100 × 取引日数",
             formulaSub:"（円換算 ×155円）",
             extraNote:"本表のpipsはDesk Oneの表示定義（1pips=$0.10）。価格の最小刻み（$0.01）で数えると、同じ値動きは10倍のpips数になります。"
@@ -247,6 +377,12 @@
             pipsWidth:"$0.10",
             contract:"1ロット = 5,000オンス ｜ 1pips = $0.01",
             baseYen:77500, baseLabel:"$500 ＝ 77,500円",
+            marginYen1:96875,
+            marginYen1XS:19375,
+            cashbackYen1:1395,
+            marginNote:"XM版の必要証拠金は、レバレッジ400倍・銀価格 $50／オンス・1ドル=155円で計算した目安です。",
+            marginNoteXS:"XS版は、レバレッジ2,000倍（有効証拠金ベース・最初のティア、円建て口座 ¥0〜150,000）・銀価格 $50／オンス・1ドル=155円で計算した目安です。",
+            xsChangeNote:"XSでは2026年9月11日から、シルバーの最大レバレッジが従来の1:500から1:2000へ引き上げられました（XSのお知らせメール「ゴールド・シルバーのダイナミック・レバレッジ条件更新のお知らせ」2026-09-10）。本表のXS版は引き上げ後の値で計算しています。",
             formula:"ロット数 × $500 × 取引日数",
             formulaSub:"（円換算 ×155円）",
             extraNote:null
@@ -258,6 +394,11 @@
             pipsWidth:"0.10円",
             contract:"1ロット = 100,000通貨 ｜ 1pips = 0.01円",
             baseYen:10000, baseLabel:"10,000円",
+            marginYen1:15500,
+            marginYen1XS:7750,
+            cashbackYen1:1395,
+            marginNote:"XM版の必要証拠金は、レバレッジ1,000倍・ドル円 155円で計算した目安です。",
+            marginNoteXS:"XS版は、レバレッジ2,000倍（有効証拠金ベース・最初のティア、円建て口座 ¥0〜450,000）・ドル円 155円で計算した目安です。",
             formula:"ロット数 × 10,000円 × 取引日数",
             formulaSub:"（1ロット・+10pips／日 あたり）",
             extraNote:null
@@ -269,6 +410,11 @@
             pipsWidth:"$10",
             contract:"1ロット = 1 BTC ｜ 1pips = $1",
             baseYen:1550, baseLabel:"$10 ＝ 1,550円",
+            marginYen1:31000,
+            marginYen1XS:77500,
+            cashbackYen1:null,
+            marginNote:"XM版の必要証拠金は、レバレッジ500倍・BTC価格 $100,000・1ドル=155円で計算した目安です。",
+            marginNoteXS:"XS版は、レバレッジ200倍（有効証拠金ベース・最初のティア、円建て口座 ¥0〜150,000）・BTC価格 $100,000・1ドル=155円で計算した目安です。",
             formula:"ロット数 × $10 × 取引日数",
             formulaSub:"（円換算 ×155円）",
             extraNote:null
@@ -280,6 +426,11 @@
             pipsWidth:"$0.10",
             contract:"1ロット = 100バレル ｜ 1pips = $0.01",
             baseYen:1550, baseLabel:"$10 ＝ 1,550円",
+            marginYen1:4650,
+            marginYen1XS:1860,
+            cashbackYen1:null,
+            marginNote:"XM版の必要証拠金は、レバレッジ200倍・WTI価格 $60／バレル・1ドル=155円で計算した目安です。",
+            marginNoteXS:"XS版は、レバレッジ500倍（有効証拠金ベース・最初のティア、円建て口座 ¥0〜150,000）・WTI価格 $60／バレル・1ドル=155円で計算した目安です。",
             formula:"ロット数 × $10 × 取引日数",
             formulaSub:"（円換算 ×155円）",
             extraNote:null
@@ -296,6 +447,10 @@
             ? l.toFixed(2) : l.toFixed(2);
         }
         function lotText(l){ return l.toFixed(2) + " ロット"; }
+        // 必要証拠金：円の整数（四捨五入）で表示
+        function fmtYen(n){
+          return Math.round(n).toLocaleString("ja-JP");
+        }
         function sumLotText(l){ return (l === 0.1 ? "0.1" : String(l)) + "ロット"; }
         // 万円表記：1万円以上は万円単位（小数1桁まで）、未満は円のまま
         function bigValue(yen){
@@ -321,6 +476,13 @@
             '<path d="' + leaf + '" transform="translate(52,-24) rotate(8 30 30) scale(.9)"/>' +
             '<path d="' + leaf + '" transform="translate(154,2) rotate(66 30 30) scale(.82)"/>' +
             '</g></svg>';
+        }
+
+        function cashbackNote(ins){
+          if (ins.cashbackYen1){
+            return '<p>キャッシュバック（XM）：バリバリ（Atelier de Balibari）経由のスタンダード口座では、1ロットの取引につき <b>$9.0</b>（1ドル=155円換算で約1,395円）のリベートがあります。表の「CB XM」はその額で、5分以内に決済した取引も対象です。ただし、クレジットボーナスを利用した取引にはリベートは発生せず、自己資金を入金していない口座（ボーナスのみ）での取引は対象外です。</p>';
+          }
+          return '<p>キャッシュバック（XM）：バリバリ（Atelier de Balibari）経由のスタンダード口座では、この銘柄は「その他CFD」に当たり、お取引コミッション総額の<b>90%リベート</b>です（固定額ではないため、表には金額を載せていません）。クレジットボーナスを利用した取引にはリベートは発生せず、自己資金を入金していない口座（ボーナスのみ）での取引は対象外です。</p>';
         }
 
         function buildSheet(ins){
@@ -366,7 +528,7 @@
 
           // table
           html += '<table><thead><tr>' +
-            '<th>取引数量<span class="sub">（ロット）</span></th>' +
+            '<th>取引数量<span class="sub">（ロット）／括弧内は必要証拠金（XM／XS）とCB（XM）</span></th>' +
             '<th>1日の利益<span class="sub">+10pips</span></th>' +
             '<th>月20取引日<span class="sub">+200pips</span></th>' +
             '<th>月22取引日<span class="sub">+220pips</span></th>' +
@@ -377,7 +539,8 @@
             var m22 = round1(d * 22);
             var isKey = KEY_LOTS.indexOf(l) >= 0;
             var cls = isKey ? ' class="key' + (l === 10 ? ' key-last' : '') + '"' : '';
-            html += '<tr' + cls + '><td>' + lotText(l) + '</td>' +
+            var cbSpan = ins.cashbackYen1 ? '<span class="mg">（CB XM 約' + fmtYen(ins.cashbackYen1 * l) + '円／取引）</span>' : '';
+            html += '<tr' + cls + '><td>' + lotText(l) + '<span class="mg">（証拠金 XM 約' + fmtYen(ins.marginYen1 * l) + '円）</span><span class="mg">（証拠金 XS 約' + fmtYen(ins.marginYen1XS * l) + '円）</span>' + cbSpan + '</td>' +
               '<td>' + fmt(d) + '円</td>' +
               '<td class="m20">' + fmt(m20) + '円</td>' +
               '<td>' + fmt(m22) + '円</td></tr>';
@@ -391,14 +554,21 @@
           // notes
           html += '<div class="notes">' +
             '<p>同じ数量で、勝ち負けを合算して1日あたり+10pipsと仮定。売買コスト・税金を差し引く前の試算。スワップは含みません。円換算は1ドル=155円と仮定。</p>' +
+            '<p>' + ins.marginNote + '実際の必要証拠金は、価格の変動や口座のレバレッジ設定、ブローカーの条件によって変わります。</p>' +
+            '<p>' + ins.marginNoteXS + '</p>' +
+            cashbackNote(ins) +
+            '<p>XS版は「有効証拠金ベースの最大レバレッジ（最初のティア）」での試算です。有効証拠金が増えるとレバレッジは段階的に下がり、必要証拠金は増えます。また、指標発表前後や金曜クローズ前などのHMR（必要証拠金引き上げ）期間は、XSでは新規ポジションの最大レバレッジが1:200に制限される場合があります。</p>' +
             '<p class="warn">取引数量を増やすと、利益と損失の両方が同じ倍率で増えます。</p>';
+          if (ins.xsChangeNote){
+            html += '<p class="gold-note">' + ins.xsChangeNote + '</p>';
+          }
           if (ins.extraNote){
             html += '<p class="gold-note">' + ins.extraNote + '</p>';
           }
           html += '</div>';
 
           // source
-          html += '<div class="srcrow"><div>pips定義・契約サイズ：Desk One（XMTrading基準）</div>' +
+          html += '<div class="srcrow"><div>pips定義・契約サイズ：Desk One（XMTrading基準）／XSレバレッジ：<a href="https://www.xs.com/jp/accounts/dynamic-leverage/equity-based/" target="_blank" rel="noopener">XS公式「有効証拠金ベースのダイナミック・レバレッジ」</a>／キャッシュバック：<a href="https://atelierdebalibari.com/xm-com/" target="_blank" rel="noopener">Atelier de Balibari（バリバリ）</a></div>' +
             '<div class="stamp">' + ins.stamp + ' / ' + STAMP_DATE + '</div></div>';
 
           html += '</section>';
