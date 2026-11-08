@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="ec02122814">
+<meta name="build" content="521981ecb6">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1175,7 +1175,8 @@ function mergeSpotAll(price,t){
 /* ---------- cache / prefs ---------- */
 function saveCache(){
   lsSet(LSP+'auto_cache_final',JSON.stringify({
-    spot:IS_OIL&&state.spot?{...state.spot,src:state.src.spot,live:oilLive,oilDiff:oilEffDiff(oilActive())}:state.spot,  // 原油：ホームのカードが同じ値・同じ差を出せるようにfx:state.fx,goldJpy:state.goldJpy,h1:state.h1,m15:state.m15,m5:state.m5,m30:state.m30,h4:state.h4,d1:state.d1,w1:state.w1,mn:state.mn,
+    spot:IS_OIL&&state.spot?{...state.spot,src:state.src.spot,live:oilLive,oilDiff:oilEffDiff(oilActive())}:state.spot,  // 原油：ホームのカードが同じ値・同じ差を出せるように
+    fx:state.fx,goldJpy:state.goldJpy,h1:state.h1,m15:state.m15,m5:state.m5,m30:state.m30,h4:state.h4,d1:state.d1,w1:state.w1,mn:state.mn,
     events:state.events,lastOk:state.lastOk,rolling:state.rolling
   }));
 }
@@ -1523,7 +1524,7 @@ async function closedSpot(){
   const changed=!state.spot||state.spot.price!==px;
   state.src.spot='サイト（休場前の最終値）';
   state.spot={price:px,asof:toMs(g.asOf)||Date.now(),freshness:'fresh',age:0};
-  if(IS_FX){state.fx=px;state.health.fx=true}else if(state.fx)state.goldJpy=px*state.fx;
+  if(IS_FX){state.fx=px;state.health.fx=true}else{await refreshFx();if(state.fx)state.goldJpy=px*state.fx}  // 休場中も横断表示のドル円を取る（サイトの休場前の最終値に追従。取れなければ表示は前回のまま）
   state.health.spot=true;state.lastOk=Date.now();state.nextSpot=Date.now()+INTERVALS.spot;
   setStatus('live','休場中');showError('');if(changed){saveCache();renderAll()}
 }
@@ -1653,7 +1654,7 @@ async function refreshSpot(){
     if(Date.now()-asof>10*60000)freshness='stale';
     if(!src.startsWith('サイト'))liveCalibrate(usd);
     if(liveFresh()&&state.spot){  // リアルタイム配信が生きている間は、補正だけして配信の値を使い続ける
-      if(fx){state.fx=fx;state.health.fx=true}else{await refreshFx();if(state.fx)state.goldJpy=state.spot.price*state.fx}  // 横断表示のドル円も30秒ごとに追従
+      if(fx){state.fx=fx;state.health.fx=true;state.src.fx='XAUS'}else{await refreshFx();if(state.fx)state.goldJpy=state.spot.price*state.fx}  // 横断表示のドル円も30秒ごとに追従
       state.health.spot=true;state.lastOk=Date.now();state.nextSpot=Date.now()+INTERVALS.spot;setStatus('live','LIVE');showError('');return;
     }
     state.src.spot=src;
@@ -1661,7 +1662,7 @@ async function refreshSpot(){
     if(!fx) fx=await refreshFx();
     state.prevPrice=state.spot?.price??null;
     state.spot={price:usd,asof,freshness,age:0};
-    if(fx){state.fx=fx;state.health.fx=true}
+    if(fx){state.fx=fx;state.health.fx=true;if(!state.src.fx)state.src.fx='XAUS'}
     state.goldJpy=jpyOz||(fx?usd*fx:state.goldJpy);
     if(!src.startsWith('サイト'))alignSiteBars(usd);
     updateRolling(usd);
@@ -2785,7 +2786,9 @@ function rebound(){
   const touch=detectTouch();
   if(!touch)return {touch:null,up:0,down:0,count:0};
   const after=state.m15.filter(b=>b.t>=touch.t).slice(0,48);
-  if(!after.length)return {touch,up:0,down:0,count:0};
+  // M15の足がタッチの直後（1本以内）から始まっていないときは、タッチ後の窓がデータの範囲外。
+  // そのまま集計すると、いま残っている一番古い48本（タッチとは無関係な窓）を測ってしまい、更新のたびに値が動く
+  if(!after.length||after[0].t-touch.t>900000)return {touch,up:0,down:0,count:0};
   return {touch,up:Math.max(...after.map(b=>b.h))-touch.p,down:touch.p-Math.min(...after.map(b=>b.l)),count:after.length};
 }
 // ロット計算の想定方向：手動指定 → セットアップ判定（BUY/SELL）→ 総合判定（買い優勢／売り優勢）→ どれも方向がなければ120SMAの目線（チェック1と同じ）
@@ -3739,7 +3742,7 @@ function renderRebound(){
   const r=rebound();
   if(!r.touch){['touchTime','touchPrice','reboundUp','reboundDown'].forEach(id=>$(id).textContent='--');$('reboundNote').textContent='H1/M15データ接続後に自動計算';return r}
   $('touchTime').textContent=localTime(r.touch.t);$('touchPrice').textContent=fmt(r.touch.p);
-  $('reboundUp').textContent=INSTR.dist(Math.max(0,r.up));$('reboundDown').textContent=INSTR.dist(Math.max(0,r.down));
+  $('reboundUp').textContent=r.count?INSTR.dist(Math.max(0,r.up)):'--';$('reboundDown').textContent=r.count?INSTR.dist(Math.max(0,r.down)):'--';
   $('reboundNote').textContent=r.count?`タッチ後M15 ${r.count}本（最大12時間）を集計`:'M15データの範囲外';
   return r;
 }
@@ -4449,7 +4452,7 @@ function renderChecks(risk,reb){
     atr:a?['ok',INSTR.dist(a),`SL幅 ${INSTR.dist(risk.sl)}（ATR×${n($('slMult').value)||1.2}）`]:['na','待機','M15データ接続待ち'],
     news:caution?['ng','指標注意',`${caution.currency} ${caution.title} の前後です`]:nx?['ok','OK',`次は ${mdwJst(nx.ts)}${hhmm(nx.ts)} ${nx.currency} ${nx.title}`]:['ok','OK','直近の重要指標なし'],
     lot:risk.lot?[risk.lotStep>=0.01?'ok':'wn',risk.lotStep>=0.01?risk.lotStep.toFixed(2)+' lot':'最小ロットでも上限超え',risk.lotStep>=0.01?`最大損失 ${$('riskYen').textContent}／0.01lot刻み`:`0.01lotでも ${$('lotRound').textContent.match(/損失(¥[\d,]+)/)?.[1]||''}（上限 ${$('riskYen').textContent}）`]:['na','待機','価格・為替の取得待ち'],
-    rebound:reb.touch?['ok','反発',`上 ${INSTR.dist(Math.max(0,reb.up))} / 下 ${INSTR.dist(Math.max(0,reb.down))}（${hhmm(reb.touch.t)}タッチ）`]:['na','なし','直近の120SMAタッチなし']
+    rebound:reb.touch?(reb.count?['ok','反発',`上 ${INSTR.dist(Math.max(0,reb.up))} / 下 ${INSTR.dist(Math.max(0,reb.down))}（${hhmm(reb.touch.t)}タッチ）`]:['na','範囲外',`${hhmm(reb.touch.t)}タッチ（タッチ後のM15がデータ範囲外）`]):['na','なし','直近の120SMAタッチなし']
   };
   {const ckEl=$('checks'),ckHtml=CHECKS.map((c,i)=>{
     const [k,label,desc]=live[c.id],done=!!ticks[c.id];
