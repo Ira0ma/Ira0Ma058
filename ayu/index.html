@@ -1354,13 +1354,22 @@ html:not(.beginner) .step-note { display: none; }
 #points .pt-none { color: var(--ink-3); font-size: 12.5px; line-height: 1.6; }
 #points .pt-x { display: none; margin-left: auto; align-items: center; justify-content: center; gap: 6px; min-width: 44px; min-height: 40px; border: 1px solid var(--glass-line); background: rgba(255,255,255,.06); color: var(--ink-2); font-size: 13px; border-radius: 8px; padding: 6px 12px; cursor: pointer; touch-action: manipulation; }
 #points.pt-expanded .pt-x { display: inline-flex; }
-/* 広げるボタン（下段パネルの .tp-x と同じ見た目・大きさ）。展開中は「戻す」（.pt-x）に交代する */
+/* 「大きく読む」ボタン（下段パネルの .tp-x と同じ見た目・大きさ）。展開中は「もどす」（.pt-x）に交代する */
 #points .pt-xp { display: none; margin-left: auto; align-items: center; justify-content: center; gap: 6px; min-width: 44px; min-height: 40px; border: 1px solid var(--glass-line); background: rgba(255,255,255,.05); color: var(--ink-2); border-radius: 8px; font-size: 13px; line-height: 1; padding: 6px 12px; cursor: pointer; touch-action: manipulation; }
 #points:not(.pt-expanded) .pt-xp { display: inline-flex; }
 #points.pt-expanded { z-index: 45; box-shadow: 0 24px 60px rgba(0,0,0,.55); }
 #stage #points.pt-expanded { left: 27px; top: 35px; width: 1156px; height: 771px; }
 /* flow では fixed にしない（下段パネルと同じ理由：.flow .card の position 指定と #fstage の transform に閉じ込められる）。その場で縦に広げ、.pt-list（overflow-y:auto）の中で読む */
 html.flow #points.pt-expanded { position: relative; inset: auto; width: auto; height: 78vh; }
+/* F8：初回だけの説明吹き出し（金の吹き出し）。カード内に重ねて出すだけで、既存レイアウトは一切動かさない */
+.xp-hint { position: absolute; z-index: 2; width: 300px; max-width: calc(100% - 20px); background: #ffd977; color: #3a2a10; font-size: 12.5px; font-weight: 600; line-height: 1.6; padding: 9px 30px 9px 12px; border-radius: 10px; box-shadow: 0 8px 22px rgba(0,0,0,.4); cursor: pointer; }
+.xp-hint::before { content: ""; position: absolute; top: -7px; right: 30px; border: 8px solid transparent; border-bottom-color: #ffd977; border-top: 0; }
+.xp-hint .xp-hint-x { position: absolute; top: 5px; right: 9px; font-size: 13px; font-weight: 400; opacity: .6; }
+.xp-hint[hidden] { display: none !important; }
+#points .xp-hint { top: 88px; right: 10px; }
+#tabpanel .xp-hint { top: 6px; right: 6px; }
+/* flow では .tp-wrap が static のためカード基準になる。タブ行＋次の指標の帯の下に出す */
+html.flow #tabpanel .xp-hint { top: 100px; right: 6px; }
 .ind-peak { flex: none; margin-top: 6px; padding: 5px 10px; border-left: 3px solid var(--gold); border-radius: 6px; background: rgba(var(--gold-rgb),.08); font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ind-list li.min { padding: 4px 0; }
 .ind-list li.min .n { font-size: 12.5px; }
@@ -1563,9 +1572,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <div class="tp-tabs" role="tablist" aria-label="下段パネルの切替">
       <button type="button" class="tp-tab" data-tp="ind" role="tab">📊 指標</button>
       <button type="button" class="tp-tab" data-tp="learn" role="tab">📚 学ぶ</button>
-      <button type="button" class="tp-x" id="tp-expand" aria-label="パネルを広げる"><span class="tp-x-i" aria-hidden="true">⤢</span><span class="tp-x-t">広げる</span></button>
+      <button type="button" class="tp-x" id="tp-expand" aria-label="パネルを大きく読む"><span class="tp-x-i" aria-hidden="true">⤢</span><span class="tp-x-t">大きく読む</span></button>
     </div>
     <div class="tp-wrap">
+      <div class="xp-hint" id="tp-hint" role="note" hidden><span class="xp-hint-t" data-i18n="tpHint">押すと、パネルが大きくなって一覧が読みやすくなります</span><span class="xp-hint-x" aria-hidden="true">✕</span></div>
   <section id="ind" class="tp-pane" aria-label="今日の重要指標">
     <div class="card-title">
       <svg class="ico" viewBox="0 0 26 26" fill="none" stroke="#f4f1ea" stroke-width="1.6"><rect x="3.5" y="5" width="19" height="17" rx="3"/><path d="M3.5 10h19M8.5 2.8v4M17.5 2.8v4"/><path d="M8 14.5h2M12 14.5h2M16 14.5h2M8 18h2M12 18h2" stroke-linecap="round"/></svg>
@@ -1600,13 +1610,14 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <div class="card-title">
       <svg class="ico" viewBox="0 0 26 26"><rect x="4" y="3" width="18" height="21" rx="3" fill="#e3b867"/><rect x="4" y="3" width="18" height="5" rx="2" fill="#c8963f"/><path d="M8 12h10M8 16h10M8 20h6" stroke="#1a1408" stroke-width="1.6" stroke-linecap="round"/></svg>
       <span data-i18n="pointsTitle">今日の注目ポイント</span>
-      <button type="button" id="pt-expand" class="pt-xp" data-i18n="ptExpand">⤢ 広げる</button>
-      <button type="button" id="pt-shrink" class="pt-x" data-i18n="ptShrink">✕ 戻す</button>
+      <button type="button" id="pt-expand" class="pt-xp" data-i18n="ptExpand">⤢ 大きく読む</button>
+      <button type="button" id="pt-shrink" class="pt-x" data-i18n="ptShrink">✕ もどす</button>
     </div>
     <div class="pt-tabs" role="tablist" aria-label="注目ポイントの切替">
       <button type="button" class="pt-tab" data-ptv="map" role="tab">価格帯</button>
       <button type="button" class="pt-tab" data-ptv="strat" role="tab">本日の戦略</button>
     </div>
+    <div class="xp-hint" id="pt-hint" role="note" hidden><span class="xp-hint-t" data-i18n="ptHint">押すと、このカードが大きくなって全文が読めます。もう一度押すと戻ります</span><span class="xp-hint-x" aria-hidden="true">✕</span></div>
     <ul class="pt-list">
       <li id="pt-map"><div class="pm-tabs" role="tablist" aria-label="銘柄"></div><div class="pm-body" aria-live="polite"><p class="pm-wait">分析データを読み込んでいます…</p></div></li>
       <li id="pt-strat-none" hidden><p class="pt-none">本日のトレード戦略は、データが届き次第ここに表示されます。</p></li>
@@ -2247,6 +2258,16 @@ window.TD_THEME = (function () {
   if (ptShrink) ptShrink.addEventListener("click", function () { if (ptsCard) ptsCard.classList.remove("pt-expanded"); });
   var ptExpand = document.getElementById("pt-expand");
   if (ptExpand) ptExpand.addEventListener("click", function () { if (ptsCard) ptsCard.classList.add("pt-expanded"); });
+  /* F8：注目ポイントの初回ヒント（金の吹き出し）。タップで消え、カードを広げても（ボタン・タブのどちらからでも）自動で消える。ayu_hint_points_v1 に記録して二度と出さない */
+  var ptHint = document.getElementById("pt-hint");
+  function dismissPtHint() { if (ptHint) ptHint.hidden = true; try { localStorage.setItem("ayu_hint_points_v1", "1"); } catch (e) {} }
+  if (ptHint) {
+    var ptHintSeen = false;
+    try { ptHintSeen = !!localStorage.getItem("ayu_hint_points_v1"); } catch (e) {}
+    if (!ptHintSeen && ptsCard && !ptsCard.classList.contains("pt-expanded")) ptHint.hidden = false;
+    ptHint.addEventListener("click", dismissPtHint);
+    if (window.MutationObserver && ptsCard) new MutationObserver(function () { if (ptsCard.classList.contains("pt-expanded")) dismissPtHint(); }).observe(ptsCard, { attributes: true, attributeFilter: ["class"] });
+  }
   function syncPtTabs() {
     var none = document.getElementById("pt-strat-none");
     if (!none) return;
@@ -7209,8 +7230,8 @@ window.TD_THEME = (function () {
     ["ユダの手紙", "Jude"], ["ヨハネの黙示録", "Revelation"]
   ];
   var I18N = {
-    ja: { layoutShow: "🔰 見る順番を表示", layoutHide: "🔰 番号札を隠す", toolsBtn: "🧰 ツール", journalBtn: "📝 日誌", pnlBtn: "📅 トレード収支", kakeiboBtn: "🧾 家計簿", lotBtn: "📊 ロット図説", tabInd: "📊 指標", tabLearn: "📚 学ぶ", ptMap: "価格帯", ptStrat: "本日の戦略", ptShrink: "✕ 戻す", ptExpand: "⤢ 広げる", pointsTitle: "今日の注目ポイント", indTitle: "今日の重要指標", learnTitle: "学ぶ", verseTitle: "今日のみことば", verseAside: "Verse of the Day", prsBtn: "聖書を聴く（PRS）", checkBtn: "通読チェック", checkTitle: "📖 聖書通読チェック", closeBtn: "閉じる", greetLine: "お誕生日おめでとうございます。これは、あなたのために仕立てた特別なデスクです。毎日のみことばとともに、穏やかで祝福に満ちた一年になりますように。", greetBtn: "はじめる", otLabel: "旧約聖書（39書）", ntLabel: "新約聖書（27書）", themeGrace: "恵みの光" },
-    en: { layoutShow: "🔰 Show step numbers", layoutHide: "🔰 Hide step numbers", toolsBtn: "🧰 Tools", journalBtn: "📝 Journal", pnlBtn: "📅 Trade P&L", kakeiboBtn: "🧾 Household Budget", lotBtn: "📊 Lot Chart", tabInd: "📊 Events", tabLearn: "📚 Learn", ptMap: "Key Levels", ptStrat: "Strategy", ptShrink: "✕ Close", ptExpand: "⤢ Expand", pointsTitle: "Key Points", indTitle: "Top Events Today", learnTitle: "Learn", verseTitle: "Verse of the Day", verseAside: "今日のみことば", prsBtn: "Listen to the Bible (PRS)", checkBtn: "Reading Checklist", checkTitle: "📖 Bible Reading Checklist", closeBtn: "Close", greetLine: "Happy birthday! This desk was made just for you. May a word of grace greet you every morning, and may the year ahead be gentle and blessed.", greetBtn: "Start", otLabel: "Old Testament (39 books)", ntLabel: "New Testament (27 books)", themeGrace: "Grace Light" }
+    ja: { layoutShow: "🔰 見る順番を表示", layoutHide: "🔰 番号札を隠す", toolsBtn: "🧰 ツール", journalBtn: "📝 日誌", pnlBtn: "📅 トレード収支", kakeiboBtn: "🧾 家計簿", lotBtn: "📊 ロット図説", tabInd: "📊 指標", tabLearn: "📚 学ぶ", ptMap: "価格帯", ptStrat: "本日の戦略", ptShrink: "✕ もどす", ptExpand: "⤢ 大きく読む", tpShrink: "もどす", tpExpand: "大きく読む", ptHint: "押すと、このカードが大きくなって全文が読めます。もう一度押すと戻ります", tpHint: "押すと、パネルが大きくなって一覧が読みやすくなります", pointsTitle: "今日の注目ポイント", indTitle: "今日の重要指標", learnTitle: "学ぶ", verseTitle: "今日のみことば", verseAside: "Verse of the Day", prsBtn: "聖書を聴く（PRS）", checkBtn: "通読チェック", checkTitle: "📖 聖書通読チェック", closeBtn: "閉じる", greetLine: "お誕生日おめでとうございます。これは、あなたのために仕立てた特別なデスクです。毎日のみことばとともに、穏やかで祝福に満ちた一年になりますように。", greetBtn: "はじめる", otLabel: "旧約聖書（39書）", ntLabel: "新約聖書（27書）", themeGrace: "恵みの光" },
+    en: { layoutShow: "🔰 Show step numbers", layoutHide: "🔰 Hide step numbers", toolsBtn: "🧰 Tools", journalBtn: "📝 Journal", pnlBtn: "📅 Trade P&L", kakeiboBtn: "🧾 Household Budget", lotBtn: "📊 Lot Chart", tabInd: "📊 Events", tabLearn: "📚 Learn", ptMap: "Key Levels", ptStrat: "Strategy", ptShrink: "✕ Shrink back", ptExpand: "⤢ Read larger", tpShrink: "Shrink back", tpExpand: "Read larger", ptHint: "Tap to make this card bigger and read the full text. Tap again to shrink it back.", tpHint: "Tap to make this panel bigger so the list is easier to read.", pointsTitle: "Key Points", indTitle: "Top Events Today", learnTitle: "Learn", verseTitle: "Verse of the Day", verseAside: "今日のみことば", prsBtn: "Listen to the Bible (PRS)", checkBtn: "Reading Checklist", checkTitle: "📖 Bible Reading Checklist", closeBtn: "Close", greetLine: "Happy birthday! This desk was made just for you. May a word of grace greet you every morning, and may the year ahead be gentle and blessed.", greetBtn: "Start", otLabel: "Old Testament (39 books)", ntLabel: "New Testament (27 books)", themeGrace: "Grace Light" }
   };
   function lang() { return lsGet("ayu_td_lang") === "en" ? "en" : "ja"; }
   function todayVerse() { return VERSES31[(new Date().getDate() - 1) % VERSES31.length]; }
@@ -7267,6 +7288,8 @@ window.TD_THEME = (function () {
     var lt = document.getElementById("lot-toggle"); if (lt) lt.innerHTML = L.lotBtn;
     document.querySelectorAll(".tp-tab").forEach(function (b) { b.innerHTML = b.getAttribute("data-tp") === "learn" ? L.tabLearn : L.tabInd; });
     document.querySelectorAll(".pt-tab").forEach(function (b) { b.innerHTML = b.getAttribute("data-ptv") === "strat" ? L.ptStrat : L.ptMap; });
+    var txp = document.getElementById("tp-expand");
+    if (txp) { var tpn = document.getElementById("tabpanel"); var ton = !!(tpn && tpn.classList.contains("tp-expanded")); var txi = txp.querySelector(".tp-x-i"), txt = txp.querySelector(".tp-x-t"); if (txi) txi.textContent = ton ? "✕" : "⤢"; if (txt) txt.textContent = ton ? L.tpShrink : L.tpExpand; }
     var va = document.getElementById("vs-aside"); if (va) va.textContent = L.verseAside;
     var tbtn = document.getElementById("theme-toggle");
     if (tbtn) {
@@ -7340,12 +7363,23 @@ window.TD_THEME = (function () {
   var pnBtn = document.getElementById("pt-next"), tpTabsEl = document.querySelector(".tp-tabs");
   if (pnBtn && tpTabsEl) tpTabsEl.appendChild(pnBtn);
   var tpExp = document.getElementById("tp-expand"), tpPanel = document.getElementById("tabpanel");
+  /* F8：下段パネルの初回ヒント（金の吹き出し）。タップで消え、パネルを広げても自動で消える。ayu_hint_panel_v1 に記録して二度と出さない */
+  var tpHint = document.getElementById("tp-hint");
+  function dismissTpHint() { if (tpHint) tpHint.hidden = true; try { localStorage.setItem("ayu_hint_panel_v1", "1"); } catch (e) {} }
+  if (tpHint) {
+    var tpHintSeen = false;
+    try { tpHintSeen = !!localStorage.getItem("ayu_hint_panel_v1"); } catch (e) {}
+    if (!tpHintSeen && tpPanel && !tpPanel.classList.contains("tp-expanded")) tpHint.hidden = false;
+    tpHint.addEventListener("click", dismissTpHint);
+  }
   if (tpExp && tpPanel) tpExp.addEventListener("click", function () {
     var on = tpPanel.classList.toggle("tp-expanded");
     var tpIc = tpExp.querySelector(".tp-x-i"), tpTx = tpExp.querySelector(".tp-x-t");
     if (tpIc) tpIc.textContent = on ? "✕" : "⤢";
-    if (tpTx) tpTx.textContent = on ? "戻す" : "広げる";
-    tpExp.setAttribute("aria-label", on ? "パネルを戻す" : "パネルを広げる");
+    if (tpTx) tpTx.textContent = on ? "もどす" : "大きく読む";
+    tpExp.setAttribute("aria-label", on ? "パネルをもどす" : "パネルを大きく読む");
+    if (on) dismissTpHint();
+    if (window.TDLangApply) window.TDLangApply();
   });
   try { tpShow(tpName); } catch (e) {}
 })();
