@@ -1328,6 +1328,36 @@ html:not(.beginner) .step-note { display: none; }
 @media (pointer: coarse) { .dk-theme-btn { min-height: 36px; padding: 6px 14px; } }
 /* 狭い画面（iPhone SE級・縦375px）：ドックは5ボタン化（2026-11-06）で幅が増えたため、詰めて折り返し、右下のテーマボタンと重ならないようにする */
 @media (max-width: 640px) { .dk-dock { gap: 4px; left: calc(env(safe-area-inset-left, 0px) + 6px); flex-wrap: wrap; max-width: calc(100vw - 176px); } .dk-dock #layout-toggle, #tools-toggle, .dk-dock .dk-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; } .dk-theme-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; right: calc(env(safe-area-inset-right, 0px) + 6px); max-width: 164px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #flow { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 140px); } }  /* 狭幅ではドックが3段（約104px＋下端4px）に折り返すため、末尾の章カードとヒント行がドックの上までスクロールできる余白 */
+
+/* ---------- 2026-11-09 ホーム再編（Desk of Ayu）：下段タブパネル／注目ポイント内タブ／ロット図説ボタン。みことばカードと左列は従来どおり ---------- */
+#tabpanel { left: 352px; top: 536px; width: 832px; height: 270px; padding: 12px 16px; display: flex; flex-direction: column; }
+.tp-tabs { display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--glass-line); padding-bottom: 10px; flex: none; }
+.tp-tab { font: inherit; font-size: 13px; font-weight: 600; padding: 6px 15px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--glass-line); color: var(--ink-2); cursor: pointer; }
+.tp-tab.on { background: var(--gold); color: var(--on-accent); border-color: var(--gold); }
+.tp-next { margin-left: auto; font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-wrap { flex: 1; min-height: 0; position: relative; margin-top: 6px; }
+#tabpanel #ind, #tabpanel #xfeed { position: absolute; inset: 0; width: auto; height: auto; background: none; border: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; border-radius: 0; margin: 0; }
+#tabpanel #ind { padding: 4px 2px; }
+#tabpanel #xfeed { padding: 4px 2px; overflow-y: auto; }
+.tp-pane[hidden] { display: none !important; }
+.pt-tabs { display: flex; gap: 6px; margin: 8px 0 2px; flex: none; }
+.pt-tab { font: inherit; font-size: 12px; font-weight: 600; padding: 5px 13px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--glass-line); color: var(--ink-2); cursor: pointer; }
+.pt-tab.on { background: var(--gold); color: var(--on-accent); border-color: var(--gold); }
+.pt-tab:disabled { opacity: .45; cursor: default; }
+#points.ptv-map #pt-strat { display: none !important; }
+#points.ptv-strat #pt-map { display: none !important; }
+#points .pt-next { flex-direction: row; align-items: baseline; gap: 8px; padding-top: 7px; }
+#points .pt-next .pn-h { flex: none; }
+#points .pt-next .pn-l2 { order: 2; font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#points .pt-next .pn-l1 { order: 3; margin-left: auto; flex: none; font-size: 12.5px; }
+.dk-grp { display: flex; gap: 7px; align-items: center; }
+.dk-lb { display: none; }
+html.phone .dk-dock { gap: 4px; }
+html.phone .dk-grp { gap: 4px; }
+html.phone .dk-dock .dk-btn, html.phone .dk-dock #layout-toggle, html.phone #tools-toggle { font-size: 11px; padding: 4px 8px; min-height: 32px; }
+.flow #tabpanel { height: auto; }
+.flow .tp-wrap { position: static; }
+.flow #tabpanel #ind, .flow #tabpanel #xfeed { position: relative; inset: auto; height: auto; overflow: visible; }
 .dk-theme-pop { position: fixed; z-index: 60; right: calc(env(safe-area-inset-right, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 48px); width: 228px; background: rgba(var(--panel-rgb),.97); border: 1px solid rgba(var(--gold-rgb),.55); border-radius: 14px; padding: 8px; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
 .dk-theme-pop h4 { margin: 2px 6px 6px; font-size: 11px; color: var(--ink-3); font-weight: 700; letter-spacing: .04em; }
 .dk-theme-pop button { display: flex; width: 100%; align-items: center; gap: 8px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); background: none; border: 0; border-radius: 9px; padding: 7px 8px; cursor: pointer; text-align: left; }
@@ -1481,7 +1511,15 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   </section>
 
   <!-- indicators -->
-  <section class="card" id="ind" aria-label="今日の重要指標">
+  <!-- 下段タブパネル（2026-11-09新設・Desk Oneと同仕様）：今日の重要指標と「学ぶ」をタブ切替 -->
+  <section class="card" id="tabpanel" aria-label="指標と学ぶ（タブ切替）">
+    <div class="tp-tabs" role="tablist" aria-label="下段パネルの切替">
+      <button type="button" class="tp-tab" data-tp="ind" role="tab">📊 指標</button>
+      <button type="button" class="tp-tab" data-tp="learn" role="tab">📚 学ぶ</button>
+      <span class="tp-next" id="tp-next"></span>
+    </div>
+    <div class="tp-wrap">
+  <section id="ind" class="tp-pane" aria-label="今日の重要指標">
     <div class="card-title">
       <svg class="ico" viewBox="0 0 26 26" fill="none" stroke="#f4f1ea" stroke-width="1.6"><rect x="3.5" y="5" width="19" height="17" rx="3"/><path d="M3.5 10h19M8.5 2.8v4M17.5 2.8v4"/><path d="M8 14.5h2M12 14.5h2M16 14.5h2M8 18h2M12 18h2" stroke-linecap="round"/></svg>
       <span data-i18n="indTitle">今日の重要指標</span><span class="aside num" id="ind-day"></span>
@@ -1496,12 +1534,28 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <span class="ind-upd num" id="ind-upd"></span>
     </div>
   </section>
+<section id="xfeed" class="tp-pane" aria-label="学習：用語集・図鑑・入門">
+    <div class="gl-tile">
+      <div class="gl-head">
+        <b class="gl-title" data-i18n="learnTitle">学ぶ</b><span id="gl-count"></span><button type="button" class="gl-open" data-gl="toc">目次を開く ›</button><button type="button" class="gl-shelf" data-shf="open">📚 小さな書斎</button>
+      </div>
+      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（カテゴリ別の30冊の本と、2冊の辞書）"><div class="gl-cat">投資とトレード</div><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="indicators" title="16冊目：インジケーターの教科書 ― 使い方とトレードへの活かし方（インジケーターの教科書）"><i class="gl-no" aria-hidden="true">16</i>インジケーターの<span class="gl-x">教科書</span></button><button type="button" role="tab" data-glbook="regime" title="17冊目：相場の読み方 ― テクニカルとファンダメンタル（相場の読み方）"><i class="gl-no" aria-hidden="true">17</i>相場の<span class="gl-x">読み方</span></button><div class="gl-cat">暮らしと制度</div><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="walls" title="8冊目：年収の壁と扶養のしくみ（パートの税金・社会保険・配偶者控除の壁）"><i class="gl-no" aria-hidden="true">8</i>年収の壁</button><button type="button" role="tab" data-glbook="fire" title="9冊目：FIREの設計図 ― 投資の組み合わせの作り方（自分の条件で設計するFIREと、設計ワーク）"><i class="gl-no" aria-hidden="true">9</i>FIRE<span class="gl-x">の設計図</span></button><button type="button" role="tab" data-glbook="safetynet" title="10冊目：困ったときに読む本 ― 生活のセーフティーネット（困ったときに開く本）"><i class="gl-no" aria-hidden="true">10</i>困ったときの<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="loan" title="11冊目：お金を借りる前に読む本 ― 上手な借り入れ、悪い借り入れ（借りる前に読む本）"><i class="gl-no" aria-hidden="true">11</i>借りる前の<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="med" title="13冊目：家庭の医学 ― 体調を崩したときに開く本（体調を崩したときに開く本）"><i class="gl-no" aria-hidden="true">13</i>家庭の<span class="gl-x">医学</span></button><button type="button" role="tab" data-glbook="safety" title="14冊目：巻き込まれたときに開く本 ― 犯罪・トラブルの安全マニュアル（巻き込まれたときに開く本）"><i class="gl-no" aria-hidden="true">14</i>巻き込まれた<span class="gl-x">ときの本</span></button><button type="button" role="tab" data-glbook="disaster" title="15冊目：災害のときに開く本 ― 避難と備えのマニュアル（災害のときに開く本）"><i class="gl-no" aria-hidden="true">15</i>災害の<span class="gl-x">ときの本</span></button><button type="button" role="tab" data-glbook="parental" title="18冊目：産休・育休の本 ― 休み方と手当の徹底まとめ（産休・育休の本）"><i class="gl-no" aria-hidden="true">18</i>産休・育休<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="taxes" title="19冊目：税金一覧の本 ― 日本の税金を表で整理（税金一覧の本）"><i class="gl-no" aria-hidden="true">19</i>税金一覧<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="inheritance" title="24冊目：相続と遺言、終活の本 ― 受け継ぐ仕組みと、自分の意思の残し方（相続と遺言、終活の本）"><i class="gl-no" aria-hidden="true">24</i>相続・遺言<span class="gl-x">終活の本</span></button><button type="button" role="tab" data-glbook="insurance" title="25冊目：民間の保険の見方 ― 公的保険との切り分けと入り方（民間の保険の見方）"><i class="gl-no" aria-hidden="true">25</i>民間の保険<span class="gl-x">の見方</span></button><button type="button" role="tab" data-glbook="housing" title="26冊目：家と住宅ローンの本 ― 賃貸と購入、ローンの仕組みと付き合い方（家と住宅ローンの本）"><i class="gl-no" aria-hidden="true">26</i>家と<span class="gl-x">住宅ローン</span></button><button type="button" role="tab" data-glbook="childcare" title="27冊目：子育てと教育費の本 ― 誕生から自立まで、お金と制度の地図（子育てと教育費の本）"><i class="gl-no" aria-hidden="true">27</i>子育てと<span class="gl-x">教育費</span></button><button type="button" role="tab" data-glbook="credit" title="28冊目：信用情報とカードの本 ― 記録の仕組みと、カードとの付き合い方（信用情報とカードの本）"><i class="gl-no" aria-hidden="true">28</i>信用情報と<span class="gl-x">カード</span></button><button type="button" role="tab" data-glbook="nursing" title="29冊目：介護の実務の本 ― 認定・サービス・費用と、家族を支える制度（介護の実務の本）"><i class="gl-no" aria-hidden="true">29</i>介護の<span class="gl-x">実務</span></button><button type="button" role="tab" data-glbook="marriage" title="30冊目：結婚と離婚のお金と手続き ― 婚姻で変わる制度と、離婚の進め方・分け方（結婚と離婚のお金と手続き）"><i class="gl-no" aria-hidden="true">30</i>結婚と離婚<span class="gl-x">の手続き</span></button><div class="gl-cat">仕事と経営</div><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="aiside" title="12冊目：AIと始める副業の教科書 ― クラウドワークス・アフィリエイト・コンテンツ販売（AIと始める副業の教科書）"><i class="gl-no" aria-hidden="true">12</i>AI副業の<span class="gl-x">教科書</span></button><button type="button" role="tab" data-glbook="labor" title="20冊目：職場のルールの本 ― 労働基準法と懲戒・残業・解雇（職場のルールの本）"><i class="gl-no" aria-hidden="true">20</i>職場の<span class="gl-x">ルール</span></button><button type="button" role="tab" data-glbook="social" title="21冊目：社会保険・年金と福利厚生の本 ― 5つの保険と年金の地図（社会保険・年金と福利厚生の本）"><i class="gl-no" aria-hidden="true">21</i>社会保険・<span class="gl-x">年金と福利厚生</span></button><button type="button" role="tab" data-glbook="company" title="22冊目：法人化の本 ― 個人事業主と法人の徹底まとめ（法人化の本）"><i class="gl-no" aria-hidden="true">22</i>法人化<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="bookkeeping" title="23冊目：簿記・会計の本 ― 帳簿と決算書が読めるようになる本（簿記・会計の本）"><i class="gl-no" aria-hidden="true">23</i>簿記・会計<span class="gl-x">の本</span></button><div class="gl-cat">辞書</div><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
+      <div class="gl-grid" id="gl-grid"></div>
+      <p class="gl-hint">本を開いたら、左右にスワイプか「次のページ ›」でめくれます</p>
+    </div>
+  </section>
+    </div>
+  </section>
 
   <!-- points -->
-  <section class="card" id="points" aria-label="今日の注目ポイント">
+  <section class="card ptv-map" id="points" aria-label="今日の注目ポイント">
     <div class="card-title">
       <svg class="ico" viewBox="0 0 26 26"><rect x="4" y="3" width="18" height="21" rx="3" fill="#e3b867"/><rect x="4" y="3" width="18" height="5" rx="2" fill="#c8963f"/><path d="M8 12h10M8 16h10M8 20h6" stroke="#1a1408" stroke-width="1.6" stroke-linecap="round"/></svg>
       <span data-i18n="pointsTitle">今日の注目ポイント</span>
+    </div>
+    <div class="pt-tabs" role="tablist" aria-label="注目ポイントの切替">
+      <button type="button" class="pt-tab" data-ptv="map" role="tab">価格帯</button>
+      <button type="button" class="pt-tab" data-ptv="strat" role="tab">本日の戦略</button>
     </div>
     <ul class="pt-list">
       <li id="pt-map"><div class="pm-tabs" role="tablist" aria-label="銘柄"></div><div class="pm-body" aria-live="polite"><p class="pm-wait">分析データを読み込んでいます…</p></div></li>
@@ -1509,7 +1563,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     </ul>
     <div class="rep" id="rep" hidden role="dialog" aria-label="前日の振り返りと今日の予想"><div class="rep-h"><b>本日のトレード戦略</b><small id="rep-when"></small><button type="button" class="rep-close">閉じる</button></div><div class="rep-body" id="rep-body"></div></div>
     <!-- 次の重要指標までのカウントダウン（注目ポイントの下に）：タップで今日の重要指標へ -->
-    <button type="button" class="pt-next" id="pt-next" aria-label="次の★3指標（タップで今日の重要指標の一覧へ）"><span class="pn-h">次の★3指標（最も重要）</span><span class="pn-l1">指標データを読み込んでいます…</span><span class="pn-l2"></span></button>
+    <button type="button" class="pt-next" id="pt-next" aria-label="次の★3指標（タップで今日の重要指標の一覧へ）"><span class="pn-h">次の★3指標</span><span class="pn-l1">指標データを読み込んでいます…</span><span class="pn-l2"></span></button>
     <div class="pt-foot" id="pt-foot"></div>
   </section>
 
@@ -1555,17 +1609,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     </div>
   </section>
 
-  <!-- X feed -->
-  <section class="card" id="xfeed" aria-label="学習：用語集・図鑑・入門">
-    <div class="gl-tile">
-      <div class="gl-head">
-        <b class="gl-title" data-i18n="learnTitle">学ぶ</b><span id="gl-count"></span><button type="button" class="gl-open" data-gl="toc">目次を開く ›</button><button type="button" class="gl-shelf" data-shf="open">📚 小さな書斎</button>
-      </div>
-      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（カテゴリ別の30冊の本と、2冊の辞書）"><div class="gl-cat">投資とトレード</div><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="indicators" title="16冊目：インジケーターの教科書 ― 使い方とトレードへの活かし方（インジケーターの教科書）"><i class="gl-no" aria-hidden="true">16</i>インジケーターの<span class="gl-x">教科書</span></button><button type="button" role="tab" data-glbook="regime" title="17冊目：相場の読み方 ― テクニカルとファンダメンタル（相場の読み方）"><i class="gl-no" aria-hidden="true">17</i>相場の<span class="gl-x">読み方</span></button><div class="gl-cat">暮らしと制度</div><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="walls" title="8冊目：年収の壁と扶養のしくみ（パートの税金・社会保険・配偶者控除の壁）"><i class="gl-no" aria-hidden="true">8</i>年収の壁</button><button type="button" role="tab" data-glbook="fire" title="9冊目：FIREの設計図 ― 投資の組み合わせの作り方（自分の条件で設計するFIREと、設計ワーク）"><i class="gl-no" aria-hidden="true">9</i>FIRE<span class="gl-x">の設計図</span></button><button type="button" role="tab" data-glbook="safetynet" title="10冊目：困ったときに読む本 ― 生活のセーフティーネット（困ったときに開く本）"><i class="gl-no" aria-hidden="true">10</i>困ったときの<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="loan" title="11冊目：お金を借りる前に読む本 ― 上手な借り入れ、悪い借り入れ（借りる前に読む本）"><i class="gl-no" aria-hidden="true">11</i>借りる前の<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="med" title="13冊目：家庭の医学 ― 体調を崩したときに開く本（体調を崩したときに開く本）"><i class="gl-no" aria-hidden="true">13</i>家庭の<span class="gl-x">医学</span></button><button type="button" role="tab" data-glbook="safety" title="14冊目：巻き込まれたときに開く本 ― 犯罪・トラブルの安全マニュアル（巻き込まれたときに開く本）"><i class="gl-no" aria-hidden="true">14</i>巻き込まれた<span class="gl-x">ときの本</span></button><button type="button" role="tab" data-glbook="disaster" title="15冊目：災害のときに開く本 ― 避難と備えのマニュアル（災害のときに開く本）"><i class="gl-no" aria-hidden="true">15</i>災害の<span class="gl-x">ときの本</span></button><button type="button" role="tab" data-glbook="parental" title="18冊目：産休・育休の本 ― 休み方と手当の徹底まとめ（産休・育休の本）"><i class="gl-no" aria-hidden="true">18</i>産休・育休<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="taxes" title="19冊目：税金一覧の本 ― 日本の税金を表で整理（税金一覧の本）"><i class="gl-no" aria-hidden="true">19</i>税金一覧<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="inheritance" title="24冊目：相続と遺言、終活の本 ― 受け継ぐ仕組みと、自分の意思の残し方（相続と遺言、終活の本）"><i class="gl-no" aria-hidden="true">24</i>相続・遺言<span class="gl-x">終活の本</span></button><button type="button" role="tab" data-glbook="insurance" title="25冊目：民間の保険の見方 ― 公的保険との切り分けと入り方（民間の保険の見方）"><i class="gl-no" aria-hidden="true">25</i>民間の保険<span class="gl-x">の見方</span></button><button type="button" role="tab" data-glbook="housing" title="26冊目：家と住宅ローンの本 ― 賃貸と購入、ローンの仕組みと付き合い方（家と住宅ローンの本）"><i class="gl-no" aria-hidden="true">26</i>家と<span class="gl-x">住宅ローン</span></button><button type="button" role="tab" data-glbook="childcare" title="27冊目：子育てと教育費の本 ― 誕生から自立まで、お金と制度の地図（子育てと教育費の本）"><i class="gl-no" aria-hidden="true">27</i>子育てと<span class="gl-x">教育費</span></button><button type="button" role="tab" data-glbook="credit" title="28冊目：信用情報とカードの本 ― 記録の仕組みと、カードとの付き合い方（信用情報とカードの本）"><i class="gl-no" aria-hidden="true">28</i>信用情報と<span class="gl-x">カード</span></button><button type="button" role="tab" data-glbook="nursing" title="29冊目：介護の実務の本 ― 認定・サービス・費用と、家族を支える制度（介護の実務の本）"><i class="gl-no" aria-hidden="true">29</i>介護の<span class="gl-x">実務</span></button><button type="button" role="tab" data-glbook="marriage" title="30冊目：結婚と離婚のお金と手続き ― 婚姻で変わる制度と、離婚の進め方・分け方（結婚と離婚のお金と手続き）"><i class="gl-no" aria-hidden="true">30</i>結婚と離婚<span class="gl-x">の手続き</span></button><div class="gl-cat">仕事と経営</div><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="aiside" title="12冊目：AIと始める副業の教科書 ― クラウドワークス・アフィリエイト・コンテンツ販売（AIと始める副業の教科書）"><i class="gl-no" aria-hidden="true">12</i>AI副業の<span class="gl-x">教科書</span></button><button type="button" role="tab" data-glbook="labor" title="20冊目：職場のルールの本 ― 労働基準法と懲戒・残業・解雇（職場のルールの本）"><i class="gl-no" aria-hidden="true">20</i>職場の<span class="gl-x">ルール</span></button><button type="button" role="tab" data-glbook="social" title="21冊目：社会保険・年金と福利厚生の本 ― 5つの保険と年金の地図（社会保険・年金と福利厚生の本）"><i class="gl-no" aria-hidden="true">21</i>社会保険・<span class="gl-x">年金と福利厚生</span></button><button type="button" role="tab" data-glbook="company" title="22冊目：法人化の本 ― 個人事業主と法人の徹底まとめ（法人化の本）"><i class="gl-no" aria-hidden="true">22</i>法人化<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="bookkeeping" title="23冊目：簿記・会計の本 ― 帳簿と決算書が読めるようになる本（簿記・会計の本）"><i class="gl-no" aria-hidden="true">23</i>簿記・会計<span class="gl-x">の本</span></button><div class="gl-cat">辞書</div><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
-      <div class="gl-grid" id="gl-grid"></div>
-      <p class="gl-hint">本を開いたら、左右にスワイプか「次のページ ›」でめくれます</p>
-    </div>
-  </section>
+
 
   <!-- calendar -->
   <section class="card" id="cal" aria-label="カレンダー">
@@ -1776,8 +1820,8 @@ window.TD_THEME = (function () {
   try { beginner = localStorage.getItem("ayu_desk-layout") === "beginner"; } catch (e) {}
   var paintRoot = function () { document.documentElement.classList.toggle("beginner", beginner); };
   paintRoot();
-  var STEPS = { clock: [0, "今日の日付と時間を確認"], cal: [0, "休みの日・ゴトー日をチェック"], ind: [0, "荒れやすい発表の時間を知る"],
-    markets: [0, "今の値段と向きを見る（タップで詳しい分析）"], points: [0, "今日の作戦を読む"], weather: [0, "地震・台風など安全の確認"], xfeed: [0, "用語集・図鑑・入門で学ぶ"] };  // 番号は placeSteps で画面の並びから付ける
+  var STEPS = { clock: [0, "今日の日付と時間を確認"], cal: [0, "休みの日・ゴトー日をチェック"],
+    markets: [0, "今の値段と向きを見る（タップで詳しい分析）"], points: [0, "今日の作戦を読む"], weather: [0, "地震・台風など安全の確認"], tabpanel: [0, "荒れやすい発表（指標タブ）と学びの本棚（学ぶタブ）"] };  // 番号は placeSteps で画面の並びから付ける
   var cardOf = function (id) { for (var i = 0; i < cards.length; i++) if (cards[i].id === id) return cards[i]; };
   var stepTags = {};
   Object.keys(STEPS).forEach(function (id) {
@@ -1813,7 +1857,7 @@ window.TD_THEME = (function () {
   var paintLayoutBtn = function () {
     layoutBtn.innerHTML = beginner ? "🔰 番号札を隠す" : "🔰 見る順番を表示";
     layoutBtn.setAttribute("aria-pressed", beginner ? "true" : "false");
-    layoutBtn.title = beginner ? "STEP の番号札を隠します" : "各パネルに STEP 1〜7 の見る順番と、そこで見ることを表示します";
+    layoutBtn.title = beginner ? "STEP の番号札を隠します" : "各パネルに STEP 1〜6 の見る順番と、そこで見ることを表示します";
   };
   var dock = document.createElement("div"); dock.className = "dk-dock";
   var toolsBtn = document.createElement("button"); toolsBtn.type = "button"; toolsBtn.id = "tools-toggle"; toolsBtn.innerHTML = "🧰 ツール";
@@ -1822,7 +1866,16 @@ window.TD_THEME = (function () {
   // A：日誌・収支も1タップで。当初はドックを「見る順番・ツール・日誌・収支」の4つまでと決めていたが、2026-11-06に収支→トレード収支へ改名し、家計簿を足して5つにすることを決定した
   var dockBtn = function (id, html, title, tab) { var b = document.createElement("button"); b.type = "button"; b.id = id; b.className = "dk-btn"; b.innerHTML = html; b.title = title; b.addEventListener("click", function () { openTools(tab, b); }); return b; };
   var jnBtn = dockBtn("journal-toggle", "📝 日誌", "取引の記録を入れる・一覧", "journal"), plBtn = dockBtn("pnl-toggle", "📅 トレード収支", "日ごとの確定損益・入出金のカレンダーと、週・月・年のまとめ", "pnl"), kbBtn = dockBtn("kakeibo-toggle", "🧾 家計簿", "家の収入と支出を月ごとに記録（この端末の中だけに保存）", "kakeibo");
-  paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn); dock.appendChild(jnBtn); dock.appendChild(plBtn); dock.appendChild(kbBtn); document.body.appendChild(dock);
+  // ロット図説へのドア（2026-11-09追加・Desk Oneと同仕様）
+  var lotBtn = document.createElement("button"); lotBtn.type = "button"; lotBtn.id = "lot-toggle"; lotBtn.className = "dk-btn"; lotBtn.innerHTML = "📊 ロット図説";
+  lotBtn.title = "5銘柄のロット別・利益シミュレーション図説を開きます";
+  lotBtn.addEventListener("click", function () { if (window.TDOpenDash) window.TDOpenDash("lots", lotBtn); });
+  [jnBtn, plBtn, kbBtn].forEach(function (b) { b.classList.add("rec-b"); });
+  var grpOf = function (cls, label, btns) { var g = document.createElement("div"); g.className = "dk-grp " + cls; var lb = document.createElement("div"); lb.className = "dk-lb " + cls; lb.textContent = label; g.appendChild(lb); btns.forEach(function (b) { g.appendChild(b); }); return g; };
+  paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn);
+  dock.appendChild(grpOf("rec", "記録", [jnBtn, plBtn, kbBtn]));
+  dock.appendChild(grpOf("opn", "開く", [lotBtn]));
+  document.body.appendChild(dock);
   /* theme switch (plan A: a button at the bottom-right with a list). The dock holds the five main buttons (four until 2026-11-06), so the theme lives on its own at the right. Same setting as the tools screen (td_theme). */
   var THEME_LABELS = [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["grace", "恵みの光"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"], ["shippu", "利確の炎🔥"], ["aurora", "🌌 安らぎのオーロラ"]];
   var THEME_NAMES = { current: "基本デザイン", grace: "恵みの光", neon: "アゲアゲ⭐︎ネオン", spring: "春", summer: "夏", autumn: "秋", xmas: "クリスマス", newyear: "正月", winter: "冬", shippu: "利確の炎🔥", aurora: "安らぎのオーロラ" };
@@ -1923,10 +1976,10 @@ window.TD_THEME = (function () {
     pager.scrollLeft = pageIdx * pager.clientWidth;
   }
   var flow, fsizer, fstage, flowCols = 0;
-  var FLOW_1 = [["clock", "markets", "ind", "points", "cal", "weather", "xfeed"]];
-  var FLOW_2 = [["clock", "markets", "weather"], ["ind", "points", "cal", "xfeed"]];
-  var PAGER_N = [[["clock"], ["markets"]], [["ind"], ["points"]], [["weather"], ["cal", "xfeed"]]];
-  var PAGE_NAMES = ["相場", "指標・戦略", "天気・学ぶ"];
+  var FLOW_1 = [["clock", "markets", "points", "tabpanel", "cal", "weather"]];
+  var FLOW_2 = [["clock", "markets", "weather"], ["points", "tabpanel", "cal"]];
+  var PAGER_N = [[["clock"], ["markets"]], [["points"], ["tabpanel"]], [["weather"], ["cal"]]];
+  var PAGE_NAMES = ["相場", "指標・戦略", "天気・カレンダー"];
   function pagerSpec() { return PAGER_N; }
   function buildFlow() {
     flow = document.createElement("div"); flow.id = "flow";
@@ -1992,7 +2045,8 @@ window.TD_THEME = (function () {
     silver: { src: "silver.html?v=035a35d683", title: "シルバー分析" },
     usdjpy: { src: "usdjpy.html?v=37d5f18b9f", title: "ドル円分析" },
     btc: { src: "btc.html?v=9195c7baf7", title: "BTC分析" },
-    oil: { src: "oil.html?v=0aeeeabb9b", title: "オイル分析" }
+    oil: { src: "oil.html?v=0aeeeabb9b", title: "オイル分析" },
+    lots: { src: "lotsim.html", title: "ロット図説" }
   };
   var openSheet = null, sheetOpener = null;
   /* ステータスバーの分：iframe の中では端末の値（safe-area）が届かないので、デスクで測った --safe-top を各ダッシュボードに渡す */
@@ -2026,6 +2080,7 @@ window.TD_THEME = (function () {
     try { sh.el.querySelector("iframe").contentWindow.postMessage({ type: "desk-sheet", on: true }, "*"); } catch (e) {}  // it draws its chart again
     sh.el.querySelector(".dash-close").focus();
   }
+  window.TDOpenDash = openDash;
   function closeDash() {
     if (!openSheet) return;
     try { openSheet.el.querySelector("iframe").contentWindow.postMessage({ type: "desk-sheet", on: false }, "*"); } catch (e) {}  // behind the desk: it stops drawing
@@ -2036,6 +2091,44 @@ window.TD_THEME = (function () {
     btn.addEventListener("click", function () { openDash(btn.getAttribute("data-sheet"), btn); });
   });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeDash(); });
+
+  /* ---------- 2026-11-09 ホーム再編：下段タブパネル（指標・学ぶ）と注目ポイント内タブ（価格帯・本日の戦略）。保存キーは ayu_ 付き ---------- */
+  var tpInd = document.getElementById("ind"), tpLearn = document.getElementById("xfeed");
+  var tpName = "ind";
+  try { tpName = localStorage.getItem("ayu_tabpane") || "ind"; } catch (e) {}
+  function tpShow(name) {
+    tpName = name === "learn" ? "learn" : "ind";
+    try { localStorage.setItem("ayu_tabpane", tpName); } catch (e) {}
+    if (tpInd) tpInd.hidden = tpName !== "ind";
+    if (tpLearn) tpLearn.hidden = tpName !== "learn";
+    document.querySelectorAll(".tp-tab").forEach(function (b) { var on = b.getAttribute("data-tp") === tpName; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
+  }
+  window.TDTabPane = { show: tpShow };
+  document.querySelectorAll(".tp-tab").forEach(function (b) { b.addEventListener("click", function () { tpShow(b.getAttribute("data-tp")); }); });
+  tpShow(tpName);
+  var pnL1 = document.querySelector("#pt-next .pn-l1"), tpNextEl = document.getElementById("tp-next");
+  if (pnL1 && tpNextEl && window.MutationObserver) {
+    var tpMirror = function () { var t = pnL1.textContent || ""; if (t && t.indexOf("読み込んでいます") < 0) tpNextEl.textContent = t; };
+    new MutationObserver(tpMirror).observe(pnL1, { childList: true, characterData: true, subtree: true });
+    tpMirror();
+  }
+  var ptsCard = document.getElementById("points"), ptStratLi = document.getElementById("pt-strat");
+  var ptView = "map";
+  try { ptView = localStorage.getItem("ayu_ptview") || "map"; } catch (e) {}
+  function ptShow(name) {
+    ptView = name === "strat" ? "strat" : "map";
+    try { localStorage.setItem("ayu_ptview", ptView); } catch (e) {}
+    if (ptsCard) { ptsCard.classList.toggle("ptv-strat", ptView === "strat"); ptsCard.classList.toggle("ptv-map", ptView !== "strat"); }
+    document.querySelectorAll(".pt-tab").forEach(function (b) { var on = b.getAttribute("data-ptv") === ptView; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
+  }
+  document.querySelectorAll(".pt-tab").forEach(function (b) { b.addEventListener("click", function () { ptShow(b.getAttribute("data-ptv")); }); });
+  function syncPtTabs() {
+    var has = !!(ptStratLi && !ptStratLi.hidden);
+    document.querySelectorAll('.pt-tab[data-ptv="strat"]').forEach(function (b) { b.disabled = !has; });
+    if (!has && ptView === "strat") ptShow("map");
+  }
+  window.TDSyncPtTabs = syncPtTabs;
+  ptShow(ptView); syncPtTabs();
 
   /* Entry alerts: both dashboards run hidden in the background and report their setup call. When one
      calls an entry, the market panel showing that instrument and its button blink, with a badge that
@@ -4714,6 +4807,7 @@ window.TD_THEME = (function () {
     el.classList.toggle("soon", mins <= 30);
   }
   document.getElementById("pt-next").addEventListener("click", function () {  // 今日の重要指標の一覧へ
+    if (window.TDTabPane) window.TDTabPane.show("ind");
     var ic = document.getElementById("ind"); if (indDay) { indDay = ""; renderIndicators(); }
     ic.scrollIntoView({ block: "nearest" }); ic.classList.add("flash"); setTimeout(function () { ic.classList.remove("flash"); }, 1200);
   });
@@ -4725,6 +4819,7 @@ window.TD_THEME = (function () {
     var pe = document.querySelector('[data-pt="' + i + 'p"]');
     if (html) { if (pe.__h !== html) { pe.innerHTML = html; pe.__h = html; } } else { pe.textContent = body; pe.__h = null; }
     document.querySelector('[data-pt="' + i + 'h"]').closest("li").hidden = !title;  // empty slot: hide the row
+    if (i === 5 && window.TDSyncPtTabs) window.TDSyncPtTabs();
   }
   /* 追加C：銘柄はタブで切り替える（ゴールド・ドル円・BTC・オイル＝価格カードと同じ4銘柄。以前の「銘柄を変える」メニューはタブに置き換え） */
   var PT_TABS = ["gold", "usdjpy", "btc", "usoil"];
@@ -6977,8 +7072,8 @@ window.TD_THEME = (function () {
     ["ユダの手紙", "Jude"], ["ヨハネの黙示録", "Revelation"]
   ];
   var I18N = {
-    ja: { layoutShow: "🔰 見る順番を表示", layoutHide: "🔰 番号札を隠す", toolsBtn: "🧰 ツール", journalBtn: "📝 日誌", pnlBtn: "📅 トレード収支", kakeiboBtn: "🧾 家計簿", pointsTitle: "今日の注目ポイント", indTitle: "今日の重要指標", learnTitle: "学ぶ", verseTitle: "今日のみことば", verseAside: "Verse of the Day", prsBtn: "聖書を聴く（PRS）", checkBtn: "通読チェック", checkTitle: "📖 聖書通読チェック", closeBtn: "閉じる", greetLine: "お誕生日おめでとうございます。これは、あなたのために仕立てた特別なデスクです。毎日のみことばとともに、穏やかで祝福に満ちた一年になりますように。", greetBtn: "はじめる", otLabel: "旧約聖書（39書）", ntLabel: "新約聖書（27書）", themeGrace: "恵みの光" },
-    en: { layoutShow: "🔰 Show step numbers", layoutHide: "🔰 Hide step numbers", toolsBtn: "🧰 Tools", journalBtn: "📝 Journal", pnlBtn: "📅 Trade P&L", kakeiboBtn: "🧾 Household Budget", pointsTitle: "Key Points", indTitle: "Top Events Today", learnTitle: "Learn", verseTitle: "Verse of the Day", verseAside: "今日のみことば", prsBtn: "Listen to the Bible (PRS)", checkBtn: "Reading Checklist", checkTitle: "📖 Bible Reading Checklist", closeBtn: "Close", greetLine: "Happy birthday! This desk was made just for you. May a word of grace greet you every morning, and may the year ahead be gentle and blessed.", greetBtn: "Start", otLabel: "Old Testament (39 books)", ntLabel: "New Testament (27 books)", themeGrace: "Grace Light" }
+    ja: { layoutShow: "🔰 見る順番を表示", layoutHide: "🔰 番号札を隠す", toolsBtn: "🧰 ツール", journalBtn: "📝 日誌", pnlBtn: "📅 トレード収支", kakeiboBtn: "🧾 家計簿", lotBtn: "📊 ロット図説", tabInd: "📊 指標", tabLearn: "📚 学ぶ", ptMap: "価格帯", ptStrat: "本日の戦略", pointsTitle: "今日の注目ポイント", indTitle: "今日の重要指標", learnTitle: "学ぶ", verseTitle: "今日のみことば", verseAside: "Verse of the Day", prsBtn: "聖書を聴く（PRS）", checkBtn: "通読チェック", checkTitle: "📖 聖書通読チェック", closeBtn: "閉じる", greetLine: "お誕生日おめでとうございます。これは、あなたのために仕立てた特別なデスクです。毎日のみことばとともに、穏やかで祝福に満ちた一年になりますように。", greetBtn: "はじめる", otLabel: "旧約聖書（39書）", ntLabel: "新約聖書（27書）", themeGrace: "恵みの光" },
+    en: { layoutShow: "🔰 Show step numbers", layoutHide: "🔰 Hide step numbers", toolsBtn: "🧰 Tools", journalBtn: "📝 Journal", pnlBtn: "📅 Trade P&L", kakeiboBtn: "🧾 Household Budget", lotBtn: "📊 Lot Chart", tabInd: "📊 Events", tabLearn: "📚 Learn", ptMap: "Key Levels", ptStrat: "Strategy", pointsTitle: "Key Points", indTitle: "Top Events Today", learnTitle: "Learn", verseTitle: "Verse of the Day", verseAside: "今日のみことば", prsBtn: "Listen to the Bible (PRS)", checkBtn: "Reading Checklist", checkTitle: "📖 Bible Reading Checklist", closeBtn: "Close", greetLine: "Happy birthday! This desk was made just for you. May a word of grace greet you every morning, and may the year ahead be gentle and blessed.", greetBtn: "Start", otLabel: "Old Testament (39 books)", ntLabel: "New Testament (27 books)", themeGrace: "Grace Light" }
   };
   function lang() { return lsGet("ayu_td_lang") === "en" ? "en" : "ja"; }
   function todayVerse() { return VERSES31[(new Date().getDate() - 1) % VERSES31.length]; }
@@ -7032,6 +7127,9 @@ window.TD_THEME = (function () {
     var jn = document.getElementById("journal-toggle"); if (jn) jn.innerHTML = L.journalBtn;
     var pl = document.getElementById("pnl-toggle"); if (pl) pl.innerHTML = L.pnlBtn;
     var kb = document.getElementById("kakeibo-toggle"); if (kb) kb.innerHTML = L.kakeiboBtn;
+    var lt = document.getElementById("lot-toggle"); if (lt) lt.innerHTML = L.lotBtn;
+    document.querySelectorAll(".tp-tab").forEach(function (b) { b.innerHTML = b.getAttribute("data-tp") === "learn" ? L.tabLearn : L.tabInd; });
+    document.querySelectorAll(".pt-tab").forEach(function (b) { b.innerHTML = b.getAttribute("data-ptv") === "strat" ? L.ptStrat : L.ptMap; });
     var va = document.getElementById("vs-aside"); if (va) va.textContent = L.verseAside;
     var tbtn = document.getElementById("theme-toggle");
     if (tbtn) {
