@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="85ba77ff1d">
+<meta name="build" content="9b16676862">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1251,7 +1251,10 @@ html:not(.beginner) .step-note { display: none; }
 .tp-tabs { display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--glass-line); padding-bottom: 10px; flex: none; }
 .tp-tab { font: inherit; font-size: 13px; font-weight: 600; padding: 6px 15px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--glass-line); color: var(--ink-2); cursor: pointer; }
 .tp-tab.on { background: var(--gold); color: var(--on-accent); border-color: var(--gold); }
-.tp-next { margin-left: auto; font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-tabs .pt-next { margin: 0 0 0 auto; border-top: 0; padding: 0; flex-direction: row; align-items: baseline; gap: 8px; width: auto; }
+.tp-tabs .pt-next .pn-h { flex: none; }
+.tp-tabs .pt-next .pn-l2 { order: 2; font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.tp-tabs .pt-next .pn-l1 { order: 3; flex: none; font-size: 12.5px; }
 .tp-wrap { flex: 1; min-height: 0; position: relative; margin-top: 6px; }
 #tabpanel #ind, #tabpanel #xfeed { position: absolute; inset: 0; width: auto; height: auto; background: none; border: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; border-radius: 0; margin: 0; }
 #tabpanel #ind { padding: 4px 2px; }
@@ -1262,11 +1265,16 @@ html:not(.beginner) .step-note { display: none; }
 .pt-tab.on { background: var(--gold); color: var(--on-accent); border-color: var(--gold); }
 .pt-tab:disabled { opacity: .45; cursor: default; }
 #points.ptv-map #pt-strat { display: none !important; }
+#points.ptv-map #pt-strat-none { display: none !important; }
+#points .pt-none { color: var(--ink-3); font-size: 12.5px; line-height: 1.6; }
 #points.ptv-strat #pt-map { display: none !important; }
-#points .pt-next { flex-direction: row; align-items: baseline; gap: 8px; padding-top: 7px; }
-#points .pt-next .pn-h { flex: none; }
-#points .pt-next .pn-l2 { order: 2; font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-#points .pt-next .pn-l1 { order: 3; margin-left: auto; flex: none; font-size: 12.5px; }
+.flow .tp-tabs { flex-wrap: wrap; }
+.flow .tp-tabs .pt-next .pn-h { display: none; }
+/* 縦並び（flow）ではドックを小さく畳み、右下のテーマボタンに被らない幅で止める（ボタン7つ化に伴う調整・2026-11-09） */
+html.flow .dk-dock { gap: 4px; flex-wrap: wrap; max-width: calc(100vw - 182px); }
+html.flow .dk-grp { gap: 4px; }
+html.flow .dk-dock #layout-toggle, html.flow #tools-toggle, html.flow .dk-dock .dk-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; }
+html.flow .dk-theme-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; right: calc(env(safe-area-inset-right, 0px) + 6px); max-width: 164px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dk-grp { display: flex; gap: 7px; align-items: center; }
 .dk-lb { display: none; }
 .dk-dock.vdock { position: absolute; left: 27px; top: 557px; bottom: auto; width: 308px; flex-direction: column; align-items: stretch; gap: 6px; }
@@ -1440,7 +1448,6 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <div class="tp-tabs" role="tablist" aria-label="下段パネルの切替">
       <button type="button" class="tp-tab" data-tp="ind" role="tab">📊 指標</button>
       <button type="button" class="tp-tab" data-tp="learn" role="tab">📚 学ぶ</button>
-      <span class="tp-next" id="tp-next"></span>
     </div>
     <div class="tp-wrap">
   <section id="ind" class="tp-pane" aria-label="今日の重要指標">
@@ -1483,6 +1490,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     </div>
     <ul class="pt-list">
       <li id="pt-map"><div class="pm-tabs" role="tablist" aria-label="銘柄"></div><div class="pm-body" aria-live="polite"><p class="pm-wait">分析データを読み込んでいます…</p></div></li>
+      <li id="pt-strat-none" hidden><p class="pt-none">本日のトレード戦略は、データが届き次第ここに表示されます。</p></li>
       <li id="pt-strat" hidden><div><h3 data-pt="5h">本日のトレード戦略</h3><p data-pt="5p"></p><button class="pt-more" type="button">前日の振り返りと今日の予想<svg width="6" height="9" viewBox="0 0 7 10"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></div></li>
     </ul>
     <div class="rep" id="rep" hidden role="dialog" aria-label="前日の振り返りと今日の予想"><div class="rep-h"><b>本日のトレード戦略</b><small id="rep-when"></small><button type="button" class="rep-close">閉じる</button></div><div class="rep-body" id="rep-body"></div></div>
@@ -1999,12 +2007,9 @@ window.TD_THEME = (function () {
   window.TDTabPane = { show: tpShow };
   document.querySelectorAll(".tp-tab").forEach(function (b) { b.addEventListener("click", function () { tpShow(b.getAttribute("data-tp")); }); });
   tpShow(tpName);
-  var pnL1 = document.querySelector("#pt-next .pn-l1"), tpNextEl = document.getElementById("tp-next");
-  if (pnL1 && tpNextEl && window.MutationObserver) {
-    var tpMirror = function () { var t = pnL1.textContent || ""; if (t && t.indexOf("読み込んでいます") < 0) tpNextEl.textContent = t; };
-    new MutationObserver(tpMirror).observe(pnL1, { childList: true, characterData: true, subtree: true });
-    tpMirror();
-  }
+  // 次の★3指標ボタンは、注目ポイントから下段パネル（指標タブ）の見出し右へ移設（2026-11-09・重複と圧迫の解消）
+  var pnBtn = document.getElementById("pt-next"), tpTabsEl = document.querySelector(".tp-tabs");
+  if (pnBtn && tpTabsEl) tpTabsEl.appendChild(pnBtn);
   var ptsCard = document.getElementById("points"), ptStratLi = document.getElementById("pt-strat");
   var ptView = "map";
   try { ptView = localStorage.getItem("td_ptview") || "map"; } catch (e) {}
@@ -2013,12 +2018,14 @@ window.TD_THEME = (function () {
     try { localStorage.setItem("td_ptview", ptView); } catch (e) {}
     if (ptsCard) { ptsCard.classList.toggle("ptv-strat", ptView === "strat"); ptsCard.classList.toggle("ptv-map", ptView !== "strat"); }
     document.querySelectorAll(".pt-tab").forEach(function (b) { var on = b.getAttribute("data-ptv") === ptView; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
+    if (window.TDSyncPtTabs) window.TDSyncPtTabs();
   }
   document.querySelectorAll(".pt-tab").forEach(function (b) { b.addEventListener("click", function () { ptShow(b.getAttribute("data-ptv")); }); });
   function syncPtTabs() {
+    var none = document.getElementById("pt-strat-none");
+    if (!none) return;
     var has = !!(ptStratLi && !ptStratLi.hidden);
-    document.querySelectorAll('.pt-tab[data-ptv="strat"]').forEach(function (b) { b.disabled = !has; });
-    if (!has && ptView === "strat") ptShow("map");
+    none.hidden = !(ptView === "strat" && !has);
   }
   window.TDSyncPtTabs = syncPtTabs;
   ptShow(ptView); syncPtTabs();
@@ -4588,7 +4595,7 @@ window.TD_THEME = (function () {
     if (!nx) { l1.textContent = "今週これからの重要指標（★3）はありません"; l2.textContent = ""; return; }
     var mins = Math.max(1, Math.ceil((nx.t - now) / 60000)), h = Math.floor(mins / 60), m = mins % 60, t = nx.t;
     var day = t.toDateString() === now.toDateString() ? "" : MDW(t);  // tomorrow too: the date, not 「明日」
-    l1.textContent = "次の★3指標まで あと" + (h ? h + "時間" : "") + (h && !m ? "" : m + "分");
+    l1.textContent = "あと" + (h ? h + "時間" : "") + (h && !m ? "" : m + "分");  // 2026-11-09: 1行帯では見出し「次の★3指標」と重複するので短形に
     l2.innerHTML = esc(day + HHMM(t) + " JST " + jaTitle(nx)) + '<span class="stars">★★★</span>';
     el.classList.toggle("soon", mins <= 30);
   }
