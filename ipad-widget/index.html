@@ -1160,6 +1160,8 @@ html.flow .shf-spine, html.phone .shf-spine { flex: 1 1 140px; height: 198px; }
 /* GOLD dashboard: opens full-screen over the desk; closing keeps it loaded so it reopens instantly */
 .dash-open { position: absolute; left: 18px; right: 10px; bottom: 18px; z-index: 1; display: flex; gap: 5px; }
 .dash-open .gold-open { flex: 1 1 0; min-width: 0; justify-content: center; padding: 7px 0; gap: 2px; font-size: 11.5px; letter-spacing: -.02em; }  /* four dashboards: GOLD, ドル円, BTC, オイル (equal widths, one row) */
+.dash-open:has(> .wk-open) .gold-open { font-size: 10.5px; }
+.dash-open .wk-open { color: #f5c86e; }
 .gold-open { white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: 13px; font-weight: 700; color: var(--on-accent); background: var(--gold); border: 0; border-radius: 999px; padding: 7px 14px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.45); }
 /* エントリーの枠：カードの角で切れないよう、列の少し内側に描く。光は描いた層の透明度だけを動かす（描き直しなし） */
 .mkt.entry-buy::before, .mkt.entry-sell::before, .mkt.entry-buy::after, .mkt.entry-sell::after { content: ""; position: absolute; z-index: -1; inset: 6px 5px 4px; border-radius: 18px; pointer-events: none; }
@@ -1361,6 +1363,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <button class="gold-open" data-sheet="usdjpy" type="button" aria-haspopup="dialog" aria-label="ドル円分析を開く">ドル円 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
       <button class="gold-open" data-sheet="btc" type="button" aria-haspopup="dialog" aria-label="BTC分析を開く">BTC <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
       <button class="gold-open" data-sheet="oil" type="button" aria-haspopup="dialog" aria-label="オイル分析（USオイル・OILCash 補正表示）を開く">オイル <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+      <button class="gold-open wk-open" data-sheet="weekend" type="button" aria-haspopup="dialog" aria-label="週末ボード（参考値）を開く">週末 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
     </div>
   </section>
 
@@ -1951,7 +1954,8 @@ window.TD_THEME = (function () {
     usdjpy: { src: "usdjpy.html", title: "ドル円分析" },
     btc: { src: "btc.html", title: "BTC分析" },
     oil: { src: "oil.html", title: "オイル分析" },
-    lots: { src: "learn/lotsim.html", title: "ロット図説" }
+    lots: { src: "learn/lotsim.html", title: "ロット図説" },
+    weekend: { src: "learn/weekend.html", title: "週末ボード" }
   };
   var openSheet = null, sheetOpener = null;
   /* ステータスバーの分：iframe の中では端末の値（safe-area）が届かないので、デスクで測った --safe-top を各ダッシュボードに渡す */
