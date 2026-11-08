@@ -453,7 +453,7 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .dk-toasts.stack { left: 10px; right: 10px; bottom: calc(44px + env(safe-area-inset-bottom, 0px)); height: auto; flex-direction: column; align-items: stretch; }
 .dk-toast .tt { font-style: normal; color: var(--ink-3); font-weight: 600; font-size: 11px; margin-right: 6px; }
 /* 縦に並ぶ表示：スクロールする枠（#flow）の下端を、下の帯（ボタンと通知）の上で止める。カードは帯の下に入らない */
-.flow #flow { bottom: calc(env(safe-area-inset-bottom, 0px) + 44px + var(--tbar, 0px)) !important; padding-bottom: 8px !important; }
+.flow #flow { bottom: calc(env(safe-area-inset-bottom, 0px) + 128px + var(--tbar, 0px)) !important; padding-bottom: 8px !important; }  /* 128px＝flowドックの実測高113px＋余白（2026-11-09 F6で44pxから更新） */
 .dk-toast { pointer-events: auto; font: inherit; font-size: 12px; font-weight: 700; color: #ffd57a; background: rgba(14,15,20,.96); border: 1px solid rgba(255,213,122,.7); border-radius: 10px; padding: 5px 10px; box-shadow: 0 4px 14px rgba(0,0,0,.5); cursor: pointer; max-width: 360px; min-width: 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; }
 .dk-toast small { color: var(--ink-3); font-weight: 600; margin-right: 6px; }
 .mkt canvas.chart { width: 100%; height: 108px; display: block; margin-top: 8px; touch-action: none; cursor: grab; }
@@ -1352,11 +1352,15 @@ html:not(.beginner) .step-note { display: none; }
 #points.ptv-map #pt-strat { display: none !important; }
 #points.ptv-map #pt-strat-none { display: none !important; }
 #points .pt-none { color: var(--ink-3); font-size: 12.5px; line-height: 1.6; }
-#points .pt-x { display: none; margin-left: auto; border: 1px solid var(--glass-line); background: rgba(255,255,255,.06); color: var(--ink-2); font-size: 11.5px; border-radius: 999px; padding: 3px 10px; cursor: pointer; }
-#points.pt-expanded .pt-x { display: block; }
+#points .pt-x { display: none; margin-left: auto; align-items: center; justify-content: center; gap: 6px; min-width: 44px; min-height: 40px; border: 1px solid var(--glass-line); background: rgba(255,255,255,.06); color: var(--ink-2); font-size: 13px; border-radius: 8px; padding: 6px 12px; cursor: pointer; touch-action: manipulation; }
+#points.pt-expanded .pt-x { display: inline-flex; }
+/* 広げるボタン（下段パネルの .tp-x と同じ見た目・大きさ）。展開中は「戻す」（.pt-x）に交代する */
+#points .pt-xp { display: none; margin-left: auto; align-items: center; justify-content: center; gap: 6px; min-width: 44px; min-height: 40px; border: 1px solid var(--glass-line); background: rgba(255,255,255,.05); color: var(--ink-2); border-radius: 8px; font-size: 13px; line-height: 1; padding: 6px 12px; cursor: pointer; touch-action: manipulation; }
+#points:not(.pt-expanded) .pt-xp { display: inline-flex; }
 #points.pt-expanded { z-index: 45; box-shadow: 0 24px 60px rgba(0,0,0,.55); }
 #stage #points.pt-expanded { left: 27px; top: 35px; width: 1156px; height: 771px; }
-html.flow #points.pt-expanded { position: fixed; inset: 10px; width: auto; height: auto; }
+/* flow では fixed にしない（下段パネルと同じ理由：.flow .card の position 指定と #fstage の transform に閉じ込められる）。その場で縦に広げ、.pt-list（overflow-y:auto）の中で読む */
+html.flow #points.pt-expanded { position: relative; inset: auto; width: auto; height: 78vh; }
 .ind-peak { flex: none; margin-top: 6px; padding: 5px 10px; border-left: 3px solid var(--gold); border-radius: 6px; background: rgba(var(--gold-rgb),.08); font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ind-list li.min { padding: 4px 0; }
 .ind-list li.min .n { font-size: 12.5px; }
@@ -1375,6 +1379,7 @@ body:has(#points.pt-expanded) .dk-dock, body:has(#tabpanel.tp-expanded) .dk-dock
 .flow .tp-tabs { flex-wrap: wrap; }
 .flow .tp-tabs .pt-next .pn-h { display: none; }
 html.flow .dk-dock { gap: 4px; flex-wrap: wrap; max-width: calc(100vw - 182px); }
+html.flow .step-note { bottom: calc(env(safe-area-inset-bottom, 0px) + 124px + var(--tbar, 0px)); }  /* 初心者モードの注記もドック（実測113px）の上へ */
 html.flow .dk-grp { gap: 4px; }
 html.flow .dk-grp.opn, html.phone .dk-grp.opn { flex-wrap: wrap; max-width: 100%; }
 html.flow .dk-dock #layout-toggle, html.flow #tools-toggle, html.flow .dk-dock .dk-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; }
@@ -1384,6 +1389,15 @@ html.flow .dk-theme-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; r
 .dk-app-row { display: contents; }
 .dk-dock .dk-app-btn { display: inline-flex; align-items: center; gap: 7px; }
 .dk-dock .dk-app-ic { width: 26px; height: 26px; border-radius: 7px; flex: none; }
+/* 縦並び（flow）専用：アプリ3ボタンは「アプリ」ピル1つに畳み、タップで小さい一覧（ポップ）を開く（ドックの高さを戻す・2026-11-09 F6） */
+.dk-apps-btn { display: none; }
+html.flow .dk-apps-btn { display: inline-flex; align-items: center; }
+html.flow .dk-app-row { display: none !important; }
+.dk-apps-pop { position: fixed; z-index: 60; width: 216px; background: rgba(var(--panel-rgb),.97); border: 1px solid rgba(var(--gold-rgb),.55); border-radius: 14px; padding: 8px; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
+.dk-apps-pop h4 { margin: 2px 6px 6px; font-size: 11px; color: var(--ink-3); font-weight: 700; letter-spacing: .04em; }
+.dk-apps-pop button { display: flex; width: 100%; align-items: center; gap: 9px; font: inherit; font-size: 13.5px; font-weight: 700; color: var(--ink); background: none; border: 0; border-radius: 9px; padding: 8px; cursor: pointer; text-align: left; min-height: 44px; touch-action: manipulation; }
+.dk-apps-pop button:hover, .dk-apps-pop button:focus-visible { background: rgba(var(--gold-rgb),.16); outline: none; }
+.dk-apps-pop .dk-app-ic { width: 28px; height: 28px; border-radius: 8px; flex: none; }
 html.phone .dk-dock { gap: 4px; }
 html.phone .dk-grp { gap: 4px; }
 html.phone .dk-dock .dk-btn, html.phone .dk-dock #layout-toggle, html.phone #tools-toggle { font-size: 11px; padding: 4px 8px; min-height: 32px; }
@@ -1586,6 +1600,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <div class="card-title">
       <svg class="ico" viewBox="0 0 26 26"><rect x="4" y="3" width="18" height="21" rx="3" fill="#e3b867"/><rect x="4" y="3" width="18" height="5" rx="2" fill="#c8963f"/><path d="M8 12h10M8 16h10M8 20h6" stroke="#1a1408" stroke-width="1.6" stroke-linecap="round"/></svg>
       <span data-i18n="pointsTitle">今日の注目ポイント</span>
+      <button type="button" id="pt-expand" class="pt-xp" data-i18n="ptExpand">⤢ 広げる</button>
       <button type="button" id="pt-shrink" class="pt-x" data-i18n="ptShrink">✕ 戻す</button>
     </div>
     <div class="pt-tabs" role="tablist" aria-label="注目ポイントの切替">
@@ -1945,15 +1960,58 @@ window.TD_THEME = (function () {
     b.addEventListener("click", function () { openTradeApp(def); });
     appRow.appendChild(b);
   });
-  var paintAppBtns = function () { var show = true; try { show = localStorage.getItem("ayu_apps_show") !== "0"; } catch (e) {} appRow.style.display = show ? "" : "none"; };
+  var appsBtn = document.createElement("button"); appsBtn.type = "button"; appsBtn.id = "apps-toggle"; appsBtn.className = "dk-btn dk-apps-btn";
+  appsBtn.textContent = "📱 アプリ"; appsBtn.title = "取引アプリを開く（XMTD TraderPro／XS アプリ／MetaTrader 5）";
+  appsBtn.setAttribute("aria-haspopup", "menu");
+  var appsPop = null;
+  var closeAppsPop = function () { if (appsPop) { appsPop.remove(); appsPop = null; document.removeEventListener("pointerdown", appsPopOutside, true); } };
+  var appsPopOutside = function (e) { if (appsPop && !appsPop.contains(e.target) && e.target !== appsBtn) closeAppsPop(); };
+  var openAppsPop = function () {
+    if (appsPop) { closeAppsPop(); return; }
+    appsPop = document.createElement("div"); appsPop.className = "dk-apps-pop"; appsPop.setAttribute("role", "menu");
+    appsPop.innerHTML = "<h4>取引アプリを開く</h4>";
+    TRADE_APPS.forEach(function (def) {
+      var b = document.createElement("button"); b.type = "button";
+      b.innerHTML = '<img class="dk-app-ic" src="' + TD_APP_ICONS[def.id] + '" alt="">' + def.name;
+      b.addEventListener("click", function () { closeAppsPop(); openTradeApp(def); });
+      appsPop.appendChild(b);
+    });
+    document.body.appendChild(appsPop);
+    var r = appsBtn.getBoundingClientRect();
+    appsPop.style.left = Math.max(6, Math.min(r.left, window.innerWidth - appsPop.offsetWidth - 6)) + "px";
+    appsPop.style.bottom = (window.innerHeight - r.top + 8) + "px";
+    document.addEventListener("pointerdown", appsPopOutside, true);
+  };
+  appsBtn.addEventListener("click", openAppsPop);
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeAppsPop(); });
+  var paintAppBtns = function () { var show = true; try { show = localStorage.getItem("ayu_apps_show") !== "0"; } catch (e) {} appRow.style.display = show ? "" : "none"; appsBtn.style.display = show ? "" : "none"; };
   window.TDAppDockSync = paintAppBtns; paintAppBtns();
   window.addEventListener("storage", function (e) { if (e.key === "ayu_apps_show") paintAppBtns(); });
   [jnBtn, plBtn, kbBtn].forEach(function (b) { b.classList.add("rec-b"); });
   var grpOf = function (cls, label, btns) { var g = document.createElement("div"); g.className = "dk-grp " + cls; var lb = document.createElement("div"); lb.className = "dk-lb " + cls; lb.textContent = label; g.appendChild(lb); btns.forEach(function (b) { g.appendChild(b); }); return g; };
   paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn);
   dock.appendChild(grpOf("rec", "記録", [jnBtn, plBtn, kbBtn]));
-  dock.appendChild(grpOf("opn", "開く", [lotBtn, appRow]));
+  dock.appendChild(grpOf("opn", "開く", [lotBtn, appRow, appsBtn]));
   document.body.appendChild(dock);
+  /* 縦並び（flow）では、ドックの実測の高さに合わせて本文（#flow）の下端と初心者注記の位置を決める（2026-11-09 F6） */
+  var syncFlowDock = function () {
+    var fl = document.getElementById("flow");
+    var on = document.documentElement.classList.contains("flow");
+    if (fl) {
+      if (on) fl.style.setProperty("bottom", "calc(env(safe-area-inset-bottom, 0px) + " + (dock.offsetHeight + 15) + "px + var(--tbar, 0px))", "important");
+      else fl.style.removeProperty("bottom");
+    }
+    var note = document.querySelector(".step-note");
+    if (note) {
+      if (on) note.style.bottom = "calc(env(safe-area-inset-bottom, 0px) + " + (dock.offsetHeight + 11) + "px + var(--tbar, 0px))";
+      else note.style.removeProperty("bottom");
+    }
+  };
+  window.TDFlowDockSync = syncFlowDock;
+  if (window.ResizeObserver) new ResizeObserver(function () { syncFlowDock(); }).observe(dock);
+  window.addEventListener("resize", syncFlowDock);
+  new MutationObserver(function () { syncFlowDock(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  syncFlowDock();
   /* theme switch (plan A: a button at the bottom-right with a list). The dock holds the five main buttons (four until 2026-11-06), so the theme lives on its own at the right. Same setting as the tools screen (td_theme). */
   var THEME_LABELS = [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["grace", "恵みの光"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"], ["shippu", "利確の炎🔥"], ["aurora", "🌌 安らぎのオーロラ"]];
   var THEME_NAMES = { current: "基本デザイン", grace: "恵みの光", neon: "アゲアゲ⭐︎ネオン", spring: "春", summer: "夏", autumn: "秋", xmas: "クリスマス", newyear: "正月", winter: "冬", shippu: "利確の炎🔥", aurora: "安らぎのオーロラ" };
@@ -2187,6 +2245,8 @@ window.TD_THEME = (function () {
   document.querySelectorAll(".pt-tab").forEach(function (b) { b.addEventListener("click", function () { ptShow(b.getAttribute("data-ptv"), true); }); });
   var ptShrink = document.getElementById("pt-shrink");
   if (ptShrink) ptShrink.addEventListener("click", function () { if (ptsCard) ptsCard.classList.remove("pt-expanded"); });
+  var ptExpand = document.getElementById("pt-expand");
+  if (ptExpand) ptExpand.addEventListener("click", function () { if (ptsCard) ptsCard.classList.add("pt-expanded"); });
   function syncPtTabs() {
     var none = document.getElementById("pt-strat-none");
     if (!none) return;
@@ -7149,8 +7209,8 @@ window.TD_THEME = (function () {
     ["ユダの手紙", "Jude"], ["ヨハネの黙示録", "Revelation"]
   ];
   var I18N = {
-    ja: { layoutShow: "🔰 見る順番を表示", layoutHide: "🔰 番号札を隠す", toolsBtn: "🧰 ツール", journalBtn: "📝 日誌", pnlBtn: "📅 トレード収支", kakeiboBtn: "🧾 家計簿", lotBtn: "📊 ロット図説", tabInd: "📊 指標", tabLearn: "📚 学ぶ", ptMap: "価格帯", ptStrat: "本日の戦略", ptShrink: "✕ 戻す", pointsTitle: "今日の注目ポイント", indTitle: "今日の重要指標", learnTitle: "学ぶ", verseTitle: "今日のみことば", verseAside: "Verse of the Day", prsBtn: "聖書を聴く（PRS）", checkBtn: "通読チェック", checkTitle: "📖 聖書通読チェック", closeBtn: "閉じる", greetLine: "お誕生日おめでとうございます。これは、あなたのために仕立てた特別なデスクです。毎日のみことばとともに、穏やかで祝福に満ちた一年になりますように。", greetBtn: "はじめる", otLabel: "旧約聖書（39書）", ntLabel: "新約聖書（27書）", themeGrace: "恵みの光" },
-    en: { layoutShow: "🔰 Show step numbers", layoutHide: "🔰 Hide step numbers", toolsBtn: "🧰 Tools", journalBtn: "📝 Journal", pnlBtn: "📅 Trade P&L", kakeiboBtn: "🧾 Household Budget", lotBtn: "📊 Lot Chart", tabInd: "📊 Events", tabLearn: "📚 Learn", ptMap: "Key Levels", ptStrat: "Strategy", ptShrink: "✕ Close", pointsTitle: "Key Points", indTitle: "Top Events Today", learnTitle: "Learn", verseTitle: "Verse of the Day", verseAside: "今日のみことば", prsBtn: "Listen to the Bible (PRS)", checkBtn: "Reading Checklist", checkTitle: "📖 Bible Reading Checklist", closeBtn: "Close", greetLine: "Happy birthday! This desk was made just for you. May a word of grace greet you every morning, and may the year ahead be gentle and blessed.", greetBtn: "Start", otLabel: "Old Testament (39 books)", ntLabel: "New Testament (27 books)", themeGrace: "Grace Light" }
+    ja: { layoutShow: "🔰 見る順番を表示", layoutHide: "🔰 番号札を隠す", toolsBtn: "🧰 ツール", journalBtn: "📝 日誌", pnlBtn: "📅 トレード収支", kakeiboBtn: "🧾 家計簿", lotBtn: "📊 ロット図説", tabInd: "📊 指標", tabLearn: "📚 学ぶ", ptMap: "価格帯", ptStrat: "本日の戦略", ptShrink: "✕ 戻す", ptExpand: "⤢ 広げる", pointsTitle: "今日の注目ポイント", indTitle: "今日の重要指標", learnTitle: "学ぶ", verseTitle: "今日のみことば", verseAside: "Verse of the Day", prsBtn: "聖書を聴く（PRS）", checkBtn: "通読チェック", checkTitle: "📖 聖書通読チェック", closeBtn: "閉じる", greetLine: "お誕生日おめでとうございます。これは、あなたのために仕立てた特別なデスクです。毎日のみことばとともに、穏やかで祝福に満ちた一年になりますように。", greetBtn: "はじめる", otLabel: "旧約聖書（39書）", ntLabel: "新約聖書（27書）", themeGrace: "恵みの光" },
+    en: { layoutShow: "🔰 Show step numbers", layoutHide: "🔰 Hide step numbers", toolsBtn: "🧰 Tools", journalBtn: "📝 Journal", pnlBtn: "📅 Trade P&L", kakeiboBtn: "🧾 Household Budget", lotBtn: "📊 Lot Chart", tabInd: "📊 Events", tabLearn: "📚 Learn", ptMap: "Key Levels", ptStrat: "Strategy", ptShrink: "✕ Close", ptExpand: "⤢ Expand", pointsTitle: "Key Points", indTitle: "Top Events Today", learnTitle: "Learn", verseTitle: "Verse of the Day", verseAside: "今日のみことば", prsBtn: "Listen to the Bible (PRS)", checkBtn: "Reading Checklist", checkTitle: "📖 Bible Reading Checklist", closeBtn: "Close", greetLine: "Happy birthday! This desk was made just for you. May a word of grace greet you every morning, and may the year ahead be gentle and blessed.", greetBtn: "Start", otLabel: "Old Testament (39 books)", ntLabel: "New Testament (27 books)", themeGrace: "Grace Light" }
   };
   function lang() { return lsGet("ayu_td_lang") === "en" ? "en" : "ja"; }
   function todayVerse() { return VERSES31[(new Date().getDate() - 1) % VERSES31.length]; }
