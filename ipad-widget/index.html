@@ -1257,13 +1257,22 @@ html:not(.beginner) .step-note { display: none; }
 #points .pt-none { color: var(--ink-3); font-size: 12.5px; line-height: 1.6; }
 #points .pt-x { display: none; margin-left: auto; align-items: center; justify-content: center; gap: 6px; min-width: 44px; min-height: 40px; border: 1px solid var(--glass-line); background: rgba(255,255,255,.06); color: var(--ink-2); font-size: 13px; border-radius: 8px; padding: 6px 12px; cursor: pointer; touch-action: manipulation; }
 #points.pt-expanded .pt-x { display: inline-flex; }
-/* 広げるボタン（下段パネルの .tp-x と同じ見た目・大きさ）。展開中は「戻す」（.pt-x）に交代する */
+/* 「大きく読む」ボタン（下段パネルの .tp-x と同じ見た目・大きさ）。展開中は「もどす」（.pt-x）に交代する */
 #points .pt-xp { display: none; margin-left: auto; align-items: center; justify-content: center; gap: 6px; min-width: 44px; min-height: 40px; border: 1px solid var(--glass-line); background: rgba(255,255,255,.05); color: var(--ink-2); border-radius: 8px; font-size: 13px; line-height: 1; padding: 6px 12px; cursor: pointer; touch-action: manipulation; }
 #points:not(.pt-expanded) .pt-xp { display: inline-flex; }
 #points.pt-expanded { z-index: 45; box-shadow: 0 24px 60px rgba(0,0,0,.55); }
 #stage #points.pt-expanded { left: 27px; top: 35px; width: 1156px; height: 771px; }
 /* flow では fixed にしない（下段パネルと同じ理由：.flow .card の position 指定と #fstage の transform に閉じ込められる）。その場で縦に広げ、.pt-list（overflow-y:auto）の中で読む */
 html.flow #points.pt-expanded { position: relative; inset: auto; width: auto; height: 78vh; }
+/* F8：初回だけの説明吹き出し（金の吹き出し）。カード内に重ねて出すだけで、既存レイアウトは一切動かさない */
+.xp-hint { position: absolute; z-index: 2; width: 300px; max-width: calc(100% - 20px); background: #ffd977; color: #3a2a10; font-size: 12.5px; font-weight: 600; line-height: 1.6; padding: 9px 30px 9px 12px; border-radius: 10px; box-shadow: 0 8px 22px rgba(0,0,0,.4); cursor: pointer; }
+.xp-hint::before { content: ""; position: absolute; top: -7px; right: 30px; border: 8px solid transparent; border-bottom-color: #ffd977; border-top: 0; }
+.xp-hint .xp-hint-x { position: absolute; top: 5px; right: 9px; font-size: 13px; font-weight: 400; opacity: .6; }
+.xp-hint[hidden] { display: none !important; }
+#points .xp-hint { top: 88px; right: 10px; }
+#tabpanel .xp-hint { top: 6px; right: 6px; }
+/* flow では .tp-wrap が static のためカード基準になる。タブ行＋次の指標の帯の下に出す */
+html.flow #tabpanel .xp-hint { top: 100px; right: 6px; }
 .ind-peak { flex: none; margin-top: 6px; padding: 5px 10px; border-left: 3px solid var(--gold); border-radius: 6px; background: rgba(var(--gold-rgb),.08); font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ind-list li.min { padding: 4px 0; }
 .ind-list li.min .n { font-size: 12.5px; }
@@ -1476,9 +1485,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <div class="tp-tabs" role="tablist" aria-label="下段パネルの切替">
       <button type="button" class="tp-tab" data-tp="ind" role="tab">📊 指標</button>
       <button type="button" class="tp-tab" data-tp="learn" role="tab">📚 学ぶ</button>
-      <button type="button" class="tp-x" id="tp-expand" aria-label="パネルを広げる"><span class="tp-x-i" aria-hidden="true">⤢</span><span class="tp-x-t">広げる</span></button>
+      <button type="button" class="tp-x" id="tp-expand" aria-label="パネルを大きく読む"><span class="tp-x-i" aria-hidden="true">⤢</span><span class="tp-x-t">大きく読む</span></button>
     </div>
     <div class="tp-wrap">
+      <div class="xp-hint" id="tp-hint" role="note" hidden><span class="xp-hint-t">押すと、パネルが大きくなって一覧が読みやすくなります</span><span class="xp-hint-x" aria-hidden="true">✕</span></div>
   <section id="ind" class="tp-pane" aria-label="今日の重要指標">
     <div class="card-title">
       <svg class="ico" viewBox="0 0 26 26" fill="none" stroke="#f4f1ea" stroke-width="1.6"><rect x="3.5" y="5" width="19" height="17" rx="3"/><path d="M3.5 10h19M8.5 2.8v4M17.5 2.8v4"/><path d="M8 14.5h2M12 14.5h2M16 14.5h2M8 18h2M12 18h2" stroke-linecap="round"/></svg>
@@ -1513,13 +1523,14 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <div class="card-title">
       <svg class="ico" viewBox="0 0 26 26"><rect x="4" y="3" width="18" height="21" rx="3" fill="#e3b867"/><rect x="4" y="3" width="18" height="5" rx="2" fill="#c8963f"/><path d="M8 12h10M8 16h10M8 20h6" stroke="#1a1408" stroke-width="1.6" stroke-linecap="round"/></svg>
       今日の注目ポイント
-      <button type="button" id="pt-expand" class="pt-xp">⤢ 広げる</button>
-      <button type="button" id="pt-shrink" class="pt-x">✕ 戻す</button>
+      <button type="button" id="pt-expand" class="pt-xp">⤢ 大きく読む</button>
+      <button type="button" id="pt-shrink" class="pt-x">✕ もどす</button>
     </div>
     <div class="pt-tabs" role="tablist" aria-label="注目ポイントの切替">
       <button type="button" class="pt-tab" data-ptv="map" role="tab">価格帯</button>
       <button type="button" class="pt-tab" data-ptv="strat" role="tab">本日の戦略</button>
     </div>
+    <div class="xp-hint" id="pt-hint" role="note" hidden><span class="xp-hint-t">押すと、このカードが大きくなって全文が読めます。もう一度押すと戻ります</span><span class="xp-hint-x" aria-hidden="true">✕</span></div>
     <ul class="pt-list">
       <li id="pt-map"><div class="pm-tabs" role="tablist" aria-label="銘柄"></div><div class="pm-body" aria-live="polite"><p class="pm-wait">分析データを読み込んでいます…</p></div></li>
       <li id="pt-strat-none" hidden><p class="pt-none">本日のトレード戦略は、データが届き次第ここに表示されます。</p></li>
@@ -2130,6 +2141,16 @@ window.TD_THEME = (function () {
   if (ptShrink) ptShrink.addEventListener("click", function () { if (ptsCard) ptsCard.classList.remove("pt-expanded"); });
   var ptExpand = document.getElementById("pt-expand");
   if (ptExpand) ptExpand.addEventListener("click", function () { if (ptsCard) ptsCard.classList.add("pt-expanded"); });
+  /* F8：注目ポイントの初回ヒント（金の吹き出し）。タップで消え、カードを広げても（ボタン・タブのどちらからでも）自動で消える。td_hint_points_v1 に記録して二度と出さない */
+  var ptHint = document.getElementById("pt-hint");
+  function dismissPtHint() { if (ptHint) ptHint.hidden = true; try { localStorage.setItem("td_hint_points_v1", "1"); } catch (e) {} }
+  if (ptHint) {
+    var ptHintSeen = false;
+    try { ptHintSeen = !!localStorage.getItem("td_hint_points_v1"); } catch (e) {}
+    if (!ptHintSeen && ptsCard && !ptsCard.classList.contains("pt-expanded")) ptHint.hidden = false;
+    ptHint.addEventListener("click", dismissPtHint);
+    if (window.MutationObserver && ptsCard) new MutationObserver(function () { if (ptsCard.classList.contains("pt-expanded")) dismissPtHint(); }).observe(ptsCard, { attributes: true, attributeFilter: ["class"] });
+  }
   function syncPtTabs() {
     var none = document.getElementById("pt-strat-none");
     if (!none) return;
@@ -6931,12 +6952,22 @@ window.TD_THEME = (function () {
   var pnBtn = document.getElementById("pt-next"), tpTabsEl = document.querySelector(".tp-tabs");
   if (pnBtn && tpTabsEl) tpTabsEl.appendChild(pnBtn);
   var tpExp = document.getElementById("tp-expand"), tpPanel = document.getElementById("tabpanel");
+  /* F8：下段パネルの初回ヒント（金の吹き出し）。タップで消え、パネルを広げても自動で消える。td_hint_panel_v1 に記録して二度と出さない */
+  var tpHint = document.getElementById("tp-hint");
+  function dismissTpHint() { if (tpHint) tpHint.hidden = true; try { localStorage.setItem("td_hint_panel_v1", "1"); } catch (e) {} }
+  if (tpHint) {
+    var tpHintSeen = false;
+    try { tpHintSeen = !!localStorage.getItem("td_hint_panel_v1"); } catch (e) {}
+    if (!tpHintSeen && tpPanel && !tpPanel.classList.contains("tp-expanded")) tpHint.hidden = false;
+    tpHint.addEventListener("click", dismissTpHint);
+  }
   if (tpExp && tpPanel) tpExp.addEventListener("click", function () {
     var on = tpPanel.classList.toggle("tp-expanded");
     var tpIc = tpExp.querySelector(".tp-x-i"), tpTx = tpExp.querySelector(".tp-x-t");
     if (tpIc) tpIc.textContent = on ? "✕" : "⤢";
-    if (tpTx) tpTx.textContent = on ? "戻す" : "広げる";
-    tpExp.setAttribute("aria-label", on ? "パネルを戻す" : "パネルを広げる");
+    if (tpTx) tpTx.textContent = on ? "もどす" : "大きく読む";
+    tpExp.setAttribute("aria-label", on ? "パネルをもどす" : "パネルを大きく読む");
+    if (on) dismissTpHint();
   });
   try { tpShow(tpName); } catch (e) {}
 })();
