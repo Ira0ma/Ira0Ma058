@@ -1253,6 +1253,11 @@ html:not(.beginner) .step-note { display: none; }
 #points.ptv-map #pt-strat { display: none !important; }
 #points.ptv-map #pt-strat-none { display: none !important; }
 #points .pt-none { color: var(--ink-3); font-size: 12.5px; line-height: 1.6; }
+#points .pt-x { display: none; margin-left: auto; border: 1px solid var(--glass-line); background: rgba(255,255,255,.06); color: var(--ink-2); font-size: 11.5px; border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+#points.pt-expanded .pt-x { display: block; }
+#points.pt-expanded { z-index: 45; box-shadow: 0 24px 60px rgba(0,0,0,.55); }
+#stage #points.pt-expanded { left: 27px; top: 35px; width: 1156px; height: 771px; }
+html.flow #points.pt-expanded { position: fixed; inset: 10px; width: auto; height: auto; }
 #points.ptv-strat #pt-map { display: none !important; }
 .flow .tp-tabs { flex-wrap: wrap; }
 .flow .tp-tabs .pt-next .pn-h { display: none; }
@@ -1468,6 +1473,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <div class="card-title">
       <svg class="ico" viewBox="0 0 26 26"><rect x="4" y="3" width="18" height="21" rx="3" fill="#e3b867"/><rect x="4" y="3" width="18" height="5" rx="2" fill="#c8963f"/><path d="M8 12h10M8 16h10M8 20h6" stroke="#1a1408" stroke-width="1.6" stroke-linecap="round"/></svg>
       今日の注目ポイント
+      <button type="button" id="pt-shrink" class="pt-x">✕ 戻す</button>
     </div>
     <div class="pt-tabs" role="tablist" aria-label="注目ポイントの切替">
       <button type="button" class="pt-tab" data-ptv="map" role="tab">価格帯</button>
@@ -1998,14 +2004,17 @@ window.TD_THEME = (function () {
   var ptsCard = document.getElementById("points"), ptStratLi = document.getElementById("pt-strat");
   var ptView = "map";
   try { ptView = localStorage.getItem("td_ptview") || "map"; } catch (e) {}
-  function ptShow(name) {
+  function ptShow(name, expand) {
     ptView = name === "strat" ? "strat" : "map";
+    if (expand && ptsCard) ptsCard.classList.add("pt-expanded");
     try { localStorage.setItem("td_ptview", ptView); } catch (e) {}
     if (ptsCard) { ptsCard.classList.toggle("ptv-strat", ptView === "strat"); ptsCard.classList.toggle("ptv-map", ptView !== "strat"); }
     document.querySelectorAll(".pt-tab").forEach(function (b) { var on = b.getAttribute("data-ptv") === ptView; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
     if (window.TDSyncPtTabs) window.TDSyncPtTabs();
   }
-  document.querySelectorAll(".pt-tab").forEach(function (b) { b.addEventListener("click", function () { ptShow(b.getAttribute("data-ptv")); }); });
+  document.querySelectorAll(".pt-tab").forEach(function (b) { b.addEventListener("click", function () { ptShow(b.getAttribute("data-ptv"), true); }); });
+  var ptShrink = document.getElementById("pt-shrink");
+  if (ptShrink) ptShrink.addEventListener("click", function () { if (ptsCard) ptsCard.classList.remove("pt-expanded"); });
   function syncPtTabs() {
     var none = document.getElementById("pt-strat-none");
     if (!none) return;
