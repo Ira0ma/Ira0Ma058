@@ -1257,6 +1257,8 @@ html.flow .shf-spine, html.phone .shf-spine { flex: 1 1 140px; height: 198px; }
 /* GOLD dashboard: opens full-screen over the desk; closing keeps it loaded so it reopens instantly */
 .dash-open { position: absolute; left: 18px; right: 10px; bottom: 18px; z-index: 1; display: flex; gap: 5px; }
 .dash-open .gold-open { flex: 1 1 0; min-width: 0; justify-content: center; padding: 7px 0; gap: 2px; font-size: 11.5px; letter-spacing: -.02em; }  /* four dashboards: GOLD, ドル円, BTC, オイル (equal widths, one row) */
+.dash-open:has(> .wk-open) .gold-open { font-size: 10.5px; }
+#clock .dash-open .wk-open { background: #16233f; color: #ffd35e; font-weight: 800; box-shadow: inset 0 0 0 1.5px rgba(255,211,94,.7), 0 4px 14px rgba(0,0,0,.45); }
 .gold-open { white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: 13px; font-weight: 700; color: var(--on-accent); background: var(--gold); border: 0; border-radius: 999px; padding: 7px 14px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.45); }
 /* エントリーの枠：カードの角で切れないよう、列の少し内側に描く。光は描いた層の透明度だけを動かす（描き直しなし） */
 .mkt.entry-buy::before, .mkt.entry-sell::before, .mkt.entry-buy::after, .mkt.entry-sell::after { content: ""; position: absolute; z-index: -1; inset: 6px 5px 4px; border-radius: 18px; pointer-events: none; }
@@ -1328,6 +1330,66 @@ html:not(.beginner) .step-note { display: none; }
 @media (pointer: coarse) { .dk-theme-btn { min-height: 36px; padding: 6px 14px; } }
 /* 狭い画面（iPhone SE級・縦375px）：ドックは5ボタン化（2026-11-06）で幅が増えたため、詰めて折り返し、右下のテーマボタンと重ならないようにする */
 @media (max-width: 640px) { .dk-dock { gap: 4px; left: calc(env(safe-area-inset-left, 0px) + 6px); flex-wrap: wrap; max-width: calc(100vw - 176px); } .dk-dock #layout-toggle, #tools-toggle, .dk-dock .dk-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; } .dk-theme-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; right: calc(env(safe-area-inset-right, 0px) + 6px); max-width: 164px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #flow { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 140px); } }  /* 狭幅ではドックが3段（約104px＋下端4px）に折り返すため、末尾の章カードとヒント行がドックの上までスクロールできる余白 */
+
+/* ---------- 2026-11-09 ホーム再編（Desk of Ayu）：下段タブパネル／注目ポイント内タブ／ロット図説ボタン。みことばカードと左列は従来どおり ---------- */
+#tabpanel { left: 352px; top: 536px; width: 832px; height: 270px; padding: 12px 16px; display: flex; flex-direction: column; }
+.tp-tabs { display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--glass-line); padding-bottom: 10px; flex: none; }
+.tp-tab { font: inherit; font-size: 13px; font-weight: 600; padding: 6px 15px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--glass-line); color: var(--ink-2); cursor: pointer; }
+.tp-tab.on { background: var(--gold); color: var(--on-accent); border-color: var(--gold); }
+.tp-tabs .pt-next { margin: 0 0 0 auto; border-top: 0; padding: 0; flex-direction: row; align-items: baseline; gap: 8px; width: auto; }
+.tp-tabs .pt-next .pn-h { flex: none; }
+.tp-tabs .pt-next .pn-l2 { order: 2; font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.tp-tabs .pt-next .pn-l1 { order: 3; flex: none; font-size: 12.5px; }
+.tp-wrap { flex: 1; min-height: 0; position: relative; margin-top: 6px; }
+#tabpanel #ind, #tabpanel #xfeed { position: absolute; inset: 0; width: auto; height: auto; background: none; border: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; border-radius: 0; margin: 0; }
+#tabpanel #ind { padding: 4px 2px; }
+#tabpanel #xfeed { padding: 4px 2px; overflow-y: auto; }
+.tp-pane[hidden] { display: none !important; }
+.pt-tabs { display: flex; gap: 6px; margin: 8px 0 2px; flex: none; }
+.pt-tab { font: inherit; font-size: 12px; font-weight: 600; padding: 5px 13px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--glass-line); color: var(--ink-2); cursor: pointer; }
+.pt-tab.on { background: var(--gold); color: var(--on-accent); border-color: var(--gold); }
+.pt-tab:disabled { opacity: .45; cursor: default; }
+#points.ptv-map #pt-strat { display: none !important; }
+#points.ptv-map #pt-strat-none { display: none !important; }
+#points .pt-none { color: var(--ink-3); font-size: 12.5px; line-height: 1.6; }
+#points .pt-x { display: none; margin-left: auto; border: 1px solid var(--glass-line); background: rgba(255,255,255,.06); color: var(--ink-2); font-size: 11.5px; border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+#points.pt-expanded .pt-x { display: block; }
+#points.pt-expanded { z-index: 45; box-shadow: 0 24px 60px rgba(0,0,0,.55); }
+#stage #points.pt-expanded { left: 27px; top: 35px; width: 1156px; height: 771px; }
+html.flow #points.pt-expanded { position: fixed; inset: 10px; width: auto; height: auto; }
+.ind-peak { flex: none; margin-top: 6px; padding: 5px 10px; border-left: 3px solid var(--gold); border-radius: 6px; background: rgba(var(--gold-rgb),.08); font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ind-list li.min { padding: 4px 0; }
+.ind-list li.min .n { font-size: 12.5px; }
+.ind-list li.min .t { font-size: 12px; }
+.tp-x { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 44px; min-height: 40px; border: 1px solid var(--glass-line); background: rgba(255,255,255,.05); color: var(--ink-2); border-radius: 8px; font-size: 13px; line-height: 1; padding: 6px 12px; cursor: pointer; touch-action: manipulation; }
+.tp-tab, .pt-tab { touch-action: manipulation; }
+#tabpanel.tp-expanded { z-index: 45; box-shadow: 0 24px 60px rgba(0,0,0,.55); }
+#stage #tabpanel.tp-expanded { left: 27px; top: 35px; width: 1156px; height: 771px; }
+/* flow では fixed にしない：.flow .card の position:relative !important に負けるうえ、#fstage の transform に閉じ込められて画面外へ出る。パネルをその場で縦に広げる */
+html.flow #tabpanel.tp-expanded { position: relative; inset: auto; width: auto; height: 78vh; }
+html.flow #tabpanel.tp-expanded #ind, html.flow #tabpanel.tp-expanded #xfeed { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+@media (max-width: 820px) { html.phone #pdots { bottom: calc(env(safe-area-inset-bottom, 0px) + 44px); } }
+body:has(#points.pt-expanded) .dk-dock, body:has(#tabpanel.tp-expanded) .dk-dock { opacity: .25; pointer-events: none; }
+#stage #cal { z-index: 3; }
+#points.ptv-strat #pt-map { display: none !important; }
+.flow .tp-tabs { flex-wrap: wrap; }
+.flow .tp-tabs .pt-next .pn-h { display: none; }
+html.flow .dk-dock { gap: 4px; flex-wrap: wrap; max-width: calc(100vw - 182px); }
+html.flow .dk-grp { gap: 4px; }
+html.flow .dk-grp.opn, html.phone .dk-grp.opn { flex-wrap: wrap; max-width: 100%; }
+html.flow .dk-dock #layout-toggle, html.flow #tools-toggle, html.flow .dk-dock .dk-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; }
+html.flow .dk-theme-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; right: calc(env(safe-area-inset-right, 0px) + 6px); max-width: 164px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dk-grp { display: flex; gap: 7px; align-items: center; }
+.dk-lb { display: none; }
+.dk-app-row { display: contents; }
+.dk-dock .dk-app-btn { display: inline-flex; align-items: center; gap: 7px; }
+.dk-dock .dk-app-ic { width: 26px; height: 26px; border-radius: 7px; flex: none; }
+html.phone .dk-dock { gap: 4px; }
+html.phone .dk-grp { gap: 4px; }
+html.phone .dk-dock .dk-btn, html.phone .dk-dock #layout-toggle, html.phone #tools-toggle { font-size: 11px; padding: 4px 8px; min-height: 32px; }
+.flow #tabpanel { height: auto; }
+.flow .tp-wrap { position: static; }
+.flow #tabpanel #ind, .flow #tabpanel #xfeed { position: relative; inset: auto; height: auto; overflow: visible; }
 .dk-theme-pop { position: fixed; z-index: 60; right: calc(env(safe-area-inset-right, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 48px); width: 228px; background: rgba(var(--panel-rgb),.97); border: 1px solid rgba(var(--gold-rgb),.55); border-radius: 14px; padding: 8px; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
 .dk-theme-pop h4 { margin: 2px 6px 6px; font-size: 11px; color: var(--ink-3); font-weight: 700; letter-spacing: .04em; }
 .dk-theme-pop button { display: flex; width: 100%; align-items: center; gap: 8px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); background: none; border: 0; border-radius: 9px; padding: 7px 8px; cursor: pointer; text-align: left; }
@@ -1398,6 +1460,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <button class="gold-open" data-sheet="usdjpy" type="button" aria-haspopup="dialog" aria-label="ドル円分析を開く">ドル円 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
       <button class="gold-open" data-sheet="btc" type="button" aria-haspopup="dialog" aria-label="BTC分析を開く">BTC <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
       <button class="gold-open" data-sheet="oil" type="button" aria-haspopup="dialog" aria-label="オイル分析（USオイル・OILCash 補正表示）を開く">オイル <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+      <button class="gold-open wk-open" data-sheet="weekend" type="button" aria-haspopup="dialog" aria-label="週末ボード（参考値）を開く">週末 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
     </div>
   </section>
 
@@ -1481,12 +1544,21 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
   </section>
 
   <!-- indicators -->
-  <section class="card" id="ind" aria-label="今日の重要指標">
+  <!-- 下段タブパネル（2026-11-09新設・Desk Oneと同仕様）：今日の重要指標と「学ぶ」をタブ切替 -->
+  <section class="card" id="tabpanel" aria-label="指標と学ぶ（タブ切替）">
+    <div class="tp-tabs" role="tablist" aria-label="下段パネルの切替">
+      <button type="button" class="tp-tab" data-tp="ind" role="tab">📊 指標</button>
+      <button type="button" class="tp-tab" data-tp="learn" role="tab">📚 学ぶ</button>
+      <button type="button" class="tp-x" id="tp-expand" aria-label="パネルを広げる"><span class="tp-x-i" aria-hidden="true">⤢</span><span class="tp-x-t">広げる</span></button>
+    </div>
+    <div class="tp-wrap">
+  <section id="ind" class="tp-pane" aria-label="今日の重要指標">
     <div class="card-title">
       <svg class="ico" viewBox="0 0 26 26" fill="none" stroke="#f4f1ea" stroke-width="1.6"><rect x="3.5" y="5" width="19" height="17" rx="3"/><path d="M3.5 10h19M8.5 2.8v4M17.5 2.8v4"/><path d="M8 14.5h2M12 14.5h2M16 14.5h2M8 18h2M12 18h2" stroke-linecap="round"/></svg>
       <span data-i18n="indTitle">今日の重要指標</span><span class="aside num" id="ind-day"></span>
     </div>
     <div class="ind-week" id="ind-week" aria-label="今週の重要指標（★3）"></div>
+    <div class="ind-peak" id="ind-peak" hidden></div>
     <ul class="ind-list" id="ind-list">
       <li class="empty">今日の経済指標を読み込んでいます…</li>
     </ul>
@@ -1496,20 +1568,38 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <span class="ind-upd num" id="ind-upd"></span>
     </div>
   </section>
+<section id="xfeed" class="tp-pane" aria-label="学習：用語集・図鑑・入門">
+    <div class="gl-tile">
+      <div class="gl-head">
+        <b class="gl-title" data-i18n="learnTitle">学ぶ</b><span id="gl-count"></span><button type="button" class="gl-open" data-gl="toc">目次を開く ›</button><button type="button" class="gl-shelf" data-shf="open">📚 小さな書斎</button>
+      </div>
+      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（カテゴリ別の30冊の本と、2冊の辞書）"><div class="gl-cat">投資とトレード</div><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="indicators" title="16冊目：インジケーターの教科書 ― 使い方とトレードへの活かし方（インジケーターの教科書）"><i class="gl-no" aria-hidden="true">16</i>インジケーターの<span class="gl-x">教科書</span></button><button type="button" role="tab" data-glbook="regime" title="17冊目：相場の読み方 ― テクニカルとファンダメンタル（相場の読み方）"><i class="gl-no" aria-hidden="true">17</i>相場の<span class="gl-x">読み方</span></button><div class="gl-cat">暮らしと制度</div><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="walls" title="8冊目：年収の壁と扶養のしくみ（パートの税金・社会保険・配偶者控除の壁）"><i class="gl-no" aria-hidden="true">8</i>年収の壁</button><button type="button" role="tab" data-glbook="fire" title="9冊目：FIREの設計図 ― 投資の組み合わせの作り方（自分の条件で設計するFIREと、設計ワーク）"><i class="gl-no" aria-hidden="true">9</i>FIRE<span class="gl-x">の設計図</span></button><button type="button" role="tab" data-glbook="safetynet" title="10冊目：困ったときに読む本 ― 生活のセーフティーネット（困ったときに開く本）"><i class="gl-no" aria-hidden="true">10</i>困ったときの<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="loan" title="11冊目：お金を借りる前に読む本 ― 上手な借り入れ、悪い借り入れ（借りる前に読む本）"><i class="gl-no" aria-hidden="true">11</i>借りる前の<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="med" title="13冊目：家庭の医学 ― 体調を崩したときに開く本（体調を崩したときに開く本）"><i class="gl-no" aria-hidden="true">13</i>家庭の<span class="gl-x">医学</span></button><button type="button" role="tab" data-glbook="safety" title="14冊目：巻き込まれたときに開く本 ― 犯罪・トラブルの安全マニュアル（巻き込まれたときに開く本）"><i class="gl-no" aria-hidden="true">14</i>巻き込まれた<span class="gl-x">ときの本</span></button><button type="button" role="tab" data-glbook="disaster" title="15冊目：災害のときに開く本 ― 避難と備えのマニュアル（災害のときに開く本）"><i class="gl-no" aria-hidden="true">15</i>災害の<span class="gl-x">ときの本</span></button><button type="button" role="tab" data-glbook="parental" title="18冊目：産休・育休の本 ― 休み方と手当の徹底まとめ（産休・育休の本）"><i class="gl-no" aria-hidden="true">18</i>産休・育休<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="taxes" title="19冊目：税金一覧の本 ― 日本の税金を表で整理（税金一覧の本）"><i class="gl-no" aria-hidden="true">19</i>税金一覧<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="inheritance" title="24冊目：相続と遺言、終活の本 ― 受け継ぐ仕組みと、自分の意思の残し方（相続と遺言、終活の本）"><i class="gl-no" aria-hidden="true">24</i>相続・遺言<span class="gl-x">終活の本</span></button><button type="button" role="tab" data-glbook="insurance" title="25冊目：民間の保険の見方 ― 公的保険との切り分けと入り方（民間の保険の見方）"><i class="gl-no" aria-hidden="true">25</i>民間の保険<span class="gl-x">の見方</span></button><button type="button" role="tab" data-glbook="housing" title="26冊目：家と住宅ローンの本 ― 賃貸と購入、ローンの仕組みと付き合い方（家と住宅ローンの本）"><i class="gl-no" aria-hidden="true">26</i>家と<span class="gl-x">住宅ローン</span></button><button type="button" role="tab" data-glbook="childcare" title="27冊目：子育てと教育費の本 ― 誕生から自立まで、お金と制度の地図（子育てと教育費の本）"><i class="gl-no" aria-hidden="true">27</i>子育てと<span class="gl-x">教育費</span></button><button type="button" role="tab" data-glbook="credit" title="28冊目：信用情報とカードの本 ― 記録の仕組みと、カードとの付き合い方（信用情報とカードの本）"><i class="gl-no" aria-hidden="true">28</i>信用情報と<span class="gl-x">カード</span></button><button type="button" role="tab" data-glbook="nursing" title="29冊目：介護の実務の本 ― 認定・サービス・費用と、家族を支える制度（介護の実務の本）"><i class="gl-no" aria-hidden="true">29</i>介護の<span class="gl-x">実務</span></button><button type="button" role="tab" data-glbook="marriage" title="30冊目：結婚と離婚のお金と手続き ― 婚姻で変わる制度と、離婚の進め方・分け方（結婚と離婚のお金と手続き）"><i class="gl-no" aria-hidden="true">30</i>結婚と離婚<span class="gl-x">の手続き</span></button><div class="gl-cat">仕事と経営</div><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="aiside" title="12冊目：AIと始める副業の教科書 ― クラウドワークス・アフィリエイト・コンテンツ販売（AIと始める副業の教科書）"><i class="gl-no" aria-hidden="true">12</i>AI副業の<span class="gl-x">教科書</span></button><button type="button" role="tab" data-glbook="labor" title="20冊目：職場のルールの本 ― 労働基準法と懲戒・残業・解雇（職場のルールの本）"><i class="gl-no" aria-hidden="true">20</i>職場の<span class="gl-x">ルール</span></button><button type="button" role="tab" data-glbook="social" title="21冊目：社会保険・年金と福利厚生の本 ― 5つの保険と年金の地図（社会保険・年金と福利厚生の本）"><i class="gl-no" aria-hidden="true">21</i>社会保険・<span class="gl-x">年金と福利厚生</span></button><button type="button" role="tab" data-glbook="company" title="22冊目：法人化の本 ― 個人事業主と法人の徹底まとめ（法人化の本）"><i class="gl-no" aria-hidden="true">22</i>法人化<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="bookkeeping" title="23冊目：簿記・会計の本 ― 帳簿と決算書が読めるようになる本（簿記・会計の本）"><i class="gl-no" aria-hidden="true">23</i>簿記・会計<span class="gl-x">の本</span></button><div class="gl-cat">辞書</div><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
+      <div class="gl-grid" id="gl-grid"></div>
+      <p class="gl-hint">本を開いたら、左右にスワイプか「次のページ ›」でめくれます</p>
+    </div>
+  </section>
+    </div>
+  </section>
 
   <!-- points -->
-  <section class="card" id="points" aria-label="今日の注目ポイント">
+  <section class="card ptv-map" id="points" aria-label="今日の注目ポイント">
     <div class="card-title">
       <svg class="ico" viewBox="0 0 26 26"><rect x="4" y="3" width="18" height="21" rx="3" fill="#e3b867"/><rect x="4" y="3" width="18" height="5" rx="2" fill="#c8963f"/><path d="M8 12h10M8 16h10M8 20h6" stroke="#1a1408" stroke-width="1.6" stroke-linecap="round"/></svg>
       <span data-i18n="pointsTitle">今日の注目ポイント</span>
+      <button type="button" id="pt-shrink" class="pt-x" data-i18n="ptShrink">✕ 戻す</button>
+    </div>
+    <div class="pt-tabs" role="tablist" aria-label="注目ポイントの切替">
+      <button type="button" class="pt-tab" data-ptv="map" role="tab">価格帯</button>
+      <button type="button" class="pt-tab" data-ptv="strat" role="tab">本日の戦略</button>
     </div>
     <ul class="pt-list">
       <li id="pt-map"><div class="pm-tabs" role="tablist" aria-label="銘柄"></div><div class="pm-body" aria-live="polite"><p class="pm-wait">分析データを読み込んでいます…</p></div></li>
+      <li id="pt-strat-none" hidden><p class="pt-none">本日のトレード戦略は、データが届き次第ここに表示されます。</p></li>
       <li id="pt-strat" hidden><div><h3 data-pt="5h">本日のトレード戦略</h3><p data-pt="5p"></p><button class="pt-more" type="button">前日の振り返りと今日の予想<svg width="6" height="9" viewBox="0 0 7 10"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></div></li>
     </ul>
     <div class="rep" id="rep" hidden role="dialog" aria-label="前日の振り返りと今日の予想"><div class="rep-h"><b>本日のトレード戦略</b><small id="rep-when"></small><button type="button" class="rep-close">閉じる</button></div><div class="rep-body" id="rep-body"></div></div>
     <!-- 次の重要指標までのカウントダウン（注目ポイントの下に）：タップで今日の重要指標へ -->
-    <button type="button" class="pt-next" id="pt-next" aria-label="次の★3指標（タップで今日の重要指標の一覧へ）"><span class="pn-h">次の★3指標（最も重要）</span><span class="pn-l1">指標データを読み込んでいます…</span><span class="pn-l2"></span></button>
+    <button type="button" class="pt-next" id="pt-next" aria-label="次の★3指標（タップで今日の重要指標の一覧へ）"><span class="pn-h">次の★3指標</span><span class="pn-l1">指標データを読み込んでいます…</span><span class="pn-l2"></span></button>
     <div class="pt-foot" id="pt-foot"></div>
   </section>
 
@@ -1555,17 +1645,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     </div>
   </section>
 
-  <!-- X feed -->
-  <section class="card" id="xfeed" aria-label="学習：用語集・図鑑・入門">
-    <div class="gl-tile">
-      <div class="gl-head">
-        <b class="gl-title" data-i18n="learnTitle">学ぶ</b><span id="gl-count"></span><button type="button" class="gl-open" data-gl="toc">目次を開く ›</button><button type="button" class="gl-shelf" data-shf="open">📚 小さな書斎</button>
-      </div>
-      <div class="gl-tabs" role="tablist" aria-label="本を選ぶ（カテゴリ別の30冊の本と、2冊の辞書）"><div class="gl-cat">投資とトレード</div><button type="button" role="tab" data-glbook="first" title="1冊目：はじめての投資とトレード（最初に読む本）"><i class="gl-no" aria-hidden="true">1</i>最初の1冊</button><button type="button" role="tab" data-glbook="gold" title="2冊目：ゴールド入門"><i class="gl-no" aria-hidden="true">2</i>ゴールド<span class="gl-x">入門</span></button><button type="button" role="tab" data-glbook="usdjpy" title="3冊目：ドル円入門"><i class="gl-no" aria-hidden="true">3</i>ドル円入門</button><button type="button" role="tab" data-glbook="pattern" title="4冊目：パターン図鑑"><i class="gl-no" aria-hidden="true">4</i>パターン<span class="gl-x">図鑑</span></button><button type="button" role="tab" data-glbook="fvg" title="5冊目：FVG詳説"><i class="gl-no" aria-hidden="true">5</i>FVG詳説</button><button type="button" role="tab" data-glbook="indicators" title="16冊目：インジケーターの教科書 ― 使い方とトレードへの活かし方（インジケーターの教科書）"><i class="gl-no" aria-hidden="true">16</i>インジケーターの<span class="gl-x">教科書</span></button><button type="button" role="tab" data-glbook="regime" title="17冊目：相場の読み方 ― テクニカルとファンダメンタル（相場の読み方）"><i class="gl-no" aria-hidden="true">17</i>相場の<span class="gl-x">読み方</span></button><div class="gl-cat">暮らしと制度</div><button type="button" role="tab" data-glbook="retire" title="7冊目：退職と給付金の手続きガイド（会社を辞める前と、辞めたあとのお金と手続き）"><i class="gl-no" aria-hidden="true">7</i>退職と給付金</button><button type="button" role="tab" data-glbook="walls" title="8冊目：年収の壁と扶養のしくみ（パートの税金・社会保険・配偶者控除の壁）"><i class="gl-no" aria-hidden="true">8</i>年収の壁</button><button type="button" role="tab" data-glbook="fire" title="9冊目：FIREの設計図 ― 投資の組み合わせの作り方（自分の条件で設計するFIREと、設計ワーク）"><i class="gl-no" aria-hidden="true">9</i>FIRE<span class="gl-x">の設計図</span></button><button type="button" role="tab" data-glbook="safetynet" title="10冊目：困ったときに読む本 ― 生活のセーフティーネット（困ったときに開く本）"><i class="gl-no" aria-hidden="true">10</i>困ったときの<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="loan" title="11冊目：お金を借りる前に読む本 ― 上手な借り入れ、悪い借り入れ（借りる前に読む本）"><i class="gl-no" aria-hidden="true">11</i>借りる前の<span class="gl-x">本</span></button><button type="button" role="tab" data-glbook="med" title="13冊目：家庭の医学 ― 体調を崩したときに開く本（体調を崩したときに開く本）"><i class="gl-no" aria-hidden="true">13</i>家庭の<span class="gl-x">医学</span></button><button type="button" role="tab" data-glbook="safety" title="14冊目：巻き込まれたときに開く本 ― 犯罪・トラブルの安全マニュアル（巻き込まれたときに開く本）"><i class="gl-no" aria-hidden="true">14</i>巻き込まれた<span class="gl-x">ときの本</span></button><button type="button" role="tab" data-glbook="disaster" title="15冊目：災害のときに開く本 ― 避難と備えのマニュアル（災害のときに開く本）"><i class="gl-no" aria-hidden="true">15</i>災害の<span class="gl-x">ときの本</span></button><button type="button" role="tab" data-glbook="parental" title="18冊目：産休・育休の本 ― 休み方と手当の徹底まとめ（産休・育休の本）"><i class="gl-no" aria-hidden="true">18</i>産休・育休<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="taxes" title="19冊目：税金一覧の本 ― 日本の税金を表で整理（税金一覧の本）"><i class="gl-no" aria-hidden="true">19</i>税金一覧<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="inheritance" title="24冊目：相続と遺言、終活の本 ― 受け継ぐ仕組みと、自分の意思の残し方（相続と遺言、終活の本）"><i class="gl-no" aria-hidden="true">24</i>相続・遺言<span class="gl-x">終活の本</span></button><button type="button" role="tab" data-glbook="insurance" title="25冊目：民間の保険の見方 ― 公的保険との切り分けと入り方（民間の保険の見方）"><i class="gl-no" aria-hidden="true">25</i>民間の保険<span class="gl-x">の見方</span></button><button type="button" role="tab" data-glbook="housing" title="26冊目：家と住宅ローンの本 ― 賃貸と購入、ローンの仕組みと付き合い方（家と住宅ローンの本）"><i class="gl-no" aria-hidden="true">26</i>家と<span class="gl-x">住宅ローン</span></button><button type="button" role="tab" data-glbook="childcare" title="27冊目：子育てと教育費の本 ― 誕生から自立まで、お金と制度の地図（子育てと教育費の本）"><i class="gl-no" aria-hidden="true">27</i>子育てと<span class="gl-x">教育費</span></button><button type="button" role="tab" data-glbook="credit" title="28冊目：信用情報とカードの本 ― 記録の仕組みと、カードとの付き合い方（信用情報とカードの本）"><i class="gl-no" aria-hidden="true">28</i>信用情報と<span class="gl-x">カード</span></button><button type="button" role="tab" data-glbook="nursing" title="29冊目：介護の実務の本 ― 認定・サービス・費用と、家族を支える制度（介護の実務の本）"><i class="gl-no" aria-hidden="true">29</i>介護の<span class="gl-x">実務</span></button><button type="button" role="tab" data-glbook="marriage" title="30冊目：結婚と離婚のお金と手続き ― 婚姻で変わる制度と、離婚の進め方・分け方（結婚と離婚のお金と手続き）"><i class="gl-no" aria-hidden="true">30</i>結婚と離婚<span class="gl-x">の手続き</span></button><div class="gl-cat">仕事と経営</div><button type="button" role="tab" data-glbook="tax" title="6冊目：確定申告ガイド（FXと副業の税金手続き）"><i class="gl-no" aria-hidden="true">6</i>確定申告<span class="gl-x">ガイド</span></button><button type="button" role="tab" data-glbook="aiside" title="12冊目：AIと始める副業の教科書 ― クラウドワークス・アフィリエイト・コンテンツ販売（AIと始める副業の教科書）"><i class="gl-no" aria-hidden="true">12</i>AI副業の<span class="gl-x">教科書</span></button><button type="button" role="tab" data-glbook="labor" title="20冊目：職場のルールの本 ― 労働基準法と懲戒・残業・解雇（職場のルールの本）"><i class="gl-no" aria-hidden="true">20</i>職場の<span class="gl-x">ルール</span></button><button type="button" role="tab" data-glbook="social" title="21冊目：社会保険・年金と福利厚生の本 ― 5つの保険と年金の地図（社会保険・年金と福利厚生の本）"><i class="gl-no" aria-hidden="true">21</i>社会保険・<span class="gl-x">年金と福利厚生</span></button><button type="button" role="tab" data-glbook="company" title="22冊目：法人化の本 ― 個人事業主と法人の徹底まとめ（法人化の本）"><i class="gl-no" aria-hidden="true">22</i>法人化<span class="gl-x">の本</span></button><button type="button" role="tab" data-glbook="bookkeeping" title="23冊目：簿記・会計の本 ― 帳簿と決算書が読めるようになる本（簿記・会計の本）"><i class="gl-no" aria-hidden="true">23</i>簿記・会計<span class="gl-x">の本</span></button><div class="gl-cat">辞書</div><button type="button" role="tab" data-glbook="fx" title="辞書：FX用語集（引いて使う本）"><i class="gl-dic">辞書</i>FX<span class="gl-x">用語集</span></button><button type="button" role="tab" data-glbook="eco" title="辞書：経済用語集（引いて使う本）"><i class="gl-dic">辞書</i>経済<span class="gl-x">用語集</span></button></div>
-      <div class="gl-grid" id="gl-grid"></div>
-      <p class="gl-hint">本を開いたら、左右にスワイプか「次のページ ›」でめくれます</p>
-    </div>
-  </section>
+
 
   <!-- calendar -->
   <section class="card" id="cal" aria-label="カレンダー">
@@ -1776,8 +1856,8 @@ window.TD_THEME = (function () {
   try { beginner = localStorage.getItem("ayu_desk-layout") === "beginner"; } catch (e) {}
   var paintRoot = function () { document.documentElement.classList.toggle("beginner", beginner); };
   paintRoot();
-  var STEPS = { clock: [0, "今日の日付と時間を確認"], cal: [0, "休みの日・ゴトー日をチェック"], ind: [0, "荒れやすい発表の時間を知る"],
-    markets: [0, "今の値段と向きを見る（タップで詳しい分析）"], points: [0, "今日の作戦を読む"], weather: [0, "地震・台風など安全の確認"], xfeed: [0, "用語集・図鑑・入門で学ぶ"] };  // 番号は placeSteps で画面の並びから付ける
+  var STEPS = { clock: [0, "今日の日付と時間を確認"], cal: [0, "休みの日・ゴトー日をチェック"],
+    markets: [0, "今の値段と向きを見る（タップで詳しい分析）"], points: [0, "今日の作戦を読む"], weather: [0, "地震・台風など安全の確認"], tabpanel: [0, "荒れやすい発表（指標タブ）と学びの本棚（学ぶタブ）"] };  // 番号は placeSteps で画面の並びから付ける
   var cardOf = function (id) { for (var i = 0; i < cards.length; i++) if (cards[i].id === id) return cards[i]; };
   var stepTags = {};
   Object.keys(STEPS).forEach(function (id) {
@@ -1813,7 +1893,7 @@ window.TD_THEME = (function () {
   var paintLayoutBtn = function () {
     layoutBtn.innerHTML = beginner ? "🔰 番号札を隠す" : "🔰 見る順番を表示";
     layoutBtn.setAttribute("aria-pressed", beginner ? "true" : "false");
-    layoutBtn.title = beginner ? "STEP の番号札を隠します" : "各パネルに STEP 1〜7 の見る順番と、そこで見ることを表示します";
+    layoutBtn.title = beginner ? "STEP の番号札を隠します" : "各パネルに STEP 1〜6 の見る順番と、そこで見ることを表示します";
   };
   var dock = document.createElement("div"); dock.className = "dk-dock";
   var toolsBtn = document.createElement("button"); toolsBtn.type = "button"; toolsBtn.id = "tools-toggle"; toolsBtn.innerHTML = "🧰 ツール";
@@ -1822,7 +1902,58 @@ window.TD_THEME = (function () {
   // A：日誌・収支も1タップで。当初はドックを「見る順番・ツール・日誌・収支」の4つまでと決めていたが、2026-11-06に収支→トレード収支へ改名し、家計簿を足して5つにすることを決定した
   var dockBtn = function (id, html, title, tab) { var b = document.createElement("button"); b.type = "button"; b.id = id; b.className = "dk-btn"; b.innerHTML = html; b.title = title; b.addEventListener("click", function () { openTools(tab, b); }); return b; };
   var jnBtn = dockBtn("journal-toggle", "📝 日誌", "取引の記録を入れる・一覧", "journal"), plBtn = dockBtn("pnl-toggle", "📅 トレード収支", "日ごとの確定損益・入出金のカレンダーと、週・月・年のまとめ", "pnl"), kbBtn = dockBtn("kakeibo-toggle", "🧾 家計簿", "家の収入と支出を月ごとに記録（この端末の中だけに保存）", "kakeibo");
-  paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn); dock.appendChild(jnBtn); dock.appendChild(plBtn); dock.appendChild(kbBtn); document.body.appendChild(dock);
+  // ロット図説へのドア（2026-11-09追加・Desk Oneと同仕様）
+  var lotBtn = document.createElement("button"); lotBtn.type = "button"; lotBtn.id = "lot-toggle"; lotBtn.className = "dk-btn"; lotBtn.innerHTML = "📊 ロット図説";
+  lotBtn.title = "5銘柄のロット別・利益シミュレーション図説を開きます";
+  lotBtn.addEventListener("click", function () { if (window.TDOpenDash) window.TDOpenDash("lots", lotBtn); });
+  // 取引アプリへのドア（2026-11-09追加）：公式アイコン（96×96に縮小して埋め込み。配信がテキストのみのため）を添えた起動ボタン。
+  // 飛び先の標準値は各ストアの公式ページ（アプリID・パッケージ名はストアで実在確認済み）。表示と飛び先はツール→設定で端末ごとに調整可（Plan Cと同じ方式）
+  var TD_APP_ICONS = { xmtd: "data:image/jpeg;base64,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", xs: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBAUEBAYFBQUGBgYHCQ4JCQgICRINDQoOFRIWFhUSFBQXGiEcFxgfGRQUHScdHyIjJSUlFhwpLCgkKyEkJST/2wBDAQYGBgkICREJCREkGBQYJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCT/wAARCABgAGADASIAAhEBAxEB/8QAHAABAAMBAQEBAQAAAAAAAAAAAAQGBwMCBQgB/8QAOxAAAQMCAgcEBgkFAQAAAAAAAQACAwQRBQYHEhMhMUFRYYGR0RQVInGTsRYjJDJCVJSh8DNDRVJVwf/EABoBAQADAQEBAAAAAAAAAAAAAAABAgYFAwT/xAAnEQABAwIGAQQDAAAAAAAAAAAAAQIDBBEFEiExcdFBFCRRwYGR8P/aAAwDAQACEQMRAD8A/VKIiAIiIAiIgCIiAIiIAiIgCIiAIuE2IUdO/ZzVUEbxv1XyAHwJX9graaqJEFRDKW7yGPDreCFcyXtc7Iijy4hR08hjmq4I3ji18jQR3EoSqom5IRcoKynqtbYTxS6vHZvDreC8SYhRxPLJKqBjhxDpACP3QjMlr3JCKN60oPztN8VvmvcNbTVDiyGohkcBezHgm3cgR7V8nZERCwREQFN0j5KbmbD/AEukiacSpmks3b5Wc2H5jt96yLLePVOV8Yir6dpuw6ksXDaM5tP83EL9HrJtK2S/RpH5goI/qnn7XG0fdcf7nuPPt38yhncYoXIvq4NHJv32XrE85YdQ5X9fxyCWGRgMDb2MjzwZ2G979LFYNK+tzDixke01NdWy8AN7nE7gOg+QC4uqp3UrKR0zzTxvMjYyfZa4ixIHXctV0TZP9FgGYK2P66ZtqVrh9xh4v97uXZ70Oc6aXFZmR7Im/wBr0fAzRVPyNhlPlbC5dlUSxifEKmL2XSOdwaDxAsPC3UqmQYTXVrNtBh9VUMJtrxwueCfeArdpcoJqXNZq3NOyqoWFjuV2jVI+R71Ly1pXGA4LTYbLhG39HbqCSObUDhfmLcUPGeON1S6Kd2RrdE0vx+9ymMy5i8jg1uDVxcdwApX+S1bRfkiqy9t8TxGMQ1NQwRshFrsZe51rcyQN3KyhwabKR0rRPg1THHfe5kzXEdxA+avuDY1Q4/QsrcPnE0Lt3QtPMEcih1MLoqNJc8cmZU/BOREQ0oREQBZVpczbtHjL1HJ7LbPq3NPE8Ws/9PcrVnnPUGU6cwsilkrpWExXYRGO0uO426Df7lkOXsAxHOOMbOPaPEkmvU1RFwwE3c4nqeQ6oZ/GK1Xe0g1cu/X94PnOw2sZhzMSdTyCkkkMLZreyXgXI/nQ9FftF2ePQpWYDiUv2eQ2pZXH+m4/gPYeXQ7ua0iTLeGy4D6jdTj0ERiIMHEAcCD/ALX336rBcz5dqcrYtJQ1Ru370MvASs5EdvUcihzZqSbDHsnYt08/acfBvmP5fw/MlCaPEIS9l9Zrmmz43dWnkVRJNCVOXkx43O1vIOpwSO8ELN/pFiw/zFd+qf5p9IsW/wCxXfqn+aFqjFaSdc0sN156LXm7RicsYO/E48UFS2NzWujfFqEgm243Nzc8E0QYnNS5mdQtcTDVwuLm8tZu8HwuO9U2qxWsrmBlVX1FQ1puGyzOeAetiVoWh7LlSa+XHJ4nR07IzFAXC20cbXI7ABa/b2IfPSKyWtYtM3Kib635NaREQ3AREQHiaCKoYWTRskYfwvaCP3SKGOBgZFGyNg4NaAB4Be0QiyXuFynpKeq1dvBFLq8NdgdbxXVECoi6KRfVOH/kaX4TfJPVOH/kaX4TfJSkQrkb8EX1VQDeKKl+E3yUoANAAFgERCyNRNkCIiEhERAEREAREQBERAEREAREQH//2Q==", mt5: "data:image/jpeg;base64,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" };
+  var TRADE_APPS = [
+    { id: "xmtd", name: "XMTD TraderPro", key: "ayu_app_xmtd", pkg: "com.xmtd.traderpro", scheme: "", store: "https://apps.apple.com/app/id6758664608", play: "https://play.google.com/store/apps/details?id=com.xmtd.traderpro", site: "https://www.xmtrading.com/jp/xmtd-traderpro-app" },
+    { id: "xs", name: "XS アプリ", key: "ayu_app_xs", pkg: "com.xs.mobile", scheme: "", store: "https://apps.apple.com/app/id6503892711", play: "https://play.google.com/store/apps/details?id=com.xs.mobile", site: "https://www.xs.com/jp/platforms/xs-trading-app/" },
+    { id: "mt5", name: "MetaTrader 5", key: "ayu_app_mt5", pkg: "net.metaquotes.metatrader5", scheme: "metatrader5", store: "https://apps.apple.com/app/id413251709", play: "https://play.google.com/store/apps/details?id=net.metaquotes.metatrader5", site: "https://apps.apple.com/app/id413251709" }
+  ];
+  var appOverride = function (key) { try { return (localStorage.getItem(key) || "").trim(); } catch (e) { return ""; } };
+  // 起動できなかったときの受け皿：1.2秒たっても画面が残っていたら（アプリが開くと画面が隠れる）受け皿のURLへ進む
+  var appArmFallback = function (url) {
+    var gone = false, mark = function () { gone = true; };
+    document.addEventListener("visibilitychange", mark); window.addEventListener("pagehide", mark);
+    setTimeout(function () { document.removeEventListener("visibilitychange", mark); window.removeEventListener("pagehide", mark); if (!gone && !document.hidden) location.href = url; }, 1200);
+  };
+  var openTradeApp = function (def) {
+    var ov = appOverride(def.key);
+    if (ov) { window.open(ov, "_blank", "noopener"); return; }
+    var ua = navigator.userAgent || "", ios = /iphone|ipad|ipod/i.test(ua), andr = /android/i.test(ua);
+    if (ios) {
+      if (def.scheme) { appArmFallback(def.store); try { location.href = def.scheme + "://"; } catch (e) {} }
+      else window.open(def.store, "_blank", "noopener");
+    } else if (andr) {
+      var intent = def.scheme
+        ? "intent://#Intent;scheme=" + def.scheme + ";package=" + def.pkg + ";S.browser_fallback_url=" + encodeURIComponent(def.play) + ";end"
+        : "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=" + def.pkg + ";S.browser_fallback_url=" + encodeURIComponent(def.play) + ";end";
+      appArmFallback(def.play);
+      try { location.href = intent; } catch (e) {}
+    } else window.open(def.site, "_blank", "noopener");
+  };
+  var appRow = document.createElement("div"); appRow.className = "dk-app-row";
+  TRADE_APPS.forEach(function (def) {
+    var b = document.createElement("button"); b.type = "button"; b.id = "appbtn-" + def.id; b.className = "dk-btn dk-app-btn";
+    b.innerHTML = '<img class="dk-app-ic" src="' + TD_APP_ICONS[def.id] + '" alt="">' + def.name;
+    b.title = def.name + "を開きます（開けない場合は公式ストア／サイトへ）";
+    b.setAttribute("aria-label", def.name + "を開く");
+    b.addEventListener("click", function () { openTradeApp(def); });
+    appRow.appendChild(b);
+  });
+  var paintAppBtns = function () { var show = true; try { show = localStorage.getItem("ayu_apps_show") !== "0"; } catch (e) {} appRow.style.display = show ? "" : "none"; };
+  window.TDAppDockSync = paintAppBtns; paintAppBtns();
+  window.addEventListener("storage", function (e) { if (e.key === "ayu_apps_show") paintAppBtns(); });
+  [jnBtn, plBtn, kbBtn].forEach(function (b) { b.classList.add("rec-b"); });
+  var grpOf = function (cls, label, btns) { var g = document.createElement("div"); g.className = "dk-grp " + cls; var lb = document.createElement("div"); lb.className = "dk-lb " + cls; lb.textContent = label; g.appendChild(lb); btns.forEach(function (b) { g.appendChild(b); }); return g; };
+  paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn);
+  dock.appendChild(grpOf("rec", "記録", [jnBtn, plBtn, kbBtn]));
+  dock.appendChild(grpOf("opn", "開く", [lotBtn, appRow]));
+  document.body.appendChild(dock);
   /* theme switch (plan A: a button at the bottom-right with a list). The dock holds the five main buttons (four until 2026-11-06), so the theme lives on its own at the right. Same setting as the tools screen (td_theme). */
   var THEME_LABELS = [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["grace", "恵みの光"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"], ["shippu", "利確の炎🔥"], ["aurora", "🌌 安らぎのオーロラ"]];
   var THEME_NAMES = { current: "基本デザイン", grace: "恵みの光", neon: "アゲアゲ⭐︎ネオン", spring: "春", summer: "夏", autumn: "秋", xmas: "クリスマス", newyear: "正月", winter: "冬", shippu: "利確の炎🔥", aurora: "安らぎのオーロラ" };
@@ -1923,10 +2054,10 @@ window.TD_THEME = (function () {
     pager.scrollLeft = pageIdx * pager.clientWidth;
   }
   var flow, fsizer, fstage, flowCols = 0;
-  var FLOW_1 = [["clock", "markets", "ind", "points", "cal", "weather", "xfeed"]];
-  var FLOW_2 = [["clock", "markets", "weather"], ["ind", "points", "cal", "xfeed"]];
-  var PAGER_N = [[["clock"], ["markets"]], [["ind"], ["points"]], [["weather"], ["cal", "xfeed"]]];
-  var PAGE_NAMES = ["相場", "指標・戦略", "天気・学ぶ"];
+  var FLOW_1 = [["clock", "markets", "points", "tabpanel", "cal", "weather"]];
+  var FLOW_2 = [["clock", "markets", "weather"], ["points", "tabpanel", "cal"]];
+  var PAGER_N = [[["clock"], ["markets"]], [["points"], ["tabpanel"]], [["weather"], ["cal"]]];
+  var PAGE_NAMES = ["相場", "指標・戦略", "天気・カレンダー"];
   function pagerSpec() { return PAGER_N; }
   function buildFlow() {
     flow = document.createElement("div"); flow.id = "flow";
@@ -1992,7 +2123,9 @@ window.TD_THEME = (function () {
     silver: { src: "silver.html?v=035a35d683", title: "シルバー分析" },
     usdjpy: { src: "usdjpy.html?v=37d5f18b9f", title: "ドル円分析" },
     btc: { src: "btc.html?v=9195c7baf7", title: "BTC分析" },
-    oil: { src: "oil.html?v=0aeeeabb9b", title: "オイル分析" }
+    oil: { src: "oil.html?v=0aeeeabb9b", title: "オイル分析" },
+    lots: { src: "lotsim.html", title: "ロット図説" },
+    weekend: { src: "weekend.html", title: "週末ボード" }
   };
   var openSheet = null, sheetOpener = null;
   /* ステータスバーの分：iframe の中では端末の値（safe-area）が届かないので、デスクで測った --safe-top を各ダッシュボードに渡す */
@@ -2026,6 +2159,7 @@ window.TD_THEME = (function () {
     try { sh.el.querySelector("iframe").contentWindow.postMessage({ type: "desk-sheet", on: true }, "*"); } catch (e) {}  // it draws its chart again
     sh.el.querySelector(".dash-close").focus();
   }
+  window.TDOpenDash = openDash;
   function closeDash() {
     if (!openSheet) return;
     try { openSheet.el.querySelector("iframe").contentWindow.postMessage({ type: "desk-sheet", on: false }, "*"); } catch (e) {}  // behind the desk: it stops drawing
@@ -2036,6 +2170,31 @@ window.TD_THEME = (function () {
     btn.addEventListener("click", function () { openDash(btn.getAttribute("data-sheet"), btn); });
   });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeDash(); });
+
+  /* ---------- 2026-11-09 ホーム再編：下段タブパネル（指標・学ぶ）と注目ポイント内タブ（価格帯・本日の戦略）。保存キーは ayu_ 付き ---------- */
+  /* 下段タブパネル（指標・学ぶ）の結線は、本体スクリプトの例外で道連れにならないよう専用の別スクリプトへ分離した（ファイル末尾側） */
+  var ptsCard = document.getElementById("points"), ptStratLi = document.getElementById("pt-strat");
+  var ptView = "map";
+  try { ptView = localStorage.getItem("ayu_ptview") || "map"; } catch (e) {}
+  function ptShow(name, expand) {
+    ptView = name === "strat" ? "strat" : "map";
+    if (expand && ptsCard) ptsCard.classList.add("pt-expanded");
+    try { localStorage.setItem("ayu_ptview", ptView); } catch (e) {}
+    if (ptsCard) { ptsCard.classList.toggle("ptv-strat", ptView === "strat"); ptsCard.classList.toggle("ptv-map", ptView !== "strat"); }
+    document.querySelectorAll(".pt-tab").forEach(function (b) { var on = b.getAttribute("data-ptv") === ptView; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
+    if (window.TDSyncPtTabs) window.TDSyncPtTabs();
+  }
+  document.querySelectorAll(".pt-tab").forEach(function (b) { b.addEventListener("click", function () { ptShow(b.getAttribute("data-ptv"), true); }); });
+  var ptShrink = document.getElementById("pt-shrink");
+  if (ptShrink) ptShrink.addEventListener("click", function () { if (ptsCard) ptsCard.classList.remove("pt-expanded"); });
+  function syncPtTabs() {
+    var none = document.getElementById("pt-strat-none");
+    if (!none) return;
+    var has = !!(ptStratLi && !ptStratLi.hidden);
+    none.hidden = !(ptView === "strat" && !has);
+  }
+  window.TDSyncPtTabs = syncPtTabs;
+  ptShow(ptView); syncPtTabs();
 
   /* Entry alerts: both dashboards run hidden in the background and report their setup call. When one
      calls an entry, the market panel showing that instrument and its button blink, with a badge that
@@ -4532,6 +4691,7 @@ window.TD_THEME = (function () {
     if (!calEvents) return;
     var ulF = document.getElementById("ind-list");
     ulF.classList.toggle("filtered", !!indDay);
+    var ipkF = document.getElementById("ind-peak"); if (ipkF && indDay) ipkF.hidden = true;
     if (indDay) {  // カレンダーの「この日の指標を一覧に表示」：その日だけ（「すべて表示」でいつでも元に戻る）
       var p = indDay.split("-"), dt = new Date(+p[0], +p[1] - 1, +p[2]), evs = eventsOn(indDay);
       document.getElementById("ind-day").textContent = (dt.getMonth() + 1) + "月" + dt.getDate() + "日(" + WD[dt.getDay()] + ")だけ";
@@ -4548,6 +4708,16 @@ window.TD_THEME = (function () {
     var today = calEvents.filter(function (e) {
       return e.t >= day.start && e.t < day.end;
     }).sort(function (a, b) { return a.t - b.t || b.stars - a.stars; });
+    var ipk = document.getElementById("ind-peak");
+    if (ipk) {
+      var s3 = today.filter(function (e) { return e.stars === 3; });
+      var s3up = s3.filter(function (e) { return e.t > now; });
+      if (s3up.length) ipk.textContent = "⛰ 今日の山場は " + HHMM(s3up[0].t) + " " + jaTitle(s3up[0]) + (s3up.length > 1 ? "（★3は残り" + s3up.length + "件）" : "");
+      else if (s3.length) ipk.textContent = "⛰ 今日の★3はすべて発表済みです";
+      else if (today.length) ipk.textContent = "今日は★3指標なし・比較的静かな日です";
+      else ipk.textContent = "今日は指標発表なし・静かな日です";
+      ipk.hidden = false;
+    }
     var upcoming = today.filter(function (e) { return e.t > now - IND_KEEP; });  // 発表済みは結果つきで2時間残す
     var list = (upcoming.length ? upcoming : today);
     if (list.length > 3) { // keep the most important ones, then show them in time order
@@ -4565,7 +4735,7 @@ window.TD_THEME = (function () {
     list.forEach(function (e) {
       var li = document.createElement("li");
       var mins = (e.t - now) / 60000;
-      if (mins < -30) li.classList.add("past");  // just released: stay bright while the result comes in
+      if (mins < -30) li.classList.add("past", "min");  // just released: stay bright while the result comes in／30分を過ぎたら畳む
       var hm = HHMM(e.t);
       var sub = [e.forecast ? "予想 " + e.forecast : "", e.previous ? "前回 " + e.previous : ""].filter(Boolean).join(" / ");
       li.innerHTML = '<div class="t num"></div><div class="stars"></div><div class="b"><div class="n"></div><div class="s num"></div></div>';
@@ -4584,7 +4754,7 @@ window.TD_THEME = (function () {
       } else if (mins <= 0 && mins > -30) {
         s.innerHTML = '<span class="soon">発表済み・結果を取得中…</span>';
       } else if (mins <= 0) {
-        s.textContent = "発表済み（結果は未取得）" + (sub ? "｜" + sub : "");
+        s.textContent = "発表済み";  // 畳んだ行では予想・前回を出さない
       } else if (mins > 0 && mins <= 60) {
         s.innerHTML = '<span class="soon"></span>';
         s.firstChild.textContent = "あと" + Math.ceil(mins) + "分" + (sub ? "｜" + sub : "");
@@ -4709,11 +4879,12 @@ window.TD_THEME = (function () {
     if (!nx) { l1.textContent = "今週これからの重要指標（★3）はありません"; l2.textContent = ""; return; }
     var mins = Math.max(1, Math.ceil((nx.t - now) / 60000)), h = Math.floor(mins / 60), m = mins % 60, t = nx.t;
     var day = t.toDateString() === now.toDateString() ? "" : MDW(t);  // tomorrow too: the date, not 「明日」
-    l1.textContent = "次の★3指標まで あと" + (h ? h + "時間" : "") + (h && !m ? "" : m + "分");
+    l1.textContent = "あと" + (h ? h + "時間" : "") + (h && !m ? "" : m + "分");  // 2026-11-09: パネル見出しでは見出し「次の★3指標」と重複するので短形に
     l2.innerHTML = esc(day + HHMM(t) + " JST " + jaTitle(nx)) + '<span class="stars">★★★</span>';
     el.classList.toggle("soon", mins <= 30);
   }
   document.getElementById("pt-next").addEventListener("click", function () {  // 今日の重要指標の一覧へ
+    if (window.TDTabPane) window.TDTabPane.show("ind");
     var ic = document.getElementById("ind"); if (indDay) { indDay = ""; renderIndicators(); }
     ic.scrollIntoView({ block: "nearest" }); ic.classList.add("flash"); setTimeout(function () { ic.classList.remove("flash"); }, 1200);
   });
@@ -4725,6 +4896,7 @@ window.TD_THEME = (function () {
     var pe = document.querySelector('[data-pt="' + i + 'p"]');
     if (html) { if (pe.__h !== html) { pe.innerHTML = html; pe.__h = html; } } else { pe.textContent = body; pe.__h = null; }
     document.querySelector('[data-pt="' + i + 'h"]').closest("li").hidden = !title;  // empty slot: hide the row
+    if (i === 5 && window.TDSyncPtTabs) window.TDSyncPtTabs();
   }
   /* 追加C：銘柄はタブで切り替える（ゴールド・ドル円・BTC・オイル＝価格カードと同じ4銘柄。以前の「銘柄を変える」メニューはタブに置き換え） */
   var PT_TABS = ["gold", "usdjpy", "btc", "usoil"];
@@ -6977,8 +7149,8 @@ window.TD_THEME = (function () {
     ["ユダの手紙", "Jude"], ["ヨハネの黙示録", "Revelation"]
   ];
   var I18N = {
-    ja: { layoutShow: "🔰 見る順番を表示", layoutHide: "🔰 番号札を隠す", toolsBtn: "🧰 ツール", journalBtn: "📝 日誌", pnlBtn: "📅 トレード収支", kakeiboBtn: "🧾 家計簿", pointsTitle: "今日の注目ポイント", indTitle: "今日の重要指標", learnTitle: "学ぶ", verseTitle: "今日のみことば", verseAside: "Verse of the Day", prsBtn: "聖書を聴く（PRS）", checkBtn: "通読チェック", checkTitle: "📖 聖書通読チェック", closeBtn: "閉じる", greetLine: "お誕生日おめでとうございます。これは、あなたのために仕立てた特別なデスクです。毎日のみことばとともに、穏やかで祝福に満ちた一年になりますように。", greetBtn: "はじめる", otLabel: "旧約聖書（39書）", ntLabel: "新約聖書（27書）", themeGrace: "恵みの光" },
-    en: { layoutShow: "🔰 Show step numbers", layoutHide: "🔰 Hide step numbers", toolsBtn: "🧰 Tools", journalBtn: "📝 Journal", pnlBtn: "📅 Trade P&L", kakeiboBtn: "🧾 Household Budget", pointsTitle: "Key Points", indTitle: "Top Events Today", learnTitle: "Learn", verseTitle: "Verse of the Day", verseAside: "今日のみことば", prsBtn: "Listen to the Bible (PRS)", checkBtn: "Reading Checklist", checkTitle: "📖 Bible Reading Checklist", closeBtn: "Close", greetLine: "Happy birthday! This desk was made just for you. May a word of grace greet you every morning, and may the year ahead be gentle and blessed.", greetBtn: "Start", otLabel: "Old Testament (39 books)", ntLabel: "New Testament (27 books)", themeGrace: "Grace Light" }
+    ja: { layoutShow: "🔰 見る順番を表示", layoutHide: "🔰 番号札を隠す", toolsBtn: "🧰 ツール", journalBtn: "📝 日誌", pnlBtn: "📅 トレード収支", kakeiboBtn: "🧾 家計簿", lotBtn: "📊 ロット図説", tabInd: "📊 指標", tabLearn: "📚 学ぶ", ptMap: "価格帯", ptStrat: "本日の戦略", ptShrink: "✕ 戻す", pointsTitle: "今日の注目ポイント", indTitle: "今日の重要指標", learnTitle: "学ぶ", verseTitle: "今日のみことば", verseAside: "Verse of the Day", prsBtn: "聖書を聴く（PRS）", checkBtn: "通読チェック", checkTitle: "📖 聖書通読チェック", closeBtn: "閉じる", greetLine: "お誕生日おめでとうございます。これは、あなたのために仕立てた特別なデスクです。毎日のみことばとともに、穏やかで祝福に満ちた一年になりますように。", greetBtn: "はじめる", otLabel: "旧約聖書（39書）", ntLabel: "新約聖書（27書）", themeGrace: "恵みの光" },
+    en: { layoutShow: "🔰 Show step numbers", layoutHide: "🔰 Hide step numbers", toolsBtn: "🧰 Tools", journalBtn: "📝 Journal", pnlBtn: "📅 Trade P&L", kakeiboBtn: "🧾 Household Budget", lotBtn: "📊 Lot Chart", tabInd: "📊 Events", tabLearn: "📚 Learn", ptMap: "Key Levels", ptStrat: "Strategy", ptShrink: "✕ Close", pointsTitle: "Key Points", indTitle: "Top Events Today", learnTitle: "Learn", verseTitle: "Verse of the Day", verseAside: "今日のみことば", prsBtn: "Listen to the Bible (PRS)", checkBtn: "Reading Checklist", checkTitle: "📖 Bible Reading Checklist", closeBtn: "Close", greetLine: "Happy birthday! This desk was made just for you. May a word of grace greet you every morning, and may the year ahead be gentle and blessed.", greetBtn: "Start", otLabel: "Old Testament (39 books)", ntLabel: "New Testament (27 books)", themeGrace: "Grace Light" }
   };
   function lang() { return lsGet("ayu_td_lang") === "en" ? "en" : "ja"; }
   function todayVerse() { return VERSES31[(new Date().getDate() - 1) % VERSES31.length]; }
@@ -7032,6 +7204,9 @@ window.TD_THEME = (function () {
     var jn = document.getElementById("journal-toggle"); if (jn) jn.innerHTML = L.journalBtn;
     var pl = document.getElementById("pnl-toggle"); if (pl) pl.innerHTML = L.pnlBtn;
     var kb = document.getElementById("kakeibo-toggle"); if (kb) kb.innerHTML = L.kakeiboBtn;
+    var lt = document.getElementById("lot-toggle"); if (lt) lt.innerHTML = L.lotBtn;
+    document.querySelectorAll(".tp-tab").forEach(function (b) { b.innerHTML = b.getAttribute("data-tp") === "learn" ? L.tabLearn : L.tabInd; });
+    document.querySelectorAll(".pt-tab").forEach(function (b) { b.innerHTML = b.getAttribute("data-ptv") === "strat" ? L.ptStrat : L.ptMap; });
     var va = document.getElementById("vs-aside"); if (va) va.textContent = L.verseAside;
     var tbtn = document.getElementById("theme-toggle");
     if (tbtn) {
@@ -7084,6 +7259,35 @@ window.TD_THEME = (function () {
     }
   }
   window.TDLangApply();
+})();
+</script>
+<script>
+/* 下段タブパネル（指標・学ぶ）の結線（分離版）：本体スクリプトで例外が起きても、この結線だけは必ず生きるようにするための専用ブロック */
+(function () {
+  var tpInd = document.getElementById("ind"), tpLearn = document.getElementById("xfeed");
+  var tpName = "ind";
+  try { tpName = localStorage.getItem("ayu_tabpane") || "ind"; } catch (e) {}
+  function tpShow(name) {
+    tpName = name === "learn" ? "learn" : "ind";
+    try { localStorage.setItem("ayu_tabpane", tpName); } catch (e) {}
+    if (tpInd) tpInd.hidden = tpName !== "ind";
+    if (tpLearn) tpLearn.hidden = tpName !== "learn";
+    document.querySelectorAll(".tp-tab").forEach(function (b) { var on = b.getAttribute("data-tp") === tpName; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
+  }
+  window.TDTabPane = { show: tpShow };
+  document.querySelectorAll(".tp-tab").forEach(function (b) { b.addEventListener("click", function () { tpShow(b.getAttribute("data-tp")); }); });
+  // 次の★3指標ボタンは、注目ポイントから下段パネル（指標タブ）の見出し右へ移設（2026-11-09・Desk Oneと同仕様）
+  var pnBtn = document.getElementById("pt-next"), tpTabsEl = document.querySelector(".tp-tabs");
+  if (pnBtn && tpTabsEl) tpTabsEl.appendChild(pnBtn);
+  var tpExp = document.getElementById("tp-expand"), tpPanel = document.getElementById("tabpanel");
+  if (tpExp && tpPanel) tpExp.addEventListener("click", function () {
+    var on = tpPanel.classList.toggle("tp-expanded");
+    var tpIc = tpExp.querySelector(".tp-x-i"), tpTx = tpExp.querySelector(".tp-x-t");
+    if (tpIc) tpIc.textContent = on ? "✕" : "⤢";
+    if (tpTx) tpTx.textContent = on ? "戻す" : "広げる";
+    tpExp.setAttribute("aria-label", on ? "パネルを戻す" : "パネルを広げる");
+  });
+  try { tpShow(tpName); } catch (e) {}
 })();
 </script>
 
