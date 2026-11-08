@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="ee96a581a6">
+<meta name="build" content="88a0b96edd">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1272,6 +1272,17 @@ html:not(.beginner) .step-note { display: none; }
 #points.pt-expanded { z-index: 45; box-shadow: 0 24px 60px rgba(0,0,0,.55); }
 #stage #points.pt-expanded { left: 27px; top: 35px; width: 1156px; height: 771px; }
 html.flow #points.pt-expanded { position: fixed; inset: 10px; width: auto; height: auto; }
+.ind-peak { flex: none; margin-top: 6px; padding: 5px 10px; border-left: 3px solid var(--gold); border-radius: 6px; background: rgba(var(--gold-rgb),.08); font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ind-list li.min { padding: 4px 0; }
+.ind-list li.min .n { font-size: 12.5px; }
+.ind-list li.min .t { font-size: 12px; }
+.tp-x { flex: none; border: 1px solid var(--glass-line); background: rgba(255,255,255,.05); color: var(--ink-2); border-radius: 8px; font-size: 13px; line-height: 1; padding: 5px 9px; cursor: pointer; }
+#tabpanel.tp-expanded { z-index: 45; box-shadow: 0 24px 60px rgba(0,0,0,.55); }
+#stage #tabpanel.tp-expanded { left: 27px; top: 35px; width: 1156px; height: 771px; }
+html.flow #tabpanel.tp-expanded { position: fixed; inset: 10px; width: auto; height: auto; }
+@media (max-width: 820px) { html.phone #pdots { bottom: calc(env(safe-area-inset-bottom, 0px) + 44px); } }
+body:has(#points.pt-expanded) .dk-dock, body:has(#tabpanel.tp-expanded) .dk-dock { opacity: .25; pointer-events: none; }
+#stage #cal { z-index: 3; }
 #points.ptv-strat #pt-map { display: none !important; }
 .flow .tp-tabs { flex-wrap: wrap; }
 .flow .tp-tabs .pt-next .pn-h { display: none; }
@@ -1282,12 +1293,12 @@ html.flow .dk-dock #layout-toggle, html.flow #tools-toggle, html.flow .dk-dock .
 html.flow .dk-theme-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; right: calc(env(safe-area-inset-right, 0px) + 6px); max-width: 164px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dk-grp { display: flex; gap: 7px; align-items: center; }
 .dk-lb { display: none; }
-.dk-dock.vdock { position: absolute; left: 27px; top: 557px; bottom: auto; width: 308px; flex-direction: column; align-items: stretch; gap: 6px; }
+.dk-dock.vdock { position: absolute; left: 27px; top: 557px; bottom: auto; width: 308px; flex-direction: column; align-items: stretch; gap: 4px; }
 .dk-dock.vdock .dk-grp { flex-direction: column; align-items: stretch; gap: 4px; }
 .dk-dock.vdock .dk-lb { display: block; font-size: 9.5px; letter-spacing: .22em; margin: 2px 0 0 4px; font-weight: 700; }
 .dk-dock.vdock .dk-lb.rec { color: #5fd99a; }
 .dk-dock.vdock .dk-lb.opn { color: var(--gold); }
-.dk-dock.vdock .dk-btn, .dk-dock.vdock #layout-toggle, .dk-dock.vdock #tools-toggle { text-align: left; border-radius: 11px; padding: 4px 12px; font-size: 12.5px; min-height: 30px; line-height: 1.5; }
+.dk-dock.vdock .dk-btn, .dk-dock.vdock #layout-toggle, .dk-dock.vdock #tools-toggle { text-align: left; border-radius: 11px; padding: 3px 12px; font-size: 12.5px; min-height: 27px; line-height: 1.5; }
 .dk-dock.vdock .rec-b { border-color: rgba(95,217,170,.5); color: #bfe9d4; }
 html.phone .dk-dock { gap: 4px; }
 html.phone .dk-grp { gap: 4px; }
@@ -1453,6 +1464,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <div class="tp-tabs" role="tablist" aria-label="下段パネルの切替">
       <button type="button" class="tp-tab" data-tp="ind" role="tab">📊 指標</button>
       <button type="button" class="tp-tab" data-tp="learn" role="tab">📚 学ぶ</button>
+      <button type="button" class="tp-x" id="tp-expand" aria-label="パネルを広げる">⤢</button>
     </div>
     <div class="tp-wrap">
   <section id="ind" class="tp-pane" aria-label="今日の重要指標">
@@ -1461,6 +1473,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       今日の重要指標<span class="aside num" id="ind-day"></span>
     </div>
     <div class="ind-week" id="ind-week" aria-label="今週の重要指標（★3）"></div>
+    <div class="ind-peak" id="ind-peak" hidden></div>
     <ul class="ind-list" id="ind-list">
       <li class="empty">今日の経済指標を読み込んでいます…</li>
     </ul>
@@ -2016,6 +2029,12 @@ window.TD_THEME = (function () {
   // 次の★3指標ボタンは、注目ポイントから下段パネル（指標タブ）の見出し右へ移設（2026-11-09・重複と圧迫の解消）
   var pnBtn = document.getElementById("pt-next"), tpTabsEl = document.querySelector(".tp-tabs");
   if (pnBtn && tpTabsEl) tpTabsEl.appendChild(pnBtn);
+  var tpExp = document.getElementById("tp-expand"), tpPanel = document.getElementById("tabpanel");
+  if (tpExp && tpPanel) tpExp.addEventListener("click", function () {
+    var on = tpPanel.classList.toggle("tp-expanded");
+    tpExp.textContent = on ? "✕" : "⤢";
+    tpExp.setAttribute("aria-label", on ? "パネルを戻す" : "パネルを広げる");
+  });
   var ptsCard = document.getElementById("points"), ptStratLi = document.getElementById("pt-strat");
   var ptView = "map";
   try { ptView = localStorage.getItem("td_ptview") || "map"; } catch (e) {}
@@ -4427,6 +4446,7 @@ window.TD_THEME = (function () {
     if (!calEvents) return;
     var ulF = document.getElementById("ind-list");
     ulF.classList.toggle("filtered", !!indDay);
+    var ipkF = document.getElementById("ind-peak"); if (ipkF && indDay) ipkF.hidden = true;
     if (indDay) {  // カレンダーの「この日の指標を一覧に表示」：その日だけ（「すべて表示」でいつでも元に戻る）
       var p = indDay.split("-"), dt = new Date(+p[0], +p[1] - 1, +p[2]), evs = eventsOn(indDay);
       document.getElementById("ind-day").textContent = (dt.getMonth() + 1) + "月" + dt.getDate() + "日(" + WD[dt.getDay()] + ")だけ";
@@ -4443,6 +4463,16 @@ window.TD_THEME = (function () {
     var today = calEvents.filter(function (e) {
       return e.t >= day.start && e.t < day.end;
     }).sort(function (a, b) { return a.t - b.t || b.stars - a.stars; });
+    var ipk = document.getElementById("ind-peak");
+    if (ipk) {
+      var s3 = today.filter(function (e) { return e.stars === 3; });
+      var s3up = s3.filter(function (e) { return e.t > now; });
+      if (s3up.length) ipk.textContent = "⛰ 今日の山場は " + HHMM(s3up[0].t) + " " + jaTitle(s3up[0]) + (s3up.length > 1 ? "（★3は残り" + s3up.length + "件）" : "");
+      else if (s3.length) ipk.textContent = "⛰ 今日の★3はすべて発表済みです";
+      else if (today.length) ipk.textContent = "今日は★3指標なし・比較的静かな日です";
+      else ipk.textContent = "今日は指標発表なし・静かな日です";
+      ipk.hidden = false;
+    }
     var upcoming = today.filter(function (e) { return e.t > now - IND_KEEP; });  // 発表済みは結果つきで2時間残す
     var list = (upcoming.length ? upcoming : today);
     if (list.length > 3) { // keep the most important ones, then show them in time order
@@ -4460,7 +4490,7 @@ window.TD_THEME = (function () {
     list.forEach(function (e) {
       var li = document.createElement("li");
       var mins = (e.t - now) / 60000;
-      if (mins < -30) li.classList.add("past");  // just released: stay bright while the result comes in
+      if (mins < -30) li.classList.add("past", "min");  // just released: stay bright while the result comes in／30分を過ぎたら畳む
       var hm = HHMM(e.t);
       var sub = [e.forecast ? "予想 " + e.forecast : "", e.previous ? "前回 " + e.previous : ""].filter(Boolean).join(" / ");
       li.innerHTML = '<div class="t num"></div><div class="stars"></div><div class="b"><div class="n"></div><div class="s num"></div></div>';
@@ -4479,7 +4509,7 @@ window.TD_THEME = (function () {
       } else if (mins <= 0 && mins > -30) {
         s.innerHTML = '<span class="soon">発表済み・結果を取得中…</span>';
       } else if (mins <= 0) {
-        s.textContent = "発表済み（結果は未取得）" + (sub ? "｜" + sub : "");
+        s.textContent = "発表済み";  // 畳んだ行では予想・前回を出さない
       } else if (mins > 0 && mins <= 60) {
         s.innerHTML = '<span class="soon"></span>';
         s.firstChild.textContent = "あと" + Math.ceil(mins) + "分" + (sub ? "｜" + sub : "");
