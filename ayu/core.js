@@ -659,12 +659,214 @@
     return best;
   }
 
+  /* ---------- 相場タイプ判定（テクニカル／ファンダメンタル） ----------
+     仕様：market-regime-spec-20261105.md（v2）。判定は純関数 regimeJudge に閉じ込め、
+     画面側は既存データのスナップショットを渡すだけにする。新規の外部通信は持たない。
+     スコアは −100（テクニカル）〜 +100（ファンダメンタル）。段階の区切り ±25／±60 は
+     仕様ファイル末尾の較正記録（2026-11-09）で確定した値。 */
+  var REGIME_T1 = 25, REGIME_T2 = 60;
+  var REGIME_STAGES = [
+    { k: "funda2", ja: "ファンダメンタル強め" },
+    { k: "funda1", ja: "ファンダメンタル寄り" },
+    { k: "mixed", ja: "混ざっている" },
+    { k: "tech1", ja: "テクニカル寄り" },
+    { k: "tech2", ja: "テクニカル強め" }
+  ];
+  // イベント分類 × 銘柄の重み（仕様 v2 の重み表）。1=強、0.7=中、0.4=弱、0=対象外
+  var REGIME_W = {
+    "us-jobs":   { usdjpy: 1,   gold: 1,   btc: 0.4, usoil: 0.4 },
+    "us-prices": { usdjpy: 1,   gold: 1,   btc: 0.4, usoil: 0.4 },
+    "us-rates":  { usdjpy: 1,   gold: 1,   btc: 0.7, usoil: 0.4 },
+    "jp-policy": { usdjpy: 1,   gold: 0,   btc: 0,   usoil: 0 },
+    "jp-data":   { usdjpy: 0.7, gold: 0,   btc: 0,   usoil: 0 },
+    "eu-policy": { usdjpy: 0.4, gold: 0.4, btc: 0,   usoil: 0 },
+    "oil-inv":   { usdjpy: 0,   gold: 0,   btc: 0,   usoil: 0 }
+  };
+  function regimeEventClass(country, title) {
+    var t = String(title || "");
+    if (/Crude Oil Inventories/i.test(t)) return "oil-inv";
+    if (country === "USD") {
+      if (/Non-?Farm|\bADP\b|Unemployment|Jobless|JOLTS|Employment|Average Hourly Earnings/i.test(t)) return "us-jobs";
+      if (/\bCPI\b|\bPPI\b|\bPCE\b|Price Index|Inflation/i.test(t)) return "us-prices";
+      if (/Federal Funds|FOMC|Powell|Fed Chair|Federal Reserve|Speaks|Testif/i.test(t)) return "us-rates";
+      return null;
+    }
+    if (country === "JPY") {
+      if (/BOJ|Bank of Japan|Monetary Policy|Policy Rate|Ueda/i.test(t)) return "jp-policy";
+      if (/\bCPI\b|Unemployment|Cash Earnings|Wage|Tankan|Retail Sales|Household Spending/i.test(t)) return "jp-data";
+      return null;
+    }
+    if (country === "EUR") {
+      if (/ECB|Refinancing Rate|Lagarde|Monetary Policy/i.test(t)) return "eu-policy";
+      return null;
+    }
+    return null;
+  }
+  // 前回反応の上乗せ（最大+10）の基準値：reactions.json 実測の代表クラスの平均から較正（較正記録参照）。
+  // btc は reactions.json に記録がないため 0（上乗せなし）
+  var REGIME_RXREF = { usdjpy: 80, gold: 80, usoil: 1.5, btc: 0 };
+  // 節目への接近の基準（ホームの注目ポイント PT_NEAR と同じ値。単位は各銘柄の価格）
+  var REGIME_NEAR = { usdjpy: 0.10, gold: 10, btc: 300, usoil: 0.50 };
+  // DXY・米10年金利の「通常の1日の値幅」の基準（market.json 実測の中央値。較正記録参照）。
+  // 実行時は系列から中央値を取り直し、取れない時だけこの値を使う
+  var REGIME_FX_BASE = { dxy: 0.49, us10yBp: 6.9 };
+  function regimeStage(score) {
+    if (score >= REGIME_T2) return REGIME_STAGES[0];
+    if (score >= REGIME_T1) return REGIME_STAGES[1];
+    if (score <= -REGIME_T2) return REGIME_STAGES[4];
+    if (score <= -REGIME_T1) return REGIME_STAGES[3];
+    return REGIME_STAGES[2];
+  }
+  /* スナップショット（画面側が既存データから作る）:
+     { key, now, marketOpen, calendarOk, dayStart, dayEnd,
+       events: [{ t, stars, cls, name, hhmm, reactionAvg, reactionText }],
+       surge: { level: "caution"|"emergency", win, backed } | null,
+       newsCount: number|null, fxMult: number|null,
+       nearLevel: { label } | null, narrow: bool|null }
+     返り値：{ ok:false, why:"calendar"|"closed" } |
+             { ok:true, score, stage, stageJa, reasons:[{text,pts}], parts, missing, event } */
+  function regimeJudge(s) {
+    if (!s) return { ok: false, why: "calendar" };
+    if (!s.calendarOk) return { ok: false, why: "calendar" };
+    if (!s.marketOpen) return { ok: false, why: "closed" };
+    var key = s.key, now = s.now, missing = [];
+    var parts = { approach: 0, reaction: 0, surge: 0, news: 0, fx: 0, level: 0, narrow: 0, quiet: 0 };
+    var cand = [];
+    // イベント：接近と発表直後の「反応中」は、寄与が最大の1件だけを数える（二重数え禁止）。
+    // ★1は接近の対象にしない（仕様の接近加点は★3・★2の定義のみ）。原油在庫は重み0で自然に外れる
+    var ev = null, evPts = 0, evPost = false;
+    (s.events || []).forEach(function (e) {
+      if (!e || e.stars < 2 || !e.cls) return;
+      var w = (REGIME_W[e.cls] || {})[key]; if (!w) return;
+      var sf = e.stars >= 3 ? 1 : 0.5, mins = (e.t - now) / MIN, pts = 0, post = false;
+      if (mins > 0) {
+        if (e.t >= s.dayEnd) return;  // 接近は「当日中」だけ
+        pts = (mins <= 60 ? 50 : mins <= 180 ? 35 : 20) * sf * w;
+      } else if (mins >= -120) {
+        pts = 40 * (1 + mins / 120) * sf * w; post = true;  // 発表直後+40 → 1時間で+20 → 2時間で消滅（直線）
+      } else return;
+      if (pts > 0 && (!ev || pts > evPts)) { ev = e; evPts = pts; evPost = post; }
+    });
+    if (ev) {
+      parts.approach = Math.round(evPts);
+      cand.push({ rank: 1, pts: parts.approach, text: evPost ? ev.name + "の発表直後（反応中）" : ev.hhmm + " " + ev.name + "（★" + ev.stars + "）が近い" });
+      var ref = REGIME_RXREF[key] || 0;
+      if (ref > 0 && ev.reactionAvg != null && isFinite(ev.reactionAvg) && ev.reactionAvg > 0) {
+        parts.reaction = Math.round(10 * Math.min(1, ev.reactionAvg / ref));
+        if (parts.reaction > 0 && ev.reactionText) cand.push({ rank: 5, pts: parts.reaction, text: "前回この指標は" + ev.reactionText + "動いた" });
+      }
+    }
+    // 急変：注意+15／緊急+30。ニュースの裏付けがないものは半分
+    if (s.surge) {
+      var sb = s.surge.level === "emergency" ? 30 : 15;
+      parts.surge = Math.round(s.surge.backed ? sb : sb / 2);
+      cand.push({ rank: 2, pts: parts.surge, text: "直近" + (s.surge.win || 15) + "分で急変（" + (s.surge.level === "emergency" ? "緊急" : "注意") + "水準）" });
+    }
+    // ニュース：直近3時間の関連見出し（束ね後）が複数なら +10〜+20
+    if (s.newsCount == null) missing.push("news");
+    else if (s.newsCount >= 2) {
+      parts.news = s.newsCount === 2 ? 10 : s.newsCount === 3 ? 15 : 20;
+      cand.push({ rank: 3, pts: parts.news, text: "関連ニュースが" + s.newsCount + "件（直近3時間）" });
+    }
+    // DXY・金利：通常の1日の値幅の0.6倍を超えた分だけ数える（0.6倍以下は「大きな動き」とみなさない）
+    if (s.fxMult == null) missing.push("fx");
+    else if (s.fxMult > 0.6) {
+      parts.fx = Math.round(20 * Math.min(1, (s.fxMult - 0.6) / 0.9));
+      if (parts.fx > 0) cand.push({ rank: 4, pts: parts.fx, text: "ドル指数・金利が大きめの動き（通常の約" + s.fxMult.toFixed(1) + "倍）" });
+    }
+    // 節目接近 −15／値幅の狭さ −10（合わせて −25 が上限）
+    if (s.nearLevel) {
+      parts.level = -15;
+      cand.push({ rank: 6, pts: -15, text: "節目 " + s.nearLevel.label + " の攻防が中心" });
+    }
+    if (s.narrow == null) missing.push("range");
+    else if (s.narrow) {
+      parts.narrow = -10;
+      cand.push({ rank: 7, pts: -10, text: "値幅が狭い（様子見の地合い）" });
+    }
+    // 静けさ：プラスの材料が何もない時間帯は −10
+    if (!(parts.approach > 0 || parts.surge > 0 || parts.news > 0 || parts.fx > 0)) {
+      parts.quiet = -10;
+      cand.push({ rank: 8, pts: -10, text: "目立った材料なし" });
+    }
+    var score = 0; Object.keys(parts).forEach(function (k) { score += parts[k]; });
+    score = Math.max(-100, Math.min(100, score));
+    cand.sort(function (a, b) { return a.rank - b.rank || Math.abs(b.pts) - Math.abs(a.pts); });
+    var st = regimeStage(score);
+    return { ok: true, score: score, stage: st.k, stageJa: st.ja, reasons: cand.slice(0, 2), parts: parts, missing: missing,
+      event: ev ? { name: ev.name, stars: ev.stars } : null };
+  }
+  /* DXY・米10年金利の「その日の動き ÷ 通常の1日の値幅」の倍率（大きい方）。
+     inst = market.json の instruments。その日の動きは price − prevClose、通常の値幅は
+     日足（1d）の高値−安値の中央値（直近25本）。どちらも取れなければ null */
+  function regimeFxMult(inst) {
+    if (!inst) return null;
+    function medRange(c1d, scale) {
+      if (!c1d || c1d.length < 10) return null;
+      var rs = c1d.slice(-25).map(function (c) { return (c[2] - c[3]) * scale; }).filter(function (v) { return v > 0; }).sort(function (a, b) { return a - b; });
+      return rs.length >= 10 ? rs[Math.floor(rs.length / 2)] : null;
+    }
+    var mults = [];
+    var dx = inst.dxy;
+    if (dx && dx.price && dx.prevClose) mults.push(Math.abs(dx.price - dx.prevClose) / (medRange(dx.candles && dx.candles["1d"], 1) || REGIME_FX_BASE.dxy));
+    var y = inst.us10y;
+    if (y && y.price && y.prevClose) mults.push(Math.abs(y.price - y.prevClose) * 100 / (medRange(y.candles && y.candles["1d"], 100) || REGIME_FX_BASE.us10yBp));
+    return mults.length ? Math.max.apply(null, mults) : null;
+  }
+  /* 直近3時間の値幅が、過去の日々の同じ時間帯（UTC時）の3時間値幅の中央値の半分以下か。
+     bars = 時刻順の確定1時間足 [{ t(ms), h, l }]。材料が足りなければ null */
+  function regimeNarrow(bars, now) {
+    if (!bars || bars.length < 30) return null;
+    function rng(i) { var b = bars.slice(i - 2, i + 1); return Math.max.apply(null, b.map(function (x) { return x.h; })) - Math.min.apply(null, b.map(function (x) { return x.l; })); }
+    var last = -1;
+    for (var i = bars.length - 1; i >= 0; i--) { if (bars[i].t + HOUR <= now) { last = i; break; } }
+    if (last < 2) return null;
+    var cur = rng(last), hod = new Date(bars[last].t).getUTCHours(), day0 = Math.floor(bars[last].t / DAY), samples = [];
+    for (var j = 2; j < last; j++) {
+      if (Math.floor(bars[j].t / DAY) >= day0) continue;
+      if (new Date(bars[j].t).getUTCHours() !== hod) continue;
+      var r = rng(j); if (r > 0) samples.push(r);
+    }
+    if (samples.length < 5) return null;
+    samples.sort(function (a, b) { return a - b; });
+    var med = samples[Math.floor(samples.length / 2)];
+    return med > 0 ? cur <= med / 2 : null;
+  }
+  // ニュース見出しの数え方（仕様 v2）：見出しのみを銘柄キーワードで数え、同じ材料の続報は1件に束ねる。
+  // 束ねの鍵は見出し中の材料語（介入・雇用統計など）の集合、材料語がなければ正規化した先頭10文字。
+  // items = news.json の items（{ t: 秒, title }）。返り値 { count: 束ね後, raw: 束ね前 }
+  var REGIME_NEWS_KW = {
+    gold: /ゴールド|金価格|金相場|金利|地政学|中東|ウクライナ|ロシア|停戦|有事|関税/,
+    usdjpy: /円高|円安|円買い|円売り|円相場|対円|ドル高|ドル安|ドル買い|ドル売り|ドル相場|対ドル|日銀|FRB|米金利|金利|介入|財務省|雇用統計|消費者物価|物価/,
+    btc: /ビットコイン|暗号資産|仮想通貨|規制|SEC|ETF/,
+    usoil: /原油|OPEC|石油|在庫|ガソリン/
+  };
+  var REGIME_NEWS_TOKENS = ["雇用統計", "介入", "日銀", "FRB", "FOMC", "CPI", "PCE", "PPI", "金利", "物価", "関税", "中東", "ウクライナ", "停戦", "OPEC", "原油", "ビットコイン", "暗号資産", "財務省", "総裁", "議長"];
+  function regimeNewsCount(items, key, now) {
+    var kw = REGIME_NEWS_KW[key]; if (!kw || !Array.isArray(items)) return null;
+    var seen = {}, count = 0, raw = 0;
+    items.forEach(function (i) {
+      if (!i || !i.title) return;
+      var t = +i.t * 1000;
+      if (!(t <= now + 5 * MIN) || now - t > 3 * HOUR) return;
+      if (!kw.test(i.title)) return;
+      raw++;
+      var toks = REGIME_NEWS_TOKENS.filter(function (w) { return i.title.indexOf(w) >= 0; });
+      var norm = toks.length ? toks[0] : String(i.title).replace(/[0-9０-９\s　・「」（）()［］\[\],.、。:：%％$＄]/g, "").slice(0, 10);
+      if (!seen[norm]) { seen[norm] = 1; count++; }
+    });
+    return { count: count, raw: raw };
+  }
+
   return { MIN: MIN, HOUR: HOUR, DAY: DAY, partsIn: partsIn, zoneOffset: zoneOffset, zoneTime: zoneTime, isDst: isDst,
     KIND: KIND, marketState: marketState, hoursNote: hoursNote, nextOpen: nextOpen, sessions: sessions, RULES: RULES, freshness: freshness, ago: ago, jst: jst,
     checkMarket: checkMarket, realCandles: realCandles, sequencer: sequencer,
     weeklyHours: weeklyHours, REOPEN_NOTE: REOPEN_NOTE, LEVEL_JA: LEVEL_JA,
     positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey, journalDays: journalDays, dailyBook: dailyBook, periodSummary: periodSummary, weekOf: weekOf, gotobi: gotobi, surpriseOf: surpriseOf, indDirection: indDirection, indUnit: indUnit, indAffects: indAffects, rxInsts: rxInsts, RX_JA: RX_JA, reactionStats: reactionStats, moveText: moveText, INST_JA: INST_JA,
     SURGE: SURGE, SURGE_GAP: SURGE_GAP, SURGE_COOL: SURGE_COOL, SURGE_SHOW: SURGE_SHOW, surgeAdd: surgeAdd, surgeCheck: surgeCheck, surgeGate: surgeGate, surgeText: surgeText, interventionPick: interventionPick,
+    regimeJudge: regimeJudge, regimeEventClass: regimeEventClass, regimeStage: regimeStage,
+    regimeFxMult: regimeFxMult, regimeNarrow: regimeNarrow, regimeNewsCount: regimeNewsCount,
+    REGIME_STAGES: REGIME_STAGES, REGIME_NEAR: REGIME_NEAR, REGIME_RXREF: REGIME_RXREF, REGIME_FX_BASE: REGIME_FX_BASE,
     newStore: newStore, updateSignal: updateSignal, expireSignals: expireSignals, loadStore: loadStore, COOLDOWN: COOLDOWN,
     toCSV: toCSV, parseCSV: parseCSV, importCSV: importCSV,
     GROUPS: GROUPS, groupOf: groupOf, exportSettings: exportSettings, importSettings: importSettings, resetGroup: resetGroup, safeSet: safeSet };
