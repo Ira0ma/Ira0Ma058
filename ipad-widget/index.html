@@ -391,6 +391,20 @@ html:not(.flow) .mkt canvas.chart { flex: 1 1 0; height: auto; min-height: 40px;
 .mkt .mscore .mt { display: flex; gap: 3px; }
 .mkt .mscore .mt i { font-style: normal; display: flex; flex-direction: column; align-items: center; width: 22px; font-size: 8.5px; color: var(--ink-3); line-height: 1.1; }
 .mkt .mscore .mt i em { font-style: normal; font-size: 13px; font-weight: 700; color: #ffd166; }
+/* 相場タイプ判定（2026-11-09）：メーター＋段階・根拠の2行。意味色は全テーマ共通で固定（テクニカル=水色／ファンダメンタル=橙） */
+.mkt .mreg { margin-top: 7px; font-size: 10.5px; line-height: 1.5; color: var(--ink-2); }
+.mkt .mreg[hidden] { display: none; }
+.mreg .rg-m { position: relative; height: 5px; border-radius: 3px; background: linear-gradient(90deg, rgba(86,182,232,.55), rgba(255,255,255,.13) 50%, rgba(240,154,62,.55)); }
+.mreg .rg-m::after { content: ""; position: absolute; left: 50%; top: -2px; width: 1px; height: 9px; background: rgba(255,255,255,.35); }
+.mreg .rg-dot { position: absolute; top: 50%; width: 11px; height: 11px; border-radius: 50%; background: #fff; border: 2px solid rgba(0,0,0,.45); transform: translate(-50%,-50%); }
+html:not(.lowpower) .mreg .rg-dot { transition: left .6s ease; }
+.mreg .rg-t { display: flex; gap: 6px; align-items: baseline; margin-top: 3px; white-space: nowrap; overflow: hidden; }
+.mreg .rg-stage { font-weight: 700; flex: 0 0 auto; }
+.mreg .rg-stage.f { color: #f09a3e; }
+.mreg .rg-stage.t { color: #56b6e8; }
+.mreg .rg-stage.m { color: var(--ink-2); }
+.mreg .rg-reason { overflow: hidden; text-overflow: ellipsis; color: var(--ink-3); }
+.mreg .rg-none { color: var(--ink-3); }
 .mkt .mscore .up { color: #5fd99a; border-color: rgba(95,217,154,.55); } .mkt .mscore .down { color: #ff8a7e; border-color: rgba(255,138,126,.55); }
 .mkt .mscore .mt i.up em { color: #5fd99a; } .mkt .mscore .mt i.down em { color: #ff8a7e; }
 .mkt.has-score .sym small, .mkt.has-score .head .chev { display: none; } .mkt.has-score .jp { max-width: 110px; }
@@ -1413,6 +1427,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <div class="chg num" data-f="chg"></div>
       <div class="klv num" data-f="klv" hidden></div>
       <div class="mscore" data-f="score" hidden></div>
+      <div class="mreg" data-f="regime" hidden></div>
       <canvas class="chart"></canvas>
       <div class="tabs" role="group" aria-label="期間"></div>
       <div class="picker" hidden><div class="picker-h"><span>銘柄を選ぶ</span><button type="button" class="picker-close">閉じる</button></div><div class="picker-list"></div></div>
@@ -1428,6 +1443,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <div class="chg num" data-f="chg"></div>
       <div class="klv num" data-f="klv" hidden></div>
       <div class="mscore" data-f="score" hidden></div>
+      <div class="mreg" data-f="regime" hidden></div>
       <canvas class="chart"></canvas>
       <div class="tabs" role="group" aria-label="期間"></div>
       <div class="picker" hidden><div class="picker-h"><span>銘柄を選ぶ</span><button type="button" class="picker-close">閉じる</button></div><div class="picker-list"></div></div>
@@ -1443,6 +1459,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <div class="chg num" data-f="chg"></div>
       <div class="klv num" data-f="klv" hidden></div>
       <div class="mscore" data-f="score" hidden></div>
+      <div class="mreg" data-f="regime" hidden></div>
       <canvas class="chart"></canvas>
       <div class="tabs" role="group" aria-label="期間"></div>
       <div class="picker" hidden><div class="picker-h"><span>銘柄を選ぶ</span><button type="button" class="picker-close">閉じる</button></div><div class="picker-list"></div></div>
@@ -1459,6 +1476,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
       <div class="klv num" data-f="oiladj"></div>
       <div class="klv num" data-f="klv" hidden></div>
       <div class="mscore" data-f="score" hidden></div>
+      <div class="mreg" data-f="regime" hidden></div>
       <canvas class="chart"></canvas>
       <div class="tabs" role="group" aria-label="期間"></div>
     </div>
@@ -3619,7 +3637,7 @@ window.TD_THEME = (function () {
     var o = read("usoil_auto_cache_final"), m = market && (market.instruments || market).usoil;
     if (o && o.live && +o.price && now - +o.asof < 90000) surgeSample("usoil", +o.price, +o.asof, "oil-okx");  // OKXのWTI連動（補正前の値）
     else if (m && m.price && m.asOf) surgeSample("usoil", +m.price, m.asOf * 1000, "oil-site");  // サイトの CL=F（補正前）
-    paintAlerts(); paintSurgeCards();
+    paintAlerts(); paintSurgeCards(); regimeTick();
   }
   function surgeState() {  // データ状態の画面に出す：有効／配信停止中／休場
     var now = Date.now(), out = {};
@@ -5007,6 +5025,71 @@ window.TD_THEME = (function () {
     setPoint(5, "本日のトレード戦略", "", stratHtml(new Date()));
   }
   var marketSeq = TDCore.sequencer(), marketCheck = null;
+  /* ---------- 相場タイプ判定（テクニカル／ファンダメンタル） ----------
+     仕様 market-regime-spec-20261105.md v2。判定は TDCore.regimeJudge（純関数）に任せ、ここでは
+     既存データ（指標カレンダー・reactions.json・急変・ニュース・節目・DXY/金利・値幅）を
+     スナップショットに整えるだけ。新規の通信は増やさず、急変ポーリング（10秒）に相乗りし、
+     再計算は最大で60秒に1回まで（仕様の5分相当より細かいが、通信は増えない） */
+  var REGIME_KEYS = { gold: 1, usdjpy: 1, btc: 1, usoil: 1 };
+  var regimeLast = 0;
+  function regimeEvents(key, now, day) {
+    if (!calEvents) return [];
+    var out = [];
+    calEvents.forEach(function (e) {
+      var cls = TDCore.regimeEventClass(e.country, e.title);
+      if (!cls || e.stars < 2) return;
+      var t = +e.t;
+      if (t >= day.end || t < now - 2 * 3600000) return;
+      var st = RX ? TDCore.reactionStats(RX, e.country, e.title, t) : null;
+      var av = st && st.avg[key] ? st.avg[key].v : null;
+      out.push({ t: t, stars: e.stars, cls: cls,
+        name: e.country === "JPY" ? shortTitle(e) : (CC[e.country] || "") + "・" + shortTitle(e),
+        hhmm: HHMM(e.t), reactionAvg: av, reactionText: av != null ? "平均" + TDCore.moveText(key, av) : null });
+    });
+    return out;
+  }
+  function regimeSnapshot(key, now) {
+    var day = tradingDay(new Date(now));
+    var nc = newsData && newsData.items ? TDCore.regimeNewsCount(newsData.items, key, now) : null;
+    var sg = surgeActive(key);
+    var inst = market && (market.instruments || market);
+    var ins = inst && inst[key];
+    var bars = ins && ins.candles && ins.candles["1h"] ? ins.candles["1h"].map(function (c) { return { t: c[0] * 1000, h: c[2], l: c[3] }; }) : null;
+    var near = null, kl = keyLv[key];
+    if (kl && ((kl.r && kl.r.length) || (kl.s && kl.s.length))) {
+      var px = ptLivePx(key) || kl.px;
+      if (px) { var nr = ptNear(key, { r: kl.r || [], s: kl.s || [], px: px }); if (nr && nr.near) near = { label: ptVal(key, nr.v) }; }
+    }
+    return { key: key, now: now, marketOpen: !marketClosed(key, now), calendarOk: !!(calEvents && !calFailed),
+      dayStart: day.start.getTime(), dayEnd: day.end.getTime(),
+      events: regimeEvents(key, now, day),
+      surge: sg ? { level: sg.level, win: sg.win, backed: !!(nc && nc.raw > 0) } : null,
+      newsCount: nc ? nc.count : null,
+      fxMult: inst ? TDCore.regimeFxMult(inst) : null,
+      nearLevel: near, narrow: bars ? TDCore.regimeNarrow(bars, now) : null };
+  }
+  function paintRegimes() {
+    if (!markets) return;
+    var now = Date.now();
+    markets.forEach(function (mk) {
+      var el = mk.el.querySelector('[data-f="regime"]'); if (!el) return;
+      if (!REGIME_KEYS[mk.key]) { el.hidden = true; return; }
+      var r = TDCore.regimeJudge(regimeSnapshot(mk.key, now));
+      el.hidden = false;
+      if (!r.ok) {
+        el.innerHTML = '<div class="rg-t"><span class="rg-none">相場タイプ：判定なし（' + (r.why === "closed" ? "市場は休み" : "材料不足") + '）</span></div>';
+        el.title = "";
+        return;
+      }
+      var side = r.stage.indexOf("funda") === 0 ? "f" : r.stage.indexOf("tech") === 0 ? "t" : "m";
+      var left = Math.round((r.score + 100) / 2);
+      el.innerHTML = '<div class="rg-m"><i class="rg-dot" style="left:' + left + '%"></i></div>' +
+        '<div class="rg-t"><b class="rg-stage ' + side + '">' + r.stageJa + '</b><span class="rg-reason">' + esc(r.reasons.length ? r.reasons[0].text : "") + '</span></div>';
+      el.title = "相場タイプの目安（スコア " + (r.score > 0 ? "+" : "") + r.score + "）" + (r.reasons[1] ? "／" + r.reasons[1].text : "");
+    });
+  }
+  function regimeTick() { var n = Date.now(); if (n - regimeLast < 60000) return; regimeLast = n; paintRegimes(); }
+
   function loadMarket() {
     if (!window.fetch) return;
     var id = marketSeq.next();
