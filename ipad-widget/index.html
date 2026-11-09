@@ -2832,10 +2832,16 @@ window.TD_THEME = (function () {
       s[tf] = s[tf].map(function (r) { return [r[0], r[1] + gap, r[2] + gap, r[3] + gap, r[4] + gap]; });
     });
   };
-  /* Real-time ticks over WebSocket for panels showing GOLD, USD/JPY or SILVER, as on the dashboards:
-     USD/JPY from GMO Coin's FX feed less the site's measured gap to the XS bid; gold from XAUT
-     (OKX, then Bitfinex, then Kraken's PAXG) less its median gap to the spot price polled every minute;
-     silver from XAG-USDT-SWAP (OKX's silver-linked perpetual) less its median gap to the same spot.
+  /* Real-time ticks over WebSocket, from the same sources as the dashboards. The desk keeps these
+     feeds for its headline instruments — GOLD, USD/JPY, SILVER and USOIL — whether or not a panel
+     currently shows them, because the points card （注目ポイント） also prices from this layer; the
+     site's file price (market.json) stays the starting value and the fallback whenever a feed is
+     stale or down. USD/JPY from GMO Coin's FX feed less the site's measured gap to the XS bid; gold
+     from XAUT (OKX, then Bitfinex, then Kraken's PAXG) less its median gap to the spot price polled
+     every minute; silver from XAG-USDT-SWAP (OKX's silver-linked perpetual) less its median gap to
+     the same spot; oil from OKX's CL perpetual as-is (the OILCash card adds its MT5 difference on
+     top, inside oilMk). BTC is the one exception: the desk shows the BTC dashboard's own price via
+     its shared cache (applyBtcDash), so the desk and the dashboard can never disagree.
      A panel repaints at most twice a second. */
   var LIVE_SRC = {
     usdjpy: [{ name: "GMOコイン FX", url: "wss://forex-api.coin.z.com/ws/public/v1", sub: { command: "subscribe", channel: "ticker", symbol: "USD_JPY" },
@@ -2851,7 +2857,9 @@ window.TD_THEME = (function () {
     btc: [{ name: "Coinbase", url: "wss://ws-feed.exchange.coinbase.com", sub: { type: "subscribe", product_ids: ["BTC-USD"], channels: ["ticker"] },
       parse: function (m) { return m && m.type === "ticker" && +m.best_bid && +m.best_ask ? (+m.best_bid + +m.best_ask) / 2 : 0; } },
       { name: "Kraken", url: "wss://ws.kraken.com/v2", sub: { method: "subscribe", params: { channel: "ticker", symbol: ["BTC/USD"] } },
-      parse: function (m) { var d = m && m.channel === "ticker" && m.data && m.data[0]; return d ? (d.bid + d.ask) / 2 : 0; } }]
+      parse: function (m) { var d = m && m.channel === "ticker" && m.data && m.data[0]; return d ? (d.bid + d.ask) / 2 : 0; } }],
+    usoil: [{ name: "OKX CL（WTI連動パーペチュアル）", url: "wss://ws.okx.com/ws/v5/public", sub: { op: "subscribe", args: [{ channel: "tickers", instId: "CL-USDT-SWAP" }] }, ping: "ping",
+      parse: function (m) { var d = m && m.data && m.data[0]; return d && +d.bidPx && +d.askPx ? (+d.bidPx + +d.askPx) / 2 : 0; } }]
   };
   /* Closed markets (weekly hours from core.js: FX at the weekend, gold, silver and oil also 17:00-18:00 New York daily,
      VIX outside its hours; BTC never closes). XAUT, Gold API, Swissquote and Coinbase keep quoting then, so while a
@@ -2865,7 +2873,7 @@ window.TD_THEME = (function () {
   function liveOffset(key) {
     var L = live[key];
     if (key === "usdjpy") { var m = market && (market.instruments || market).usdjpy; return m ? +m.liveOffsetGmo || 0 : 0; }
-    if (key === "btc") return 0;  // BTC: the feeds quote the spot price itself
+    if (key === "btc" || key === "usoil") return 0;  // BTC: the feeds quote the spot price itself／オイル：パーペチュアルの値をそのまま（OILCash の差は oilMk 側で足す）
     var o = L.offs.slice().sort(function (a, b) { return a - b; });
     return o.length ? o[o.length >> 1] : 0;
   }
@@ -2874,13 +2882,24 @@ window.TD_THEME = (function () {
     if ((key !== "gold" && key !== "silver") || !L || !L.raw || Date.now() - L.at > 10000 || !spot || Math.abs(L.raw - spot) > (key === "gold" ? 40 : 0.6)) return;
     L.offs.push(L.raw - spot); if (L.offs.length > 20) L.offs.shift();
   }
+  var homeOilTick = null;  // このデスク自身の OKX CL 配信の最新値（オイルのダッシュボードが裏で動いていないときの受け皿。oilDash が読む）
   function liveTick(key) {
     var L = live[key];
     if (!liveFresh(key) || Date.now() - L.drawn < 500) return;
     L.drawn = Date.now();
+    if (key === "usoil") {  // オイルは専用パネル（補正表示）の経路へ：生のパーペチュアル値を覚えて、oilMk の流儀（差を足す・出典を書く）で出す
+      homeOilTick = { price: Math.round(L.raw * 1000) / 1000, asof: L.at };
+      oilTickApply();
+      return;
+    }
     var sc = key === "usdjpy" ? 1000 : 100, px = Math.round((L.raw - liveOffset(key)) * sc) / sc;
     markets.forEach(function (mk) {
-      if (mk.key !== key || !mk.price || Math.abs(px - mk.price) > (key === "gold" ? 30 : key === "silver" ? 0.6 : key === "btc" ? mk.price * 0.02 : 0.5)) return;
+      var band = key === "gold" ? 30 : key === "silver" ? 0.6 : key === "btc" ? mk.price * 0.02 : 0.5;
+      // 照合相手はカードの現在値。ただしゴールド／シルバーは、カードが古いファイル価格のままだと
+      // 実勢が大きく動いた局面ほど差が帯を超えて永遠に弾かれるため、60秒以内のスポット定期取得値と
+      // 帯の中で一致すればそちらを正として通す（較正済みの配信値＝スポット近似、という関係の裏返し）
+      var okRef = Math.abs(px - mk.price) <= band || ((key === "gold" || key === "silver") && L.spot && Date.now() - L.spotAt < 60000 && Math.abs(px - L.spot) <= band);
+      if (mk.key !== key || !mk.price || !okRef) return;
       mk.asOf = Date.now() / 1000;
       mk.prov = { src: "リアルタイム配信（" + (L.name || "") + "）", type: key === "usdjpy" ? "売値（GMOの配信から、測った差を引いた補正値）" : key === "gold" ? "推定値（金連動トークンXAUTの仲値を現物価格に補正）" : key === "silver" ? "推定値（銀連動パーペチュアルXAG-USDT-SWAPの仲値を現物価格に補正）" : "仲値（Bid・Askの中間）" };
       // 帯の外に完全に出ているパネルは描き直さない（値は進める。急変検知は上の surgeSample が別に受けている）。
@@ -2910,9 +2929,12 @@ window.TD_THEME = (function () {
       clearTimeout(L.timer); L.timer = setTimeout(liveWatch, Math.min(30000, 2000 * (1 + L.tries)));
     };
   }
-  function liveWatch() {  // keep a feed open for each of GOLD, USD/JPY and SILVER while a panel shows it
-    ["gold", "usdjpy", "silver"].forEach(function (key) {
-      var used = markets.some(function (mk) { return mk.key === key; }), L = live[key];
+  function liveWatch() {  // keep a feed open for each instrument the desk itself prices from: GOLD, USD/JPY, SILVER, USOIL
+    ["gold", "usdjpy", "silver", "usoil"].forEach(function (key) {
+      // パネルの選択によらず開く：ゴールド・ドル円・オイルは注目ポイントの価格帯タブの銘柄でもあり、
+      // シルバーとオイルには専用パネルが常にある。BTC はここでは開かない（ダッシュボードの保存値を
+      // そのまま使う統一方式＝applyBtcDash。デスクとダッシュボードで値が割れないための決まり）
+      var used = markets.some(function (mk) { return mk.key === key; }) || key === "gold" || key === "usdjpy" || key === "usoil", L = live[key];
       // Watchdog: a socket that never delivers a tick (stuck connecting, or the venue accepted the
       // connection but pushes nothing) blocks every retry while it sits in L.ws, because liveConnect
       // will not open a second one. Recycle it: a socket with no tick 12 s after it was made, or no
@@ -2926,6 +2948,28 @@ window.TD_THEME = (function () {
       }
       if (used && !document.hidden && !marketClosed(key)) liveConnect(key);
       else if (L && L.ws) { var ws = L.ws; L.ws = null; try { ws.close(); } catch (e) {} }
+    });
+    liveSpotCalibrate();
+  }
+  /* ゴールド／シルバーの較正はもともとパネル側の定期取得（loadPrices）が担うが、パネルが別銘柄に
+     切り替わっていると較正が止まり、注目ポイントの現在価格まで生配信に載れなくなる。パネル表示に
+     依らない較正を1分に1回だけ別に回し、較正済みかどうか（＝liveFresh）だけを保つ。表示価格そのものは
+     ここでは動かさない（カードは loadPrices と配信が担う）。休場中は配信と同じく止める */
+  var liveSpotAt = 0;
+  function liveSpotCalibrate() {
+    if (!window.fetch || document.hidden) return;
+    var now = Date.now(); if (now - liveSpotAt < 60000) return; liveSpotAt = now;
+    [["gold", "XAU"], ["silver", "XAG"]].forEach(function (pair) {
+      var key = pair[0];
+      if (marketClosed(key)) return;
+      fetch("https://api.gold-api.com/price/" + pair[1], { cache: "no-store" })
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+        .then(function (j) {
+          if (!j || !j.price) return;
+          var L = live[key] || (live[key] = { raw: 0, at: 0, offs: [], drawn: 0, tries: 0, ws: null, timer: 0 });
+          L.spot = +j.price; L.spotAt = Date.now(); liveCalibrate(key, +j.price);
+        })
+        .catch(function () {});
     });
   }
   function loadPrices() {
@@ -2959,7 +3003,7 @@ window.TD_THEME = (function () {
         if (key === "gold" || key === "silver") {
           var L = live[key] || (live[key] = { raw: 0, at: 0, offs: [], drawn: 0, tries: 0, ws: null, timer: 0 });
           L.spot = price; L.spotAt = Date.now(); liveCalibrate(key, price);
-          if (liveFresh(key) && mk.price) return;  // the real-time feed is newer; this price only calibrates it
+          if (liveFresh(key) && mk.live) return;  // the real-time feed is newer; this price only calibrates it（カードがまだ生値で動いていない間は、ファイル価格より新しいこの値を一度表示に使う）
         }
         surgeSample(key, price, asOf ? asOf * 1000 : Date.now(), "spot");  // 配信がないときの急変検知は定期取得の値で
         mk.asOf = asOf; mk.prov = prov;
@@ -3130,6 +3174,15 @@ window.TD_THEME = (function () {
     // まず配信の値（ダッシュボードが1秒ごとに保存する小さな値。15秒以内）、なければ定期取得の値（3分以内）
     try { var l = JSON.parse(localStorage.getItem("usoil_live_spot") || "null");
       if (l && l.live && +l.price && Date.now() - (+l.asof) <= 15000) return l; } catch (e) {}
+    // ダッシュボードの保存が新しい値を持たないときは、このデスク自身の OKX CL 配信（15秒以内）を使う。
+    // 価格の出どころはダッシュボードと同じパーペチュアルで、差（oilDiff）だけは保存側の最新の値を借りる
+    if (homeOilTick && Date.now() - homeOilTick.asof <= 15000) {
+      var df = null;
+      try { if (l && l.oilDiff != null && isFinite(l.oilDiff)) df = +l.oilDiff; } catch (e) {}
+      try { var c0 = JSON.parse(localStorage.getItem("usoil_auto_cache_final") || "null"), s0 = c0 && c0.spot;
+        if (df === null && s0 && s0.oilDiff != null && isFinite(s0.oilDiff)) df = +s0.oilDiff; } catch (e) {}
+      return { price: homeOilTick.price, asof: homeOilTick.asof, live: true, oilDiff: df, home: true };
+    }
     try { var c = JSON.parse(localStorage.getItem("usoil_auto_cache_final") || "null"), sp = c && c.spot;
       return sp && sp.live && +sp.price && Date.now() - (+sp.asof) <= 3 * 60000 ? sp : null; } catch (e) { return null; }
   }
@@ -3160,7 +3213,7 @@ window.TD_THEME = (function () {
     var sh = function (r) { return [r[0], r[1] + gap, r[2] + gap, r[3] + gap, r[4] + gap]; }, c = {};
     Object.keys(m.candles || {}).forEach(function (tf) { c[tf] = gap ? (m.candles[tf] || []).map(sh) : m.candles[tf]; });
     this.series = c; this.prevClose = m.prevClose != null ? m.prevClose + gap : null; this.asOf = dash ? +dash.asof / 1000 : m.asOf;
-    this.prov = dash ? { src: "USオイルのダッシュボード（OKX・WTI連動パーペチュアル。OILCashそのものではありません）", type: use ? "パーペチュアルの価格に、" + TDCore.jst(a.t) + "に入力されたMT5値との差（" + dTxt + "）を加えた推定値。XMの配信値そのものではありません" : "補正なし（パーペチュアルの中値のまま）" }
+    this.prov = dash ? { src: dash.home ? "OKX（WTI連動パーペチュアル。このデスク自身の配信。OILCashそのものではありません）" : "USオイルのダッシュボード（OKX・WTI連動パーペチュアル。OILCashそのものではありません）", type: use ? "パーペチュアルの価格に、" + TDCore.jst(a.t) + "に入力されたMT5値との差（" + dTxt + "）を加えた推定値。XMの配信値そのものではありません" : "補正なし（パーペチュアルの中値のまま）" }
       : { src: "サイトの定期取得（Yahoo Finance CL=F" + (spot ? "・Swissquote XTI/USD の現物に換算）" : "・先物のまま。現物の価格は未取得）"),
         type: use ? "CL=F に、" + TDCore.jst(a.t) + "に入力されたMT5値との差（" + dTxt + "）を加えた推定値。XMの配信値そのものではありません" : "補正なし（" + (spot ? "現物に換算した値" : "CL=F の最新の足の終値") + "のまま）" };
     this.applyLive(px + d); this.gen(); this.draw();
@@ -3173,6 +3226,11 @@ window.TD_THEME = (function () {
   silverMk.cv.__mkt = silverMk; if (chartRO) chartRO.observe(silverMk.cv);
   silverMk.el.querySelector(".head").addEventListener("click", function () { openDash("silver", this); });
   var oilFedFor = "", oilBase = "";
+  function oilTickApply() {  // デスク自前の配信でオイルの価格だけが動いたとき：足と差はそのまま、いまの表示価格だけを進める（oilRefeed の近道と同じ扱い）
+    if (!homeOilTick || !oilMk.live || !oilMk.oilShown) return;
+    oilMk.asOf = homeOilTick.asof / 1000;
+    oilMk.applyLive(homeOilTick.price + oilMk.oilShown.d);
+  }
   var oilRefeed = function () {  // only when the price or the correction changed (moving every candle costs)
     var m = market && (market.instruments || market).usoil; if (!m) return;
     var a = oilAdj(), dd = oilDash(), key = [m.asOf, m.price, m.spotAdjusted, a ? a.t : "-", dd ? dd.price + "@" + dd.asof + "@" + dd.oilDiff : "-"].join("|");
@@ -4829,25 +4887,41 @@ window.TD_THEME = (function () {
     if (a && a.items.length) h += '<p class="pm-ans"><b>' + a.label + "の答え合わせ</b>" + a.items.map(function (x) { return '<span class="' + (x.hit ? "hit" : "") + '">' + esc(x.txt) + "</span>"; }).join("") + "</p>";
     return { html: h, sig: [view, k.r.join(), k.s.join(), (k.rt || []).join(), (k.st || []).join(), near && near.near ? near.nm : "", a ? a.day + a.items.map(function (x) { return x.txt; }).join() : ""].join("/") };
   }
+  /* 注目ポイントの「現在価格」と水準までの距離は、デスク自身のライブ層の値で計算する（ダッシュボードの
+     知らせ＝dash-levels の px は、水準か目線が変わったときと、価格だけなら5秒に1回までしか来ない）。
+     帯（R/S）・目線・値幅目安はダッシュボードの計算のまま。ライブ層に新しい値が無い銘柄は知らせの px を使う。
+     出どころはダッシュボードと同じ：ゴールド・ドル円はこのデスクの配信、BTCはダッシュボードの保存値、
+     オイルはダッシュボード／このデスクのパーペチュアル（補正前の値で、帯と同じ基準） */
+  function ptLivePx(key) {
+    if (key === "btc") { var d = btcDashPrice(market && (market.instruments || market).btc); return d ? d.price : 0; }
+    if (key === "usoil") { var od = oilDash(); return od ? +od.price : 0; }
+    if (!liveFresh(key)) return 0;
+    var L = live[key], sc = key === "usdjpy" ? 1000 : 100;
+    return Math.round((L.raw - liveOffset(key)) * sc) / sc;
+  }
+  function ptEffK(key, k) {  // 水準はそのまま、現在価格だけライブ層の新しい値に差し替えた複製（異常値よけの幅はダッシュボードと同じ）
+    var px = ptLivePx(key);
+    if (!px || !k || !k.px || Math.abs(px - k.px) > (key === "gold" ? 30 : key === "silver" ? 0.6 : key === "btc" ? k.px * 0.02 : key === "usoil" ? k.px * 0.04 : 0.5)) return k;
+    var c = {}; for (var p in k) c[p] = k[p]; c.px = px; return c;
+  }
   var ptSig = "", ptShownAt = 0;
   function ptRows() {
     if (document.hidden) return;
     var tabs = document.querySelector("#pt-map .pm-tabs"), bodyEl = document.querySelector("#pt-map .pm-body"); if (!tabs) return;
     var nears = {};
-    PT_TABS.forEach(function (key) { var k = keyLv[key]; if (k && k.px) { var n = ptNear(key, k); if (n) nears[key] = n; } });
+    PT_TABS.forEach(function (key) { var k = keyLv[key]; if (k && k.px) { var n = ptNear(key, ptEffK(key, k)); if (n) nears[key] = n; } });
     // 既定のタブ：基準以内の水準があるうち、基準に対していちばん近い銘柄。どれも近くなければゴールド（タブを押したあとはその銘柄のまま）
     if (!ptTabByUser) { var best = "gold", bd = Infinity; PT_TABS.forEach(function (key) { var n = nears[key]; if (n && n.near && n.d / PT_NEAR[key] < bd) { bd = n.d / PT_NEAR[key]; best = key; } }); ptTab = best; }
     var th = PT_TABS.map(function (key) { var on = key === ptTab, nr = nears[key] && nears[key].near; return '<button type="button" role="tab" data-pmt="' + key + '" aria-selected="' + on + '" class="' + (on ? "on" : "") + (nr ? " near" : "") + '"' + (nr ? ' title="水準に接近（' + PT_NEAR_TXT[key] + '以内）"' : "") + ">" + esc({ gold: "ゴールド", usdjpy: "ドル円", btc: "BTC", usoil: "オイル" }[key]) + "</button>"; }).join("");
     if (tabs.__h !== th) { tabs.innerHTML = th; tabs.__h = th; }
-    var k = keyLv[ptTab], r = k && k.px ? ptMap(ptTab, k) : { html: '<p class="pm-wait">' + esc(INST[ptTab].name) + "：ダッシュボードの重要価格帯を計算しています…</p>", sig: ptTab + ":wait" };
+    var k = keyLv[ptTab] ? ptEffK(ptTab, keyLv[ptTab]) : null, r = k && k.px ? ptMap(ptTab, k) : { html: '<p class="pm-wait">' + esc(INST[ptTab].name) + "：ダッシュボードの重要価格帯を計算しています…</p>", sig: ptTab + ":wait" };
     if (bodyEl.__h !== r.html) { bodyEl.innerHTML = r.html; bodyEl.__h = r.html; }
     var sig = ptTab + "|" + r.sig;
     if (sig !== ptSig) { ptShownAt = Date.now(); ptSig = sig; }
     var foot = document.getElementById("pt-foot"); if (!foot || foot.querySelector(".retry")) return;
     var u = market ? new Date(market.updated) : null, stale = u && Date.now() - u > 3 * 3600000;
     // 更新スタンプは中身（水準・目線・接近・答え合わせ）が変わった時刻。距離は価格に合わせて動くので数えない
-    setText(foot, "水準＝ダッシュボードの水平線・目線＝H1の120SMAの上下・接近＝ゴールド" + PT_NEAR_TXT.gold + "・ドル円" + PT_NEAR_TXT.usdjpy + "・BTC" + PT_NEAR_TXT.btc + "・オイル" + PT_NEAR_TXT.usoil + "以内・" + updAt(new Date(ptShownAt)) +
-      (u ? "／戦略文：自動分析 " + (stale ? MDHM(u) + "（更新が止まっています）" : stampAt(u) + "（約15分ごと）") : ""));
+    setText(foot, (u ? "分析 " + (stale ? MDHM(u) : stampAt(u)) + "時点" + (stale ? "（更新が止まっています）" : "") + "・" : "") + "水準＝ダッシュボードの水平線・目線＝H1の120SMAの上下・接近＝ゴールド" + PT_NEAR_TXT.gold + "・ドル円" + PT_NEAR_TXT.usdjpy + "・BTC" + PT_NEAR_TXT.btc + "・オイル" + PT_NEAR_TXT.usoil + "以内・" + updAt(new Date(ptShownAt)));
     foot.style.color = stale ? "var(--up-red)" : "";
     if (market) renderStrategy();  // 戦略文も同じ材料（目線・値幅・答え合わせ）に追随
   }
