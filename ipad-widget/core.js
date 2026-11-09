@@ -773,7 +773,7 @@
     if (s.fxMult == null) missing.push("fx");
     else if (s.fxMult > 0.6) {
       parts.fx = Math.round(20 * Math.min(1, (s.fxMult - 0.6) / 0.9));
-      if (parts.fx > 0) cand.push({ rank: 4, pts: parts.fx, text: "ドル指数・金利が大きめの動き（通常の約" + s.fxMult.toFixed(1) + "倍）" });
+      if (parts.fx > 0) cand.push({ rank: 4, pts: parts.fx, text: "ドル・金利 通常の約" + s.fxMult.toFixed(1) + "倍の動き" });
     }
     // 節目接近 −15／値幅の狭さ −10（合わせて −25 が上限）
     if (s.nearLevel) {
