@@ -1,0 +1,3 @@
+Desk One data-refresh trigger.
+Updating this file runs the Pages workflow, which re-fetches prices and rebuilds the analysis (market.json).
+Last kick: 2026-11-09 22:45 JST - manual kick after the GitHub Actions incident stalled scheduled runs (market.json frozen at 21:44).
