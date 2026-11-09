@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="db6bcc3c8a">
+<meta name="build" content="9fcb9ad551">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -292,6 +292,23 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .plrow.tp15 b{color:#5cc8ff}.plrow span b{font-size:12px;text-align:left}.plrow.sl b{color:var(--red)}
 .plfoot{font-size:10px;color:var(--muted);text-align:right;margin-top:4px}.plfoot.warn{color:var(--amber)}
 .nextev{background:#0d1217;border:1px solid #232d37;border-radius:13px;padding:12px}
+/* 相場タイプ判定の帯（2026-11-09）：意味色は全テーマ共通で固定（テクニカル=水色／ファンダメンタル=橙） */
+.regimeband{margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.regimehead{display:flex;align-items:center;gap:10px;width:100%;height:34px;padding:0 12px;background:none;border:0;color:var(--text);font:inherit;cursor:pointer;text-align:left}
+.regimehead .rg-lab{font-size:11px;color:var(--muted);flex:0 0 auto}
+.regimehead .rg-stage{font-size:13px;flex:0 0 auto}
+.regimehead .rg-stage.f{color:#f09a3e}
+.regimehead .rg-stage.t{color:#56b6e8}
+.regimehead .rg-stage.m{color:var(--text)}
+.regimehead .rg-m{position:relative;flex:0 0 110px;height:5px;border-radius:3px;background:linear-gradient(90deg,rgba(86,182,232,.55),rgba(255,255,255,.13) 50%,rgba(240,154,62,.55))}
+.regimehead .rg-m::after{content:"";position:absolute;left:50%;top:-2px;width:1px;height:9px;background:rgba(255,255,255,.35)}
+.regimehead .rg-dot{position:absolute;top:50%;width:11px;height:11px;border-radius:50%;background:#fff;border:2px solid rgba(0,0,0,.45);transform:translate(-50%,-50%)}
+.regimehead .rg-reasons{flex:1 1 auto;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.regimehead .rg-x{font-size:11px;color:var(--muted);flex:0 0 auto}
+.regimedetail{border-top:1px solid var(--line);padding:8px 12px;font-size:12px;color:var(--muted)}
+.regimedetail .rgd-head{margin-bottom:4px}
+.regimedetail .rgd-row{display:flex;justify-content:space-between;gap:12px;padding:1px 0}
+.regimedetail .rgd-row b{color:var(--text)}
 .nextev.alert{border-color:#6c4f16;background:#22190c}
 .nextev .count{font-size:26px;font-weight:950;margin:6px 0 2px}
 .nextev .evtitle{font-size:13px;font-weight:800;line-height:1.4}
@@ -613,6 +630,17 @@ html[data-theme="aurora"] .mini{background:rgba(5,7,15,.92)}
   <div><div class="caution-title">⚠ 重要指標の前後です（新しく入らない）</div><div id="cautionText" class="caution-sub">重要指標が近づいています。</div></div>
   <div id="cautionCount" class="caution-count">--:--</div>
 </section>
+
+<div id="regimeBand" class="regimeband" hidden>
+  <button type="button" id="regimeHead" class="regimehead" aria-expanded="false">
+    <span class="rg-lab">相場タイプ</span>
+    <b id="regimeStage" class="rg-stage m">--</b>
+    <span class="rg-m"><i id="regimeDot" class="rg-dot" style="left:50%"></i></span>
+    <span id="regimeReasons" class="rg-reasons">読み込み中</span>
+    <span class="rg-x">内訳 ▾</span>
+  </button>
+  <div id="regimeDetail" class="regimedetail" hidden></div>
+</div>
 
 <main class="grid">
   <!-- ===== 概要：価格・判定・次の指標 ===== -->
@@ -4339,6 +4367,7 @@ function renderNext(){
   if(box.className!==cls)box.className=cls;
   if(box.__h!==html){box.innerHTML=html;box.__h=html}
   const mn=$('miniNext');if(mn.textContent!==miniTxt)mn.textContent=miniTxt;
+  paintRegimeBand();
 }
 // 追加D：前回の反応1行（デスクの重要指標パネルと同じ reactions.json・同じ計算＝TDCore.reactionStats）。記録がない指標は出さない
 function rxNextLine(e){
@@ -4350,6 +4379,79 @@ function rxNextLine(e){
   const p=new Date(st.last.t*1000),av=st.avg[k];
   return `<div class="sub" style="margin-top:4px">前回（${p.getMonth()+1}/${p.getDate()}発表）：発表後1時間で ${k==='usoil'&&TDCore.RX_JA?TDCore.RX_JA.usoil+' ':''}${TDCore.moveText(k,st.last.move[k].size)} の動き${av?`<small style="opacity:.75">（過去${av.n}回の平均 ${TDCore.moveText(k,av.v)}）</small>`:''}</div>`;
 }
+/* ---------- 相場タイプ判定（テクニカル／ファンダメンタル）の帯 ----------
+   仕様 market-regime-spec-20261105.md v2。判定は TDCore.regimeJudge（純関数）に任せ、ここでは
+   この画面が既に持っている材料をスナップショットに整えるだけ：指標カレンダー（state.events）、
+   reactions.json（rxNextLine のキャッシュ）、急変の記録（td_surge_v1）、発言ニュース（state.talk）、
+   サイト定期取得の DXY・米10年（siteCache）、重要価格帯（keyLevels）、1時間足（state.h1）。
+   新規の通信は増やさない。再計算は renderNext（毎秒）に相乗りし、最大で30秒に1回まで */
+const REGIME_SHORT=[[/Non-Farm Employment/i,"雇用統計"],[/ADP/i,"ADP"],[/Unemployment Rate/i,"失業率"],[/Unemployment Claims|Jobless Claims/i,"失業保険"],[/Average Hourly Earnings/i,"時給"],[/Tokyo Core CPI/i,"東京CPI"],[/National Core CPI/i,"全国CPI"],[/Core CPI/i,"コアCPI"],[/\bCPI\b/i,"CPI"],[/Core PPI/i,"コアPPI"],[/\bPPI\b/i,"PPI"],[/PCE/i,"PCE"],[/GDP/i,"GDP"],[/Retail Sales/i,"小売"],[/ISM Manufacturing/i,"ISM製造業"],[/ISM Services/i,"ISM非製造業"],[/JOLTS/i,"JOLTS"],[/Consumer Confidence/i,"消費者信頼感"],[/Consumer Sentiment/i,"ミシガン"],[/Federal Funds Rate|FOMC Statement/i,"FOMC"],[/FOMC Press/i,"FOMC会見"],[/BOJ Policy Rate|Monetary Policy Statement/i,"日銀"],[/BOJ Press/i,"日銀会見"],[/Durable Goods/i,"耐久財"],[/Tankan/i,"短観"],[/Crude Oil/i,"原油在庫"],[/Speaks|Testifies/i,"発言"]];
+function regimeShortTitle(e){for(let i=0;i<REGIME_SHORT.length;i++)if(REGIME_SHORT[i][0].test(e.title))return REGIME_SHORT[i][1];return e.title}
+const REGIME_PART_JA={approach:"イベント接近・反応中",reaction:"前回反応の上乗せ",surge:"急変",news:"ニュース",fx:"ドル指数・金利",level:"節目接近",narrow:"値幅の狭さ",quiet:"静けさ"};
+let regimeBandAt=0,regimeOpen=false;
+function regimeDayEnd(now){
+  const p=TDCore.partsIn("America/New_York",now);
+  let end=TDCore.zoneTime("America/New_York",p.y,p.mo,p.d,17,0);
+  if(end<=now){const nd=new Date(Date.UTC(p.y,p.mo-1,p.d+1));end=TDCore.zoneTime("America/New_York",nd.getUTCFullYear(),nd.getUTCMonth()+1,nd.getUTCDate(),17,0)}
+  return end;
+}
+function regimeSnapshotDash(now){
+  const key=INSTR.key,dayEnd=regimeDayEnd(now),evs=[];
+  (state.events||[]).forEach(e=>{
+    const cls=TDCore.regimeEventClass(e.currency,e.title);if(!cls)return;
+    const stars=e.impact==='High'?3:e.impact==='Medium'?2:1;if(stars<2)return;
+    if(e.ts>=dayEnd||e.ts<now-2*3600e3)return;
+    let av=null;
+    if(rxNextLine.j){const st=TDCore.reactionStats(rxNextLine.j,e.currency,e.title,e.ts);if(st&&st.avg[key])av=st.avg[key].v}
+    evs.push({t:e.ts,stars:stars,cls:cls,name:(e.currency==='USD'?'米':e.currency==='JPY'?'日':'欧')+'・'+regimeShortTitle(e),
+      hhmm:new Date(e.ts).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}),
+      reactionAvg:av,reactionText:av!=null?'平均'+TDCore.moveText(key,av):null});
+  });
+  const nc=TDCore.regimeNewsCount(state.talk||[],key,now);
+  let sg=null;
+  try{const st=JSON.parse(localStorage.getItem('td_surge_v1')||'null');
+    if(st&&Array.isArray(st.ev)){const cand=st.ev.filter(x=>x.key===key&&now-x.at<30*60000),last=cand[cand.length-1];
+      if(last)sg={level:last.level,win:last.win,backed:!!(nc&&nc.raw>0)}}}catch(e){}
+  const inst=siteCache&&siteCache.d&&siteCache.d.instruments;
+  let near=null;const kl=keyLevels();
+  if(kl&&TDCore.REGIME_NEAR[key]!=null){
+    let best=null;(kl.r||[]).concat(kl.s||[]).forEach(l=>{if(l&&l.price!=null){const d=Math.abs(l.price-kl.px);if(!best||d<best.d)best={v:l.price,d:d}}});
+    if(best&&best.d<=TDCore.REGIME_NEAR[key])near={label:fmt(best.v)};
+  }
+  const bars=(state.h1||[]).map(b=>({t:b.t>1e12?b.t:b.t*1000,h:b.h,l:b.l}));
+  return {key:key,now:now,marketOpen:!marketClosed(now),
+    calendarOk:!!(state.health.calendar&&state.calendarAt&&now-state.calendarAt<15*60000),
+    dayStart:now-12*3600e3,dayEnd:dayEnd,events:evs,surge:sg,newsCount:nc?nc.count:null,
+    fxMult:inst?TDCore.regimeFxMult(inst):null,nearLevel:near,narrow:bars.length?TDCore.regimeNarrow(bars,now):null};
+}
+function paintRegimeBand(){
+  const band=$('regimeBand');if(!band||!window.TDCore||!TDCore.regimeJudge)return;
+  const now=Date.now();if(band.__done&&now-regimeBandAt<30000)return;regimeBandAt=now;band.__done=true;
+  band.hidden=false;
+  const stageEl=$('regimeStage'),dot=$('regimeDot'),rs=$('regimeReasons'),det=$('regimeDetail');
+  if(INSTR.key==='silver'){  // シルバーは仕様の判定モデル（4銘柄）の対象外
+    stageEl.textContent='対象外';stageEl.className='rg-stage m';dot.style.display='none';
+    rs.textContent='相場タイプ判定はこの銘柄では行いません';det.innerHTML='';return;
+  }
+  const r=TDCore.regimeJudge(regimeSnapshotDash(now));
+  if(!r.ok){
+    stageEl.textContent='判定なし';stageEl.className='rg-stage m';dot.style.display='none';
+    rs.textContent=r.why==='closed'?'市場は休みのため':'材料不足のため';
+    det.innerHTML='<div class="rgd-row">判定の材料がそろっていないため判定なしにしています（前回の判定は残しません）。</div>';
+    return;
+  }
+  dot.style.display='';
+  const side=r.stage.indexOf('funda')===0?'f':r.stage.indexOf('tech')===0?'t':'m';
+  stageEl.textContent=r.stageJa;stageEl.className='rg-stage '+side;
+  dot.style.left=Math.round((r.score+100)/2)+'%';
+  rs.textContent=r.reasons.map(x=>x.text).join('／');
+  const rows=Object.keys(REGIME_PART_JA).filter(k=>r.parts[k]!==0).map(k=>'<div class="rgd-row"><span>'+REGIME_PART_JA[k]+'</span><b>'+(r.parts[k]>0?'+':'')+r.parts[k]+'</b></div>').join('');
+  det.innerHTML='<div class="rgd-head">スコア <b>'+(r.score>0?'+':'')+r.score+'</b>（−100 テクニカル 〜 +100 ファンダメンタル）｜目安の内訳</div>'+(rows||'<div class="rgd-row">加点・減点なし</div>');
+}
+(function(){const h=$('regimeHead'),d=$('regimeDetail');if(!h||!d)return;
+  h.addEventListener('click',()=>{regimeOpen=!regimeOpen;d.hidden=!regimeOpen;h.setAttribute('aria-expanded',String(regimeOpen))});
+})();
+
 // 結果の表示：発表前は何も出さず、発表後は結果か「結果待ち」を出す
 function num(v){const m=String(v??'').replace(/,/g,'').match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):null}
 function resultLine(e,diff){
