@@ -45,7 +45,24 @@ python upload_urls.py --folder handoff/2026-11-10_issue \
 - 同じ号を2つ同時に動かさないよう錠（`urls.json.lock`）を使う。前のプロセスが死んでいれば自動で引き継ぐ。
 - 終了コード：0＝全点OK、1＝失敗あり、2＝使い方の誤り。標準出力に再利用・新規・失敗の一覧（JSON）。
 
-アップロード手段の差し替え：
+アップロード手段の選び方（`--method`）：
+
+**github（GitHub Pages）**
+```bash
+python upload_urls.py --method github \
+  --gh-repo-dir ~/warashibe-figures --gh-date 2026-11-10 \
+  --folder handoff/2026-11-10_issue --files handoff/2026-11-10_issue/*.png
+```
+- クローン済みの warashibe-figures の `<号の日付>/<ファイル名>` に置き、**その1ファイルだけ**をコミットしてプッシュ。
+  URL は `https://ira0ma.github.io/warashibe-figures/<日付>/<ファイル名>`（日本語・空白はURLエンコード）。
+- プッシュ直後は開けないので、反映を待ちながら確認する（既定：10秒おき・最大180秒。`--gh-interval` `--gh-max-wait`）。
+  この確認は GET で中身を読み、**ハッシュが一致するまで**待つ（作り直した図は同じURLなので、古い中身の200では合格にしない）。
+- 有効期限なし：`expires_at` は `"none"`。
+- 同じ中身がすでにコミット済みなら、コミットは作らずプッシュだけ（コミット後・プッシュ前に止まった分も再開時に送られる）。
+- プッシュに失敗したら、今回のコミットだけを取り消して再試行（2回まで）。だめなら failed で記録し、残りは続行。
+- プッシュ先は `--gh-remote`（既定 origin）と `--gh-branch`（既定は今のブランチ）。認証はクローン側の設定をそのまま使う。
+
+**command（外部コマンド・既定）**
 ```bash
 --upload-cmd "/opt/hatch/bin/remote-storage upload-file --path {path}"   # 既定（編集長環境）
 --upload-cmd "別のコマンド {path}"                                        # 差し替え例
@@ -63,10 +80,14 @@ URL が取れなければ失敗扱い（終了コードには依存しない）�
     "hash": "sha256:...",
     "checked_at": "2026-11-10T05:12:03Z",
     "status": "ok",
+    "uploader": "command",
     "uploaded_at": "2026-11-10T05:12:02Z"
   }
 }
 ```
+github 方式では `url` が `https://ira0ma.github.io/warashibe-figures/...`、`expires_at` が `"none"`、`uploader` が `"github_pages"` になる。
+`uploader`（置き場所）が前回と違う図は、ハッシュが同じでも上げ直す（48時間で切れる置き場から GitHub へ移すときのため）。
+
 status：`ok`（確認済み）／`uploaded`（記録直後・未確認）／`check_failed`（上げたが開けず・再試行中）／`failed`（あきらめた。`error` に理由）
 
 ## テスト
@@ -82,4 +103,8 @@ cd warashibe && python -m unittest discover -s tests -v
   テスト `test_tests_never_call_production_command` が、テストのコードに本番コマンドが入っていないことを毎回確認します。
 - `127.0.0.1` に一時的なHTTPサーバを立てます（空いているポートを自動で使用）。
 - `TestKillAndResumeCLI` は SIGKILL を使うため、Linux / macOS が前提です（Windows では未確認）。
-- 外部ネットワークは使いません。
+- 外部ネットワークは使いません。本物の GitHub にも接続しません（`test_github.py` はローカルの bare リポジトリと、
+  プッシュから一定時間後に公開する模擬 Pages サーバで反映待ちを再現します）。
+- `test_github.py` には `git` コマンドが必要です（2.43 で確認）。テスト用リポジトリは一時フォルダに作り、
+  そのリポジトリだけで `commit.gpgsign=false` と仮の作者名を設定します（利用者の git 設定は変えません）。
+- 所要時間の目安：全64件で約40秒（反映待ちの再現を含むため）。

@@ -10,8 +10,15 @@
   python upload_urls.py --folder handoff/2026-11-10_issue \
       --files handoff/2026-11-10_issue/fig01.png handoff/2026-11-10_issue/fig02.png
 
-アップロード手段は --upload-cmd で差し替えられる（{path} がファイルパスに置き換わる）。
-既定は編集長環境の /opt/hatch/bin/remote-storage upload-file --path {path}。
+アップロード手段は --method で選ぶ。
+  command（既定）: 外部コマンド。--upload-cmd で差し替え（{path} がファイルパスに置き換わる）。
+                   既定は編集長環境の /opt/hatch/bin/remote-storage upload-file --path {path}。
+  github         : GitHub Pages。クローン済みリポジトリの <号の日付>/<ファイル名> に置いて
+                   コミット＆プッシュし、https://ira0ma.github.io/warashibe-figures/<日付>/<ファイル名>
+                   を記録する。反映を待ちながら（既定 最大180秒）中身の一致まで確認する。有効期限なし。
+
+  python upload_urls.py --method github --gh-repo-dir ~/warashibe-figures --gh-date 2026-11-10 \
+      --folder handoff/2026-11-10_issue --files handoff/2026-11-10_issue/*.png
 終了コード: 0=全点OK / 1=失敗あり（urls.json に status=failed で記録済み）/ 2=使い方の誤り
 標準ライブラリだけで動く（Python 3.11〜3.13 で確認）。
 """
@@ -26,15 +33,19 @@ import re
 import shlex
 import subprocess
 import sys
+import shutil
 import tempfile
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence
 
 DEFAULT_UPLOAD_CMD = "/opt/hatch/bin/remote-storage upload-file --path {path}"
+DEFAULT_GH_BASE_URL = "https://ira0ma.github.io/warashibe-figures"
+NO_EXPIRY = "none"  # urls.json の expires_at に入れる「有効期限なし」の印
 URLS_FILE = "urls.json"
 LOCK_FILE = "urls.json.lock"
 
@@ -54,7 +65,7 @@ def iso(t: _dt.datetime) -> str:
 
 
 def parse_time(s: Optional[str]) -> Optional[_dt.datetime]:
-    if not s:
+    if not s or s == NO_EXPIRY:
         return None
     s = str(s).strip()
     if re.fullmatch(r"\d{9,11}(\.\d+)?", s):  # epoch 秒
@@ -131,6 +142,8 @@ def parse_upload_output(text: str) -> UploadResult:
 class CommandUploader:
     """外部コマンドでアップロードする。cmd の {path} をファイルパスに置き換える。"""
 
+    name = "command"
+
     def __init__(self, cmd: str = DEFAULT_UPLOAD_CMD, timeout: float = 300):
         self.argv = shlex.split(cmd)
         if not any("{path}" in a for a in self.argv):
@@ -159,6 +172,7 @@ class CheckResult:
     method: Optional[str] = None
     final_url: Optional[str] = None
     error: Optional[str] = None
+    attempts: int = 1
 
 
 class _KeepHeadRedirect(urllib.request.HTTPRedirectHandler):
@@ -201,6 +215,112 @@ def check_url(url: str, timeout: float = 10, retries: int = 2, wait: float = 1.0
         if last.ok:
             return last
     return last
+
+
+def _get_hash(url: str, timeout: float) -> tuple:
+    """GET で本体を読み、(CheckResult, "sha256:...") を返す。"""
+    req = urllib.request.Request(url, headers={"User-Agent": "warashibe-url-check/1",
+                                               "Cache-Control": "no-cache"})
+    try:
+        with _opener.open(req, timeout=timeout) as r:
+            h = hashlib.sha256()
+            for chunk in iter(lambda: r.read(1 << 16), b""):
+                h.update(chunk)
+            return CheckResult(r.status == 200, r.status, "GET", r.geturl()), "sha256:" + h.hexdigest()
+    except urllib.error.HTTPError as e:
+        return CheckResult(False, e.code, "GET", e.geturl(), f"HTTP {e.code}"), None
+    except Exception as e:
+        return CheckResult(False, None, "GET", None, f"{type(e).__name__}: {e}"), None
+
+
+def wait_until_live(url: str, expected_hash: Optional[str] = None, *, max_wait: float = 180,
+                    interval: float = 10, timeout: float = 10,
+                    clock: Callable[[], float] = time.monotonic,
+                    sleep: Callable[[float], None] = time.sleep) -> CheckResult:
+    """反映待ちのあるホスティング用。最終 200（expected_hash があれば中身の一致も）になるまで
+    interval 秒おきに確かめ、max_wait 秒を超えたらあきらめる。"""
+    start = clock()
+    n = 0
+    while True:
+        n += 1
+        if expected_hash:
+            res, got = _get_hash(url, timeout)
+            if res.ok and got != expected_hash:
+                res = CheckResult(False, res.status, "GET", res.final_url,
+                                  "200 だが中身がまだ古い（ハッシュ不一致）")
+        else:
+            res = check_url(url, timeout=timeout, retries=0, wait=0)
+        res.attempts = n
+        if res.ok:
+            return res
+        if clock() - start + interval > max_wait:
+            res.error = f"{res.error or res.status}（{max_wait:g}秒待っても開けず・確認{n}回）"
+            return res
+        sleep(interval)
+
+
+class GitHubPagesUploader:
+    """GitHub Pages に置く。クローン済みリポジトリの <date>/<ファイル名> にコピーして
+    そのファイルだけをコミットし、プッシュする。URL は base_url/<date>/<ファイル名>。
+
+    - 同じ中身がすでにコミット済みなら、コミットは作らずプッシュだけ行う（再開時の未プッシュ分も送る）。
+    - プッシュに失敗したら、今回作ったコミットだけを取り消して UploadError（他の図のプッシュを巻き込まない）。
+    - 有効期限はないので expires_at は "none"。
+    - アップロード直後の確認は post_upload_check（反映待ち＋中身の一致）を使う。
+    """
+
+    name = "github_pages"
+
+    def __init__(self, repo_dir: Path, date: str, base_url: str = DEFAULT_GH_BASE_URL,
+                 remote: str = "origin", branch: Optional[str] = None,
+                 max_wait: float = 180, interval: float = 10, check_timeout: float = 10,
+                 git_timeout: float = 120):
+        _dt.date.fromisoformat(date)  # 形式違いはここで ValueError
+        self.repo = Path(repo_dir).resolve()
+        if not (self.repo / ".git").exists():
+            raise ValueError(f"git のクローンではありません: {self.repo}")
+        self.date, self.base_url = date, base_url.rstrip("/")
+        self.remote, self.branch = remote, branch
+        self.max_wait, self.interval, self.check_timeout = max_wait, interval, check_timeout
+        self.git_timeout = git_timeout
+
+    def _git(self, *args: str, check: bool = True) -> subprocess.CompletedProcess:
+        try:
+            cp = subprocess.run(["git", "-C", str(self.repo), *args], capture_output=True,
+                                text=True, timeout=self.git_timeout)
+        except subprocess.TimeoutExpired as e:
+            raise UploadError(f"git {args[0]} が {self.git_timeout:g} 秒で終わりませんでした") from e
+        if check and cp.returncode != 0:
+            raise UploadError(f"git {' '.join(args[:2])} に失敗: {(cp.stderr or cp.stdout).strip()[:300]}")
+        return cp
+
+    def url_for(self, name: str) -> str:
+        return f"{self.base_url}/{self.date}/{urllib.parse.quote(name)}"
+
+    def upload(self, path: Path) -> UploadResult:
+        path = Path(path)
+        rel = f"{self.date}/{path.name}"
+        dest = self.repo / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        if not dest.exists() or file_hash(dest) != file_hash(path):
+            shutil.copyfile(path, dest)
+        self._git("add", "--", rel)
+        before = self._git("rev-parse", "HEAD", check=False).stdout.strip() or None
+        made_commit = False
+        if self._git("diff", "--cached", "--quiet", "--", rel, check=False).returncode != 0:
+            self._git("commit", "-m", f"図を追加: {rel}", "--", rel)
+            made_commit = True
+        branch = self.branch or self._git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+        push = self._git("push", self.remote, f"HEAD:refs/heads/{branch}", check=False)
+        if push.returncode != 0:
+            if made_commit and before:
+                self._git("reset", "--mixed", before, check=False)  # 今回のコミットだけ取り消す
+            raise UploadError(f"git push に失敗: {(push.stderr or push.stdout).strip()[:300]}")
+        return UploadResult(url=self.url_for(path.name), expires_at=NO_EXPIRY)
+
+    def post_upload_check(self, url: str, expected_hash: str) -> CheckResult:
+        return wait_until_live(url, expected_hash, max_wait=self.max_wait,
+                               interval=self.interval, timeout=self.check_timeout)
 
 
 # ---- 記録ファイル -----------------------------------------------------------------
@@ -282,10 +402,12 @@ class Summary:
 
 
 def _reuse_reason(rec: Optional[dict], h: str, now: _dt.datetime,
-                  min_remaining: _dt.timedelta) -> Optional[str]:
+                  min_remaining: _dt.timedelta, uploader_name: str) -> Optional[str]:
     """再利用できない理由を返す（再利用候補なら None）。"""
     if not rec or not rec.get("url"):
         return "未記録"
+    if rec.get("uploader") != uploader_name:
+        return f"置き場所が違う（記録 {rec.get('uploader')} → 今回 {uploader_name}）"
     if rec.get("status") not in ("ok", "uploaded"):
         return f"前回 status={rec.get('status')}"
     if rec.get("hash") != h:
@@ -309,6 +431,8 @@ def sync(folder: Path, files: Sequence[Path], uploader, *,
         raise ValueError(f"ファイル名が重複しています（urls.json のキーが衝突）: {sorted(dup)}")
     records = load_records(folder)
     summary = Summary()
+    up_name = getattr(uploader, "name", "custom")
+    post_check = getattr(uploader, "post_upload_check", None) or (lambda u, _h: checker(u))
 
     for f in map(Path, files):
         name = f.name
@@ -322,7 +446,7 @@ def sync(folder: Path, files: Sequence[Path], uploader, *,
             continue
         h = file_hash(f)
         rec = records.get(name)
-        why = _reuse_reason(rec, h, now(), min_remaining)
+        why = _reuse_reason(rec, h, now(), min_remaining, up_name)
         if why is None:
             res = checker(rec["url"])
             if res.ok:
@@ -345,11 +469,11 @@ def sync(folder: Path, files: Sequence[Path], uploader, *,
                 log(f"  試行{attempt}: {last_err}")
                 continue
             # URL を取れたら確認より先に即記録（ここで落ちても URL は残る）
-            rec = {"url": r.url, "expires_at": r.expires_at, "hash": h,
+            rec = {"url": r.url, "expires_at": r.expires_at, "hash": h, "uploader": up_name,
                    "uploaded_at": iso(now()), "checked_at": None, "status": "uploaded"}
             records[name] = rec
             save_records(folder, records)
-            res = checker(r.url)
+            res = post_check(r.url, h)
             rec["checked_at"] = iso(now())
             if res.ok:
                 rec["status"] = "ok"
@@ -364,7 +488,7 @@ def sync(folder: Path, files: Sequence[Path], uploader, *,
         else:
             rec = records.get(name) if records.get(name, {}).get("hash") == h else {}
             records[name] = {"url": (rec or {}).get("url"), "expires_at": (rec or {}).get("expires_at"),
-                             "hash": h, "checked_at": iso(now()), "status": "failed",
+                             "hash": h, "uploader": up_name, "checked_at": iso(now()), "status": "failed",
                              "error": last_err}
             save_records(folder, records)
             summary.failed.append(name)
@@ -377,6 +501,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description="図のアップロード＋URL記録（再開対応）")
     ap.add_argument("--folder", required=True, help="その号のフォルダ（urls.json をここに置く）")
     ap.add_argument("--files", required=True, nargs="+", help="アップロードする PNG（順に1点ずつ）")
+    ap.add_argument("--method", choices=["command", "github"], default="command",
+                    help="アップロード手段（既定 command）")
     ap.add_argument("--upload-cmd", default=DEFAULT_UPLOAD_CMD,
                     help=f"アップロードコマンド。{{path}} がファイルに置き換わる（既定: {DEFAULT_UPLOAD_CMD}）")
     ap.add_argument("--upload-timeout", type=float, default=300)
@@ -385,12 +511,32 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--check-retries", type=int, default=2)
     ap.add_argument("--min-remaining-hours", type=float, default=0,
                     help="有効期限の残りがこれ以下なら上げ直す（既定 0＝期限切れのみ）")
+    g = ap.add_argument_group("github 方式")
+    g.add_argument("--gh-repo-dir", help="warashibe-figures のクローンの場所")
+    g.add_argument("--gh-date", help="号の日付 YYYY-MM-DD（リポジトリ内のフォルダ名になる）")
+    g.add_argument("--gh-base-url", default=DEFAULT_GH_BASE_URL)
+    g.add_argument("--gh-remote", default="origin")
+    g.add_argument("--gh-branch", help="プッシュ先ブランチ（省略時は今のブランチ）")
+    g.add_argument("--gh-max-wait", type=float, default=180, help="反映待ちの上限秒（既定 180）")
+    g.add_argument("--gh-interval", type=float, default=10, help="反映待ちの確認間隔秒（既定 10）")
     a = ap.parse_args(argv)
     folder = Path(a.folder)
     if not folder.is_dir():
         print(f"フォルダがありません: {folder}", file=sys.stderr)
         return 2
-    uploader = CommandUploader(a.upload_cmd, timeout=a.upload_timeout)
+    if a.method == "github":
+        if not (a.gh_repo_dir and a.gh_date):
+            print("--method github には --gh-repo-dir と --gh-date が必要です", file=sys.stderr)
+            return 2
+        try:
+            uploader = GitHubPagesUploader(Path(a.gh_repo_dir), a.gh_date, a.gh_base_url,
+                                           a.gh_remote, a.gh_branch, a.gh_max_wait,
+                                           a.gh_interval, a.check_timeout)
+        except ValueError as e:
+            print(f"github 方式の設定が正しくありません: {e}", file=sys.stderr)
+            return 2
+    else:
+        uploader = CommandUploader(a.upload_cmd, timeout=a.upload_timeout)
     checker = lambda u: check_url(u, timeout=a.check_timeout, retries=a.check_retries)
     with Lock(folder):
         s = sync(folder, [Path(f) for f in a.files], uploader, checker=checker,
