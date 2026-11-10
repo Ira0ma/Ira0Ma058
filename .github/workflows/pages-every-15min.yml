@@ -1,0 +1,33 @@
+name: Refresh the site every 15 minutes
+
+# GitHub runs the 5-minute schedule of pages.yml only about once an hour, so the site's prices
+# (oil above all: it has no other source when OKX cannot be read) were up to an hour old.
+# This job starts pages.yml by hand (workflow_dispatch, which GitHub does not hold back) three
+# times, 15 minutes apart. Together with pages.yml's own hourly run that makes about every
+# 15 minutes. It only waits between the starts, so it costs no build work of its own.
+on:
+  schedule:
+    - cron: "11 * * * *"  # once an hour (GitHub may start it late; the loop below covers the hour)
+  workflow_dispatch:
+
+permissions:
+  actions: write  # to start pages.yml
+  contents: read
+
+concurrency:
+  group: pages-every-15min
+  cancel-in-progress: false  # a late start waits for the running loop instead of piling up
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Start the Pages build 15, 30 and 45 minutes from now
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in 1 2 3; do
+            sleep 900
+            gh workflow run pages.yml --repo "${{ github.repository }}" --ref "${{ github.ref_name }}" || echo "start failed (next one in 15 minutes)"
+          done

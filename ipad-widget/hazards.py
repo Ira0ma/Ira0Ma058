@@ -72,7 +72,10 @@ def typhoons():
                              or pick(p, "probabilityCircle", "radius") or pick(p, "forecastCircle", "radius")),
                   "storm": pick(p, "stormWarning", "radius", "km") or pick(p, "stormArea", "radius", "km")}
             if head is None and (p.get("name") or p.get("typhoonNumber")):
-                head = {"id": tc, "number": p.get("typhoonNumber") or tc[2:],
+                # A tropical depression has no typhoon number; JMA puts "a" in typhoonNumber.
+                # Keep the number only when it is all digits (the TC serial is not a typhoon number).
+                raw_num = str(p.get("typhoonNumber") or "")
+                head = {"id": tc, "number": raw_num if raw_num.isdigit() else "",
                         "name": pick(p, "name", "jp") or pick(p, "name", "en") or "",
                         "category": pick(p, "category", "jp") or "",
                         "size": "", "strength": ""}
@@ -82,7 +85,7 @@ def typhoons():
             if pos:
                 track.append(pt)
         if head is None:
-            head = {"id": tc, "number": tc[2:], "name": "", "category": "", "size": "", "strength": ""}
+            head = {"id": tc, "number": "", "name": "", "category": "", "size": "", "strength": ""}
         head["track"] = track
         head["raw"] = parts[:1]  # the first part as published, for checking the fields
         out.append(head)

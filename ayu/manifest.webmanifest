@@ -1,0 +1,12 @@
+{
+  "name": "Desk of Ayu",
+  "short_name": "Desk of Ayu",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#06070b",
+  "theme_color": "#06070b",
+  "icons": [
+    { "src": "icon-ayu.png", "sizes": "192x192", "type": "image/png" }
+  ]
+}

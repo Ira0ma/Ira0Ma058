@@ -1,0 +1,378 @@
+{
+ "version": "2026-11-05b",
+ "note": "One-time backfill of past releases (2026-08-14 .. 2026-10-29) whose date and time were read on the official schedule pages named in each entry. Times are US Eastern (EDT). Measured once with the same method as live reactions (reactions.py) on Yahoo 5-minute candles, which reach back about 60 days; records already measured live are never replaced. BLS releases (Employment Situation, CPI, PPI, JOLTS) come from FRED's release calendar (its times are US Central and are converted here). Left out: Japan's CPI because its release time is not stated on the schedule page.",
+ "events": [
+  {
+   "title": "Retail Sales m/m",
+   "country": "USD",
+   "date": "2026-08-14T08:30:00-04:00",
+   "source": "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
+  },
+  {
+   "title": "Core Retail Sales m/m",
+   "country": "USD",
+   "date": "2026-08-14T08:30:00-04:00",
+   "source": "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
+  },
+  {
+   "title": "Crude Oil Inventories",
+   "country": "USD",
+   "date": "2026-08-19T10:30:00-04:00",
+   "source": "https://www.eia.gov/petroleum/supply/weekly/schedule.php"
+  },
+  {
+   "title": "Unemployment Claims",
+   "country": "USD",
+   "date": "2026-08-20T08:30:00-04:00",
+   "source": "https://www.dol.gov/ui/data.pdf"
+  },
+  {
+   "title": "Durable Goods Orders m/m",
+   "country": "USD",
+   "date": "2026-08-26T08:30:00-04:00",
+   "source": "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
+  },
+  {
+   "title": "Core Durable Goods Orders m/m",
+   "country": "USD",
+   "date": "2026-08-26T08:30:00-04:00",
+   "source": "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
+  },
+  {
+   "title": "Crude Oil Inventories",
+   "country": "USD",
+   "date": "2026-08-26T10:30:00-04:00",
+   "source": "https://www.eia.gov/petroleum/supply/weekly/schedule.php"
+  },
+  {
+   "title": "Unemployment Claims",
+   "country": "USD",
+   "date": "2026-08-27T08:30:00-04:00",
+   "source": "https://www.dol.gov/ui/data.pdf"
+  },
+  {
+   "title": "ISM Manufacturing PMI",
+   "country": "USD",
+   "date": "2026-09-01T10:00:00-04:00",
+   "source": "https://www.ismworld.org/supply-management-news-and-reports/reports/rob-report-calendar/"
+  },
+  {
+   "title": "JOLTS Job Openings",
+   "country": "USD",
+   "date": "2026-09-01T10:00:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=192&y=2026"
+  },
+  {
+   "title": "Crude Oil Inventories",
+   "country": "USD",
+   "date": "2026-09-02T10:30:00-04:00",
+   "source": "https://www.eia.gov/petroleum/supply/weekly/schedule.php"
+  },
+  {
+   "title": "Unemployment Claims",
+   "country": "USD",
+   "date": "2026-09-03T08:30:00-04:00",
+   "source": "https://www.dol.gov/ui/data.pdf"
+  },
+  {
+   "title": "ISM Services PMI",
+   "country": "USD",
+   "date": "2026-09-03T10:00:00-04:00",
+   "source": "https://www.ismworld.org/supply-management-news-and-reports/reports/rob-report-calendar/"
+  },
+  {
+   "title": "Non-Farm Employment Change",
+   "country": "USD",
+   "date": "2026-09-04T08:30:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=50&y=2026"
+  },
+  {
+   "title": "Unemployment Rate",
+   "country": "USD",
+   "date": "2026-09-04T08:30:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=50&y=2026"
+  },
+  {
+   "title": "Average Hourly Earnings m/m",
+   "country": "USD",
+   "date": "2026-09-04T08:30:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=50&y=2026"
+  },
+  {
+   "title": "Unemployment Claims",
+   "country": "USD",
+   "date": "2026-09-10T08:30:00-04:00",
+   "source": "https://www.dol.gov/ui/data.pdf"
+  },
+  {
+   "title": "PPI m/m",
+   "country": "USD",
+   "date": "2026-09-10T08:30:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=46&y=2026"
+  },
+  {
+   "title": "Core PPI m/m",
+   "country": "USD",
+   "date": "2026-09-10T08:30:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=46&y=2026"
+  },
+  {
+   "title": "Crude Oil Inventories",
+   "country": "USD",
+   "date": "2026-09-10T12:00:00-04:00",
+   "source": "https://www.eia.gov/petroleum/supply/weekly/schedule.php"
+  },
+  {
+   "title": "CPI m/m",
+   "country": "USD",
+   "date": "2026-09-11T08:30:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=10&y=2026"
+  },
+  {
+   "title": "Core CPI m/m",
+   "country": "USD",
+   "date": "2026-09-11T08:30:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=10&y=2026"
+  },
+  {
+   "title": "CPI y/y",
+   "country": "USD",
+   "date": "2026-09-11T08:30:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=10&y=2026"
+  },
+  {
+   "title": "Retail Sales m/m",
+   "country": "USD",
+   "date": "2026-09-16T08:30:00-04:00",
+   "source": "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
+  },
+  {
+   "title": "Core Retail Sales m/m",
+   "country": "USD",
+   "date": "2026-09-16T08:30:00-04:00",
+   "source": "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
+  },
+  {
+   "title": "Crude Oil Inventories",
+   "country": "USD",
+   "date": "2026-09-16T10:30:00-04:00",
+   "source": "https://www.eia.gov/petroleum/supply/weekly/schedule.php"
+  },
+  {
+   "title": "Federal Funds Rate",
+   "country": "USD",
+   "date": "2026-09-16T14:00:00-04:00",
+   "source": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+  },
+  {
+   "title": "FOMC Statement",
+   "country": "USD",
+   "date": "2026-09-16T14:00:00-04:00",
+   "source": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+  },
+  {
+   "title": "FOMC Press Conference",
+   "country": "USD",
+   "date": "2026-09-16T14:30:00-04:00",
+   "source": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+  },
+  {
+   "title": "Unemployment Claims",
+   "country": "USD",
+   "date": "2026-09-17T08:30:00-04:00",
+   "source": "https://www.dol.gov/ui/data.pdf"
+  },
+  {
+   "title": "Crude Oil Inventories",
+   "country": "USD",
+   "date": "2026-09-23T10:30:00-04:00",
+   "source": "https://www.eia.gov/petroleum/supply/weekly/schedule.php"
+  },
+  {
+   "title": "Unemployment Claims",
+   "country": "USD",
+   "date": "2026-09-24T08:30:00-04:00",
+   "source": "https://www.dol.gov/ui/data.pdf"
+  },
+  {
+   "title": "Durable Goods Orders m/m",
+   "country": "USD",
+   "date": "2026-09-25T08:30:00-04:00",
+   "source": "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
+  },
+  {
+   "title": "Core Durable Goods Orders m/m",
+   "country": "USD",
+   "date": "2026-09-25T08:30:00-04:00",
+   "source": "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
+  },
+  {
+   "title": "JOLTS Job Openings",
+   "country": "USD",
+   "date": "2026-09-29T10:00:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=192&y=2026"
+  },
+  {
+   "title": "Crude Oil Inventories",
+   "country": "USD",
+   "date": "2026-09-30T10:30:00-04:00",
+   "source": "https://www.eia.gov/petroleum/supply/weekly/schedule.php"
+  },
+  {
+   "title": "Unemployment Claims",
+   "country": "USD",
+   "date": "2026-10-01T08:30:00-04:00",
+   "source": "https://www.dol.gov/ui/data.pdf"
+  },
+  {
+   "title": "ISM Manufacturing PMI",
+   "country": "USD",
+   "date": "2026-10-01T10:00:00-04:00",
+   "source": "https://www.ismworld.org/supply-management-news-and-reports/reports/rob-report-calendar/"
+  },
+  {
+   "title": "Non-Farm Employment Change",
+   "country": "USD",
+   "date": "2026-10-02T08:30:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=50&y=2026"
+  },
+  {
+   "title": "Unemployment Rate",
+   "country": "USD",
+   "date": "2026-10-02T08:30:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=50&y=2026"
+  },
+  {
+   "title": "Average Hourly Earnings m/m",
+   "country": "USD",
+   "date": "2026-10-02T08:30:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=50&y=2026"
+  },
+  {
+   "title": "ISM Services PMI",
+   "country": "USD",
+   "date": "2026-10-05T10:00:00-04:00",
+   "source": "https://www.ismworld.org/supply-management-news-and-reports/reports/rob-report-calendar/"
+  },
+  {
+   "title": "Crude Oil Inventories",
+   "country": "USD",
+   "date": "2026-10-07T10:30:00-04:00",
+   "source": "https://www.eia.gov/petroleum/supply/weekly/schedule.php"
+  },
+  {
+   "title": "Unemployment Claims",
+   "country": "USD",
+   "date": "2026-10-08T08:30:00-04:00",
+   "source": "https://www.dol.gov/ui/data.pdf"
+  },
+  {
+   "title": "CPI m/m",
+   "country": "USD",
+   "date": "2026-10-14T08:30:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=10&y=2026"
+  },
+  {
+   "title": "Core CPI m/m",
+   "country": "USD",
+   "date": "2026-10-14T08:30:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=10&y=2026"
+  },
+  {
+   "title": "CPI y/y",
+   "country": "USD",
+   "date": "2026-10-14T08:30:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=10&y=2026"
+  },
+  {
+   "title": "Retail Sales m/m",
+   "country": "USD",
+   "date": "2026-10-15T08:30:00-04:00",
+   "source": "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
+  },
+  {
+   "title": "Core Retail Sales m/m",
+   "country": "USD",
+   "date": "2026-10-15T08:30:00-04:00",
+   "source": "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
+  },
+  {
+   "title": "Unemployment Claims",
+   "country": "USD",
+   "date": "2026-10-15T08:30:00-04:00",
+   "source": "https://www.dol.gov/ui/data.pdf"
+  },
+  {
+   "title": "PPI m/m",
+   "country": "USD",
+   "date": "2026-10-15T08:30:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=46&y=2026"
+  },
+  {
+   "title": "Core PPI m/m",
+   "country": "USD",
+   "date": "2026-10-15T08:30:00-04:00",
+   "source": "https://fred.stlouisfed.org/releases/calendar?rid=46&y=2026"
+  },
+  {
+   "title": "Crude Oil Inventories",
+   "country": "USD",
+   "date": "2026-10-15T12:00:00-04:00",
+   "source": "https://www.eia.gov/petroleum/supply/weekly/schedule.php"
+  },
+  {
+   "title": "Crude Oil Inventories",
+   "country": "USD",
+   "date": "2026-10-21T10:30:00-04:00",
+   "source": "https://www.eia.gov/petroleum/supply/weekly/schedule.php"
+  },
+  {
+   "title": "Unemployment Claims",
+   "country": "USD",
+   "date": "2026-10-22T08:30:00-04:00",
+   "source": "https://www.dol.gov/ui/data.pdf"
+  },
+  {
+   "title": "Durable Goods Orders m/m",
+   "country": "USD",
+   "date": "2026-10-27T08:30:00-04:00",
+   "source": "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
+  },
+  {
+   "title": "Core Durable Goods Orders m/m",
+   "country": "USD",
+   "date": "2026-10-27T08:30:00-04:00",
+   "source": "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
+  },
+  {
+   "title": "Crude Oil Inventories",
+   "country": "USD",
+   "date": "2026-10-28T10:30:00-04:00",
+   "source": "https://www.eia.gov/petroleum/supply/weekly/schedule.php"
+  },
+  {
+   "title": "Federal Funds Rate",
+   "country": "USD",
+   "date": "2026-10-28T14:00:00-04:00",
+   "source": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+  },
+  {
+   "title": "FOMC Statement",
+   "country": "USD",
+   "date": "2026-10-28T14:00:00-04:00",
+   "source": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+  },
+  {
+   "title": "FOMC Press Conference",
+   "country": "USD",
+   "date": "2026-10-28T14:30:00-04:00",
+   "source": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+  },
+  {
+   "title": "Unemployment Claims",
+   "country": "USD",
+   "date": "2026-10-29T08:30:00-04:00",
+   "source": "https://www.dol.gov/ui/data.pdf"
+  }
+ ]
+}

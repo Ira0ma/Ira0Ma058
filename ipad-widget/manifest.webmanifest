@@ -1,6 +1,6 @@
 {
-  "name": "Trade Desk",
-  "short_name": "Trade Desk",
+  "name": "Desk One",
+  "short_name": "Desk One",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

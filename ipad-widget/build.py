@@ -31,11 +31,50 @@ bt_build = hashlib.sha1(bt.encode()).hexdigest()[:10]
 bt = bt.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name="build" content="%s">\n' % bt_build, 1)
 here.joinpath("btc.html").write_text(bt, encoding="utf-8")
 
+# oil.html: the same page again, as US oil (WTI); it also carries the OILCash (補正表示) panel
+oil = re.sub(r'<meta name="build" content="[^"]*">\n', "", gold)
+oil = oil.replace("<title>GOLD Trade Dashboard</title>", "<title>USOIL Trade Dashboard</title>", 1)
+oil = oil.replace('<meta name="apple-mobile-web-app-title" content="GOLD">', '<meta name="apple-mobile-web-app-title" content="USOIL">', 1)
+oil = oil.replace("<script>\nconst $ = id =>", "<script>window.INSTR_KEY='usoil';</script>\n<script>\nconst $ = id =>", 1)
+oil_build = hashlib.sha1(oil.encode()).hexdigest()[:10]
+oil = oil.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name="build" content="%s">\n' % oil_build, 1)
+here.joinpath("oil.html").write_text(oil, encoding="utf-8")
+
+# silver.html: the same page again, as XAG/USD (silver take-profit rules come from the COMEX SI=F measurements)
+sv = re.sub(r'<meta name="build" content="[^"]*">\n', "", gold)
+sv = sv.replace("<title>GOLD Trade Dashboard</title>", "<title>SILVER Trade Dashboard</title>", 1)
+sv = sv.replace('<meta name="apple-mobile-web-app-title" content="GOLD">', '<meta name="apple-mobile-web-app-title" content="SILVER">', 1)
+sv = sv.replace("<script>\nconst $ = id =>", "<script>window.INSTR_KEY='silver';</script>\n<script>\nconst $ = id =>", 1)
+sv_build = hashlib.sha1(sv.encode()).hexdigest()[:10]
+sv = sv.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name="build" content="%s">\n' % sv_build, 1)
+here.joinpath("silver.html").write_text(sv, encoding="utf-8")
+
+# silver detour copy under learn/: the Pages workflow copies dashboards by name and does not
+# include silver.html, but it copies learn/ recursively — so the desk opens the silver sheet
+# from learn/silver.html until the workflow gains a silver line. The copy is the same page
+# with only its data base made absolute (the production ternary yields '' on github.io, which
+# resolves market.json/calendar.json against the page's own folder; from learn/ that would
+# 404). Same fix the Ayu fork dashboards carry. core.js is copied byte for byte because the
+# page loads it as plain "core.js", which from learn/ resolves to learn/core.js.
+svl = sv
+for old, new in [
+    ("location.hostname.endsWith('github.io') ? '' : 'https://ira0ma.github.io/Ira0Ma058/'",
+     "location.hostname.endsWith('github.io') ? '/Ira0Ma058/' : 'https://ira0ma.github.io/Ira0Ma058/'"),
+    ("fetch('reactions.json", "fetch(SITE+'reactions.json"),
+    ("fetch('holidays.json", "fetch(SITE+'holidays.json"),
+]:
+    if svl.count(old) != 1:
+        raise SystemExit("build.py: silver detour pattern not found exactly once: %r" % old)
+    svl = svl.replace(old, new, 1)
+here.joinpath("learn", "silver.html").write_text(svl, encoding="utf-8")
+here.joinpath("learn", "core.js").write_bytes(here.joinpath("core.js").read_bytes())
+
 body = here.joinpath("index.html").read_text(encoding="utf-8").split("\n", 2)[2]  # drop <title> and claude meta
-# the sheets always open the current GOLD / USDJPY / BTCUSD pages, and a new one also refreshes the desk
+# the sheets always open the current GOLD / USDJPY / BTCUSD / OIL pages, and a new one also refreshes the desk
 body = body.replace('src: "gold.html"', 'src: "gold.html?v=%s"' % gold_build).replace('src: "usdjpy.html"', 'src: "usdjpy.html?v=%s"' % fx_build)
-body = body.replace('src: "btc.html"', 'src: "btc.html?v=%s"' % bt_build)
-build = hashlib.sha1((body + gold_build + fx_build + bt_build).encode()).hexdigest()[:10]
+body = body.replace('src: "btc.html"', 'src: "btc.html?v=%s"' % bt_build).replace('src: "oil.html"', 'src: "oil.html?v=%s"' % oil_build)
+body = body.replace('src: "learn/silver.html"', 'src: "learn/silver.html?v=%s"' % sv_build)
+build = hashlib.sha1((body + gold_build + fx_build + bt_build + oil_build + sv_build).encode()).hexdigest()[:10]
 head = """<!doctype html>
 <html lang="ja">
 <head>
@@ -44,13 +83,13 @@ head = """<!doctype html>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Trade Desk">
+<meta name="apple-mobile-web-app-title" content="Desk One">
 <meta name="theme-color" content="#06070b">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
 <meta name="build" content="{build}">
-<title>Trade Desk Home</title>
+<title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 """
 body = body.replace('</style>\n\n<canvas id="bg"', '</style>\n</head>\n<body>\n<canvas id="bg"', 1)

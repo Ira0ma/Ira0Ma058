@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>週末ボード｜Desk One</title>
+<style>
+  :root{
+    --bg1:#0a0f1e; --bg2:#101a30; --glass:rgba(255,255,255,.055); --line:rgba(255,255,255,.12);
+    --tx:#eef2f8; --sub:#9fb0c8; --gold:#f0c35c; --up:#ff7a72; --dn:#57b6ff;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ min-height:100%; }
+  body{
+    font-family:"Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+    color:var(--tx); background:linear-gradient(160deg,var(--bg1),var(--bg2) 70%);
+    padding:18px 16px 26px;
+  }
+  .wrap{ max-width:860px; margin:0 auto; }
+  header{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  h1{ font-size:21px; font-weight:800; letter-spacing:.02em; }
+  h1 .accent{ color:var(--gold); }
+  .upd{ margin-left:auto; font-size:12px; color:var(--sub); }
+  .upd b{ color:var(--tx); font-weight:600; }
+  .src{ margin-top:6px; font-size:12px; color:var(--sub); line-height:1.6; }
+  .src b{ color:var(--gold); font-weight:600; }
+  .board{ margin-top:14px; border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--glass); }
+  .row{ display:grid; grid-template-columns: 1.25fr .95fr .95fr 1fr; gap:8px; align-items:center;
+        padding:12px 14px; border-top:1px solid var(--line); }
+  .row:first-child{ border-top:none; }
+  .row.head{ padding:8px 14px; font-size:11px; color:var(--sub); letter-spacing:.06em; background:rgba(255,255,255,.03); }
+  .nm{ font-size:15px; font-weight:700; }
+  .nm small{ display:block; font-size:11px; font-weight:400; color:var(--sub); margin-top:1px; }
+  .px{ font-size:17px; font-weight:700; text-align:right; font-variant-numeric:tabular-nums; }
+  .fc{ font-size:13.5px; color:var(--sub); text-align:right; font-variant-numeric:tabular-nums; }
+  .df{ text-align:right; font-variant-numeric:tabular-nums; }
+  .df .pct{ font-size:16px; font-weight:800; }
+  .df .abs{ display:block; font-size:11.5px; color:var(--sub); margin-top:1px; }
+  .up{ color:var(--up); } .dn{ color:var(--dn); } .flat{ color:var(--sub); }
+  .state{ padding:26px 14px; text-align:center; color:var(--sub); font-size:13.5px; }
+  .notes{ margin-top:14px; font-size:12px; color:var(--sub); line-height:1.75;
+          border:1px solid var(--line); border-radius:14px; padding:12px 14px; background:var(--glass); }
+  .notes b{ color:var(--tx); }
+  footer{ margin-top:10px; font-size:11px; color:var(--sub); text-align:right; }
+  @media (max-width:560px){
+    .row{ grid-template-columns: 1.1fr .9fr 1fr; }
+    .row .fc, .row.head .h-fc{ display:none; }
+    .px{ font-size:15.5px; } .df .pct{ font-size:14.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🌆 週末ボード <span class="accent">参考値</span></h1>
+    <div class="upd">更新 <b id="upd">取得中…</b>（リアルタイム自動更新）</div>
+  </header>
+  <p class="src">土日も動く相場の参考値です。価格は分散型取引所 <b>Hyperliquid</b> の永久先物（perp）で、<b>公式市場の価格ではありません</b>。比べ先は<b>金曜終値</b>（ニューヨーク金曜17:00＝日本時間土曜7:00ごろ）で、月曜の窓（ギャップ）の目安に使います。</p>
+
+  <div class="board" id="board">
+    <div class="row head"><div>銘柄</div><div style="text-align:right">現在値</div><div class="h-fc" style="text-align:right">金曜終値</div><div style="text-align:right">金曜終値との差</div></div>
+    <div class="state" id="state">価格を取得しています…</div>
+  </div>
+
+  <div class="notes">
+    <b>見方：</b>金曜終値から離れているほど、月曜の寄り付きで窓が開きやすい目安です。ただし週末は参加者が少なく値が飛びやすく、公式市場のオープン後に収れんしたり反転したりすることもあります。窓は必ず埋まるとは限りません。BTCは通常の市場でも24時間取引されています。
+  </div>
+  <footer>価格：Hyperliquid（perp）／ Desk One 週末ボード</footer>
+</div>
+
+<script>
+"use strict";
+var API = "https://api.hyperliquid.xyz/info";
+var INSTRUMENTS = [
+  { coin:"xyz:GOLD",   dex:"xyz", name:"ゴールド",   sub:"GOLD",        dp:2 },
+  { coin:"xyz:SILVER", dex:"xyz", name:"シルバー",   sub:"SILVER",      dp:2 },
+  { coin:"xyz:JPY",    dex:"xyz", name:"ドル円",     sub:"USD/JPY",     dp:3 },
+  { coin:"xyz:CL",     dex:"xyz", name:"オイル",     sub:"WTI 原油",    dp:2 },
+  { coin:"BTC",        dex:null,  name:"ビットコイン", sub:"BTC",       dp:0 },
+  { coin:"xyz:SP500",  dex:"xyz", name:"S&P500",     sub:"米国株指数",  dp:1 },
+  { coin:"xyz:JP225",  dex:"xyz", name:"日経225",    sub:"日本株指数",  dp:0 }
+];
+var friClose = {};   // coin -> Friday NY close
+var friTarget = 0;   // ms epoch of last Friday 17:00 NY
+
+function post(body){
+  return fetch(API, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(body) })
+    .then(function(r){ if(!r.ok) throw new Error("http "+r.status); return r.json(); });
+}
+function fmt(n, dp){
+  return n.toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp });
+}
+// 直近の「金曜17:00（ニューヨーク時間）」の時刻(ms)を探す
+function lastFridayCloseNY(now){
+  var H = 3600000;
+  var t = Math.floor(now / H) * H;
+  var fmtNY = new Intl.DateTimeFormat("en-US", { timeZone:"America/New_York", weekday:"short", hour:"2-digit", hourCycle:"h23" });
+  for (var i = 0; i < 24 * 9; i++){
+    var parts = {};
+    fmtNY.formatToParts(new Date(t)).forEach(function(p){ parts[p.type] = p.value; });
+    if (parts.weekday === "Fri" && parseInt(parts.hour, 10) === 16) return t + H; // 16時台の足の終値＝金曜17:00の値
+    t -= H;
+  }
+  return 0;
+}
+function fetchFridayCloses(){
+  var target = lastFridayCloseNY(Date.now());
+  if (!target) return Promise.resolve();
+  if (target === friTarget && Object.keys(friClose).length) return Promise.resolve();
+  friTarget = target;
+  var jobs = INSTRUMENTS.map(function(ins){
+    return post({ type:"candleSnapshot", req:{ type:"candleSnapshot", coin: ins.coin, interval:"1h",
+      startTime: target - 3 * 3600000, endTime: target + 1800000 } })
+    .then(function(cs){
+      var exact = null, last = null;
+      (cs || []).forEach(function(c){
+        if (c.t === target - 3600000) exact = c;              // 金曜17:00 NY ちょうどに閉じる足
+        if (c.T < target && (!last || c.T > last.T)) last = c; // なければ target 前に閉じた最後の足
+      });
+      var pick = exact || last;
+      if (pick) friClose[ins.coin] = parseFloat(pick.c);
+    })
+    .catch(function(){ /* 取れない銘柄は金曜終値なしで表示 */ });
+  });
+  return Promise.all(jobs);
+}
+function ctxMap(data){
+  var map = {};
+  var uni = data[0].universe, ctxs = data[1];
+  for (var i = 0; i < uni.length; i++) map[uni[i].name] = ctxs[i];
+  return map;
+}
+function render(prices){
+  var board = document.getElementById("board");
+  var state = document.getElementById("state");
+  if (state) state.remove();
+  INSTRUMENTS.forEach(function(ins){
+    var row = document.getElementById("row-" + ins.coin.replace(/[^A-Za-z0-9]/g, ""));
+    if (!row){
+      row = document.createElement("div");
+      row.className = "row";
+      row.id = "row-" + ins.coin.replace(/[^A-Za-z0-9]/g, "");
+      row.innerHTML = '<div class="nm"></div><div class="px"></div><div class="fc"></div><div class="df"></div>';
+      board.appendChild(row);
+    }
+    row.children[0].innerHTML = ins.name + "<small>" + ins.sub + "</small>";
+    var px = prices[ins.coin];
+    if (px == null){ row.children[1].textContent = "—"; row.children[2].textContent = "—"; row.children[3].innerHTML = "—"; return; }
+    row.children[1].textContent = fmt(px, ins.dp);
+    var fc = friClose[ins.coin];
+    if (fc == null){ row.children[2].textContent = "—"; row.children[3].innerHTML = '<span class="flat">—</span>'; return; }
+    row.children[2].textContent = fmt(fc, ins.dp);
+    var diff = px - fc, pct = diff / fc * 100;
+    var cls = Math.abs(pct) < 0.005 ? "flat" : (diff > 0 ? "up" : "dn");
+    var arrow = cls === "flat" ? "■" : (diff > 0 ? "▲" : "▼");
+    row.children[3].innerHTML = '<span class="pct ' + cls + '">' + arrow + " " + (pct > 0 ? "+" : "") + pct.toFixed(2) + '%</span>' +
+      '<span class="abs">' + (diff > 0 ? "+" : "") + fmt(diff, ins.dp) + "</span>";
+  });
+  var d = new Date();
+  document.getElementById("upd").textContent =
+    ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2) + ":" + ("0" + d.getSeconds()).slice(-2);
+}
+var prices = {};
+function restTick(){
+  var jobs = [
+    post({ type:"metaAndAssetCtxs", dex:"xyz" }),
+    post({ type:"metaAndAssetCtxs" })
+  ];
+  return Promise.all(jobs).then(function(res){
+    var xyz = ctxMap(res[0]), main = ctxMap(res[1]);
+    INSTRUMENTS.forEach(function(ins){
+      var c = ins.dex ? xyz[ins.coin] : main[ins.coin];
+      var v = c ? parseFloat(c.markPx || c.midPx) : NaN;
+      if (isFinite(v)) prices[ins.coin] = v;
+    });
+    return fetchFridayCloses().then(function(){ render(prices); });
+  }).catch(function(){
+    var s = document.getElementById("state");
+    if (s) s.textContent = "価格を取得できませんでした。自動で再試行します。";
+    document.getElementById("upd").textContent = "取得エラー";
+  });
+}
+// WebSocket でリアルタイム受信（値が動いた瞬間に反映）。切れたら自動でつなぎ直す
+var ws = null, wsOk = false, lastMsg = 0, renderQueued = false;
+function scheduleRender(){
+  if (renderQueued) return;
+  renderQueued = true;
+  requestAnimationFrame(function(){ renderQueued = false; render(prices); });
+}
+function wsConnect(){
+  var sock;
+  try { sock = new WebSocket("wss://api.hyperliquid.xyz/ws"); } catch (e) { return; }
+  ws = sock;
+  sock.onopen = function(){
+    sock.send(JSON.stringify({ method:"subscribe", subscription:{ type:"allMids", dex:"xyz" } }));
+    sock.send(JSON.stringify({ method:"subscribe", subscription:{ type:"allMids" } }));
+  };
+  sock.onmessage = function(ev){
+    var m;
+    try { m = JSON.parse(ev.data); } catch (e) { return; }
+    if (m.channel === "allMids" && m.data && m.data.mids){
+      wsOk = true; lastMsg = Date.now();
+      var mids = m.data.mids, changed = false;
+      INSTRUMENTS.forEach(function(ins){
+        var raw = mids[ins.coin];
+        if (raw == null && ins.dex) raw = mids[ins.coin.split(":")[1]];
+        var v = parseFloat(raw);
+        if (isFinite(v) && prices[ins.coin] !== v){ prices[ins.coin] = v; changed = true; }
+      });
+      if (changed) scheduleRender();
+    }
+  };
+  sock.onclose = function(){ wsOk = false; setTimeout(wsConnect, 3000); };
+  sock.onerror = function(){ try { sock.close(); } catch (e) {} };
+}
+restTick();
+wsConnect();
+// WebSocket が届いていない間は REST で補う
+setInterval(function(){ if (!wsOk || Date.now() - lastMsg > 25000) restTick(); }, 20000);
+setInterval(function(){ fetchFridayCloses().then(function(){ render(prices); }); }, 3600000);
+</script>
+</body>
+</html>

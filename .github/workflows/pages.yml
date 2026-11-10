@@ -7,6 +7,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "*/5 * * * *"  # every 5 minutes (GitHub's minimum): refresh charts, analysis, calendar
+    # Second schedule, offset by 2 minutes: on 2026-11-09 21:44-22:30 UTC GitHub dropped the 5-minute runs for about
+    # 46 minutes and market.json stopped updating; a second line of schedules keeps the analysis going when one is skipped.
+    - cron: "2,12,22,32,42,52 * * * *"
     # Morning check at 7:00 JST: extra runs from 6:40 to 7:20 JST (21:40-22:20 UTC), around the
     # New York close (17:00 NY = 6:00 JST in summer, 7:00 JST in winter), so the day's previous close,
     # pivots and notes are fresh even when GitHub delays or skips the 5-minute runs.
@@ -39,7 +42,7 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p prev
-          for f in market.json calendar.json holidays.json spothist.json news.json typhoon.json pollen.json; do
+          for f in market.json calendar.json holidays.json market_holidays.json spothist.json news.json typhoon.json pollen.json reactions.json; do
             curl -fsSL --retry 2 "${{ steps.pages.outputs.base_url }}/$f" -o "prev/$f" || rm -f "prev/$f"
           done
           ls -la prev
@@ -56,6 +59,8 @@ jobs:
           cp ipad-widget/gold.html _site/gold.html
           cp ipad-widget/usdjpy.html _site/usdjpy.html
           cp ipad-widget/btc.html _site/btc.html
+          cp ipad-widget/oil.html _site/oil.html  # the US oil dashboard (the same page as GOLD, for USOIL, with OILCash 補正表示)
+          cp ipad-widget/silver.html _site/silver.html  # the silver dashboard at its own path (until now served only as learn/silver.html)
           cp -r ipad-widget/learn _site/learn  # 学習の本（パターン図鑑・ドル円入門・FVG詳説）のデータと図。learn-src は公開しない
           cp ipad-widget/strategy.json _site/strategy.json || true  # daily recap and outlook (written by the morning report task)
       - name: Fetch economic calendar
@@ -87,6 +92,9 @@ jobs:
           else
             echo "holiday fetch failed; keeping the published copy"; cp prev/holidays.json _site/holidays.json
           fi
+      - name: Work out US and UK market holidays (from their rules; no outside source)
+        continue-on-error: true
+        run: python3 ipad-widget/market_holidays.py _site/market_holidays.json || cp prev/market_holidays.json _site/market_holidays.json || true
       - name: Fetch remarks by central bankers and officials
         continue-on-error: true
         run: |
@@ -100,6 +108,12 @@ jobs:
         run: |
           python3 ipad-widget/analyze.py _site/market.json --prev=prev/market.json \
             || { cp prev/market.json _site/market.json; cp prev/spothist.json _site/spothist.json || true; }
+      - name: Measure the reactions to past releases (from the site's own candles; history kept from the published copy)
+        continue-on-error: true
+        run: |
+          python3 ipad-widget/reactions.py _site/reactions.json _site/market.json _site/calendar.json --prev=prev/reactions.json \
+            --backfill=ipad-widget/reaction_backfill.json \
+            || cp prev/reactions.json _site/reactions.json || true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

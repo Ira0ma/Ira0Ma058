@@ -17,6 +17,10 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 UA = {"User-Agent": "Mozilla/5.0 (TradeDeskWidget)"}
+# US oil's spot symbol at Swissquote. Off: on 2026-11-03 Swissquote's public feed answered XTI/USD with no prices
+# ("swissquote: no prices"), so oil stays on CL=F. Set it to "XTI" to try again (the futures are then moved onto
+# the spot bid as for gold, and the pages say 現物 instead of CL=F 先物).
+OIL_SPOT = None
 # key: (Yahoo symbol, Japanese name, level step, decimals, gold-api spot symbol for futures)
 INSTRUMENTS = {
     "usdjpy": ("JPY=X", "ドル円", 0.05, 2, None),
@@ -31,7 +35,7 @@ INSTRUMENTS = {
     "usdcad": ("CAD=X", "ドルカナダ", 0.0005, 4, None),
     "gold": ("GC=F", "ゴールド", 5.0, 0, "XAU"),
     "silver": ("SI=F", "シルバー", 0.05, 2, "XAG"),
-    "usoil": ("CL=F", "USオイル", 0.05, 2, None),
+    "usoil": ("CL=F", "USオイル", 0.05, 2, OIL_SPOT),  # WTI futures; moved onto a spot price only if OIL_SPOT is set
     "btc": ("BTC-USD", "BTC/USD", 100.0, 0, None),
     "dxy": ("DX-Y.NYB", "ドル指数", 0.05, 2, None),
     "jxy": (None, "円指数", 0.05, 2, None),  # computed below from six yen crosses
@@ -133,9 +137,10 @@ def get_json(url):
 
 
 def spot_price(spot_sym):
-    """Spot price of a metal (XAU/XAG in USD) and when it was quoted (unix seconds): Swissquote's public
-    quote feed first (its bid, the side MT4/MT5 charts at XM/XS are drawn from, with an exact quote time),
-    then gold-api.com, whose time stamp can trail its price by minutes in a fast market."""
+    """Spot price of a metal (XAU/XAG in USD) or of WTI oil (XTI) and when it was quoted (unix seconds): Swissquote's
+    public quote feed first (its bid, the side MT4/MT5 charts at XM/XS are drawn from, with an exact quote time),
+    then, for the metals only, gold-api.com, whose time stamp can trail its price by minutes in a fast market.
+    Oil has no second source (none was chosen): without Swissquote it stays on the futures price."""
     errs = []
     try:
         feed = get_json(f"https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/{spot_sym}/USD")
@@ -146,6 +151,8 @@ def spot_price(spot_sym):
         errs.append("swissquote: no prices")
     except Exception as e:
         errs.append(f"swissquote: {e}")
+    if spot_sym not in ("XAU", "XAG"):
+        raise RuntimeError("; ".join(errs))
     try:
         d = get_json(f"https://api.gold-api.com/price/{spot_sym}")
         try:
@@ -276,6 +283,10 @@ def analyze(key, done, price):
     sup2 = below[-2] if len(below) > 1 else sup - a / 2
     res = above[0] if above else price + a / 2
     res2 = above[1] if len(above) > 1 else res + a / 2
+    # 第2部 B5：水準の根拠（前日の足から出すピボット、なければ ATR の半分の目安）を文に添える
+    piv = {s2: "S2", s1: "S1", p: "ピボット", r1: "R1", r2: "R2"}
+    why = lambda v: f"（前日のピボット{piv[v]}）" if v in piv and piv[v] != "ピボット" else "（前日のピボット）" if v in piv else "（ATRの半分の目安）"
+    why2 = lambda v: why(v) if v in piv else "（ATRの半分先の目安）"  # 「視野」側：次のピボット、なければ1つ目の水準から ATR の半分先
 
     if s20 and s50 and s20 > s50 and price > s20:
         trend = "up"
@@ -294,18 +305,18 @@ def analyze(key, done, price):
     elif kind == "index":
         title = {"up": f"{name}：上昇トレンド", "down": f"{name}：下落トレンド", "range": f"{name}：レンジ内の推移"}[trend]
         if trend == "up":
-            body = f"{f(sup)}付近が下値の目安。\n{f(res)}を上抜ければ{f(res2)}が視野。"
+            body = f"{f(sup)}{why(sup)}付近が下値の目安。\n{f(res)}{why(res)}を上抜ければ{f(res2)}{why2(res2)}が視野。"
         elif trend == "down":
-            body = f"{f(res)}付近が上値の目安。\n{f(sup)}を割り込めば{f(sup2)}が視野。"
+            body = f"{f(res)}{why(res)}付近が上値の目安。\n{f(sup)}{why(sup)}を割り込めば{f(sup2)}{why2(sup2)}が視野。"
         else:
             lo, hi = (s1, r1) if s1 < price < r1 else (sup, res)
             body = f"{f(lo)}〜{f(hi)}のレンジを想定。\n抜けた方向に注目。"
     elif trend == "up":
         title = f"{name}：押し目買い目線"
-        body = f"{f(sup)}付近の押し目に注目。\n{f(res)}を上抜ければ{f(res2)}が視野。"
+        body = f"{f(sup)}{why(sup)}付近の押し目に注目。\n{f(res)}{why(res)}を上抜ければ{f(res2)}{why2(res2)}が視野。"
     elif trend == "down":
         title = f"{name}：戻り売り目線"
-        body = f"{f(res)}付近の戻りに注目。\n{f(sup)}を割り込めば{f(sup2)}が視野。"
+        body = f"{f(res)}{why(res)}付近の戻りに注目。\n{f(sup)}{why(sup)}を割り込めば{f(sup2)}{why2(sup2)}が視野。"
     elif kind is None:
         lo, hi = (s1, r1) if s1 < price < r1 else (sup, res)
         title = f"{name}：レンジ内の攻防"
@@ -344,6 +355,18 @@ def build(fixture=None, prev=None):
                 print(key, "kept previous data from", old[key].get("updated"))
         if fixture is None:
             time.sleep(0.4)  # stay gentle with the data source
+    for key, (sym, name) in SLIM.items():
+        if fixture is not None and not any(k.startswith(sym + "|") for k in fixture):
+            continue  # an older fixture without these symbols
+        try:
+            out["instruments"][key] = dict(slim(key, sym, fixture), updated=now)
+        except Exception as e:  # the panel says 取得できませんでした; nothing else depends on these
+            print(key, sym, "failed:", e)
+            if key in old:
+                out["instruments"][key] = old[key]
+                print(key, "kept previous data from", old[key].get("updated"))
+        if fixture is None:
+            time.sleep(0.4)
     if fresh == 0 and prev:
         return prev  # nothing new at all: republish the previous file unchanged
     return out
@@ -603,6 +626,25 @@ def widen_hours(h1, *finer, sec=3600):
             r[2], r[3] = max(r[2], e[0]), min(r[3], e[1])
 
 
+# Read-only inputs for the USD/JPY page's 「ドル円の材料」 panel (not part of any judgment): only what the panel uses,
+# hourly (for the correlation with USD/JPY), 4-hourly and daily (for the day's change), from the same Yahoo route.
+SLIM = {"us10y": ("^TNX", "米10年債利回り"), "nikkei": ("^N225", "日経平均"), "spx": ("^GSPC", "S&P500")}
+
+
+def slim(key, sym, fixture):
+    h1 = yahoo(sym, "60m", "3mo", fixture)
+    d1 = yahoo(sym, "1d", "1y", fixture)
+    if not h1 or not d1:
+        raise ValueError("no candles")
+    last = h1[-1] if h1[-1][0] >= d1[-1][0] else d1[-1]
+    today = datetime.now(timezone.utc).date()
+    done = d1[:-1] if datetime.fromtimestamp(d1[-1][0], timezone.utc).date() >= today else d1
+    print(key, sym, "price", round(last[4], 4), "at", datetime.fromtimestamp(last[0], timezone.utc).strftime("%m-%d %H:%M"),
+          f"UTC, {len(h1)} hours, {len(d1)} days")
+    return {"price": float(f"{last[4]:.6g}"), "asOf": last[0], "prevClose": float(f"{done[-1][4]:.6g}") if done else None,
+            "candles": {"1h": r6(h1[-N_H1:]), "4h": r6(aggregate(h1, 4 * 3600, server=True)[-N_CANDLES:]), "1d": r6(d1[-30:])}}
+
+
 def one(key, sym, spot_sym, fixture, prev=None):
     ser = jxy_series(fixture) if key == "jxy" else fetch_series(sym, fixture)
     m1, m5, m15, h1, d1, w1, mo = (ser[tf] for tf in ("1m", "5m", "15m", "1h", "1d", "1w", "1mo"))
@@ -697,6 +739,8 @@ def one(key, sym, spot_sym, fixture, prev=None):
             "basis": shift if adjusted else None,
             # when the gap was measured: a reused gap keeps its original time so it ages out
             "basisAt": (prev or {}).get("basisAt") if adjusted and spot is None else int(time.time()),
+            # whether a spot quote answered this run (false: an earlier gap stands in, or none)
+            "spotNow": spot is not None,
         }),
         "candles": candles,
         **({"volume": volume} if volume else {}),

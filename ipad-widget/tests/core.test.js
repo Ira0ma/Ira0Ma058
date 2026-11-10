@@ -40,22 +40,31 @@ test("gold and oil: daily 17-18 break, Sunday opens at 18:00; BTC never closes",
 
 test("weekly hours are shown in Japan time and follow US summer time", () => {
   const summer = U("2026-07-08T03:00:00Z"), winter = U("2026-12-09T03:00:00Z");
-  assert.match(C.hoursNote("fx", summer), /日本時間 月曜6:00〜土曜6:00/);
-  assert.match(C.hoursNote("fx", winter), /日本時間 月曜7:00〜土曜7:00/);
-  assert.match(C.hoursNote("cme", summer), /月曜7:00〜土曜6:00、毎朝6:00〜7:00は休止/);
-  assert.match(C.hoursNote("cme", winter), /月曜8:00〜土曜7:00、毎朝7:00〜8:00は休止/);
-  assert.match(C.hoursNote("vix", summer), /平日16:15〜翌朝5:15/);
-  assert.match(C.hoursNote("vix", winter), /平日17:15〜翌朝6:15/);
+  assert.match(C.hoursNote("fx", summer), /日本時間 月曜06:00〜土曜06:00/);
+  assert.match(C.hoursNote("fx", winter), /日本時間 月曜07:00〜土曜07:00/);
+  assert.match(C.hoursNote("cme", summer), /月曜07:00〜土曜06:00、毎朝06:00〜07:00は休止/);
+  assert.match(C.hoursNote("cme", winter), /月曜08:00〜土曜07:00、毎朝07:00〜08:00は休止/);
+  assert.match(C.hoursNote("vix", summer), /平日の16:15から、日をまたいで05:15まで/);
+  assert.match(C.hoursNote("vix", winter), /平日の17:15から、日をまたいで06:15まで/);
+  assert.doesNotMatch(C.hoursNote("vix", winter), /翌/);
   assert.doesNotMatch(C.hoursNote("fx", summer) + C.hoursNote("cme", summer) + C.hoursNote("ice", summer) + C.hoursNote("vix", summer), /NY|ニューヨーク/);
-  assert.match(C.marketState("gold", U("2026-07-08T21:30:00Z")).reason, /日本時間 6:00〜7:00/);
-  assert.match(C.marketState("usdjpy", summer).note, /夏時間中/);
+  assert.match(C.marketState("gold", U("2026-07-08T21:30:00Z")).reason, /日本時間 06:00〜07:00/);
+  assert.match(C.marketState("usdjpy", summer).note, /米国の夏時間/);
+  // the week of the switch back to winter time (Sat 31 Oct 2026, still summer in New York): the tools show the time
+  // that will apply on Monday, the same as the desk's 再開 (the owner's broker: GOLD 8:00 in winter, 7:00 in summer)
+  const sat = U("2026-10-31T00:00:00Z");
+  assert.match(C.hoursNote("cme", sat), /月曜08:00〜/);
+  assert.equal(C.nextOpen("gold", sat), "月 08:00");
+  assert.match(C.hoursNote("fx", sat), /月曜07:00〜/);
+  assert.match(C.hoursNote("cme", U("2026-03-07T00:00:00Z")), /月曜07:00〜/, "Sat 7 Mar: summer time starts on Sunday 8 Mar");
+  assert.match(C.hoursNote("cme", sat), /取引所の時刻（ブローカーの再開も同じ）/);
 });
 
 test("next opening time of a closed market, in Japan time", () => {
-  assert.equal(C.nextOpen("usdjpy", U("2026-10-31T00:00:00Z")), "月 7:00", "Sat: FX opens Sunday 17:00 NY = Mon 7:00 JST (US back on winter time on 1 Nov)");
-  assert.equal(C.nextOpen("gold", U("2026-10-31T00:00:00Z")), "月 8:00");
-  assert.equal(C.nextOpen("usdjpy", U("2026-07-11T00:00:00Z")), "月 6:00", "summer");
-  assert.equal(C.nextOpen("gold", U("2026-07-08T21:30:00Z")), "木 7:00", "daily pause ends 18:00 NY");
+  assert.equal(C.nextOpen("usdjpy", U("2026-10-31T00:00:00Z")), "月 07:00", "Sat: FX opens Sunday 17:00 NY = Mon 7:00 JST (US back on winter time on 1 Nov)");
+  assert.equal(C.nextOpen("gold", U("2026-10-31T00:00:00Z")), "月 08:00");
+  assert.equal(C.nextOpen("usdjpy", U("2026-07-11T00:00:00Z")), "月 06:00", "summer");
+  assert.equal(C.nextOpen("gold", U("2026-07-08T21:30:00Z")), "木 07:00", "daily pause ends 18:00 NY");
   assert.equal(C.nextOpen("usdjpy", U("2026-07-08T12:00:00Z")), "", "open now");
   assert.equal(C.nextOpen("btc", U("2026-07-11T00:00:00Z")), "");
 });
@@ -91,7 +100,7 @@ test("freshness per data type; a closed market is not called stale", () => {
   assert.equal(C.ago(0), "0秒前");
   assert.equal(C.ago(65 * MIN), "1時間5分前");
   assert.equal(C.ago(25 * HOUR), "1日1時間前");
-  assert.equal(C.jst(U("2026-07-08T15:05:00Z")), "7/9 0:05 JST");
+  assert.equal(C.jst(U("2026-07-08T15:05:00Z")), "7/9 00:05 JST");
 });
 
 test("market.json checks: shape, time, ranges, contradictions", () => {
@@ -279,4 +288,87 @@ test("settings: export by group without caches, import validated, reset by group
   assert.equal(s.getItem("unrelated"), "x", "keys of other apps are never touched");
   const full = { setItem() { throw new Error("QuotaExceeded"); }, getItem() { return null; } };
   assert.equal(C.safeSet(full, "k", "v"), false);
+});
+
+test("journalDays: calendar-day streak and week, skips counted, today still open", () => {
+  // Wed 2026-11-04 12:00 JST
+  const now = Date.parse("2026-11-04T03:00:00Z");
+  const rows = [
+    { day: "2026-11-04", pnl: 100 },                // today: trade
+    { day: "2026-11-03", kind: "skip" },             // yesterday: skip only
+    { day: "2026-11-02", pnl: -50 }, { day: "2026-11-02", kind: "skip" },  // Monday: trade wins
+    { day: "2026-10-30", pnl: 10 }                   // Friday before: the weekend breaks the run
+  ];
+  let r = C.journalDays(rows, now);
+  assert.equal(r.streak, 3);
+  assert.equal(r.week, 3);  // Mon, Tue, Wed
+  assert.equal(r.days["2026-11-03"], "skip");
+  assert.equal(r.days["2026-11-02"], "trade");
+  assert.equal(r.today, true);
+  // nothing yet today: the run up to yesterday still counts
+  r = C.journalDays(rows.slice(1), now);
+  assert.equal(r.streak, 2);
+  assert.equal(r.today, false);
+  assert.equal(C.journalDays([], now).streak, 0);
+});
+
+test("dailyBook: a day's daily input wins over its trades, deposits only from daily input", () => {
+  const rows = [
+    { id: "a", time: "2026-11-02T01:00:00Z", day: "2026-11-02", pnl: 3000 },
+    { id: "b", time: "2026-11-02T03:00:00Z", day: "2026-11-02", pnl: -1000 },
+    { id: "c", time: "2026-11-03T03:00:00Z", day: "2026-11-03", pnl: 500 },
+    { id: "d", time: "2026-11-04T03:00:00Z", day: "2026-11-04", kind: "skip", pnl: null },
+    { id: "e", time: "2026-11-05T03:00:00Z", day: "2026-11-05", pnl: null }];
+  const daily = { "2026-11-03": { pnl: 1200, dep: 50000, wd: null }, "2026-11-06": { pnl: null, dep: null, wd: 20000 }, "2026-11-02": { pnl: "", dep: 10000 } };
+  const b = C.dailyBook(rows, daily);
+  assert.deepEqual([b["2026-11-02"].pnl, b["2026-11-02"].src, b["2026-11-02"].dep], [2000, "trades", 10000], "blank daily P&L: the trades count");
+  assert.deepEqual([b["2026-11-03"].pnl, b["2026-11-03"].src, b["2026-11-03"].dep], [1200, "daily", 50000], "daily input is the truth, not 1200 + 500");
+  assert.equal(b["2026-11-04"].skip, true); assert.equal(b["2026-11-04"].pnl, null);
+  assert.equal(b["2026-11-05"].pnl, null, "a trade without P&L adds nothing");
+  assert.deepEqual([b["2026-11-06"].pnl, b["2026-11-06"].wd], [null, 20000]);
+  const s = C.periodSummary(b, "2026-11-01", "2026-11-30");
+  assert.deepEqual([s.pnl, s.win, s.loss, s.days, s.dep, s.wd, s.best.day, s.worst.day], [3200, 2, 0, 2, 60000, 20000, "2026-11-02", "2026-11-03"]);
+  assert.deepEqual(C.weekOf("2026-11-05"), { from: "2026-11-02", to: "2026-11-08" }, "Monday to Sunday");
+  assert.deepEqual(C.weekOf("2026-11-02"), { from: "2026-11-02", to: "2026-11-08" });
+  assert.deepEqual(C.weekOf("2026-11-01"), { from: "2026-10-26", to: "2026-11-01" }, "a Sunday ends its week");
+});
+
+test("gotobi: 5/10/15/20/25/30 and month end; a weekend or holiday one moves to the business day before", () => {
+  const hol = new Set(["2026-11-03", "2026-11-23", "2026-05-03", "2026-05-04", "2026-05-05", "2026-05-06"]), H = (k) => hol.has(k);
+  assert.deepEqual(C.gotobi("2026-11-05", H), { kind: "real", moved: [] });
+  assert.deepEqual(C.gotobi("2026-11-13", H), { kind: "moved", moved: ["2026-11-15"] }, "15th is a Sunday");
+  assert.equal(C.gotobi("2026-11-15", H), null); assert.equal(C.gotobi("2026-11-12", H), null); assert.equal(C.gotobi("2026-11-04", H), null);
+  assert.deepEqual(C.gotobi("2026-11-30", H), { kind: "real", moved: [] }, "the 30th is also the month end");
+  assert.deepEqual(C.gotobi("2026-11-20", H), { kind: "real", moved: [] });
+  assert.deepEqual(C.gotobi("2026-05-01", H), { kind: "moved", moved: ["2026-05-05"] }, "Golden Week: 5th back past the holidays and the weekend");
+  assert.deepEqual(C.gotobi("2026-05-08", H), { kind: "moved", moved: ["2026-05-10"] });
+  assert.deepEqual(C.gotobi("2026-10-30", H), { kind: "real", moved: ["2026-10-31"] }, "30th (Fri) is real; the 31st (Sat, month end) moves onto it");
+  assert.deepEqual(C.gotobi("2026-02-27", H), { kind: "moved", moved: ["2026-02-28"] }, "February ends on the 28th (Sat)");
+  assert.deepEqual(C.gotobi("2026-01-30", H), { kind: "real", moved: ["2026-01-31"] }, "30th Fri real + 31st Sat moved onto it");
+});
+
+test("surpriseOf: direction table, same units only, currency named", () => {
+  const S = (title, country, actual, forecast, previous) => C.surpriseOf({ title, country, actual, forecast, previous });
+  assert.equal(S("Non-Farm Employment Change", "USD", "180K", "150K", "120K").text, "予想より強い → ドル買い材料");
+  assert.equal(S("Unemployment Rate", "USD", "4.3%", "4.1%", "4.1%").text, "予想より弱い → ドル売り材料", "higher unemployment is weaker");
+  assert.equal(S("Unemployment Claims", "USD", "210K", "225K", "231K").text, "予想より強い → ドル買い材料");
+  assert.equal(S("CPI m/m", "USD", "0.3%", "0.3%", "0.4%").text, "予想どおり");
+  assert.equal(S("Tokyo Core CPI y/y", "JPY", "2.1%", "1.9%", "2.0%").text, "予想より強い → 円買い材料");
+  assert.equal(S("CPI m/m", "USD", "0.3%", "0.3K", ""), null, "units differ: no pill");
+  assert.equal(S("CPI m/m", "USD", "0.5%", "0.3%", "120K"), null, "previous in another unit: no pill");
+  assert.equal(S("Crude Oil Inventories", "USD", "-1.2M", "0.5M", "1.0M"), null, "no currency direction");
+  assert.equal(S("Trade Balance", "USD", "-70.1B", "-68.0B", "-67.9B"), null);
+  assert.equal(S("FOMC Statement", "USD", "", "", ""), null);
+  assert.equal(S("Non-Farm Employment Change", "USD", "180K", "", "120K"), null, "no forecast: no pill");
+  assert.deepEqual(C.indAffects("USD", "CPI m/m"), ["usdjpy", "gold"]); assert.deepEqual(C.indAffects("USD", "Crude Oil Inventories"), ["usoil"]); assert.deepEqual(C.indAffects("JPY", "BOJ Policy Rate"), ["usdjpy"]);
+});
+test("reactionStats: last one and the average of up to six earlier ones", () => {
+  const ev = {}; for (let i = 0; i < 8; i++) ev["k" + i] = { title: "CPI m/m", country: "USD", t: 1000 + i * 100, move: { usdjpy: { size: 10 * (i + 1) }, gold: { size: i + 1 } } };
+  ev.x = { title: "PPI m/m", country: "USD", t: 1500, move: { usdjpy: { size: 999 } } };
+  const r = C.reactionStats({ events: ev }, "USD", "CPI m/m", 1650 * 1000);
+  assert.equal(r.last.t, 1600); assert.equal(r.n, 7);
+  assert.deepEqual(r.avg.usdjpy, { v: (70 + 60 + 50 + 40 + 30 + 20) / 6, n: 6 });
+  assert.equal(C.reactionStats({ events: ev }, "USD", "CPI m/m", 1050 * 1000).avg.usdjpy, undefined, "one record: no average");
+  assert.equal(C.reactionStats({ events: ev }, "JPY", "CPI m/m", 9e12), null);
+  assert.equal(C.moveText("usdjpy", 41.4), "41pips"); assert.equal(C.moveText("gold", 12.34), "$12"); assert.equal(C.moveText("usoil", 0.537), "$0.54");
 });
