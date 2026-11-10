@@ -1,0 +1,12 @@
+{
+  "name": "rakuten-price-check",
+  "private": true,
+  "description": "楽天の商品ページを実ブラウザで読み、価格・在庫・バリエーション・リンク先を基準値と突き合わせる（読み取り専用）",
+  "scripts": {
+    "check": "node price_check.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "playwright": "^1.48.0"
+  }
+}
