@@ -18,8 +18,8 @@
   var SIDE = { buy: "買い", sell: "売り" };
 
   /* ---------- dialog ---------- */
-  var TABS = [["guide", "使い方"], ["money", "資金管理"], ["check", "取引前チェック"], ["journal", "日誌"], ["pnl", "トレード収支"], ["kakeibo", "家計簿"], ["signals", "シグナル履歴"], ["hours", "市場時間"], ["status", "データ状態"], ["settings", "設定"]];
-  var TABS_EN = { guide: "Guide", money: "Money", check: "Pre-trade Check", journal: "Journal", pnl: "P&L", kakeibo: "Kakeibo", signals: "Signals", hours: "Market Hours", status: "Data Status", settings: "Settings" };
+  var TABS = [["guide", "使い方"], ["money", "資金管理"], ["check", "取引前チェック"], ["journal", "日誌"], ["pnl", "トレード収支"], ["kakeibo", "家計簿"], ["tax", "確定申告"], ["signals", "シグナル履歴"], ["hours", "市場時間"], ["status", "データ状態"], ["settings", "設定"]];
+  var TABS_EN = { guide: "Guide", money: "Money", check: "Pre-trade Check", journal: "Journal", pnl: "P&L", kakeibo: "Kakeibo", tax: "Tax Return", signals: "Signals", hours: "Market Hours", status: "Data Status", settings: "Settings" };
   function tdLang() { try { return LS.getItem("ayu_td_lang") === "en" ? "en" : "ja"; } catch (e) { return "ja"; } }
   function tabLabel(t) { return tdLang() === "en" ? (TABS_EN[t[0]] || t[1]) : t[1]; }
   function paintTabLabels() { document.querySelectorAll(".tdt-tabs [data-tab]").forEach(function (b) { var id = b.getAttribute("data-tab"); for (var i = 0; i < TABS.length; i++) if (TABS[i][0] === id) b.textContent = tabLabel(TABS[i]); }); }
@@ -35,6 +35,10 @@
     ".tdt-tabs{display:flex;gap:4px;overflow-x:auto;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08);scrollbar-width:thin}",
     ".tdt-tabs button{flex:none;min-height:44px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:none;cursor:pointer;font-weight:700;color:#cfc8ba}",
     ".tdt-tabs button[aria-selected=true]{background:#e3b867;color:#14100a;border-color:#e3b867}",
+    ".tdt-notice{display:flex;gap:8px;align-items:center;padding:8px 12px;background:rgba(227,184,103,.14);border-bottom:1px solid rgba(227,184,103,.45);font-size:13px}",
+    ".tdt-notice[hidden]{display:none}",
+    ".tdt-notice .tdt-notice-tx{flex:1}",
+    ".tdt-notice .tdt-notice-x{flex:none;background:none;border:none;color:#cfc8ba;font-size:15px;cursor:pointer;padding:4px 6px}",
     ".tdt-body{flex:1;overflow:auto;padding:14px 16px 24px;-webkit-overflow-scrolling:touch}",
     ".tdt h3{font-size:15px;margin:18px 0 8px;color:#e3b867}.tdt h3:first-child{margin-top:0}",
     ".tdt .note{font-size:12.5px;color:#b9b2a3;margin:6px 0}",
@@ -161,20 +165,44 @@
     ".tdt .hc-doc .note{display:block;margin:2px 0}",
     "@media (max-width:520px){.tdt .pl-cal button{min-height:54px;padding:3px}.tdt .pl-cal em{font-size:11px}.tdt .pl-cal small{font-size:9px}.tdt .pl-big b{font-size:28px}.tdt .pl-head{grid-template-columns:1fr}}",
     ".tdt .skiprow{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.tdt .skiprow label.f{flex:1;min-width:200px}",
-    "@media (max-width:600px){.tdt{padding:var(--safe-top,env(safe-area-inset-top,0px)) 0 0}.tdt-box{border-radius:0}.tdt-body{padding:12px}}"  /* スマホは全画面。上だけステータスバーの分を空ける */
+    "@media (max-width:600px){.tdt{padding:var(--safe-top,env(safe-area-inset-top,0px)) 0 0}.tdt-box{border-radius:0}.tdt-body{padding:12px}}",  /* スマホは全画面。上だけステータスバーの分を空ける */
+    /* 確定申告タブだけの丸字（M PLUS Rounded 1c）。スコープは .tax-scope の中だけ。他のタブ・画面には効かせない。数字は等幅（tnum）で桁をそろえる */
+    ".tax-scope{font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic ProN','Hiragino Sans','Noto Sans JP',sans-serif;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1}",
+    ".tax-scope *{font-variant-numeric:tabular-nums}"
   ].join("\n");
   document.head.appendChild(css);
   var box = document.createElement("div");
   box.className = "tdt"; box.hidden = true;
   box.innerHTML = '<div class="tdt-box" role="dialog" aria-modal="true" aria-labelledby="tdt-h"><div class="tdt-top"><h2 id="tdt-h">🧰 ツール</h2><button type="button" class="tdt-x">閉じる</button></div>' +
     '<div class="tdt-today" aria-live="polite"></div><div class="tdt-tabs" role="tablist">' + TABS.map(function (t) { return '<button type="button" role="tab" data-tab="' + t[0] + '" aria-selected="false">' + tabLabel(t) + "</button>"; }).join("") + "</div>" +
+    '<div class="tdt-notice" id="tdt-tax-notice" hidden><span class="tdt-notice-tx"></span><button type="button" class="btn sm" data-notice-open></button><button type="button" class="tdt-notice-x" data-notice-close aria-label="close">✕</button></div>' +
     '<div class="tdt-body" role="tabpanel" tabindex="-1"></div></div>';
   document.body.appendChild(box);
   var body = box.querySelector(".tdt-body"), opener = null, tab = "money", timer = 0;
   try { tab = LS.getItem("ayu_td-tools-tab") || "guide"; } catch (e) { tab = "guide"; }  // the first time: how to use
+  // 確定申告タブ追加のお知らせ（一度だけ）。既読は ayu_notice_tax_v1 に持ち、バックアップ対象外のUI状態として扱う（ayu_greeted_v1 や ayu_hint_* と同じ）
+  var TAX_NOTICE_KEY = "ayu_notice_tax_v1";
+  var TAX_NOTICE = {
+    ja: { text: "お知らせ：ツールに「確定申告」タブが追加されました。あなたの記録（日誌・トレード収支・家計簿）と連動して、確定申告の計算と整理ができます。", open: "開いてみる" },
+    en: { text: "New: a \u201cTax Return\u201d tab has been added to the tools. It works with your own records (journal, P&L and kakeibo) to calculate and organize your tax return.", open: "Take a look" }
+  };
+  function taxNoticeSeen() { try { return !!LS.getItem(TAX_NOTICE_KEY); } catch (e) { return true; } }
+  function paintNotice() {
+    var n = box.querySelector("#tdt-tax-notice"); if (!n) return;
+    var d = TAX_NOTICE[tdLang()] || TAX_NOTICE.ja;
+    n.querySelector(".tdt-notice-tx").textContent = d.text;
+    n.querySelector("[data-notice-open]").textContent = d.open;
+    n.hidden = taxNoticeSeen();
+  }
+  function dismissNotice() {
+    try { LS.setItem(TAX_NOTICE_KEY, "1"); } catch (e) {}
+    var n = box.querySelector("#tdt-tax-notice"); if (n) n.hidden = true;
+  }
+  box.querySelector("[data-notice-open]").addEventListener("click", function () { dismissNotice(); show("tax"); });
+  box.querySelector("[data-notice-close]").addEventListener("click", dismissNotice);
   function open(t, from) {
     opener = from || document.activeElement; if (t) tab = t;
-    box.hidden = false; show(tab);
+    box.hidden = false; paintNotice(); show(tab);
     var b = box.querySelector('[data-tab="' + tab + '"]'); if (b) { b.focus(); b.scrollIntoView({ block: "nearest", inline: "nearest" }); }
   }
   function close() { box.hidden = true; clearInterval(timer); if (opener && opener.focus) opener.focus(); }
@@ -523,12 +551,412 @@
     return { created: e, reason: "ok" };
   };
   // [hub-pure-end]
+  // [tax-pure-begin] 確定申告タブの保存の形と集計（テストで切り出して検証できるよう、C（TDCore）・get・jnDayOf・jnInstAgg と定数だけに依存する形に保つ）
+  var TAX = "ayu_td_tax_v1";
+  // 生活カテゴリのうち、経費ガイドの対応づけで「按分すれば一部OK」に当たるもの（申告ページでは按分候補として参考表示する）
+  var TAX_APP_CATS = ["通信", "光熱費", "住まい", "交通"];
+  var taxNum = function (v) { return typeof v === "number" && isFinite(v) ? v : null; };
+  // 保存データの形をそろえる。壊れた値・知らない項目は捨て、金額でないものは未入力（null）にする。国内分の損益・暗号資産の損益・経費の確定値は、0 と未入力を区別する
+  // 繰り越し台帳の行の形をそろえる（金額が正でない行・年が読めない行は捨てる）
+  var taxCarryNorm = function (list) {
+    var rows = [];
+    if (Array.isArray(list)) list.forEach(function (c, i) {
+      if (!c || typeof c !== "object") return;
+      var fy = Math.round(taxNum(c.fromYear) || 0), amt = taxNum(c.amount);
+      if (!/^\d{4}$/.test(String(fy)) || amt === null || amt <= 0) return;
+      rows.push({ id: typeof c.id === "string" && c.id ? c.id : "c" + fy + "-" + i, fromYear: fy, amount: amt });
+    });
+    return rows;
+  };
+  // 住宅ローン控除モジュールの設定の形をそろえる（ayu_td_tax_v1 の直下に1つだけ持つ。2a の年エントリには入れない）
+  var TAX_HOME_CATS = [["certified", "認定長期優良住宅・低炭素住宅（新築）"], ["zeh", "ZEH水準省エネ住宅（新築）"], ["energy", "省エネ基準適合住宅（新築）"], ["other-new", "その他の住宅（新築）"], ["certified-used", "認定長期優良住宅等（中古）"], ["zeh-used", "ZEH水準省エネ住宅（中古）"], ["energy-used", "省エネ基準適合住宅（中古）"], ["other-used", "その他の住宅（中古）"]];
+  var taxHouseNorm = function (raw) {
+    var out = { enabled: false, moveInYear: null, category: "certified", specialPerson: false, shareRatio: null, priceCap: null, balances: {}, incomeTax: {} };
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+    out.enabled = raw.enabled === true;
+    var my = Math.round(taxNum(raw.moveInYear) || 0);
+    out.moveInYear = /^\d{4}$/.test(String(my)) ? my : null;
+    out.category = TAX_HOME_CATS.some(function (c) { return c[0] === raw.category; }) ? raw.category : "certified";
+    out.specialPerson = raw.specialPerson === true;
+    var sr = taxNum(raw.shareRatio);
+    out.shareRatio = sr === null ? null : Math.min(100, Math.max(0, sr));
+    var pc = taxNum(raw.priceCap);
+    out.priceCap = pc === null || pc <= 0 ? null : pc;
+    var yrMap = function (m, min) {
+      var o = {};
+      if (m && typeof m === "object" && !Array.isArray(m)) Object.keys(m).forEach(function (y) {
+        if (!/^\d{4}$/.test(y)) return;
+        var v = taxNum(m[y]);
+        if (v !== null && v >= min) o[y] = v;
+      });
+      return o;
+    };
+    out.balances = yrMap(raw.balances, 1);   // 年末残高は正の数だけ（0以下は未入力扱い）
+    out.incomeTax = yrMap(raw.incomeTax, 0); // その年の所得税額（任意入力。住民税側の目安に使う）
+    return out;
+  };
+  // チェック状態の形をそろえる（true の項目だけ残す）。開業フロー・申告準備・保存アーカイブで共用する
+  var taxChecksNorm = function (raw) {
+    var o = {};
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) Object.keys(raw).forEach(function (k) { if (raw[k] === true) o[k] = true; });
+    return o;
+  };
+  // 書類の保存アーカイブの形をそろえる（年→項目ID→true）
+  var taxArchiveNorm = function (raw) {
+    var o = {};
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) Object.keys(raw).forEach(function (y) {
+      if (!/^\d{4}$/.test(y)) return;
+      var c = taxChecksNorm(raw[y]);
+      if (Object.keys(c).length) o[y] = c;
+    });
+    return o;
+  };
+  var taxNorm = function (raw) {
+    var out = { years: {}, carry: [], opening: { checks: {}, memo: "" }, prep: { checks: {} }, archive: {}, housing: taxHouseNorm(null) };
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+    var ys = raw.years && typeof raw.years === "object" && !Array.isArray(raw.years) ? raw.years : {}, pool = [];
+    Object.keys(ys).forEach(function (y) {
+      if (!/^\d{4}$/.test(y)) return;
+      var e = ys[y]; if (!e || typeof e !== "object") return;
+      var sal = e.salary && typeof e.salary === "object" ? e.salary : {};
+      var ap = {}, apo = e.apportion && typeof e.apportion === "object" && !Array.isArray(e.apportion) ? e.apportion : {};
+      Object.keys(apo).forEach(function (cat) {
+        var a = apo[cat]; if (!a || typeof a !== "object") return;
+        ap[cat] = { ratio: taxNum(a.ratio), memo: typeof a.memo === "string" ? a.memo.slice(0, 400) : "" };
+      });
+      pool = pool.concat(taxCarryNorm(e.carry));  // 年エントリの中に置かれた行も、年またぎの台帳（直下）へ寄せる
+      var m5 = {}, m5o = e.mt5Months && typeof e.mt5Months === "object" && !Array.isArray(e.mt5Months) ? e.mt5Months : {};
+      Object.keys(m5o).forEach(function (mk) {
+        if (!/^(1[0-2]|[1-9])$/.test(mk)) return;
+        var mv = taxNum(m5o[mk]);
+        if (mv !== null) m5[mk] = mv;
+      });
+      out.years[y] = {
+        salary: { gross: taxNum(sal.gross), afterDeduction: taxNum(sal.afterDeduction), deductionsTotal: taxNum(sal.deductionsTotal), withheld: taxNum(sal.withheld) },
+        domesticFuturesPnl: taxNum(e.domesticFuturesPnl),
+        expensesFinal: taxNum(e.expensesFinal),
+        apportion: ap,
+        cryptoPnl: taxNum(e.cryptoPnl),
+        mt5Annual: taxNum(e.mt5Annual),
+        mt5Months: m5
+      };
+    });
+    var seen = {};
+    out.carry = taxCarryNorm(raw.carry).concat(pool).filter(function (c) { if (seen[c.id]) return false; seen[c.id] = 1; return true; });
+    if (raw.opening && typeof raw.opening === "object" && !Array.isArray(raw.opening)) {
+      out.opening.checks = taxChecksNorm(raw.opening.checks);
+      out.opening.memo = typeof raw.opening.memo === "string" ? raw.opening.memo.slice(0, 4000) : "";
+    }
+    if (raw.prep && typeof raw.prep === "object" && !Array.isArray(raw.prep)) out.prep.checks = taxChecksNorm(raw.prep.checks);
+    out.archive = taxArchiveNorm(raw.archive);
+    out.housing = taxHouseNorm(raw.housing);
+    return out;
+  };
+  function taxData() { return taxNorm(get(TAX, null)); }
+  // その年の入力（なければ空の形）。呼び出し側は返すオブジェクトを書き換えてから、年キーに入れて保存する
+  var taxYearEntry = function (data, year) {
+    return (data.years[String(year)]) || { salary: { gross: null, afterDeduction: null, deductionsTotal: null, withheld: null }, domesticFuturesPnl: null, expensesFinal: null, apportion: {}, cryptoPnl: null, mt5Annual: null, mt5Months: {} };
+  };
+  // 画面に出せる年の候補：日次入力・日誌・申告ページの入力がある年＋今年（新しい順）
+  var taxYears = function (rows, daily, data, now) {
+    var set = {};
+    Object.keys(daily || {}).forEach(function (k) { if (/^\d{4}-\d\d-\d\d$/.test(k)) set[k.slice(0, 4)] = 1; });
+    (rows || []).forEach(function (r) { var d = r && (r.day || ""); if (/^\d{4}/.test(d)) set[d.slice(0, 4)] = 1; });
+    Object.keys((data && data.years) || {}).forEach(function (y) { set[y] = 1; });
+    set[C.dayKey(now).slice(0, 4)] = 1;
+    return Object.keys(set).sort().reverse();
+  };
+  // トレード損益の年集計。正本は C.dailyBook（日次入力を優先し、日誌分は二重に加えない）。月別は periodSummary を月ごとに切り、銘柄別は日誌ベースの参考値
+  var taxTradeYear = function (rows, daily, year) {
+    var y = String(year), book = C.dailyBook(rows, daily) || {};
+    var total = C.periodSummary(book, y + "-01-01", y + "-12-31"), months = [], z = function (x) { return String(x).padStart(2, "0"); };
+    for (var m = 1; m <= 12; m++) {
+      var last = new Date(Date.UTC(+y, m, 0)).getUTCDate();
+      var s = C.periodSummary(book, y + "-" + z(m) + "-01", y + "-" + z(m) + "-" + z(last));
+      months.push({ month: m, pnl: s.days ? s.pnl : null, days: s.days, win: s.win, loss: s.loss });
+    }
+    var recs = (rows || []).filter(function (r) { return r && r.kind !== "skip" && jnDayOf(r).slice(0, 4) === y; });
+    return { total: total, months: months, insts: jnInstAgg(recs), hasTrades: recs.length > 0 };
+  };
+  // 海外／国内の切り分け：海外分 ＝ 正本の年合計 − 国内分（転記入力）。国内分が未入力なら切り分けは出さない
+  var taxSplit = function (yearTotal, domestic) {
+    if (domestic === null || domestic === undefined || !isFinite(domestic)) return { known: false, domestic: null, overseas: null };
+    return { known: true, domestic: +domestic, overseas: yearTotal - domestic };
+  };
+  // 経費の候補（確定ではない）：家計簿の事業分の支出の科目別合計（転記した記録＝損益そのものは除く）と、生活分の按分候補カテゴリの合計
+  var taxExpenseCandidates = function (entries, year) {
+    var y = String(year), biz = {}, bizTotal = 0, life = {}, lifeTotal = 0;
+    (entries || []).forEach(function (e) {
+      if (!e || e.type !== "out" || String(e.date || "").slice(0, 4) !== y || !isFinite(e.amount)) return;
+      if (e.scope === "biz") { if (e.fromTrade) return; biz[e.cat] = (biz[e.cat] || 0) + e.amount; bizTotal += e.amount; }
+      else if (TAX_APP_CATS.indexOf(e.cat) >= 0) { life[e.cat] = (life[e.cat] || 0) + e.amount; lifeTotal += e.amount; }
+    });
+    var rowsOf = function (m) { return Object.keys(m).map(function (k) { return { cat: k, sum: m[k] }; }).sort(function (a, b) { return b.sum - a.sum; }); };
+    return { bizRows: rowsOf(biz), bizTotal: bizTotal, lifeRows: rowsOf(life), lifeTotal: lifeTotal };
+  };
+  // 合算イメージ：給与所得（控除後）＋トレード雑所得（海外分 − 経費の確定値。雑所得の金額は0を下限にする）＋暗号資産（雑所得・0を下限）＋事業所得の目安（家計簿の差額。マイナスはそのまま通算の考え方に寄せる）。税額の計算はしない
+  var taxCombine = function (p) {
+    var tradeMisc = p.overseas === null || p.overseas === undefined ? null : Math.max(0, p.overseas - (p.expensesFinal || 0));
+    var cryptoMisc = p.cryptoPnl === null || p.cryptoPnl === undefined ? null : Math.max(0, p.cryptoPnl);
+    var nonSalary = (tradeMisc || 0) + (cryptoMisc || 0) + (p.bizBal === null || p.bizBal === undefined ? 0 : p.bizBal);
+    var total = p.salaryAfter === null || p.salaryAfter === undefined ? null : p.salaryAfter + nonSalary;
+    return { tradeMisc: tradeMisc, cryptoMisc: cryptoMisc, nonSalary: nonSalary, total: total };
+  };
+  // 申告要否の目安（一般論との機械的な照らし合わせだけ。「要る／要らない」とは表示しない）
+  var taxFilingHint = function (nonSalary) {
+    if (nonSalary === null || nonSalary === undefined || !isFinite(nonSalary)) return { level: "unknown" };
+    return nonSalary > 200000 ? { level: "over" } : { level: "within" };
+  };
+  // 損失の繰越の台帳（国内分＝先物取引に係る雑所得等のみ）：発生年の翌年から3年、同じ区分の利益から差し引ける。各行に、表示中の年での状態を付ける
+  var taxCarryRows = function (carry, year) {
+    var y = +year;
+    return (carry || []).map(function (c) {
+      var last = c.fromYear + 3;
+      return { id: c.id, fromYear: c.fromYear, amount: c.amount, lastYear: last, usable: y > c.fromYear && y <= last, expired: y > last, remaining: Math.max(0, last - y) };
+    }).sort(function (a, b) { return a.fromYear - b.fromYear; });
+  };
+  /* ---------- フェーズ2b：住宅ローン控除・経費ガイド・ふるさと納税・着地見込み ---------- */
+  // 住宅ローン控除の借入限度額と控除期間。入居年で表が切り替わる
+  // 2026・2027年入居（令和8・9年）：国税庁 No.1211-1（新築等）・No.1211-3（中古）で照合済み。special は特例対象個人（子育て世帯等）の上乗せ後の限度額
+  // 2028〜2030年入居（令和10〜12年）：認定・ZEH・中古は令和8・9年と同じ表が続く。新築の省エネ基準適合は原則対象外（令和9年末までの建築確認等の例外は 2,000万円・10年。ここでは対象外として扱い、画面に注記する）
+  // 2025年以前の入居：家計簿側の KB_HOME_LIMITS（令和6・7年入居の表）と整合する値。特例対象個人の上乗せは反映しない（照合済みの令和8年分からの扱い）
+  var taxHomeTable = function (moveInYear, category, special) {
+    if (moveInYear >= 2026) {
+      var t8 = {
+        "certified": { limit: special ? 50000000 : 45000000, years: 13 }, "zeh": { limit: special ? 45000000 : 35000000, years: 13 },
+        "energy": moveInYear >= 2028 ? { limit: 0, years: 0 } : { limit: special ? 30000000 : 20000000, years: 13 },
+        "other-new": { limit: 0, years: 0 },
+        "certified-used": { limit: special ? 45000000 : 35000000, years: 13 }, "zeh-used": { limit: special ? 45000000 : 35000000, years: 13 },
+        "energy-used": { limit: special ? 30000000 : 20000000, years: 13 }, "other-used": { limit: 20000000, years: 10 }
+      };
+      var r = t8[category] || t8.certified;
+      return { limit: r.limit, years: r.years, basis: "r8" };
+    }
+    var tk = {
+      "certified": { limit: 45000000, years: 13 }, "zeh": { limit: 35000000, years: 13 }, "energy": { limit: 30000000, years: 13 },
+      "other-new": { limit: 20000000, years: 10 }, "certified-used": { limit: 30000000, years: 10 }, "zeh-used": { limit: 30000000, years: 10 },
+      "energy-used": { limit: 30000000, years: 10 }, "other-used": { limit: 20000000, years: 10 }
+    };
+    var k = tk[category] || tk.certified;
+    return { limit: k.limit, years: k.years, basis: "kb" };
+  };
+  // 住宅ローン控除の目安：控除額 ＝ min（年末残高×負担割合, 取得対価（任意）, 借入限度額）× 0.7%（100円未満切り捨て）。家計簿の kbHomeCredit と同じ式
+  var taxHomeCredit = function (housing, year) {
+    if (!housing || !housing.enabled) return { state: "off" };
+    if (!housing.moveInYear) return { state: "unset" };
+    var t = taxHomeTable(housing.moveInYear, housing.category, housing.specialPerson), nth = year - housing.moveInYear + 1;
+    if (nth < 1) return { state: "before", nth: nth, table: t };
+    if (!t.years) return { state: "na", nth: nth, table: t };
+    if (nth > t.years) return { state: "over", nth: nth, years: t.years, table: t };
+    var bal = taxNum((housing.balances || {})[String(year)]);
+    if (bal === null) return { state: "nobalance", nth: nth, years: t.years, limit: t.limit, table: t };
+    var shared = Math.round(bal * (housing.shareRatio == null ? 100 : housing.shareRatio) / 100);
+    var base = Math.min(shared, t.limit);
+    if (housing.priceCap) base = Math.min(base, housing.priceCap);
+    return { state: "ok", nth: nth, years: t.years, limit: t.limit, balance: bal, shared: shared, base: base, credit: Math.floor(base * 0.007 / 100) * 100, table: t };
+  };
+  // 所得税から引ききれなかった分の、住民税側の控除の目安：引ききれない額と「課税総所得金額等 × 5%（最高97,500円）」の小さい方（令和7年12月31日までの入居分で確認できた仕組み）
+  var taxHomeOverflow = function (credit, incomeTax, totalIncome) {
+    if (incomeTax === null || incomeTax === undefined || !isFinite(incomeTax)) return null;
+    var excess = Math.max(0, (credit || 0) - incomeTax);
+    return { excess: excess, residentEst: Math.min(excess, Math.floor((totalIncome || 0) * 0.05), 97500) };
+  };
+  // 経費ガイドの判定表（26費目）。grade: A＝全額OK（直接経費）／B＝按分すれば一部OK／C＝経費にできない。根拠は国税庁 No.2210 と所得税法施行令138条・139条
+  var TAX_GUIDE = [
+    { name: "取引・口座の手数料", grade: "A", why: "収入を得るために直接要した費用です。なお、スプレッド（買う値段と売る値段の差）は損益の中に含まれているので、二重に経費にはしません", proof: "業者の取引報告書・年間損益報告書" },
+    { name: "チャート・分析ツールの利用料（TradingViewなど）", grade: "A", why: "トレードの判断に直接使う道具の費用です（業務専用の場合）", proof: "領収書・カード明細、契約画面の写し" },
+    { name: "相場情報・ニュース配信サービスの料金", grade: "A", why: "トレードの判断に直接使う情報の費用です", proof: "領収書・カード明細" },
+    { name: "トレード専用のVPS（ブイピーエス）・サーバー代", grade: "A", why: "常時接続など、業務専用に使っている場合の費用です", proof: "領収書・利用明細" },
+    { name: "トレードの専門書籍・雑誌・有料記事", grade: "A", why: "業務の知識を得るために直接関係するものです", proof: "領収書・購入履歴、書名が分かるもの" },
+    { name: "トレードのセミナー・講座の受講料", grade: "A", why: "今やっている業務（トレード）に直接関係する内容の場合です", proof: "受講案内（内容が分かるもの）、領収書" },
+    { name: "会計・申告用のソフト・アプリ代", grade: "A", why: "記録と申告の準備に直接使うものです", proof: "領収書・カード明細" },
+    { name: "業務専用の作業場所代（コワーキングなど）", grade: "A", why: "自宅と切り分けて、業務専用に使う場所の費用です", proof: "契約書・領収書" },
+    { name: "パソコン本体", grade: "B", why: "家事関連費（かじかんれんひ：家と仕事の両方にかかる費用）として、仕事に使う割合（使用時間など、筋の通る基準）で分けます。金額によって扱いが変わります（下の「機器の金額で扱いが変わります」も見てください）", proof: "領収書、按分の基準を書いたメモ" },
+    { name: "モニター・周辺機器", grade: "B", why: "仕事専用のモニターは全額に近い扱いですが、兼用なら使う割合で分けます", proof: "領収書、按分メモ" },
+    { name: "スマホ・タブレット本体", grade: "B", why: "私的な利用と兼用が前提です。使う割合で分けます", proof: "領収書、按分メモ" },
+    { name: "インターネット回線代", grade: "B", why: "使う時間や用途の割合で分けます", proof: "請求書・明細、按分メモ" },
+    { name: "スマホの通信料", grade: "B", why: "使う時間や用途の割合で分けます", proof: "請求書・明細、按分メモ" },
+    { name: "自宅の家賃（作業スペース分）", grade: "B", why: "床面積の割合（作業スペース ÷ 家全体）で分けるのが一般的な考え方です。持ち家の場合は家賃ではないので、扱いが別になります（一般論）", proof: "賃貸契約書、間取りと面積のメモ、支払い明細" },
+    { name: "電気代", grade: "B", why: "面積の割合 × 使う時間など、筋の通る基準で分けます", proof: "請求書、按分メモ" },
+    { name: "車両関係（ガソリン代・駐車場・車検など）", grade: "B", why: "仕事で走った分だけが対象です。走行記録で分けます", proof: "走行記録（日時・行き先・距離）、領収書" },
+    { name: "セミナー参加のための交通費", grade: "B", why: "セミナー自体が業務に関係するものなら、その参加に要る交通費は直接経費に近い扱いです。私的な寄り道の分は除きます", proof: "セミナーの案内、交通費の領収書・履歴" },
+    { name: "セミナー・勉強会に付随する飲食・懇親会費", grade: "B", why: "仕事上の付き合いと言える範囲に限ります。私的な飲食は対象外です。判断が割れる代表例なので、個別に確認してください", proof: "店名・参加者・目的を書いたメモ、領収書" },
+    { name: "普段の食費", grade: "C", why: "生活のための費用（家事費）そのものです" },
+    { name: "被服費（服の費用）", grade: "C", why: "生活のための費用（家事費）そのものです" },
+    { name: "生活の日用品そのもの", grade: "C", why: "生活のための費用です。仕事専用の消耗品は、切り分けて別の費目（消耗品費）にします" },
+    { name: "所得税・住民税", grade: "C", why: "国税庁の案内で、経費にならないと明示されています。なお事業税は逆に、全額が経費になります" },
+    { name: "延滞税・延滞金・加算税・罰金・科料・過料", grade: "C", why: "罰金などは経費にならないと明示されています。税金の延滞分も、経費にしないのが一般のルールです" },
+    { name: "私的な交際費・贈答", grade: "C", why: "仕事との関係を説明できないものは対象になりません" },
+    { name: "私的な保険料（生命保険など）", grade: "C", why: "経費ではなく、所得控除（しょとくこうじょ）の話として別に扱います" },
+    { name: "生計を一にする家族への給与・地代家賃", grade: "C", why: "原則として経費になりません（事業所得の青色事業専従者給与は例外ですが、雑所得にはその仕組みがありません）" }
+  ];
+  // 家計簿カテゴリと判定表の対応づけ（生活）。label は判定の目安
+  var TAX_CAT_MAP_LIFE = [["食費", "C", "経費にできません"], ["住まい", "B", "家賃の作業スペース分など、面積の割合で按分"], ["光熱費", "B", "電気代など、面積×時間などで按分"], ["通信", "B", "使う割合で按分。仕事専用の回線は A に近い扱い"], ["交通", "B", "仕事の行き先の分だけ"], ["医療", "控除", "経費ではなく、医療費控除の対象（家計簿の「申告用」で計算）"], ["娯楽", "C", "原則、経費にできません"], ["日用品", "C", "生活分は不可。仕事専用の消耗品は事業分の消耗品費へ"], ["その他", "参照", "費目ごとに判定表で確かめてください"]];
+  // 家計簿カテゴリと判定表の対応づけ（事業の18科目）
+  var TAX_CAT_MAP_BIZ = [["通信費", "A/B", "ツール代は A、回線代は按分で B"], ["消耗品費", "A", "少額の機器・仕事専用の消耗品"], ["減価償却費", "分岐", "機器の金額で扱いが変わります。計算は家計簿の資産管理が担当"], ["旅費交通費", "B", "セミナー交通費・仕事の移動"], ["接待交際費", "B", "飲食・懇親会。条件つき"], ["地代家賃", "B", "家賃の按分"], ["水道光熱費", "B", "電気代の按分"], ["租税公課", "注意", "事業税は A（全額OK）。所得税・住民税は C（不可）"], ["広告宣伝費", "A寄り", "仕事の宣伝に直接関係するもの"], ["損害保険料", "条件つき", "仕事用の保険は対象になり得ます。私的な保険は C"], ["利子割引料", "自動計算", "借入の利息。家計簿の借入・資産の自動計算が担当"], ["仕入", "参考", "事業所得の科目。トレードの雑所得では出番は少ないです"], ["給料賃金", "参考", "事業所得の科目。同上"], ["外注工賃", "参考", "事業所得の科目。同上"], ["修繕費", "参考", "事業所得の科目。同上"], ["福利厚生費", "参考", "事業所得の科目。同上"], ["雑費", "参考", "事業所得の科目。同上"], ["その他事業費", "参考", "事業所得の科目。同上"]];
+  // 按分後の金額の目安（候補の合計 × 仕事の割合）。割合が未入力なら null
+  var taxApportionEst = function (sum, ratio) {
+    if (ratio === null || ratio === undefined || !isFinite(ratio) || !isFinite(sum)) return null;
+    return Math.round(sum * ratio / 100);
+  };
+  // 所得税の速算表（国税庁 No.2260。課税される所得金額は1,000円未満を切り捨ててから当てる）
+  var TAX_BRACKETS = [[1949000, 0.05, 0], [3299000, 0.10, 97500], [6949000, 0.20, 427500], [8999000, 0.23, 636000], [17999000, 0.33, 1536000], [39999000, 0.40, 2796000], [Infinity, 0.45, 4796000]];
+  var taxQuick = function (taxable) {
+    if (taxable === null || taxable === undefined || !isFinite(taxable) || taxable <= 0) return { tax: 0, rate: 0 };
+    var t = Math.floor(taxable / 1000) * 1000, b = TAX_BRACKETS[TAX_BRACKETS.length - 1];
+    for (var i = 0; i < TAX_BRACKETS.length; i++) { if (t <= TAX_BRACKETS[i][0]) { b = TAX_BRACKETS[i]; break; } }
+    return { tax: Math.max(0, Math.floor(t * b[1] - b[2])), rate: b[1] };
+  };
+  // 年末の着地見込み（概算）：総合課税分は速算表、国内分（先物取引に係る雑所得等）は分離課税（所得税15%・住民税5%）、復興特別所得税2.1%を所得税に上乗せ。住民税の所得割は課税所得×10%の目安（控除の金額は所得税と同じ合計で近似する）
+  // 所得控除の合計額（deductionsTotal）が未入力なら計算しない（null を返す）
+  var taxEstimate = function (p) {
+    if (p.deductionsTotal === null || p.deductionsTotal === undefined || !isFinite(p.deductionsTotal)) return null;
+    var compIncome = (p.salaryAfter || 0) + (p.tradeMisc || 0) + (p.cryptoMisc || 0) + (p.bizBal || 0);
+    var taxable = Math.floor(Math.max(0, compIncome - p.deductionsTotal) / 1000) * 1000;
+    var q = taxQuick(taxable);
+    var domTaxable = Math.max(0, (p.domestic || 0) - (p.carryUsable || 0));
+    var domTax = Math.floor(domTaxable * 0.15), baseTax = q.tax + domTax, fukko = Math.floor(baseTax * 0.021);
+    var national = baseTax + fukko, creditUsed = Math.min(p.housingCredit || 0, national), nationalAfter = national - creditUsed;
+    var residentComp = Math.floor(taxable * 0.10), residentDom = Math.floor(domTaxable * 0.05);
+    return {
+      compIncome: compIncome, totalIncome: compIncome + Math.max(0, p.domestic || 0), taxable: taxable, rate: q.rate, taxComp: q.tax,
+      domTaxable: domTaxable, domTax: domTax, baseTax: baseTax, fukko: fukko, national: national,
+      creditUsed: creditUsed, nationalAfter: nationalAfter,
+      balance: (p.withheld === null || p.withheld === undefined) ? null : nationalAfter - p.withheld,
+      residentComp: residentComp, residentDom: residentDom, resident: residentComp + residentDom, shotokuWari: residentComp + residentDom,
+      salaryMissing: p.salaryAfter === null || p.salaryAfter === undefined
+    };
+  };
+  // ふるさと納税で自己負担が2,000円で済む寄附額の上限の目安：所得割額×20% ÷（90% − 所得税率×1.021）＋2,000円（千円未満切り捨て）。総所得金額等の30%でも抑える
+  var taxFurusatoLimit = function (shotokuWari, rate, totalIncome) {
+    if (!(shotokuWari > 0)) return null;
+    var denom = 0.9 - (rate || 0) * 1.021;
+    if (denom <= 0) return null;
+    var lim = Math.floor(shotokuWari * 0.2 / denom / 1000) * 1000 + 2000;
+    if (totalIncome > 0) lim = Math.min(lim, Math.floor(totalIncome * 0.3));
+    return lim;
+  };
+  // 家計簿との連動（メモの拾い上げ）：その年の支出で、メモに「ふるさと納税」「寄付」を含む記録を寄付の記録として拾う
+  var taxDonationPickups = function (entries, year) {
+    var y = String(year), total = 0, count = 0;
+    (entries || []).forEach(function (e) {
+      if (!e || e.type !== "out" || String(e.date || "").slice(0, 4) !== y || !isFinite(e.amount)) return;
+      if (/ふるさと納税|寄付/.test(e.memo || "")) { total += e.amount; count++; }
+    });
+    return { total: total, count: count };
+  };
+  /* ---------- フェーズ2c：突合・青色シミュレーション・工程チェック・転記シート・ICS・アーカイブ ---------- */
+  // 突合（つきあわせ）：正本（日次入力の年合計）と、業者の年間レポートの確定損益（転記）との差額。レポート値が未入力なら null
+  var taxReconAnnual = function (appTotal, report) {
+    if (report === null || report === undefined || !isFinite(report)) return null;
+    return { app: appTotal, report: +report, diff: appTotal - report };
+  };
+  // 月別の突合：アプリの月別（taxTradeYear の months）と、レポートの月別値（mt5Months：{"1"〜"12"}）を並べる。レポート未入力の月は report/diff が null
+  var taxReconMonths = function (months, mt5Months) {
+    var mm = mt5Months || {};
+    return (months || []).map(function (m) {
+      var rep = taxNum(mm[String(m.month)]);
+      return { month: m.month, app: m.pnl, report: rep, diff: rep === null || m.pnl === null || m.pnl === undefined ? null : m.pnl - rep };
+    });
+  };
+  // MT5 の HTML レポートの数値の読み取り（カンマ・空白・通貨記号などを除く。読めなければ null）
+  var taxMt5ParseNum = function (s) {
+    if (typeof s === "number") return isFinite(s) ? s : null;
+    if (s === null || s === undefined) return null;
+    var t = String(s).replace(/[\s,，]/g, "").replace(/^[¥$€£]+/, "").replace(/\(/g, "-").replace(/\)/g, "");
+    if (!/^-?\d+(\.\d+)?$/.test(t)) return null;
+    var v = Number(t);
+    return isFinite(v) ? v : null;
+  };
+  // MT5 レポートのポジション行（抽出済みの素データ）から、年別・月別の確定損益を集める。1行の損益は 損益＋手数料＋スワップ（ネット）。決済した日で年に振り分ける
+  var taxMt5Agg = function (rows) {
+    var annual = {}, monthly = {}, count = 0;
+    (rows || []).forEach(function (r) {
+      if (!r) return;
+      var d = String(r.close || ""), m = /^(\d{4})-(\d{2})/.exec(d);
+      if (!m) return;
+      var p = taxMt5ParseNum(r.profit), c = taxMt5ParseNum(r.commission), s = taxMt5ParseNum(r.swap);
+      if (p === null) return;
+      var v = p + (c || 0) + (s || 0);
+      annual[m[1]] = (annual[m[1]] || 0) + v;
+      var mk = m[1] + "-" + m[2];
+      monthly[mk] = (monthly[mk] || 0) + v;
+      count++;
+    });
+    Object.keys(annual).forEach(function (k) { annual[k] = Math.round(annual[k]); });
+    Object.keys(monthly).forEach(function (k) { monthly[k] = Math.round(monthly[k]); });
+    return { annual: annual, monthly: monthly, count: count };
+  };
+  // 青色申告への置き換え（機械的な計算だけ）：いま雑所得などで数えている対象額を、事業所得＋青色申告特別控除だった場合の形にする。控除はプラスの所得の範囲でだけ効く。赤字はそのまま（青色なら損益通算・繰越の対象になる、という違いは文章で示す）
+  var taxBlueSim = function (base) {
+    if (base === null || base === undefined || !isFinite(base)) return null;
+    return [650000, 550000, 100000].map(function (ded) {
+      var income = base > 0 ? Math.max(0, base - ded) : base;
+      return { ded: ded, income: income, cut: base - income };
+    });
+  };
+  // 申告準備の工程チェックの項目（対象年の翌年に期限が来る）。due は ICS にも使う
+  var taxPrepItems = function (year) {
+    var y = +year, n = y + 1, z = function (x) { return String(x).padStart(2, "0"); };
+    var due = function (mo, d) { return n + "-" + z(mo) + "-" + z(d); };
+    return [
+      { id: "salary", title: "源泉徴収票を受け取る", due: due(1, 31), dueLabel: n + "年1月末まで", how: "会社から届きます。確定申告タブの「給与所得」に、票の数字（支払金額・給与所得控除後の金額・源泉徴収税額）を転記します。" },
+      { id: "housing", title: "住宅ローンの年末残高証明書を確認する", due: due(1, 31), dueLabel: n + "年1月末まで", how: "住宅ローンがある人だけです。金融機関から届く証明書の残高を、上の「住宅ローン控除」に転記します。" },
+      { id: "broker", title: "ブローカーの年間レポートを出す（XM・XS）", due: due(2, 15), dueLabel: n + "年2月中旬まで", how: "下の「報告書との照らし合わせ」の手順で出して、数字を転記します。年間の確定損益は、このレポートが正本です。" },
+      { id: "medical", title: "医療費を集計する", due: due(2, 28), dueLabel: n + "年2月末まで", how: "家計簿の「申告用」で、その年の医療費控除の目安と明細を確認します。領収書もそろえておきます。" },
+      { id: "expenses", title: "経費を確定する", due: due(2, 28), dueLabel: n + "年2月末まで", how: "上の「経費の要約」で候補と按分の割合を確認し、申告に使う「経費の確定値」を決めます。按分の根拠のメモも残します。" },
+      { id: "carry", title: "繰り越しの台帳を更新する", due: due(3, 10), dueLabel: n + "年3月10日ごろまで", how: "国内分で赤字が出た年は、上の「損失の繰り越し」にその年の行を足します。繰り越しには、毎年の申告を続ける必要があります。" },
+      { id: "resident", title: "住民税の徴収方法を選ぶ（申告書を出す直前）", due: due(3, 15), dueLabel: "申告書の提出まで", how: "下の「住民税の徴収方法チェック」を読み、申告書の第二表で「自分で納付」を選ぶか決めます。" },
+      { id: "file", title: "確定申告書を提出する", due: due(3, 15), dueLabel: n + "年2月16日〜3月15日", how: "申告期間は原則2月16日〜3月15日です。下の「転記シート」の数字を、e-Tax（確定申告書等作成コーナー）へ転記して提出します。納付も3月15日までです。" }
+    ];
+  };
+  // ICS（カレンダー取り込み用ファイル）の文字列を作る。events: {uid, date:"YYYY-MM-DD", summary, desc}
+  var taxIcsEscape = function (s) { return String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n"); };
+  var taxIcs = function (events, stamp) {
+    var lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//DeskOfAyu//tax//JA", "CALSCALE:GREGORIAN"];
+    (events || []).forEach(function (e) {
+      if (!e || !/^\d{4}-\d{2}-\d{2}$/.test(e.date || "")) return;
+      lines.push("BEGIN:VEVENT", "UID:" + (e.uid || "") + "@deskofayu", "DTSTAMP:" + stamp, "DTSTART;VALUE=DATE:" + e.date.replace(/-/g, ""), "SUMMARY:" + taxIcsEscape(e.summary), "DESCRIPTION:" + taxIcsEscape(e.desc || ""), "END:VEVENT");
+    });
+    lines.push("END:VCALENDAR");
+    return lines.join("\r\n") + "\r\n";
+  };
+  // e-Tax転記シート（申告書のマス目対応も兼ねる）。c は集計・入力済みの値のまとまり。金額が無い行（amount が null）は「—」で出す
+  // 欄の番号は令和7年分（2025年分）の申告書の手引きで確認した所得金額等・所得控除・税金の計算の番号。収入金額等は欄の名前で示す
+  var taxSheetRows = function (c) {
+    var rows = [], push = function (form, cell, item, amount, src, note) { rows.push({ form: form, cell: cell, item: item, amount: amount === undefined ? null : amount, src: src, note: note || "" }); };
+    push("第一表", "収入金額等「給与」／所得金額等 6「給与」", "給与の収入金額・所得金額", c.salaryGross, "源泉徴収票（入力値）", "証明になるのは源泉徴収票そのものです。所得金額は「給与所得控除後の金額」");
+    push("第一表", "収入金額等「業務に係る雑」・「その他の雑」／所得金額等 8・9", "トレードの収入（海外分・確定損益のプラス分）", c.overseasIncome, "トレード収支の日次入力−国内分", "海外の業者の分。収入と必要経費は分けて転記します");
+    push("第一表", "同上（必要経費）", "トレードの必要経費（海外分）", c.expensesFinal, "入力値（経費の確定値）", "按分の根拠のメモも手元に残します");
+    push("第一表", "所得金額等 9「その他」", "暗号資産の雑所得（プラスの場合）", c.cryptoMisc, "入力値（暗号資産の損益メモ）", "赤字の場合は0として扱い、他の所得とは通算しません");
+    push("第一表", "収入金額等「営業等」ほか／所得金額等 1", "事業所得（事業分を使う人）", c.bizBal, "家計簿の事業分", "くわしい科目は家計簿の事業収支CSVと併用します");
+    push("第一表", "所得金額等 12「合計」", "所得金額の合計（イメージ）", c.totalIncome, "このページの合算", "目安です。作成コーナーが自動で計算します");
+    push("第三表（分離課税用）", "「先物取引に係る雑所得等」の収入・所得", "国内分の年間損益（プラスの場合）", c.domesticPlus, "入力値（国内分の年間損益）", "マイナスの場合は、この欄には入れず、繰り越しの手続きをします");
+    push("第三表（分離課税用）", "「先物取引に係る雑所得等」の繰越損失", "繰り越しで使う赤字の額", c.carryUsable, "繰り越し台帳", "この年に使える分（発生年の翌年から3年）");
+    push("第二表", "「所得の内訳」", "給与の源泉徴収税額", c.withheld, "源泉徴収票（入力値）", "第一表の「源泉徴収税額」（49）にもつながります");
+    push("第一表", "税金の計算 35「（特定増改築等）住宅借入金等特別控除」", "住宅ローン控除の控除額", c.housingCredit, "このページの計算（明細書の結果）", "初年度は「住宅借入金等特別控除額の計算明細書」の作成が前提です");
+    push("第二表", "「所得から差し引かれる金額に関する事項」", "医療費控除の金額", c.medicalEst, "家計簿の「申告用」", "明細は家計簿の医療明細CSVを併用します");
+    push("第一表", "所得金額等 29「寄附金控除」・第二表「寄附金控除に関する事項」", "ふるさと納税などの寄附金控除", c.donation, "家計簿のメモからの拾い上げ", "受領証（寄附金受領証明書）が証明になります");
+    push("第一表", "税金の計算 50「申告納税額」", "追加で納める／戻ってくる額（概算）", c.balanceAbs, "このページの着地見込み", (c.balanceLabel || "概算") + "。最終の金額は作成コーナーで決まります");
+    return rows;
+  };
+  // 書類の保存アーカイブの項目（年ごとに「そろえたか」を記録する）
+  var TAX_ARCHIVE_ITEMS = [
+    { id: "receipts", name: "領収書・レシート（経費の証拠）", keep: "事業・業務の分は原則7年（白色は書類5年）。雑所得の業務で前々年の収入金額が300万円を超える人は5年の保存が必要です" },
+    { id: "reports", name: "ブローカーの年間レポート（XM・XS）", keep: "申告の正本になる数字のもと。帳簿に準じて7年を目安に" },
+    { id: "salary", name: "源泉徴収票", keep: "申告の控えと一緒に保管。期間は申告書の控えに合わせて7年を目安に" },
+    { id: "housing", name: "住宅ローンの年末残高証明書", keep: "控除を受ける年ごとに必要。控除期間が終わるまで＋7年を目安に" },
+    { id: "medical", name: "医療費の領収書・明細", keep: "医療費控除の領収書は、申告期限から5年間の提示・提出を求められることがあります" },
+    { id: "books", name: "帳簿・記録（日誌・家計簿・申告書の控え）", keep: "青色の帳簿・決算関係書類は7年、白色の法定帳簿は7年・その他の書類は5年（申告期限の翌日から数えます）" }
+  ];
+  // [tax-pure-end]
   var HELP = {
     money: ["口座の条件と損切り価格を入れると、許容損失に収まる数量が出ます。足りない項目があると数量は出しません。", "money"],
     check: ["入る前に7つの項目を確かめて「記録する」。次の重要指標と今日の損失も自動で表示します。"],
     journal: ["取引のあとに、まずは4項目だけで1件。くわしくは「詳しく書く」から。取引しなかった日は「見送り」も残せます。"],
     pnl: ["日ごとの確定損益と入出金をカレンダーで見て、週・月・年でまとめます。「今日のトレード収支を入れる」で1日分をまとめて入れられます。"],
     kakeibo: ["給料や食費など、家の収入と支出を月ごとに記録します。生活と事業を分けて記録でき、過去の日付でも入れられます。トレード収支とは別に、この端末の中だけに保存します。「申告用」では医療費控除・事業の収支・年間の収支まとめの目安とCSVの書き出し、借入の返済内訳と住宅ローン控除の目安、減価償却の計算もできます。"],
+    tax: ["トレードの損益・給与・経費を年単位で整理し、確定申告（かくていしんこく）の形に近づける画面です。金額はすべて、この端末の記録からの目安で、個別の税務判断はしません。"],
     signals: ["ダッシュボードの判定（買い候補・売り候補・見送り）と、その時点の根拠の記録です。売買の指示ではありません。"],
     hours: ["東京・ロンドン・ニューヨークの時間と、銘柄ごとの取引時間（目安）を日本時間で表示します。"],
     status: ["価格・ローソク足・自動分析が、いつ・どこから届いたかを確かめる画面です。数字がおかしいと思ったらまずここ。"],
@@ -573,6 +1001,14 @@
       "「借入と返済の内訳」に借入を登録すると、元利均等返済として年ごとの元本・利息・年末残高が出ます。住宅の借入では、住宅ローン控除の控除額の目安と、申請の仕方（1年目は確定申告、2年目以降は年末調整）も見られます。",
       "「減価償却の資産」に備品や建物を登録すると、定額法でその年の償却費を計算し、事業に使う割合分を事業の収支へ入れます。耐用年数は目安からも選べます。"],
       "カテゴリ別の合計は、表示している月の記録だけを集計します。ほかの月の記録は消えずに残ります。医療費控除・住宅ローン控除・事業所得の金額はすべて目安です。個別の税務判断は税務署・税理士に確認してください。医療費控除はセルフメディケーション税制と併用できません。領収書を保管し、最終的な計算と申告はe-Taxや税務署で確かめてください。住宅ローン控除の目安は令和6・7年入居の制度（国税庁）で計算しています。入居年は返済を始めた年で代用しているため、実際の入居年と違うときは目安も変わります。"],
+    ["tax", "確定申告（整理）", "トレードの損益と給与・経費を年単位で整理し、確定申告（かくていしんこく）の準備をする画面です。計算と整理のための道具で、個別の税務判断はしません。", [
+      "上の年を選ぶと、その年のトレードの損益（トレード収支の日次入力が正本）が、年合計と月別に出ます。銘柄別の内訳は日誌からの参考値です。",
+      "国内の業者で取引した分がある人は、「国内分の年間損益」に、その年の合計を業者の報告書から転記して入れる。海外分は年合計から差し引いて出します（海外と国内は、片方の利益と片方の損失を差し引く「通算（つうさん）」ができません）。",
+      "給与は、源泉徴収票（げんせんちょうしゅうひょう）の数字（支払金額・給与所得控除後の金額・源泉徴収税額）を転記します。",
+      "経費は、家計簿の記録から候補を拾って表示します。候補は確定ではないので、申告に使う金額は「経費の確定値」に自分で入れてください。",
+      "国内分で赤字が出た年は、「損失の繰越（そんしつのくりこし）」に行を足しておくと、翌年からの繰り越しの残り年数が出ます。",
+      "暗号資産（あんごうしさん）の損益は、FXとは計算が別のため、専用のメモ欄に入れます（雑所得（ざっしょとく）の内訳として、合算イメージには入ります）。"],
+      "表示される金額は、この端末に記録された数字からの目安です。業者の年間損益報告書の数字と照らし合わせてください。医療費控除（いりょうひこうじょ）の目安は家計簿の「申告用」で見られます。最終的な判断は税務署・税理士に確認してください。"],
     ["signals", "シグナル履歴", "アプリの判定がいつ・なぜ出たかの記録です。判定を振り返るときに開きます。", [
       "「いまの判定」で、各銘柄が買い候補・売り候補・見送りのどれかと、その理由が分かります。",
       "履歴の行をタップすると、成立した条件・足りなかった条件・判定時の価格と時刻・有効期限・取り消しになった理由が見られます。",
@@ -638,7 +1074,7 @@
   ];
   // タブごとの難しい言葉（意味は上の WORDS の文をそのまま使う）
   var TAB_WORDS = { money: ["lot（ロット）", "pips", "RR（リスクリワード）"], check: ["CAUTION", "JST"], journal: ["CSV", "localStorage"],
-    signals: ["H1・H4・M15・M5", "SMA"], hours: ["JST", "夏時間（DST）", "CME"], status: ["API", "WebSocket", "market.json など"], settings: ["JSON", "localStorage"] };
+    signals: ["H1・H4・M15・M5", "SMA"], hours: ["JST", "夏時間（DST）", "CME"], status: ["API", "WebSocket", "market.json など"], settings: ["JSON", "localStorage"], tax: ["localStorage"] };
   var wordOf = function (name) { for (var i = 0; i < WORDS.length; i++) for (var j = 0; j < WORDS[i][1].length; j++) if (WORDS[i][1][j][0] === name) return WORDS[i][1][j]; return null; };
   var QA = [["価格が止まっている・古い", "価格カードの札を確認してください。『停止』なら、データ状態を開いて再読み込みを試せます。『休場中』なら故障ではありません。"],
     ["日誌が消えてしまった？", "日誌や設定は、この端末のブラウザの中だけに保存されています。ブラウザのデータを消したり端末を替えたりする前に、『設定』から書き出しておいてください。"],
@@ -1178,6 +1614,7 @@
           }).join("") + "</table></div>" +
           '<div class="pl-kv"><span>' + year + '年の償却費の合計（事業分）<b class="pl-dn">¥' + fmt(depAuto, 0) + "</b></span></div>" : '<p class="note">資産はまだ登録がありません。上の欄から足せます。</p>');
         body.innerHTML = '<h3>家計簿</h3><p class="note">確定申告の準備に使う、年単位のまとめです。記録そのものは月別と同じ家計簿のデータで、この端末の中だけに保存します。</p>' + modeSeg +
+          '<div class="btns"><button type="button" class="btn" data-tab="tax">確定申告タブを開く（トレードの損益・給与の整理はこちら）</button></div>' +
           '<div class="jcalh"><button type="button" id="kb-yprev" aria-label="前の年">‹</button><b>' + year + '年</b><button type="button" id="kb-ynext" aria-label="次の年">›</button><button type="button" class="btn" id="kb-ythis">今年</button></div>' +
           '<h3>医療費控除（' + year + '年）</h3>' +
           (meds.length ? '<div class="tw"><table><tr><th>日付</th><th>受けた人</th><th>支払先</th><th>区分</th><th>支払額</th><th>補填額</th></tr>' + meds.map(function (e) {
@@ -1288,6 +1725,14 @@
         var show = formType === "out" && formScope === "life" && cat === "医療";
         w.innerHTML = show ? medHtml(ed && ed.type === "out" && ed.scope !== "biz" && ed.cat === "医療" ? ed : null) : "";
       };
+      // 支出のカテゴリごとに、確定申告の経費ガイドの判定の目安を見せる（2b）
+      var syncCatHint = function () {
+        var w = $("#kb-cathint"); if (!w) return;
+        if (formType !== "out") { w.innerHTML = ""; return; }
+        var cat = $("#kb-cat") ? $("#kb-cat").value : "", map = formScope === "biz" ? TAX_CAT_MAP_BIZ : TAX_CAT_MAP_LIFE, row = null;
+        for (var i = 0; i < map.length; i++) if (map[i][0] === cat) { row = map[i]; break; }
+        w.innerHTML = row ? "経費の目安（確定申告の経費ガイド）：<b>" + esc(row[1]) + "</b> ― " + esc(row[2]) + ' <button type="button" class="btn sm" data-tab="tax">経費ガイドを見る</button>' : "";
+      };
       body.innerHTML = '<h3>家計簿</h3><p class="note">家の収入と支出を月ごとに記録します。トレード収支とは別の記録で、この端末の中だけに保存し、どこにも送信しません。</p>' + modeSeg +
         '<div id="kb-head"></div><div id="kb-w3"></div>' +
         '<div class="jcalh"><button type="button" id="kb-prev" aria-label="前の月">‹</button><b id="kb-title"></b><button type="button" id="kb-next" aria-label="次の月">›</button><button type="button" class="btn" id="kb-this">今月</button></div>' +
@@ -1299,6 +1744,7 @@
         '<div class="grid"><span>' + field("kb-date", "日付", ed ? ed.date : (kbLastDate || todayK), "date") + '<button type="button" class="btn" id="kb-today">今日</button></span>' + '<span id="kb-catwrap">' + catSel(formScope, formType, ed ? ed.cat : kbCats(formScope, formType)[0]) + "</span>" +
         field("kb-amt", "金額（円）", ed ? ed.amount : "", "number") + field("kb-memo", "メモ（任意）", ed ? ed.memo : "") + "</div>" +
         '<div id="kb-medwrap"></div>' +
+        '<div class="note" id="kb-cathint"></div>' +
         '<div class="btns"><button type="button" class="btn pri" id="kb-save">' + (ed ? "更新する" : "追加する") + "</button>" + (ed ? '<button type="button" class="btn" id="kb-cancel">編集をやめる</button>' : "") + "</div>" +
         '<div class="note" id="kb-msg" aria-live="polite"></div>' +
         '<p class="note">過去の日付も選べます。保存すると、その月の画面に移動します。</p></div>' +
@@ -1308,7 +1754,7 @@
       var rebuildCat = function () {
         var cur = $("#kb-cat") ? $("#kb-cat").value : "", set = kbCats(formScope, formType);
         $("#kb-catwrap").innerHTML = catSel(formScope, formType, set.indexOf(cur) >= 0 ? cur : set[0]);
-        syncMed();
+        syncMed(); syncCatHint();
       };
       body.querySelectorAll("[data-kt]").forEach(function (b) { b.addEventListener("click", function () {
         formType = b.getAttribute("data-kt");
@@ -1322,7 +1768,8 @@
       }); });
       $("#kb-today").addEventListener("click", function () { $("#kb-date").value = todayK; });
       $("#kb-catwrap").addEventListener("change", syncMed);
-      syncMed();
+      $("#kb-catwrap").addEventListener("change", syncCatHint);
+      syncMed(); syncCatHint();
       var paint = function () {
         var list = kbMonthList(kakeibo(), ym).slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
         var t = kbTotals(list);
@@ -1399,6 +1846,568 @@
     },
 
     /* ---------- signal history ---------- */
+    tax: function () {
+      // 丸字フォント（M PLUS Rounded 1c）の読み込みは、確定申告タブを開いたときだけ・1回だけ。
+      // 読み込めない環境では、CSS 側のフォールバック（システムの丸字・サンセリフ）でそのまま表示する
+      if (!document.getElementById("td-rounded-font")) {
+        var pc1 = document.createElement("link"); pc1.rel = "preconnect"; pc1.href = "https://fonts.googleapis.com"; document.head.appendChild(pc1);
+        var pc2 = document.createElement("link"); pc2.rel = "preconnect"; pc2.href = "https://fonts.gstatic.com"; pc2.crossOrigin = "anonymous"; document.head.appendChild(pc2);
+        var lk = document.createElement("link"); lk.id = "td-rounded-font"; lk.rel = "stylesheet";
+        lk.href = "https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap";
+        document.head.appendChild(lk);
+      }
+      var todayK = C.dayKey(Date.now()), rows = journal(), daily = dailyIn(), kb = kakeibo();
+      var data = taxData(), years = taxYears(rows, daily, data, Date.now());
+      var year = taxYear && years.indexOf(String(taxYear)) >= 0 ? taxYear : +todayK.slice(0, 4);
+      var entry = taxYearEntry(data, year), tr = taxTradeYear(rows, daily, year);
+      var depAuto = 0, intAuto = 0;
+      kbAssets().forEach(function (a) { depAuto += kbDepForYear(a, year).biz; });
+      kbLoans().forEach(function (l) { if (l.purpose === "事業") { var yr = kbAmortize(l).years[year]; if (yr) intAuto += Math.round(yr.interest * l.bizRatio / 100); } });
+      // 事業の目安は、転記した記録（fromTrade＝トレードの損益そのもので、上のトレード欄で数える）を除いた家計簿で出す（二重に数えないため。家計簿タブ側の事業の収支の表示は変えない）
+      var biz = kbBizSummary(kb.filter(function (e) { return !e.fromTrade; }), year, depAuto, intAuto), bizHas = kbYearList(kb, year).some(function (e) { return e.scope === "biz"; });
+      var split = taxSplit(tr.total.pnl, entry.domesticFuturesPnl);
+      var overseasForCalc = split.known ? split.overseas : tr.total.pnl;
+      var comb = taxCombine({ salaryAfter: entry.salary.afterDeduction, overseas: overseasForCalc, expensesFinal: entry.expensesFinal, cryptoPnl: entry.cryptoPnl, bizBal: bizHas ? biz.bal : null });
+      var hint = taxFilingHint(comb.nonSalary), cand = taxExpenseCandidates(kb, year), carryRows = taxCarryRows(data.carry, year);
+      // フェーズ2b：住宅ローン控除・着地見込み・ふるさと納税。着地見込みは、給与の所得控除の合計額が入っているときだけ出す
+      var hs = data.housing, hc = taxHomeCredit(hs, year);
+      var carryUsable = carryRows.reduce(function (a, r) { return a + (r.usable ? r.amount : 0); }, 0);
+      var est = taxEstimate({ salaryAfter: entry.salary.afterDeduction, tradeMisc: comb.tradeMisc || 0, cryptoMisc: comb.cryptoMisc || 0, bizBal: bizHas ? biz.bal : 0, deductionsTotal: entry.salary.deductionsTotal, domestic: split.known ? split.domestic : 0, carryUsable: carryUsable, withheld: entry.salary.withheld, housingCredit: hc.state === "ok" ? hc.credit : 0 });
+      var fur = est ? taxFurusatoLimit(est.shotokuWari, est.rate, est.totalIncome) : null;
+      var don = taxDonationPickups(kb, year);
+      // 住宅ローン控除の「所得税から引ききれない分」。所得税額は、任意入力があればそれを、なければ着地見込みの概算を使う
+      var hsTaxIn = hs.incomeTax[String(year)], hsTaxSrc = hsTaxIn != null ? "入力した所得税額" : (est ? "着地見込みの概算" : null);
+      var hov = hc.state === "ok" && hsTaxSrc ? taxHomeOverflow(hc.credit, hsTaxIn != null ? hsTaxIn : est.national, est ? est.totalIncome : (comb.total || 0)) : null;
+      // ---------- フェーズ2c の値 ----------
+      // 突合（つきあわせ）：アプリの記録（日次入力）の年合計・月別と、MT5 など業者のレポートから転記した値の照らし合わせ
+      var reconA = taxReconAnnual(tr.total.pnl, entry.mt5Annual);
+      var reconM = taxReconMonths(tr.months || [], entry.mt5Months);
+      // 青色シミュレーションの対象：いま雑所得などで数えている業務の損益（経費を引いたあと）＋事業分の合計
+      var blueBase = (split.known ? split.overseas : tr.total.pnl) - (entry.expensesFinal || 0) + (entry.cryptoPnl || 0) + (bizHas ? biz.bal : 0);
+      var blue = taxBlueSim(blueBase);
+      // 転記シート（申告書のマス目対応も兼ねる）。医療費控除の目安は、家計簿の医療の記録（支払額−補填額）から、
+      // 足切り（総所得金額等の5%と10万円の小さい方）と上限200万円を当てて出す（家計簿の「申告用」の目安と同じ考え方）
+      var medT2c = kbMedTotals(kbMedical(kb, year));
+      var incomeForMed = est ? est.totalIncome : (comb.total !== null ? comb.total + Math.max(0, entry.domesticFuturesPnl || 0) : null);
+      var medicalEst2c = null;
+      if (medT2c.net > 0 && incomeForMed !== null) medicalEst2c = Math.max(0, Math.min(medT2c.net - Math.min(Math.floor(incomeForMed * 0.05), 100000), 2000000));
+      var sheetRows = taxSheetRows({
+        salaryGross: entry.salary.gross, overseasIncome: split.known ? split.overseas : null, expensesFinal: entry.expensesFinal,
+        cryptoMisc: entry.cryptoPnl !== null && entry.cryptoPnl > 0 ? entry.cryptoPnl : null,
+        bizBal: bizHas ? biz.bal : null, totalIncome: est ? est.totalIncome : (comb.total !== null ? comb.total + Math.max(0, entry.domesticFuturesPnl || 0) : null),
+        domesticPlus: entry.domesticFuturesPnl !== null && entry.domesticFuturesPnl > 0 ? entry.domesticFuturesPnl : null,
+        carryUsable: carryUsable, housingCredit: hc.state === "ok" ? hc.credit : null,
+        medicalEst: medicalEst2c !== null && medicalEst2c > 0 ? medicalEst2c : null,
+        donation: don.count ? don.total : null, withheld: entry.salary.withheld,
+        balanceAbs: est && est.balance !== null ? Math.abs(est.balance) : null,
+        balanceLabel: est && est.balance !== null ? (est.balance >= 0 ? "追加で納める額の概算" : "戻ってくる額（還付＝かんぷ）の概算") : ""
+      });
+      var prepItems = taxPrepItems(year), prepDone = prepItems.filter(function (p) { return data.prep.checks[p.id]; }).length;
+      var openDone = ["step0", "step1", "step2", "step3", "step4", "step5"].filter(function (k) { return data.opening.checks[k]; }).length;
+      var archRow = data.archive[String(year)] || {};
+      var archDone = TAX_ARCHIVE_ITEMS.filter(function (a2) { return archRow[a2.id]; }).length;
+      var yen = function (v) { return v == null ? "—" : (v > 0 ? "+" : v < 0 ? "−" : "") + "¥" + fmt(Math.abs(v), 0); };
+      var yen0 = function (v) { return v == null ? "—" : "¥" + fmt(v, 0); };
+      var pcls = function (v) { return v > 0 ? "pl-up" : v < 0 ? "pl-dn" : ""; };
+      var yi = years.indexOf(String(year));
+      var monthRows = tr.months.map(function (m) {
+        return '<tr><td>' + m.month + '月</td><td class="' + (m.pnl == null ? "" : pcls(m.pnl)) + '">' + (m.pnl == null ? "—" : yen(m.pnl)) + '</td><td class="sub">' + (m.days ? "取引 " + m.days + "日（勝ち " + m.win + "・負け " + m.loss + "）" : "記録なし") + '</td></tr>';
+      }).join("");
+      var instRows = tr.insts.map(function (g) {
+        return '<tr><td>' + esc(g.name) + '</td><td class="' + pcls(g.bal) + '">' + yen(g.bal) + '</td><td class="sub">勝ち ' + yen(g.inc) + '・負け ' + yen(-g.out) + '（' + g.trades + '件）</td></tr>';
+      }).join("");
+      var bizCandRows = cand.bizRows.map(function (r) { return '<tr><td>' + esc(r.cat) + '</td><td>¥' + fmt(r.sum, 0) + '</td></tr>'; }).join("");
+      var apRows = cand.lifeRows.map(function (r, i) {
+        var ap = entry.apportion[r.cat] || {}, apEst = taxApportionEst(r.sum, ap.ratio);
+        return '<tr><td>' + esc(r.cat) + '</td><td>¥' + fmt(r.sum, 0) + '</td>' +
+          '<td><input id="tx-ap-r-' + i + '" type="number" min="0" max="100" step="1" value="' + (ap.ratio == null ? "" : ap.ratio) + '" placeholder="％"></td>' +
+          '<td><input id="tx-ap-m-' + i + '" type="text" value="' + esc(ap.memo || "") + '" placeholder="根拠のメモ" style="min-width:110px"></td>' +
+          '<td>' + (apEst == null ? "—" : "¥" + fmt(apEst, 0)) + '</td></tr>';
+      }).join("");
+      var sal = entry.salary;
+      var combRows =
+        '<tr><td>給与所得（控除後の金額）</td><td>' + yen0(sal.afterDeduction) + '</td></tr>' +
+        '<tr><td>トレードの雑所得（海外分 − 経費の確定値' + (split.known ? "" : "／国内分が未入力のため年合計で仮置き") + '）</td><td>' + yen0(comb.tradeMisc) + '</td></tr>' +
+        '<tr><td>暗号資産の雑所得（メモ欄の入力から）</td><td>' + (entry.cryptoPnl == null ? "—" : yen0(comb.cryptoMisc)) + '</td></tr>' +
+        (bizHas ? '<tr><td>事業所得の目安（家計簿の事業分）</td><td>' + yen(biz.bal) + '</td></tr>' : "") +
+        '<tr><td>給与以外の所得の合計</td><td>' + yen(comb.nonSalary) + '</td></tr>' +
+        '<tr><td><b>合計（イメージ）</b></td><td><b>' + (comb.total == null ? "—（給与の入力が要ります）" : yen(comb.total)) + '</b></td></tr>';
+      var segDefs = [["給与所得", sal.afterDeduction, "#7fb2c9"], ["トレード（海外分）", comb.tradeMisc, "#e3b867"], ["暗号資産", comb.cryptoMisc, "#b48ede"], ["事業の目安", bizHas ? biz.bal : null, "#5fd99a"]];
+      var segSum = segDefs.reduce(function (a, s) { return a + Math.max(0, s[1] || 0); }, 0);
+      var segHtml = segSum > 0 ? '<div class="pl-bar" style="margin:8px 0 4px">' + segDefs.map(function (s) {
+        var w = Math.max(0, s[1] || 0) / segSum * 100;
+        return w > 0 ? '<span style="width:' + w.toFixed(1) + '%;background:' + s[2] + '" title="' + s[0] + '"></span>' : "";
+      }).join("") + '</div><div class="sub">' + segDefs.map(function (s) { return '<span style="color:' + s[2] + '">■</span> ' + s[0]; }).join("　") + '</div>' : "";
+      var hintLine = hint.level === "over"
+        ? '<p><b>照らし合わせ：</b>この端末の記録では、給与以外の所得の合計（目安 ¥' + fmt(comb.nonSalary, 0) + '）が20万円を超えています。一般論の目安では、申告が必要になる側です。</p>'
+        : hint.level === "within"
+          ? '<p><b>照らし合わせ：</b>この端末の記録では、給与以外の所得の合計（目安 ¥' + fmt(comb.nonSalary, 0) + '）は20万円以下です。ただし、還付（かんぷ：払いすぎた税金の戻り）を受けたい場合や住民税の申告など、申告が要る場合があります。</p>'
+          : '<p><b>照らし合わせ：</b>給与以外の所得の合計が出せていません（給与の入力などを確認してください）。</p>';
+      var carryHtml = carryRows.length ? '<table><tr><th>赤字が出た年</th><th>金額</th><th>使える最後の年</th><th>状態</th><th></th></tr>' + carryRows.map(function (r) {
+        var st = r.expired ? '<span class="pl-dn">繰り越しの期限を過ぎています</span>' : r.usable ? (r.remaining === 0 ? "今年が使える最後の年です" : "あと " + r.remaining + " 年使えます") : "翌年から使えます";
+        return '<tr><td>' + r.fromYear + '年</td><td>¥' + fmt(r.amount, 0) + '</td><td>' + r.lastYear + '年分まで</td><td class="sub">' + st + '</td><td><button type="button" class="btn sm" data-carrydel="' + esc(r.id) + '">削除</button></td></tr>';
+      }).join("") + '</table>' : '<p class="sub">まだ行がありません。国内分で赤字が出た年に、その年の行を足してください。</p>';
+      var carryYearOpts = ""; for (var cy = year; cy >= year - 10; cy--) carryYearOpts += '<option value="' + cy + '"' + (cy === year ? " selected" : "") + '>' + cy + '年</option>';
+      /* ----- フェーズ2bのセクション ----- */
+      // 経費ガイド（判定表と家計簿カテゴリの対応）
+      var guideTable = function (grade, withProof) {
+        var rows = TAX_GUIDE.filter(function (g) { return g.grade === grade; }).map(function (g) {
+          return '<tr><td>' + esc(g.name) + '</td><td class="sub">' + esc(g.why) + '</td>' + (withProof ? '<td class="sub">' + esc(g.proof || "") + '</td>' : "") + '</tr>';
+        }).join("");
+        return '<table><tr><th>費目</th><th>理由・考え方</th>' + (withProof ? '<th>残すべき証拠</th>' : "") + '</tr>' + rows + '</table>';
+      };
+      var catMapTable = function (map) {
+        return '<table><tr><th>家計簿のカテゴリ</th><th>判定</th><th>目安</th></tr>' + map.map(function (r) {
+          return '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td><td class="sub">' + esc(r[2]) + '</td></tr>';
+        }).join("") + '</table>';
+      };
+      var guideHtml =
+        '<h3 class="vtitle">経費ガイド（費目ごとの判定表）</h3>' +
+        '<p class="sub">ふだんの生活の支払いのうち、どれが申告の経費（けいひ：収入を得るために要した費用）にできるかの、一般的な目安です。<b>判定は一般論で、あなたの支出が経費になるかは個別の事情で変わります。</b>迷う場合は、税務署・税理士に確認してください。考え方のくわしい説明は「学ぶ」の確定申告ガイドにあります。</p>' +
+        '<p style="margin:10px 0 2px"><b>A：全額を経費にできる（仕事専用・直接必要なもの）</b></p>' + guideTable("A", true) +
+        '<p style="margin:12px 0 2px"><b>B：按分（あんぶん）すれば一部を経費にできる（家と仕事で共用しているもの）</b></p>' +
+        '<p class="sub">按分とは、1つの支出を「仕事で使った割合」で分けることです。割合の根拠（時間・面積など）をメモに残しておくと、あとで説明しやすくなります。上の「経費の要約」で割合を入れると、按分後の目安が出ます。</p>' + guideTable("B", true) +
+        '<p style="margin:12px 0 2px"><b>C：経費にできない</b></p>' + guideTable("C", false) +
+        '<p style="margin:12px 0 2px"><b>機器（パソコンなど）は、金額で扱いが変わります</b></p>' +
+        '<p class="sub">・10万円未満（または使える期間が1年未満）のもの：全額を、その年の経費にできます<br>・10万円以上20万円未満のもの：一括償却（いっかつしょうきゃく）といって、3年で3分の1ずつ経費にする方法も選べます<br>・20万円以上のもの：耐用年数（たいようねんすう：使える年数の目安）で分けて、少しずつ経費にします（減価償却（げんかしょうきゃく））<br>金額の大きい機器は、家計簿の「資産」に登録すると、年ごとの償却額を自動で計算します。この判定表は「経費にできるか」の判断材料で、資産の登録は「金額の計算」の担当です。</p>' +
+        '<p style="margin:12px 0 2px"><b>家計簿のカテゴリとの対応（生活）</b></p>' + catMapTable(TAX_CAT_MAP_LIFE) +
+        '<p style="margin:12px 0 2px"><b>家計簿のカテゴリとの対応（事業）</b></p>' + catMapTable(TAX_CAT_MAP_BIZ) +
+        '<p class="sub">家計簿で支出を記録するときも、カテゴリを選ぶ欄の下に、この対応の目安が出ます。</p>';
+      // 住宅ローン控除
+      var hsYearOpts = "", hsTop = Math.max(year, hs.moveInYear || year);
+      for (var hy = hsTop; hy >= hsTop - 30; hy--) hsYearOpts += '<option value="' + hy + '"' + (hy === hs.moveInYear ? " selected" : "") + '>' + hy + '年</option>';
+      var hsAmortHint = "";
+      kbLoans().forEach(function (l) {
+        if (l.purpose !== "住宅" || hsAmortHint) return;
+        var yr = kbAmortize(l).years[year];
+        if (yr) hsAmortHint = '<p class="sub">家計簿の返済表では、この年末の残高は ¥' + fmt(yr.endBalance, 0) + ' の見込みです。証明書（年末残高証明書）の数字が正本なので、違う場合は証明書の数字を入れてください。</p>';
+      });
+      var hsResult = "";
+      if (!hs.enabled) hsResult = '<p class="sub">いまはOFFです。住宅ローン控除を使う場合は、上のチェックを入れて保存してください。</p>';
+      else if (hc.state === "unset") hsResult = '<p class="sub">入居した年を選んで保存すると、控除額の目安が出ます。</p>';
+      else if (hc.state === "before") hsResult = '<p class="sub">' + hs.moveInYear + '年の入居なので、' + year + '年分の控除はまだありません。</p>';
+      else if (hc.state === "na") hsResult = '<div class="warn">この区分・入居年の組み合わせは、原則として控除の対象外です。ただし、期限までに建築確認（けんちくかくにん）を受けた住宅などの例外では、借入限度額2,000万円・控除期間10年で対象になる場合があります。当てはまるかは、国税庁の案内や税務署で確認してください。</div>';
+      else if (hc.state === "over") hsResult = '<p class="sub">控除期間（' + hc.years + '年）を過ぎているため、' + year + '年分の控除はありません。</p>';
+      else if (hc.state === "nobalance") hsResult = '<p class="sub">入居から ' + hc.nth + ' 年目です。借入限度額は ¥' + fmt(hc.limit, 0) + '、控除期間は ' + hc.years + ' 年です。' + year + '年の年末残高を入れると、控除額の目安が出ます。</p>';
+      else if (hc.state === "ok") {
+        hsResult = '<table><tr><th>項目</th><th>金額・内容</th></tr>' +
+          '<tr><td>入居から</td><td>' + hc.nth + ' 年目（控除期間 ' + hc.years + ' 年）</td></tr>' +
+          '<tr><td>借入限度額</td><td>¥' + fmt(hc.limit, 0) + '</td></tr>' +
+          '<tr><td>計算のもとになる金額</td><td>¥' + fmt(hc.base, 0) + '<span class="sub">（年末残高 ¥' + fmt(hc.balance, 0) + (hs.shareRatio != null && hs.shareRatio !== 100 ? ' × 負担割合 ' + hs.shareRatio + '%' : '') + ' と限度額の小さい方）</span></td></tr>' +
+          '<tr><td><b>控除額の目安</b></td><td><b>¥' + fmt(hc.credit, 0) + '</b><span class="sub">（もとの金額 × 0.7%）</span></td></tr></table>';
+        if (hov) {
+          hsResult += hov.excess > 0
+            ? '<p style="margin-top:8px">所得税（' + hsTaxSrc + ' ¥' + fmt(hsTaxIn != null ? hsTaxIn : est.national, 0) + '）から引ききれない分は <b>¥' + fmt(hov.excess, 0) + '</b> です。引ききれない分は、翌年度の住民税から差し引かれる仕組みがあり、その目安は <b>¥' + fmt(hov.residentEst, 0) + '</b> です（課税総所得金額等 × 5%・最高97,500円の上限で計算）。</p>' + (hs.moveInYear >= 2026 ? '<p class="sub">注意：この住民税側の仕組みが、令和8年（2026年）入居分にも同じように続くかは、2026年11月10日時点で公式の確認が取れていません。目安として表示しています。</p>' : '<p class="sub">住民税側の仕組みは、令和7年12月31日までの入居分について確認できている内容です。実際の控除は、翌年度の住民税の通知で確認してください。</p>')
+            : '<p style="margin-top:8px">控除額は、所得税（' + hsTaxSrc + '）の範囲で引ききれる見込みです。</p>';
+        } else {
+          hsResult += '<p class="sub" style="margin-top:8px">所得税から引ききれない分の目安は、その年の所得税額が分かると出ます（上の任意入力、または下の「年末の着地見込み」が出ている場合）。</p>';
+        }
+        if (hc.nth === 1) {
+          hsResult += '<div class="warn" style="margin-top:10px"><b>入居して1年目は、会社員でも年末調整（ねんまつちょうせい）では受けられず、確定申告が必要です。</b>2年目以降で会社員の人は、年末調整で受けられます。</div>' +
+            '<p style="margin:8px 0 2px"><b>初年度の申告に要る書類（一般的なもの）</b></p>' +
+            '<p class="sub">・住宅借入金等特別控除額の計算明細書（e-Taxなら画面の入力で作れます）<br>・年末残高証明書（金融機関から届きます）<br>・建物・土地の登記事項証明書（法務局で取れます）<br>・売買契約書・請負契約書の写し<br>・源泉徴収票（給与がある人）<br>・認定通知書などの写し（認定長期優良住宅・ZEH・省エネ基準適合の家の場合）</p>' +
+            '<div class="btns"><button type="button" class="btn" id="tx-hcguide">家計簿の申請ガイドを開く（手順と書類チェックはこちら）</button></div>';
+        }
+      }
+      var hsHtml =
+        '<h3 class="vtitle">住宅ローン控除（住宅借入金等特別控除）</h3>' +
+        '<p class="sub">住宅ローン控除（じゅうたくろーんこうじょ）は、マイホームのローンについて、年末の残高の0.7%が所得税から差し引かれる制度です。所得税から引ききれない分は、翌年の住民税からも差し引かれる場合があります。家を買った人だけが使う設定です。</p>' +
+        '<label style="display:block;margin:6px 0"><input type="checkbox" id="tx-hs-on"' + (hs.enabled ? " checked" : "") + '> 住宅ローン控除を使う</label>' +
+        '<div class="row2"><div class="fld"><label>入居した年</label><select id="tx-hs-year">' + (hs.moveInYear ? "" : '<option value="" selected>選んでください</option>') + hsYearOpts + '</select></div>' +
+        '<div class="fld">' + select("tx-hs-cat", "住宅の区分", TAX_HOME_CATS, hs.category) + '</div></div>' +
+        '<label style="display:block;margin:6px 0"><input type="checkbox" id="tx-hs-special"' + (hs.specialPerson ? " checked" : "") + '> 特例対象個人（とくれいたいしょうこじん：40歳未満で配偶者がいる、40歳以上で40歳未満の配偶者がいる、または19歳未満の扶養親族がいる人。令和8年入居分から限度額が上乗せされます）</label>' +
+        '<div class="row2"><div class="fld">' + field("tx-hs-share", "負担割合（％・連帯債務のとき自分の分。空欄なら100）", hs.shareRatio == null ? "" : hs.shareRatio, "number") + '</div>' +
+        '<div class="fld">' + field("tx-hs-price", "家の取得対価（円・任意。残高より小さい場合の上限）", hs.priceCap == null ? "" : hs.priceCap, "number") + '</div></div>' +
+        '<div class="row2"><div class="fld">' + field("tx-hs-bal", year + "年の年末残高（円・年末残高証明書から）", hs.balances[String(year)] == null ? "" : hs.balances[String(year)], "number") + '</div>' +
+        '<div class="fld">' + field("tx-hs-tax", year + "年の所得税額（円・任意。引ききれない分の目安に使う）", hsTaxIn == null ? "" : hsTaxIn, "number") + '</div></div>' + hsAmortHint +
+        '<div class="btns"><button type="button" class="btn gold" id="tx-hssave">住宅ローン控除の設定を保存</button></div><div class="msg" id="tx-hsmsg"></div>' +
+        hsResult +
+        '<p class="sub">ペアローンの場合は、各自が自分の年末残高証明書の数字で、それぞれ計算します（配偶者の分は、配偶者側の設定で扱ってください）。繰上返済（くりあげへんさい）をした年も、証明書の残高をそのまま入れれば計算に反映されます。この控除には、合計所得金額が2,000万円以下、家の床面積が原則50㎡以上などの要件があります。要件に当てはまるかは、国税庁の案内（No.1211）で確認してください。解説と手続きの案内は、家計簿の「住宅ローン控除の申請ガイド」にあります。</p>';
+      // 年末の着地見込み
+      var estHtml = '<h3 class="vtitle">年末の着地見込み（税金の概算）</h3>';
+      if (!est) {
+        estHtml += '<p class="sub">給与の「所得控除の額の合計額」を入れると、その年の所得税の概算と、源泉徴収（げんせんちょうしゅう：給与から先に引かれている税金）との差（追加で納めるか、戻ってくるか）、翌年の住民税の目安が出ます。源泉徴収票がまだ無い年は、昨年の票の数字などで近づけて入れてください。</p>';
+      } else {
+        var estRows =
+          '<tr><td>課税される所得の目安（総合課税分）</td><td>¥' + fmt(est.taxable, 0) + '</td></tr>' +
+          '<tr><td>所得税の概算（総合分）</td><td>¥' + fmt(est.taxComp, 0) + '</td></tr>' +
+          (est.domTaxable > 0 ? '<tr><td>所得税の概算（国内分・分離課税15%）</td><td>¥' + fmt(est.domTax, 0) + '</td></tr>' : "") +
+          '<tr><td>復興特別所得税（ふっこうとくべつしょとくぜい）の概算（2.1%）</td><td>¥' + fmt(est.fukko, 0) + '</td></tr>' +
+          '<tr><td>所得税の合計（概算）</td><td>¥' + fmt(est.national, 0) + '</td></tr>' +
+          (est.creditUsed > 0 ? '<tr><td>住宅ローン控除（この年の分）</td><td>−¥' + fmt(est.creditUsed, 0) + '</td></tr><tr><td>控除の後の所得税（概算）</td><td>¥' + fmt(est.nationalAfter, 0) + '</td></tr>' : "") +
+          (est.balance === null ? '<tr><td>源泉徴収税額</td><td>—（未入力のため、納める／戻るの方向は出しません）</td></tr>'
+            : '<tr><td>源泉徴収税額</td><td>¥' + fmt(entry.salary.withheld, 0) + '</td></tr><tr><td><b>' + (est.balance >= 0 ? "追加で納める目安" : "戻ってくる（還付（かんぷ））目安") + '</b></td><td><b>¥' + fmt(Math.abs(est.balance), 0) + '</b></td></tr>') +
+          '<tr><td>住民税の目安（所得割（しょとくわり）・翌年度に課税）</td><td>¥' + fmt(est.resident, 0) + (hov && hov.residentEst > 0 ? '（住宅ローン控除の住民税分 ¥' + fmt(hov.residentEst, 0) + ' を差し引くと ¥' + fmt(est.resident - hov.residentEst, 0) + '）' : '') + '</td></tr>';
+        estHtml += (est.salaryMissing ? '<p class="sub">給与が未入力のため、給与分を含まない概算です。</p>' : "") +
+          '<table><tr><th>項目</th><th>金額（概算）</th></tr>' + estRows + '</table>' +
+          '<p class="sub">これは、その時点の記録からの<b>概算・目安</b>です。税率表は国税庁の速算表（No.2260）を使い、国内分は分離課税（所得税15%・住民税5%）で計算しています。住民税は、控除の金額が所得税と少し違うため、実際の金額は前後します。均等割（きんとうわり：金額にかかわらず一律にかかる分。目安は年5,000円ほどで、自治体で異なります）は含んでいません。税額の確定は、確定申告書・作成コーナーで行います。納める見込みの年は、この目安を納税資金の準備に使ってください。</p>';
+      }
+      // ふるさと納税の上限シミュレーション
+      var furHtml = '<h3 class="vtitle">ふるさと納税の上限の目安</h3>' +
+        '<p class="sub">ふるさと納税（のうぜい）は、応援したい自治体への寄付です。寄付した額のうち2,000円を超える分が、所得税と住民税から差し引かれます（国税庁 No.1155）。自己負担が2,000円で済む寄付には上限があり、その目安を、上の着地見込みの数字から逆算します。</p>';
+      if (!fur) {
+        furHtml += '<p class="sub">目安を出すには、給与の「所得控除の額の合計額」の入力と、住民税の所得割が出ることが必要です。入力が揃うと、ここに上限の目安が出ます。</p>';
+      } else {
+        furHtml += '<div class="pl-head"><div class="big">¥' + fmt(fur, 0) + '</div><div class="sub">自己負担2,000円で済む寄付額の上限の目安（この年の数字からの逆算）</div></div>' +
+          (don.count ? '<p>家計簿のメモから拾った寄付の記録：<b>¥' + fmt(don.total, 0) + '</b>（' + don.count + '件）　' + (don.total >= fur ? '拾った分だけで、目安の上限に達しています。' : 'あと <b>¥' + fmt(fur - don.total, 0) + '</b> が目安です。') + '</p>'
+            : '<p class="sub">家計簿のメモに「ふるさと納税」「寄付」と書かれた支出は、この年はまだ拾えていません。</p>') +
+          '<p class="sub">この目安は概算です。<b>最終確認は、総務省のふるさと納税ポータルや、お住まいの自治体の公式シミュレーションでしてください。</b>家計簿からの拾い上げは、メモに「ふるさと納税」「寄付」と書かれた支出だけが対象で、メモに無い寄付は含まれません。</p>';
+      }
+      /* ----- フェーズ2cのセクション ----- */
+      // 住民税の徴収方法チェック＋翌年の住民税への影響メモ（追補C・H-2）。着地見込み（est）と控除のあふれ（hov）を再利用する
+      var residentHtml =
+        '<h3 class="vtitle">住民税の徴収方法チェック（申告の直前に、かならず確認）</h3>' +
+        '<div class="warn"><b>兼業（けんぎょう：会社員をしながら副業をしている）の人は、ここが大事な分かれ目です。</b><br>給与以外の所得（トレードの利益など）にかかる住民税（じゅうみんぜい）は、何も選ばないと、原則として給与から差し引く方法（特別徴収（とくべつちょうしゅう））になり、会社の給与と一緒に処理されます。確定申告書の<b>第二表「住民税・事業税に関する事項」</b>にある「給与、公的年金等以外の所得に係る住民税の徴収方法」の欄で<b>「自分で納付（普通徴収（ふつうちょうしゅう））」</b>を選ぶと、その分の住民税は、自分あてに届く納付書で納める形になります。<b>会社に副業の所得を知られたくない人は、この欄で「自分で納付」を選ぶことが、実務上のポイントです。</b></div>' +
+        '<p class="sub">注意：扱いは市区町村によって違う場合があります（自治体によっては給与分と分けられない場合や、選んでも特別徴収になる場合があります）。最終的には、お住まいの市区町村の案内と、申告する年の確定申告書等作成コーナーの説明を確認してください。「自分で納付」を選んだ場合は、納付書が自宅に届きます。納める期限（年4回に分かれることが多いです）を過ぎると延滞金（えんたいきん）がかかる場合があるので、届いたらすぐ確認してください。</p>' +
+        '<p style="margin:10px 0 2px"><b>翌年の住民税への影響メモ</b></p>' +
+        '<p class="sub">住民税は「今年の所得」に対して「翌年」に課税（かぜい）されます。今年の所得が増えると、翌年の6月ごろから届く住民税も増えます。仕組みは、所得割（しょとくわり：所得に応じてかかる部分、おおむね10%）＋均等割（きんとうわり：所得にかかわらず一律の部分、年5,000円ほど・自治体で異なる）です。</p>' +
+        (est
+          ? '<p>この年の数字からの目安：翌年度の住民税の所得割は <b>¥' + fmt(est.resident, 0) + '</b> ほどです' + (hov && hov.residentEst > 0 ? '。住宅ローン控除で所得税から引ききれなかった分（¥' + fmt(hov.residentEst, 0) + '）が差し引かれる見込みのため、目安は <b>¥' + fmt(Math.max(0, est.resident - hov.residentEst), 0) + '</b> ほどになります' : '') + '。給与以外の所得の分は、上の欄で「自分で納付」を選んだ場合、その分が納付書で届きます。</p>'
+          : '<p class="sub">概算は、上の「年末の着地見込み」が出る（給与の「所得控除の額の合計額」を入れる）と、ここにも目安が出ます。</p>') +
+        '<p class="sub">住民税は、控除の金額や計算のしかたが所得税と少し違うため、実際の金額は目安から前後します。金額の確定は、翌年に届く住民税の決定通知書で確認してください。</p>';
+      // 突合（報告書との照らし合わせ）
+      var reconMonthRowsHtml = reconM.map(function (r) {
+        return '<tr><td>' + r.month + '月</td><td class="' + (r.app === null ? "" : pcls(r.app)) + '">' + (r.app === null ? "—" : yen(r.app)) + '</td>' +
+          '<td><input id="tx-rp-' + r.month + '" type="number" value="' + (r.report === null ? "" : r.report) + '" placeholder="レポートの額" style="min-width:110px"></td>' +
+          '<td class="' + (r.diff === null || r.diff === 0 ? "" : "pl-dn") + '">' + (r.diff === null ? "—" : r.diff === 0 ? "一致" : yen(r.diff)) + '</td></tr>';
+      }).join("");
+      var reconHtml =
+        '<h3 class="vtitle">報告書との照らし合わせ（突合（とつごう））</h3>' +
+        '<p class="sub">突合とは、2つの記録を見比べて、数字が合っているか確かめることです。申告の正本は<b>業者の年間レポートの数字</b>です。アプリの日次入力は日々の記録なので、見送った日（損益ゼロの日）の記録漏れや、入力ミスで、レポートとずれることがあります。ずれたら、レポート側の数字に合わせて記録を見直してください（とくに手数料・スワップの扱いと、年末年始の決済日）。</p>' +
+        '<p style="margin:8px 0 2px"><b>レポートの出し方（XS＝MT5 の場合）</b></p>' +
+        '<p class="sub">1. パソコンの MT5 を開き、下部の「ツールボックス」の「履歴（りれき）」タブを表示します（表示されていないときは、表示メニューから「ツールボックス」を出します）<br>2. 履歴の上で右クリックし、期間を選びます。年間の照らし合わせは「カスタム期間」で、その年の1月1日〜12月31日を指定します。月別も同じ手順で、その月の範囲を指定できます<br>3. もう一度右クリックし、「レポート」→ HTML 形式で保存します。保存したファイルは、下の「保存アーカイブ」にも加えて保管してください<br>4. XS からは、取引の明細メール（mt5reports@xs.com から届きます）も届いています。アプリの「ツール → 取引メール」で取り込んだ明細と、レポートの合計を見比べることもできます<br>XMTrading などの MT4 の場合も、履歴タブから期間を指定してレポートを保存する流れは同じです。くわしい手順は、各社の公式案内を確認してください。</p>' +
+        '<div class="row2"><div class="fld"><label>年間レポートの確定損益（円・全期間のレポートから転記）</label><input id="tx-rp-annual" type="number" value="' + (entry.mt5Annual === null ? "" : entry.mt5Annual) + '" placeholder="例：123456"></div></div>' +
+        '<p>' + (reconA
+          ? '照らし合わせ（年間）：アプリの記録 <b>' + yen(tr.total.pnl) + '</b> ／ レポート <b>' + yen(reconA.report) + '</b> ／ 差額 <b class="' + (reconA.diff === 0 ? "" : "pl-dn") + '">' + (reconA.diff === 0 ? "なし（一致）" : yen(reconA.diff)) + '</b>' + (reconA.diff === 0 ? "" : '。年の合計がずれています。下の月別で、どの月がずれているか確かめてください。')
+          : '年間レポートの数字を転記すると、このアプリの年合計との差額が出ます。') + '</p>' +
+        '<table><tr><th>月</th><th>アプリの記録</th><th>レポート（転記）</th><th>差額</th></tr>' + reconMonthRowsHtml + '</table>' +
+        '<div class="btns"><button type="button" class="btn gold" id="tx-rpsave">照らし合わせを保存</button></div><div class="msg" id="tx-rpmsg"></div>' +
+        '<p style="margin:10px 0 2px"><b>HTML レポートの自動読み込み（MT5）</b></p>' +
+        '<p class="sub">MT5 のレポートは、MetaQuotes の公式ヘルプで形式が案内されている HTML ファイルです（ポジションの一覧に、決済した日時・手数料・スワップ・損益の欄があります）。上の手順で保存した HTML ファイルを選ぶと、決済した年・月ごとに「損益＋手数料＋スワップ」の合計を読み取り、このページの転記欄へ入れます。読み取った数字は、そのままでは保存されません。内容を確認してから「照らし合わせを保存」を押してください。ファイルはこの端末の中でだけ読み、どこにも送りません。形式が違うファイル（MT4 の明細など）では読み取れない場合があります。その場合は、手で転記してください。</p>' +
+        '<div class="fld"><label>MT5 の HTML レポートファイル</label><input id="tx-mt5file" type="file" accept=".html,.htm,text/html"></div><div class="msg" id="tx-mt5msg"></div>';
+      // e-Tax転記シート（申告書のマス目マップを兼ねる）
+      var sheetRowsHtml = sheetRows.map(function (r) {
+        return '<tr><td>' + esc(r.form) + '</td><td class="sub">' + esc(r.cell) + '</td><td>' + esc(r.item) + '</td><td>' + (r.amount === null ? "—" : yen(r.amount)) + '</td><td class="sub">' + esc(r.src) + '</td><td class="sub">' + esc(r.note) + '</td></tr>';
+      }).join("");
+      var sheetHtml =
+        '<h3 class="vtitle">e-Tax 転記シート（申告書の欄への対応つき）</h3>' +
+        '<p class="sub">このページで集めた数字が、確定申告書のどの欄に入るかの一覧です。申告書の欄の番号は、<b>令和7年分（2025年分）の申告書の様式</b>（国税庁の「確定申告の手引き」）で確認したものです。申告する年の様式では、欄の並びや名前が変わっている場合があるので、実際の入力では、その年の国税庁「確定申告書等作成コーナー」の画面と見比べてください。作成コーナーでは、画面の案内に沿って数字を入れると、欄への転記と計算は自動で行われます。このシートは「どの数字が、どこへ行くか」の確認用です。</p>' +
+        '<div class="tw"><table><tr><th>様式</th><th>欄</th><th>項目</th><th>金額</th><th>もとにする記録</th><th>メモ</th></tr>' + sheetRowsHtml + '</table></div>' +
+        '<div class="btns"><button type="button" class="btn" id="tx-csv">転記シートを CSV でダウンロード</button></div><div class="msg" id="tx-csvmsg"></div>' +
+        '<p class="sub">「—」は、このページにまだ数字が無い項目です。CSV には、対象の年と、このシートの内容がそのまま入ります。</p>';
+      // 申告準備の工程チェック＋ICS
+      var prepRowsHtml = prepItems.map(function (p) {
+        return '<tr><td><label><input type="checkbox" data-prep="' + p.id + '"' + (data.prep.checks[p.id] ? " checked" : "") + '> ' + esc(p.title) + '</label></td><td class="sub">' + esc(p.dueLabel) + '</td><td class="sub">' + esc(p.how) + '</td></tr>';
+      }).join("");
+      var prepHtml =
+        '<h3 class="vtitle">申告準備の進み具合（工程チェック）</h3>' +
+        '<p class="sub">' + year + '年分の申告（提出は ' + (year + 1) + '年）に向けて、そろえるものと、やることの一覧です。終わったものにチェックを入れると、この端末に記録されます。進み具合：<b id="tx-prep-count">' + prepDone + ' / ' + prepItems.length + '</b></p>' +
+        '<table><tr><th>やること</th><th>期限の目安</th><th>進め方</th></tr>' + prepRowsHtml + '</table>' +
+        '<div class="btns"><button type="button" class="btn" id="tx-ics">まだ終わっていない分の期限を、カレンダー用ファイル（ICS）で書き出す</button></div><div class="msg" id="tx-icsmsg"></div>' +
+        '<p class="sub">ICS は、カレンダーアプリに取り込める形式のファイルです。「期限・対応」のカレンダーなど、いつものカレンダーに取り込むと、期限を予定として並べられます。取り込み方は、カレンダーアプリ側の案内を確認してください。</p>';
+      // 書類の保存アーカイブ
+      var archRowsHtml = TAX_ARCHIVE_ITEMS.map(function (a2) {
+        return '<tr><td><label><input type="checkbox" data-arch="' + a2.id + '"' + (archRow[a2.id] ? " checked" : "") + '> ' + esc(a2.name) + '</label></td><td class="sub">' + esc(a2.keep) + '</td></tr>';
+      }).join("");
+      var archHtml =
+        '<h3 class="vtitle">書類の保存アーカイブ（' + year + '年分）</h3>' +
+        '<p class="sub">申告に使った書類がそろっているかの記録です。税務署から後日たずねられたときに、根拠の書類をすぐ出せるようにしておくためのものです。揃ったものにチェックを入れてください（' + year + '年分の記録：<b id="tx-arch-count">' + archDone + ' / ' + TAX_ARCHIVE_ITEMS.length + '</b>）。</p>' +
+        '<table><tr><th>書類</th><th>保存期間の目安（一般的な案内）</th></tr>' + archRowsHtml + '</table>' +
+        '<p class="sub">保存期間の目安は、国税庁の案内をもとにした一般的なものです。保存期間は、申告期限の翌日（3月16日）から数えます。消費税のインボイス（適格請求書）の写しは7年の保存が必要です。あなたの区分（青色・白色・雑所得のみ、など）で年数が変わるので、迷う場合は長めに残しておくと安全です。</p>';
+      // 青色申告への移行シミュレーション（開業フローのステップ0と連動）
+      var blueRowsHtml = blue.map(function (b) {
+        var lab = b.ded === 650000 ? "控除65万円（複式簿記（ふくしきぼき）＋e-Tax で申告、または電子帳簿保存（でんしちょうぼほぞん））" : b.ded === 550000 ? "控除55万円（複式簿記で申告）" : "控除10万円（簡易な記録で申告）";
+        return '<tr><td>' + lab + '</td><td>' + yen(b.income) + '</td><td class="sub">' + (b.cut > 0 ? "控除によって所得が ¥" + fmt(b.cut, 0) + " 小さくなる形" : "控除の効く余地なし（所得が0以下、または控除額以下）") + '</td></tr>';
+      }).join("");
+      var blueHtml =
+        '<p style="margin:10px 0 2px"><b>青色申告（あおいろしんこく）にしたら、の置き換え計算</b></p>' +
+        '<p class="sub">いま雑所得などで数えている業務の儲け（経費を引いたあと）と、家計簿の事業分の合計 <b>' + yen(blueBase) + '</b> を、「もし全部が事業所得で、青色申告特別控除（あおいろしんこくとくべつこうじょ）を受けたら」という形に、機械的に置き換えたものです。</p>' +
+        '<table><tr><th>青色申告特別控除の区分</th><th>置き換え後の所得</th><th>内訳</th></tr>' + blueRowsHtml + '</table>' +
+        '<p class="sub">青色申告には、前提条件があります。用意するもの：開業届と「所得税の青色申告承認申請書」（原則、その年の3月15日まで。くわしくは下の開業フローのステップ1・2）。65万円控除には、複式簿記での記帳と、e-Tax での申告（または電子帳簿保存）が必要です。事業所得として認められるかは、事業の規模や継続性などの個別の事情で判断されます。<b>この置き換えは計算の形を見せるだけで、青色が有利・不利という判断はしません。</b>また、海外FXの雑所得など、所得の区分そのものが事業所得に変わるわけではありません（区分の扱いは個別の事情で確認してください）。</p>';
+      // 開業フロー（6ステップ）
+      var openStep = function (n, title, key, bodyHtml) {
+        return '<details style="margin:8px 0"><summary><b>ステップ' + n + '：' + title + '</b></summary><div style="margin:6px 0 2px"><label style="display:block;margin-bottom:4px"><input type="checkbox" data-open="' + key + '"' + (data.opening.checks[key] ? " checked" : "") + '> このステップが済んだらチェック</label>' + bodyHtml + '</div></details>';
+      };
+      var openingHtml =
+        '<h3 class="vtitle">開業フロー（個人事業を始める手順）</h3>' +
+        '<p class="sub">個人事業（こじんじぎょう）を始めるときの、届出（とどけで）と準備の流れです。進み具合：<b id="tx-open-count">' + openDone + ' / 6</b> ステップ。チェックとメモは、この端末に保存されます。期限の表記は、「学ぶ」の確定申告ガイドの整理とそろえています。</p>' +
+        blueHtml +
+        openStep(0, "判断材料をそろえる（始めるかどうかを決める）", "step0",
+          '<p class="sub">やること：いまの数字（このページの合算イメージと、上の青色の置き換え計算）を見て、雑所得のままにするか、事業として始めるかの違いを知ります。開業は義務ではなく任意です。始める場合は、青色申告承認申請の期限（原則3月15日）から逆算して、開業する時期を決めます。</p><p class="sub">つまずきポイント：海外FXの利益は雑所得のまま扱われるのが一般的で、開業届を出しても区分が自動で事業所得に変わるわけではありません。事業所得にできるのは、事業として実態のある活動の分です。判断に迷う場合は、税務署・税理士に確認してください。</p>') +
+        openStep(1, "「個人事業の開業・廃業等届出書（開業届）」を出す", "step1",
+          '<p class="sub">やること：開業届を、納税地（のうぜいち：住んでいる場所）を担当する税務署へ提出します。e-Tax（電子）でも提出できます。<br>期限：<b>2026年1月1日以後に開業した場合は、開業した年分の確定申告の期限まで</b>。それより前に開業した場合は、開業から1か月以内です（期限を延ばす見直しが議論されていますが、決まるまでは現行の期限で考えてください）。<br>必要書類：開業届の用紙（国税庁のサイトや税務署にあります）。マイナンバー（個人番号）の記入と、本人確認の書類の提示または写しの添付が要ります。<br>つまずきポイント：税務署の受付印（収受日付印（しゅうじゅうひづけいん））は、令和7年（2025年）1月から押されない決まりになりました。提出した証拠が要る場合は、e-Tax の受信通知を保存するか、控えと一緒に提出して返してもらう方法を使います。</p>') +
+        openStep(2, "セットで出す届出を出す", "step2",
+          '<p class="sub">・<b>所得税の青色申告承認申請書</b>：青色申告にする人は必須です。期限は<b>原則、その年の3月15日まで</b>。1月16日以後に開業した場合は、<b>開業から2か月以内</b>です。<br>・<b>給与支払事務所等の開設届出書</b>：従業員を雇って給与を払う場合に出します（開設から1か月以内）。<br>・<b>源泉所得税の納期の特例（のうきのとくれい）の承認申請</b>：給与を払う従業員が常時10人未満で、源泉所得税の納付を年2回にまとめたい場合に出します。<br>・<b>消費税の届出・インボイス登録</b>：課税売上高1,000万円以下は原則として免税事業者です。取引先からインボイス（適格請求書）の発行を求められる場合など、必要な人だけ検討します。<br>つまずきポイント：青色の申請は、出し忘れるとその年は白色になります。開業届と一緒に出すのが確実です。</p>') +
+        openStep(3, "開業直後の準備をする", "step3",
+          '<p class="sub">やること：帳簿（ちょうぼ）の用意をします。白色申告は、売上と経費を日々記録する法定帳簿（ほうていちょうぼ）が必要です。青色申告の65万円控除には複式簿記（ふくしきぼき）の帳簿が要ります。このアプリの家計簿で「事業」区分を使えば、日々の記録を分けて残せます。<br>事業用のお金の分け方を決めます（事業用の口座・カードを作る、など）。領収書の残し方も決めておきます（下の「書類の保存アーカイブ」参照）。</p>') +
+        openStep(4, "身分の分岐を確認する", "step4",
+          '<p class="sub">会社員のまま兼業する場合：勤務先の就業規則（しゅうぎょうきそく）で、副業が認められているかを確認します。住民税の扱いは、上の「住民税の徴収方法チェック」を見てください。<br>退職して独立する場合：健康保険は、退職から14日以内に市区町村で国民健康保険（こくみんけんこうほけん）への切り替えをします。年金も国民年金（こくみんねんきん）への切り替えが必要です。扶養（ふよう）の範囲で働いている人の扱いなど、個別の事情が大きい部分は、社会保険労務士や市区町村の窓口で確認してください。</p>') +
+        openStep(5, "年間のサイクルを回す", "step5",
+          '<p class="sub">毎月：記帳と領収書の整理をします。このページの「工程チェック」も、年明けに使います。<br>1月：源泉徴収票と、ブローカーの年間レポートを集めます。<br>2月16日〜3月15日：確定申告と納付をします。<br>5〜6月ごろ：住民税の通知が届きます。普通徴収を選んだ分は、納付書で年4回に分けて納めます。<br>青色申告の人は、65万円控除の条件（複式簿記＋e-Tax 申告、または電子帳簿保存）を、毎年満たしているかも確認します。</p>') +
+        '<div class="fld"><label>開業についてのメモ</label><textarea id="tx-opmemo" rows="3" style="width:100%" placeholder="開業する時期の希望、相談した窓口の記録など">' + esc(data.opening.memo || "") + '</textarea></div>' +
+        '<div class="btns"><button type="button" class="btn" id="tx-opmemo-save">開業のメモを保存</button></div><div class="msg" id="tx-opmsg"></div>';
+      var html =
+        '<div class="first"><b>このページは、確定申告の「計算と整理」のための道具です。税金の個別の判断はしません。</b>あなたの申告が正しいかどうかは、最終的に税務署・税理士に確認してください。表示される金額は、この端末に記録された数字からの目安です。</div>' +
+        '<div class="jcalh"><button type="button" class="iconbtn" id="tx-yprev"' + (yi >= years.length - 1 ? " disabled" : "") + '>‹</button><span style="font-weight:700">' + year + '年分</span><button type="button" class="iconbtn" id="tx-ynext"' + (yi <= 0 ? " disabled" : "") + '>›</button>' +
+        '<select id="tx-ysel">' + years.map(function (y) { return '<option value="' + y + '"' + (+y === year ? " selected" : "") + '>' + y + '年</option>'; }).join("") + '</select></div>' +
+        '<p class="sub">確定申告（かくていしんこく）の準備のために、1年分の数字をここへ集めます。下へ進むと、海外分／国内分の切り分け、経費、給与、合算のイメージの順に出ます。</p>' +
+        '<h3 class="vtitle">トレードの損益（' + year + '年）</h3>' +
+        (tr.total.days ? '<div class="pl-head"><div class="big ' + pcls(tr.total.pnl) + '">' + yen(tr.total.pnl) + '</div><div class="sub">勝ち ' + tr.total.win + ' 日・負け ' + tr.total.loss + ' 日／取引した日 ' + tr.total.days + ' 日</div></div>'
+          : '<p class="sub">この年のトレードの記録はまだありません（トレード収支の日次入力、または日誌に記録すると出ます）。</p>') +
+        '<p class="sub">合計は「トレード収支」の日次入力を優先し、日誌の分は二重に加えていません。業者の年間損益報告書の数字と照らし合わせてください。</p>' +
+        '<table><tr><th>月</th><th>損益</th><th>内訳</th></tr>' + monthRows + '</table>' +
+        (tr.hasTrades ? '<p style="margin:10px 0 2px"><b>銘柄別の内訳（日誌からの参考値）</b></p><table><tr><th>銘柄</th><th>損益</th><th>勝敗</th></tr>' + instRows + '</table><p class="sub">銘柄別の内訳は日誌の記録から出した参考値です。年の合計は上の数字（日次入力が正本）を使ってください。</p>' : "") +
+        '<h3 class="vtitle">海外分／国内分の切り分け</h3>' +
+        '<div class="jn-panels">' +
+        '<div class="jn-panel"><h4>海外分（雑所得（ざっしょとく）・総合課税（そうごうかぜい））</h4><div class="big ' + (split.known ? pcls(split.overseas) : "") + '">' + (split.known ? yen(split.overseas) : "—") + '</div>' +
+        '<div class="sub">' + (split.known ? "年合計 − 国内分で出した数字です。海外の業者（XM・XSなど）の分で、給与など他の所得と合計して税率が決まる区分です。" : "国内分の入力が要ります。下の欄に国内分の年間損益を入れると、海外分が出ます。") + ' 年の途中で為替の換算が要る場合は、業者の年間損益報告書の数字を使ってください。</div></div>' +
+        '<div class="jn-panel"><h4>国内分（先物取引に係る雑所得等・申告分離課税（しんこくぶんりかぜい））</h4><div class="big ' + (split.known ? pcls(split.domestic) : "") + '">' + (split.known ? yen(split.domestic) : "—") + '</div>' +
+        '<div class="sub">国内の業者で取引した分です。他の所得とは分けて、決まった税率（20.315％）で計算される区分です。赤字は、申告を続ければ翌年から3年、同じ区分の利益から差し引けます（繰り越し（くりこし））。</div></div>' +
+        '</div>' +
+        '<p class="sub"><b>海外分と国内分は、損益を通算（つうさん）できません。</b>片方の利益と、もう片方の損失を差し引くことはできません。暗号資産の赤字も、海外分の利益とは通算できません。</p>' +
+        '<div class="row2"><div class="fld">' + field("tx-dom", "国内分の年間損益（円・業者の報告書から転記）", split.known ? split.domestic : "", "number") + '</div></div>' +
+        '<div class="btns"><button type="button" class="btn gold" id="tx-domsave">国内分を保存</button></div><div class="msg" id="tx-dommsg"></div>' +
+        '<p class="sub">国内の業者で取引していない年は、0 と入れてください。空欄のままでは、海外分を切り分けられません。</p>' +
+        '<h3 class="vtitle">経費の要約</h3>' +
+        '<p class="sub">家計簿に記録した支出から、申告の経費になりそうな候補を拾います。<b>候補は確定ではありません。</b>自動計算で経費の額を断定はしないので、申告に使う金額は下の「経費の確定値」に、自分で決めて入れてください。トレード収支から転記した記録（損益そのもの）は、候補から除いています。</p>' +
+        (cand.bizRows.length ? '<p style="margin:8px 0 2px"><b>事業分の支出（家計簿の「事業」記録）</b></p><table><tr><th>科目</th><th>合計</th></tr>' + bizCandRows + '<tr><td><b>合計</b></td><td><b>¥' + fmt(cand.bizTotal, 0) + '</b></td></tr></table>' : '<p class="sub">家計簿の「事業」分の支出は、この年はまだありません。</p>') +
+        (cand.lifeRows.length ? '<p style="margin:10px 0 2px"><b>生活分から按分（あんぶん）できそうな候補</b>　<span class="sub">生活と仕事で共用している支出は、仕事で使った割合だけを経費にできます。割合と、その根拠（時間の割合など）をメモしておくと、あとで説明しやすくなります。</span></p><table><tr><th>カテゴリ</th><th>支出の合計</th><th>仕事の割合</th><th>根拠のメモ</th><th>按分後の目安</th></tr>' + apRows + '</table><div class="btns"><button type="button" class="btn" id="tx-apsave">按分のメモを保存</button></div><div class="msg" id="tx-apmsg"></div>'
+          : '<p class="sub">生活分の按分候補（通信・光熱費・住まい・交通）は、この年はまだありません。</p>') +
+        '<div class="row2"><div class="fld">' + field("tx-exp", "経費の確定値（円・合算イメージに使う金額）", entry.expensesFinal == null ? "" : entry.expensesFinal, "number") + '</div></div>' +
+        '<div class="btns"><button type="button" class="btn gold" id="tx-expsave">経費の確定値を保存</button><button type="button" class="btn" data-tab="kakeibo">家計簿を開く</button></div><div class="msg" id="tx-expmsg"></div>' +
+        '<p class="sub">医療費控除（いりょうひこうじょ）の目安は、家計簿の「申告用」で計算しています。そちらも合わせて確認してください。</p>' +
+        guideHtml +
+        '<h3 class="vtitle">給与所得（源泉徴収票から）</h3>' +
+        '<p class="sub">源泉徴収票（げんせんちょうしゅうひょう）の数字を転記します。「給与所得控除後の金額」は、給与の金額から給与所得控除（きゅうよしょとくこうじょ）を差し引いたあとの金額で、票に印刷されています。証明になるのは源泉徴収票そのものです。</p>' +
+        '<div class="row2"><div class="fld">' + field("tx-sal-gross", "支払金額（円）", sal.gross == null ? "" : sal.gross, "number") + '</div>' +
+        '<div class="fld">' + field("tx-sal-after", "給与所得控除後の金額（円）", sal.afterDeduction == null ? "" : sal.afterDeduction, "number") + '</div></div>' +
+        '<div class="row2"><div class="fld">' + field("tx-sal-ded", "所得控除の額の合計額（円・任意）", sal.deductionsTotal == null ? "" : sal.deductionsTotal, "number") + '</div>' +
+        '<div class="fld">' + field("tx-sal-wh", "源泉徴収税額（円）", sal.withheld == null ? "" : sal.withheld, "number") + '</div></div>' +
+        '<div class="btns"><button type="button" class="btn gold" id="tx-salsave">給与を保存</button></div><div class="msg" id="tx-salmsg"></div>' +
+        '<h3 class="vtitle">合算イメージ（目安）</h3>' +
+        '<table><tr><th>区分</th><th>金額</th></tr>' + combRows + '</table>' + segHtml +
+        '<p class="sub">雑所得の金額は0を下限にして出しています（赤字の分は他の所得から差し引きません）。この表は所得の合算イメージです。税額の概算は、下の「住宅ローン控除」と「年末の着地見込み」で出します（概算・目安で、税額の確定は確定申告書や国税庁の「確定申告書等作成コーナー」で行います）。住民税は別途かかります。</p>' +
+        hsHtml + estHtml + furHtml +
+        '<h3 class="vtitle">申告が要るかの目安</h3>' +
+        '<p>会社員で、1か所から給与を受けていて、年末調整（ねんまつちょうせい：会社が1年分の所得税を精算する手続き）が済んでいる場合、給与以外の所得の合計が年20万円以下なら、所得税の確定申告は原則として不要とされています（国税庁の案内）。ただし、医療費控除を受けたい場合や、ふるさと納税のワンストップ特例（とくれい）を使わない場合などは、20万円以下でも申告が要ります。住民税は、所得税の申告が不要でも申告が要る場合があります（お住まいの市区町村の案内を確認してください）。</p>' + hintLine +
+        '<p class="sub">これは一般論の案内です。あなたの申告が要るかどうかは、個別の事情で変わります。迷ったら税務署・税理士に確認してください。</p>' +
+        '<h3 class="vtitle">損失の繰り越し（国内分のみ）</h3>' +
+        '<p class="sub">国内の「先物取引に係る雑所得等」で赤字が出た年は、その赤字を翌年から3年、同じ区分（国内分）の利益から差し引けます。<b>繰り越しには、そのあとも毎年の申告を続ける必要があります。</b>海外の雑所得分（XM・XSなど）の赤字は、繰り越すことができません。金額は、赤字の額をプラスの数字で入れてください。</p>' +
+        (split.known && split.domestic < 0 ? '<div class="warn">' + year + '年の国内分は赤字（' + yen(split.domestic) + '）です。この年の行を下で足しておくと、繰り越しを追えます。</div>' : "") +
+        carryHtml +
+        '<div class="grid3"><div class="fld"><label>赤字が出た年</label><select id="tx-carry-year">' + carryYearOpts + '</select></div>' +
+        '<div class="fld">' + field("tx-carry-amt", "赤字の金額（円）", "", "number") + '</div></div>' +
+        '<div class="btns"><button type="button" class="btn" id="tx-carryadd">繰り越しの行を足す</button></div><div class="msg" id="tx-carrymsg"></div>' +
+        '<h3 class="vtitle">暗号資産の損益メモ</h3>' +
+        '<p class="sub">暗号資産（あんごうしさん）の年間の損益を入れておくメモ欄です。計算はFXとは別の枠（雑所得）で、赤字は他の所得と通算できません。ここに入れた金額は、雑所得の内訳として上の「合算イメージ」に入ります（0を下限にします）。取引所の年間取引報告書など、根拠になる数字から転記してください。</p>' +
+        '<div class="row2"><div class="fld">' + field("tx-crypto", year + "年の暗号資産の損益（円・赤字はマイナス）", entry.cryptoPnl == null ? "" : entry.cryptoPnl, "number") + '</div></div>' +
+        '<div class="btns"><button type="button" class="btn gold" id="tx-cryptosave">暗号資産の損益を保存</button></div><div class="msg" id="tx-cryptomsg"></div>' +
+        residentHtml + reconHtml + sheetHtml + prepHtml + archHtml + openingHtml +
+        '<p class="sub" style="margin-top:14px">個別の事情がある場合や、判断に迷う場合は、税務署・税理士に相談してください。このページは申告書そのものではありません。</p>';
+      body.innerHTML = '<div class="tax-scope">' + html + '</div>';
+      var saveYear = function (patch) {
+        var d2 = taxData(), e2 = taxYearEntry(d2, year);
+        Object.keys(patch).forEach(function (k) { e2[k] = patch[k]; });
+        d2.years[String(year)] = e2;
+        return put(TAX, d2, "確定申告");
+      };
+      var numOrNull = function (id) {
+        var v = $(id).value.trim(); if (v === "") return null;
+        var x = Number(v); return isFinite(x) ? x : NaN;
+      };
+      var rerender = function (msgId, text) { VIEWS.tax(); var m = $(msgId); if (m) m.textContent = text; };
+      $("#tx-yprev").onclick = function () { if (yi < years.length - 1) { taxYear = +years[yi + 1]; VIEWS.tax(); } };
+      $("#tx-ynext").onclick = function () { if (yi > 0) { taxYear = +years[yi - 1]; VIEWS.tax(); } };
+      $("#tx-ysel").onchange = function () { taxYear = +this.value; VIEWS.tax(); };
+      $("#tx-domsave").onclick = function () {
+        var v = numOrNull("#tx-dom");
+        if (v !== null && isNaN(v)) { $("#tx-dommsg").textContent = "数字で入れてください。"; return; }
+        if (saveYear({ domesticFuturesPnl: v })) rerender("#tx-dommsg", v === null ? "国内分を未入力に戻しました。" : "国内分を保存しました。海外分は年合計から差し引いて出しています。");
+      };
+      $("#tx-expsave").onclick = function () {
+        var v = numOrNull("#tx-exp");
+        if (v !== null && isNaN(v)) { $("#tx-expmsg").textContent = "数字で入れてください。"; return; }
+        if (v !== null && v < 0) { $("#tx-expmsg").textContent = "経費の確定値は0以上で入れてください。"; return; }
+        if (saveYear({ expensesFinal: v })) rerender("#tx-expmsg", v === null ? "経費の確定値を未入力に戻しました。" : "経費の確定値を保存しました。");
+      };
+      var apBtn = $("#tx-apsave");
+      if (apBtn) apBtn.onclick = function () {
+        var ap = {};
+        cand.lifeRows.forEach(function (r, i) {
+          var rv = $("#tx-ap-r-" + i).value.trim(), mv = $("#tx-ap-m-" + i).value.trim();
+          var ratio = rv === "" ? null : Number(rv);
+          if (rv !== "" && (!isFinite(ratio) || ratio < 0 || ratio > 100)) { $("#tx-apmsg").textContent = "割合は0〜100の数字で入れてください。"; return; }
+          if (ratio !== null || mv) ap[r.cat] = { ratio: ratio, memo: mv.slice(0, 400) };
+        });
+        if (saveYear({ apportion: ap })) rerender("#tx-apmsg", "按分のメモを保存しました。");
+      };
+      $("#tx-salsave").onclick = function () {
+        var g = numOrNull("#tx-sal-gross"), a = numOrNull("#tx-sal-after"), d = numOrNull("#tx-sal-ded"), w = numOrNull("#tx-sal-wh");
+        if ([g, a, d, w].some(function (x) { return x !== null && isNaN(x); })) { $("#tx-salmsg").textContent = "数字で入れてください。"; return; }
+        if (saveYear({ salary: { gross: g, afterDeduction: a, deductionsTotal: d, withheld: w } })) rerender("#tx-salmsg", "給与を保存しました。");
+      };
+      $("#tx-cryptosave").onclick = function () {
+        var v = numOrNull("#tx-crypto");
+        if (v !== null && isNaN(v)) { $("#tx-cryptomsg").textContent = "数字で入れてください。"; return; }
+        if (saveYear({ cryptoPnl: v })) rerender("#tx-cryptomsg", v === null ? "暗号資産の損益を未入力に戻しました。" : "暗号資産の損益を保存しました。");
+      };
+      $("#tx-carryadd").onclick = function () {
+        var fy = +$("#tx-carry-year").value, amt = numOrNull("#tx-carry-amt");
+        if (amt === null || isNaN(amt) || amt <= 0) { $("#tx-carrymsg").textContent = "赤字の金額をプラスの数字で入れてください。"; return; }
+        var d2 = taxData(), rows = (d2.carry || []).slice();
+        if (rows.some(function (c) { return c.fromYear === fy; })) { $("#tx-carrymsg").textContent = fy + "年の行はすでに入っています。"; return; }
+        rows.push({ id: uid(), fromYear: fy, amount: amt });
+        d2.carry = rows;
+        if (put(TAX, d2, "確定申告")) rerender("#tx-carrymsg", fy + "年の繰り越しの行を足しました。");
+      };
+      body.querySelectorAll("[data-carrydel]").forEach(function (b) {
+        b.onclick = function () {
+          var id = b.getAttribute("data-carrydel"), row = (data.carry || []).filter(function (c) { return c.id === id; })[0];
+          if (!row || !confirm(row.fromYear + "年の繰り越しの行（¥" + fmt(row.amount, 0) + "）を消します。よろしいですか？")) return;
+          var d2 = taxData();
+          d2.carry = (d2.carry || []).filter(function (c) { return c.id !== id; });
+          if (put(TAX, d2, "確定申告")) rerender("#tx-carrymsg", "繰り越しの行を消しました。");
+        };
+      });
+      var hsbtn = $("#tx-hssave");
+      if (hsbtn) hsbtn.onclick = function () {
+        var sr = numOrNull("#tx-hs-share"), pc = numOrNull("#tx-hs-price"), bv = numOrNull("#tx-hs-bal"), iv = numOrNull("#tx-hs-tax");
+        if (sr !== null && (isNaN(sr) || sr < 0 || sr > 100)) { $("#tx-hsmsg").textContent = "負担割合は0〜100の数字で入れてください。"; return; }
+        if (pc !== null && (isNaN(pc) || pc < 0)) { $("#tx-hsmsg").textContent = "取得対価は0以上の数字で入れてください。"; return; }
+        if (bv !== null && (isNaN(bv) || bv < 0)) { $("#tx-hsmsg").textContent = "年末残高は0以上の数字で入れてください。"; return; }
+        if (iv !== null && (isNaN(iv) || iv < 0)) { $("#tx-hsmsg").textContent = "所得税額は0以上の数字で入れてください。"; return; }
+        var d2 = taxData(), h2 = d2.housing, yk = String(year), myv = $("#tx-hs-year").value;
+        h2.enabled = $("#tx-hs-on").checked;
+        h2.moveInYear = myv === "" ? null : +myv;
+        h2.category = $("#tx-hs-cat").value;
+        h2.specialPerson = $("#tx-hs-special").checked;
+        h2.shareRatio = sr;
+        h2.priceCap = pc;
+        if (bv === null || bv === 0) delete h2.balances[yk]; else h2.balances[yk] = bv;
+        if (iv === null) delete h2.incomeTax[yk]; else h2.incomeTax[yk] = iv;
+        d2.housing = taxHouseNorm(h2);
+        if (put(TAX, d2, "確定申告")) rerender("#tx-hsmsg", "住宅ローン控除の設定を保存しました（" + year + "年の残高・所得税額を含む）。");
+      };
+      /* ----- フェーズ2cの操作 ----- */
+      // 突合：レポートの転記値（年間・月別）を保存する
+      var rpBtn = $("#tx-rpsave");
+      if (rpBtn) rpBtn.onclick = function () {
+        var av = numOrNull("#tx-rp-annual");
+        if (av !== null && isNaN(av)) { $("#tx-rpmsg").textContent = "年間の確定損益は数字で入れてください。"; return; }
+        var mm = {}, bad = false;
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].forEach(function (mo) { var v = numOrNull("#tx-rp-" + mo); if (v !== null && isNaN(v)) bad = true; else if (v !== null) mm[String(mo)] = v; });
+        if (bad) { $("#tx-rpmsg").textContent = "月別の数字を確認してください。"; return; }
+        if (saveYear({ mt5Annual: av, mt5Months: mm })) rerender("#tx-rpmsg", "照らし合わせを保存しました。差額の表示が更新されます。");
+      };
+      // MT5 の HTML レポートから、ポジションの一覧を読み取る（この端末の中だけで処理する）
+      var mt5Extract = function (doc) {
+        var rows = [];
+        var findCol = function (heads, names) { for (var i = 0; i < heads.length; i++) { var t = heads[i].replace(/\s+/g, ""); if (names.indexOf(t) >= 0) return i; } return -1; };
+        doc.querySelectorAll("table").forEach(function (tb) {
+          var trs = tb.querySelectorAll("tr");
+          if (trs.length < 2) return;
+          var heads = [].map.call(trs[0].querySelectorAll("th,td"), function (c) { return (c.textContent || "").trim(); });
+          var posI = findCol(heads, ["Position", "ポジション", "ポジションID"]);
+          var profI = findCol(heads, ["Profit", "損益", "利益"]);
+          if (posI < 0 || profI < 0) return;
+          var comI = findCol(heads, ["Commission", "手数料"]), swpI = findCol(heads, ["Swap", "スワップ"]);
+          var timeIdx = []; heads.forEach(function (h, i) { var t = h.replace(/\s+/g, ""); if (t === "Time" || t === "時刻" || t === "時間") timeIdx.push(i); });
+          var closeI = timeIdx.length >= 2 ? timeIdx[1] : (heads.length >= 13 ? 8 : timeIdx[0]);
+          if (closeI === undefined || closeI < 0) return;
+          if (comI < 0) comI = heads.length >= 13 ? 10 : -1;
+          if (swpI < 0) swpI = heads.length >= 13 ? 11 : -1;
+          for (var r = 1; r < trs.length; r++) {
+            var cells = trs[r].querySelectorAll("td");
+            if (!cells.length || cells.length <= Math.max(posI, profI, closeI)) continue;
+            if (!/^\d+$/.test((cells[posI].textContent || "").trim())) continue;  // 合計行などを除く（ポジション番号が数字の行だけ）
+            var tm = /(\d{4})[.\/](\d{2})[.\/](\d{2})/.exec(cells[closeI].textContent || "");
+            if (!tm) continue;
+            rows.push({ close: tm[1] + "-" + tm[2] + "-" + tm[3], profit: cells[profI].textContent || "", commission: comI >= 0 && cells[comI] ? cells[comI].textContent : "0", swap: swpI >= 0 && cells[swpI] ? cells[swpI].textContent : "0" });
+          }
+        });
+        return rows;
+      };
+      var fileIn = $("#tx-mt5file");
+      if (fileIn) fileIn.addEventListener("change", function () {
+        var f = fileIn.files && fileIn.files[0], msg = $("#tx-mt5msg");
+        if (!f) return;
+        var rd = new FileReader();
+        rd.onload = function () {
+          try {
+            var doc = new DOMParser().parseFromString(String(rd.result || ""), "text/html");
+            var rows = mt5Extract(doc);
+            if (!rows.length) { msg.textContent = "ポジションの一覧が見つかりませんでした。MT5 のレポート（HTML）かを確認してください。読み取れない場合は、手で転記してください。"; return; }
+            var agg = taxMt5Agg(rows), yv = agg.annual[String(year)];
+            if (yv === undefined) { msg.textContent = rows.length + "件の決済を読みましたが、" + year + "年に決済した分はありませんでした（上の年を確認してください）。"; return; }
+            var aEl = $("#tx-rp-annual"); if (aEl) aEl.value = yv;
+            for (var mo = 1; mo <= 12; mo++) { var el = $("#tx-rp-" + mo); if (!el) continue; var mv = agg.monthly[year + "-" + String(mo).padStart(2, "0")]; el.value = mv === undefined ? "" : mv; }
+            msg.textContent = "レポートから " + rows.length + " 件の決済を読み、" + year + "年の転記欄へ入れました。内容を確認して「照らし合わせを保存」を押してください。";
+          } catch (e) { msg.textContent = "読み込みに失敗しました。手で転記してください。"; }
+        };
+        rd.readAsText(f);
+      });
+      // 転記シートの CSV
+      var csvBtn = $("#tx-csv");
+      if (csvBtn) csvBtn.onclick = function () {
+        var rowsCsv = [["対象年：" + year + "年分", "", "", "", "", ""]].concat(sheetRows.map(function (r) {
+          return [r.form, r.cell, r.item, r.amount === null ? "" : r.amount, r.src, r.note];
+        }));
+        download("tax-sheet-" + year + ".csv", kbCsv(["様式", "欄", "項目", "金額（円）", "もとにする記録", "メモ"], rowsCsv), "text/csv;charset=utf-8");
+        $("#tx-csvmsg").textContent = "転記シートの CSV を書き出しました。";
+      };
+      // 工程チェックの保存（チェックの付け外しはその場で保存し、画面は作り直さない）
+      body.querySelectorAll("[data-prep]").forEach(function (cb) {
+        cb.addEventListener("change", function () {
+          var d2 = taxData(), id = cb.getAttribute("data-prep");
+          if (cb.checked) d2.prep.checks[id] = true; else delete d2.prep.checks[id];
+          if (put(TAX, d2, "確定申告")) { var c = $("#tx-prep-count"); if (c) c.textContent = prepItems.filter(function (p) { return d2.prep.checks[p.id]; }).length + " / " + prepItems.length; }
+          else cb.checked = !cb.checked;
+        });
+      });
+      // 工程チェックの期限を ICS で書き出す（未完了の分だけ）
+      var icsBtn = $("#tx-ics");
+      if (icsBtn) icsBtn.onclick = function () {
+        var d2 = taxData();
+        var evs = prepItems.filter(function (p) { return !d2.prep.checks[p.id]; }).map(function (p) {
+          return { uid: "tax-" + year + "-" + p.id, date: p.due, summary: "確定申告（" + year + "年分）：" + p.title, desc: p.how + "（期限の目安：" + p.dueLabel + "）" };
+        });
+        if (!evs.length) { $("#tx-icsmsg").textContent = "まだ終わっていない項目はありません。"; return; }
+        var stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+        download("tax-deadlines-" + year + ".ics", taxIcs(evs, stamp), "text/calendar;charset=utf-8");
+        $("#tx-icsmsg").textContent = evs.length + "件の期限を ICS ファイルに書き出しました。お使いのカレンダーに取り込んでください。";
+      };
+      // 書類の保存アーカイブの保存
+      body.querySelectorAll("[data-arch]").forEach(function (cb) {
+        cb.addEventListener("change", function () {
+          var d2 = taxData(), yk = String(year), id = cb.getAttribute("data-arch");
+          if (!d2.archive[yk]) d2.archive[yk] = {};
+          if (cb.checked) d2.archive[yk][id] = true; else delete d2.archive[yk][id];
+          d2.archive = taxArchiveNorm(d2.archive);
+          if (put(TAX, d2, "確定申告")) { var c = $("#tx-arch-count"); if (c) c.textContent = TAX_ARCHIVE_ITEMS.filter(function (a2) { return (d2.archive[yk] || {})[a2.id]; }).length + " / " + TAX_ARCHIVE_ITEMS.length; }
+          else cb.checked = !cb.checked;
+        });
+      });
+      // 開業フローの進捗とメモの保存
+      body.querySelectorAll("[data-open]").forEach(function (cb) {
+        cb.addEventListener("change", function () {
+          var d2 = taxData(), id = cb.getAttribute("data-open");
+          if (cb.checked) d2.opening.checks[id] = true; else delete d2.opening.checks[id];
+          if (put(TAX, d2, "確定申告")) { var c = $("#tx-open-count"); if (c) c.textContent = ["step0", "step1", "step2", "step3", "step4", "step5"].filter(function (k) { return d2.opening.checks[k]; }).length + " / 6"; }
+          else cb.checked = !cb.checked;
+        });
+      });
+      var opBtn = $("#tx-opmemo-save");
+      if (opBtn) opBtn.onclick = function () {
+        var d2 = taxData(); d2.opening.memo = $("#tx-opmemo").value.slice(0, 4000);
+        if (put(TAX, d2, "確定申告")) $("#tx-opmsg").textContent = "開業のメモを保存しました。";
+      };
+      var hgBtn = $("#tx-hcguide");
+      if (hgBtn) hgBtn.onclick = function () {
+        kbMode = "tax"; show("kakeibo");
+        var g = $("#kb-hcguide"); if (g) g.scrollIntoView({ block: "start" });
+      };
+    },
+
     signals: function () {
       var st = D.signals(), hist = st.history, now = Date.now();
       var cur = Object.keys(st.current || {}).map(function (k) {
@@ -1556,7 +2565,7 @@
       });
     }
   };
-  var draft = null, pnlSel = "", pnlMonth = "", pnlMode = "", kbYm = "", kbEdit = null, kbMode = "month", kbYear = 0, kbIncome = "", kbLastDate = "", kbScopeLast = "life", kbLoanEdit = null, kbAssetEdit = null, jnDay = "";
+  var draft = null, pnlSel = "", pnlMonth = "", pnlMode = "", kbYm = "", kbEdit = null, kbMode = "month", kbYear = 0, kbIncome = "", kbLastDate = "", kbScopeLast = "life", kbLoanEdit = null, kbAssetEdit = null, jnDay = "", taxYear = 0;
   var num = function (v) { var x = Number(v); return v === "" || !isFinite(x) ? null : x; };
   var toLocal = function (iso) { var t = new Date(iso), z = function (x) { return String(x).padStart(2, "0"); }; return t.getFullYear() + "-" + z(t.getMonth() + 1) + "-" + z(t.getDate()) + "T" + z(t.getHours()) + ":" + z(t.getMinutes()); };
   var JCOLS = [{ name: "id", type: "string", required: true }, { name: "time", type: "time", required: true }, { name: "key", type: "string", required: true },
