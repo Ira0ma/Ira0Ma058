@@ -75,3 +75,11 @@ status：`ok`（確認済み）／`uploaded`（記録直後・未確認）／`ch
 cd warashibe && python -m unittest discover -s tests -v
 ```
 本番の保存先・LINE には一切接続しません（ローカルHTTPサーバと模擬アップローダを使用）。
+
+### テストの環境前提
+- 本番の `/opt/hatch/bin/remote-storage` は**一度も呼びません**。コマンドがある環境（本番に近い環境）でも、
+  実ファイルはアップロードされません（存在しないコマンドの確認には一時フォルダ内の架空のパスを使います）。
+  テスト `test_tests_never_call_production_command` が、テストのコードに本番コマンドが入っていないことを毎回確認します。
+- `127.0.0.1` に一時的なHTTPサーバを立てます（空いているポートを自動で使用）。
+- `TestKillAndResumeCLI` は SIGKILL を使うため、Linux / macOS が前提です（Windows では未確認）。
+- 外部ネットワークは使いません。

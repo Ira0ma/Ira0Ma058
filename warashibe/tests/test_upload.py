@@ -215,9 +215,21 @@ class TestParseOutput(unittest.TestCase):
             uu.parse_upload_output("error: quota exceeded")
 
     def test_command_uploader_missing_binary(self):
-        up = uu.CommandUploader("/opt/hatch/bin/remote-storage upload-file --path {path}")
+        # 必ず存在しないコマンドを使う（本番の remote-storage がある環境でも実アップロードしない）
+        missing = Path(tempfile.mkdtemp()) / "no-such-upload-command"
+        self.assertFalse(missing.exists())
+        up = uu.CommandUploader(f"{missing} upload-file --path {{path}}")
         with self.assertRaises(uu.UploadError):
             up.upload(Path(__file__))
+
+    def test_tests_never_call_production_command(self):
+        """テスト一式が本番のアップロードコマンドを呼ばないことの確認。"""
+        prod = uu.DEFAULT_UPLOAD_CMD.split()[0]
+        for f in HERE.glob("*.py"):
+            text = f.read_text(encoding="utf-8")
+            if f.name == Path(__file__).name:
+                text = text.replace("uu.DEFAULT_UPLOAD_CMD", "")
+            self.assertNotIn(prod, text, f"{f.name} が本番コマンドを参照しています")
 
 
 class TestKillAndResumeCLI(Base):
