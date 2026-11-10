@@ -2,8 +2,11 @@
 // ページから読み取った材料（snapshot）を受け取り、価格・在庫・バリエーション・リンク先を取り出して、
 // 基準値と突き合わせる。推測で値を埋めず、読めなかったものは null のまま返す。
 
-// 要確認＝価格とリンク先は一致したが、在庫だけ読めなかったもの（取得不可とは分けて人の確認へ）
-const VERDICT = { MATCH: "一致", DIFF: "差異あり", REVIEW: "要確認（在庫のみ取得不可）", FAIL: "取得不可" };
+// 要確認＝読めた範囲は一致したが、読めなかった部分があるもの（取得不可とは分けて人の確認へ）
+const VERDICT = {
+  MATCH: "一致", DIFF: "差異あり", REVIEW: "要確認（在庫のみ取得不可）",
+  REVIEW_VARIANT: "要確認（バリエーション一部取得不可）", FAIL: "取得不可",
+};
 
 // 取得不可の理由。stop: true のものは、それ以上アクセスを続けずに実行を止める
 const FAIL_REASON = {
@@ -213,6 +216,14 @@ function judge(target, snapshot) {
   if (urlMatch === null) out.reasons.push("リンク先：楽天の商品URL形式でないため未照合");
 
   if (out.reasons.length) return { ...out, verdict: VERDICT.DIFF };
+
+  // 食い違いはないが、読めなかった部分がある：一致とは言えないので要確認へ
+  const unreadVariants = item.variants.filter((v) => v.price === null).length;
+  if (unreadVariants) {
+    const reasons = [`価格一致・リンク先一致、バリエーション${item.variants.length}点中${unreadVariants}点の価格を取得不可`];
+    if (!item.stock) reasons.push("在庫も取得不可");
+    return { ...out, verdict: VERDICT.REVIEW_VARIANT, reasons };
+  }
   if (!item.stock) {
     return { ...out, verdict: VERDICT.REVIEW, reasons: ["価格一致・リンク先一致、在庫のみ取得不可（構造化データに在庫なし）"] };
   }
@@ -305,7 +316,7 @@ function toMarkdown(results) {
     lines.push(`| ${i + 1} | ${mdCell(target.post_id)} | ${r.verdict} | ${mdCell(note(r, { withVariants: false }) || "-")} | ${mdCell(target.baseline_price_yen)} | ${r.current_price_yen ?? "-"} | ${r.price_match ?? "-"} | ${r.link_match ?? "-"} | ${r.stock_status} | ${mdCell(variantList(r) || "-")} | ${t.date} ${t.time} | ${mdCell(target.item_url)} |`);
   });
   const count = (v) => results.filter((x) => x.result.verdict === v).length;
-  lines.push("", `一致 ${count(VERDICT.MATCH)}件・差異あり ${count(VERDICT.DIFF)}件・要確認 ${count(VERDICT.REVIEW)}件・取得不可 ${count(VERDICT.FAIL)}件。` +
+  lines.push("", `一致 ${count(VERDICT.MATCH)}件・差異あり ${count(VERDICT.DIFF)}件・要確認 ${count(VERDICT.REVIEW) + count(VERDICT.REVIEW_VARIANT)}件・取得不可 ${count(VERDICT.FAIL)}件。` +
     "このツールの「一致」は人の最終照合の代わりではありません。差異あり・要確認・取得不可は必ず人がブラウザで確認してください。");
   return lines.join("\n") + "\n";
 }

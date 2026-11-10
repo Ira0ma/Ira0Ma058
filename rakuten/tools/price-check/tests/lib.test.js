@@ -64,14 +64,37 @@ test("バリエーションで価格が違えば差異あり、選択肢と価�
   assert.match(md, /バリエーション全2点：S 1980円（在庫あり）、L 2480円（在庫なし）/);
 });
 
-test("価格差のないバリエーションも、全点の一覧を出す（判定は一致のまま）", () => {
+test("価格差のないバリエーションも、全点の一覧を出す", () => {
+  const r = L.judge(target, page({ jsonLd: ld({ "@type": "ProductGroup", hasVariant: [
+    { name: "赤", offers: { price: 1980, availability: "InStock" } },
+    { name: "青", offers: { price: 1980, availability: "InStock" } },
+  ] }) }));
+  assert.equal(r.verdict, "一致");
+  assert.equal(L.variantList(r), "バリエーション全2点：赤 1980円（在庫あり）、青 1980円（在庫あり）");
+});
+
+test("バリエーションの一部だけ価格が読めないときは一致にせず要確認、読めた一覧は残す", () => {
   const r = L.judge(target, page({ jsonLd: ld({ "@type": "ProductGroup", hasVariant: [
     { name: "赤", offers: { price: 1980, availability: "InStock" } },
     { name: "青", offers: { price: 1980, availability: "InStock" } },
     { name: "緑", offers: { availability: "InStock" } },
   ] }) }));
-  assert.equal(r.verdict, "一致");
+  assert.equal(r.verdict, "要確認（バリエーション一部取得不可）");
+  assert.equal(r.fail, null);
+  assert.equal(r.price_match, "一致");
+  assert.equal(r.link_match, "一致");
+  assert.match(r.reasons.join(), /3点中1点の価格を取得不可/);
   assert.equal(L.variantList(r), "バリエーション全3点：赤 1980円（在庫あり）、青 1980円（在庫あり）、緑 価格不明（在庫あり）");
+  const row = L.toLogRow(target, { ...r, checkedAt: new Date() });
+  assert.equal(row.status, "要確認（バリエーション一部取得不可）");
+  assert.match(row.note, /緑 価格不明/);
+  // 読めたバリエーションに価格差があれば、差異ありが優先
+  const r2 = L.judge(target, page({ jsonLd: ld({ "@type": "ProductGroup", hasVariant: [
+    { name: "赤", offers: { price: 1980, availability: "InStock" } },
+    { name: "青", offers: { price: 2480, availability: "InStock" } },
+    { name: "緑", offers: { availability: "InStock" } },
+  ] }) }));
+  assert.equal(r2.verdict, "差異あり");
 });
 
 test("AggregateOffer の価格幅は差異あり", () => {
