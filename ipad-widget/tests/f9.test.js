@@ -93,8 +93,8 @@ test("F9: 分析スタンプ「分析 ○○時点」が脚注の先頭に出て
     assert.match(src, /ptAn: "分析 \{t\}時点", ptAnStale: "（更新が止まっています）"/);
     assert.match(src, /ptAn: "Analysis as of \{t\}", ptAnStale: " \(updates have stopped\)"/);
     assert.doesNotMatch(src, /約15分ごと/);
-    // フォークの oilDash の受け皿は ayu_ 接頭の保存キーを読む
-    assert.match(src, /var c0 = JSON\.parse\(localStorage\.getItem\("ayu_usoil_auto_cache_final"\)/);
+    // フォークの oilDash の受け皿も、シート側が実際に書くキー（usoil_auto_cache_final）を読む（キュー1で ayu_ 接頭から修正）
+    assert.match(src, /var c0 = JSON\.parse\(localStorage\.getItem\("usoil_auto_cache_final"\)/);
     // フォークのBTCキャッシュ読みは、シート側が実際に書くキー（LSP＝銘柄名基準）に合わせる
     assert.match(src, /localStorage\.getItem\("btc_auto_cache_final"\)/);
     assert.doesNotMatch(src, /ayu_btc_auto_cache_final/);
