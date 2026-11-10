@@ -60,6 +60,11 @@
     ".tdt .flow div{border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px 10px;font-size:13px}.tdt .flow b{color:#e3b867;display:block}",
     ".tdt-today{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px;color:#e8dfcc}",
     ".tdt-today b{color:#e3b867}.tdt-today .go{min-height:32px;padding:0 10px;border-radius:999px;border:1px solid rgba(227,184,103,.55);background:none;color:#e3b867;font-weight:700;cursor:pointer;margin-left:4px}",
+    /* お知らせバー（一度だけ表示）：タブ列の上に控えめに出す。黒×金 */
+    ".tdt-notice{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:8px 12px;background:rgba(227,184,103,.09);border-bottom:1px solid rgba(227,184,103,.35);font-size:13px;color:#e8dfcc}",
+    ".tdt-notice[hidden]{display:none}",
+    ".tdt-notice .go{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid rgba(227,184,103,.55);background:#e3b867;color:#14100a;font-weight:700;cursor:pointer}",
+    ".tdt-notice .x{min-height:36px;min-width:36px;padding:0;border-radius:999px;border:1px solid rgba(255,255,255,.22);background:none;color:#cfc8ba;font-weight:700;cursor:pointer}",
     ".tdt .first{border:1px solid rgba(227,184,103,.55);background:rgba(227,184,103,.08);border-radius:12px;padding:10px 12px;margin:0 0 12px}",
     ".tdt .first ol{margin:6px 0 4px 1.2em;padding:0}.tdt .first li{margin:4px 0}",
     ".tdt .g-why{margin:6px 0;font-weight:700;color:#f4f1ea}",
@@ -166,14 +171,29 @@
   var box = document.createElement("div");
   box.className = "tdt"; box.hidden = true;
   box.innerHTML = '<div class="tdt-box" role="dialog" aria-modal="true" aria-labelledby="tdt-h"><div class="tdt-top"><h2 id="tdt-h">🧰 ツール</h2><button type="button" class="tdt-x">閉じる</button></div>' +
-    '<div class="tdt-today" aria-live="polite"></div><div class="tdt-tabs" role="tablist">' + TABS.map(function (t) { return '<button type="button" role="tab" data-tab="' + t[0] + '" aria-selected="false">' + t[1] + "</button>"; }).join("") + "</div>" +
+    '<div class="tdt-today" aria-live="polite"></div><div class="tdt-notice" role="note" hidden></div><div class="tdt-tabs" role="tablist">' + TABS.map(function (t) { return '<button type="button" role="tab" data-tab="' + t[0] + '" aria-selected="false">' + t[1] + "</button>"; }).join("") + "</div>" +
     '<div class="tdt-body" role="tabpanel" tabindex="-1"></div></div>';
   document.body.appendChild(box);
   var body = box.querySelector(".tdt-body"), opener = null, tab = "money", timer = 0;
   try { tab = LS.getItem("td-tools-tab") || "guide"; } catch (e) { tab = "guide"; }  // the first time: how to use
+  // [notice-pure-begin] お知らせバー（確定申告タブ追加）の「一度だけ」判定。ストレージは引数で受け取り、テストで差し替えられる形に保つ。キーはバックアップ対象外のUI状態（F8のヒントと同じ扱い）
+  var NOTICE_TAX_KEY = "td_notice_tax_v1";
+  function noticeTaxSeen(store) { try { return store.getItem(NOTICE_TAX_KEY) != null; } catch (e) { return true; } }  // 読めない環境では出さない（安全側）
+  function noticeTaxMark(store) { try { store.setItem(NOTICE_TAX_KEY, "1"); } catch (e) {} }
+  // [notice-pure-end]
+  var noticeEl = box.querySelector(".tdt-notice");
+  function dismissTaxNotice() { noticeTaxMark(LS); noticeEl.hidden = true; noticeEl.innerHTML = ""; }
+  function renderTaxNotice() {
+    if (noticeTaxSeen(LS)) { noticeEl.hidden = true; return; }
+    noticeEl.innerHTML = "<span>お知らせ：ツールに『確定申告』タブが追加されました。トレード収支・日誌・家計簿の記録と連動して、確定申告の計算と整理ができます。</span>" +
+      '<button type="button" class="go">開いてみる</button><button type="button" class="x" aria-label="お知らせを閉じる">✕</button>';
+    noticeEl.hidden = false;
+    noticeEl.querySelector(".go").addEventListener("click", function () { dismissTaxNotice(); show("tax"); });
+    noticeEl.querySelector(".x").addEventListener("click", dismissTaxNotice);
+  }
   function open(t, from) {
     opener = from || document.activeElement; if (t) tab = t;
-    box.hidden = false; show(tab);
+    box.hidden = false; renderTaxNotice(); show(tab);
     var b = box.querySelector('[data-tab="' + tab + '"]'); if (b) { b.focus(); b.scrollIntoView({ block: "nearest", inline: "nearest" }); }
   }
   function close() { box.hidden = true; clearInterval(timer); if (opener && opener.focus) opener.focus(); }
