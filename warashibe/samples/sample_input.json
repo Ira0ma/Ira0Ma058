@@ -1,0 +1,482 @@
+{
+  "schema_version": "1",
+  "is_sample": true,
+  "_note": "これはサンプル入力です。実際の相場の数字は入っていません（〇〇〇 は伏せ字）。",
+  "issue_no": 0,
+  "date": "2026-11-10",
+  "bubbles": [
+    {
+      "kind": "menu",
+      "blocks": [
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "heading",
+              "text": "（サンプル）本日のおしながき"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "body",
+              "text": "（サンプル）1. 相場まとめ\n2. 前日総評と答え合わせ\n3. 日足セブン\n4. わらしべ教室\n5. チャート考察\n6. 勤務形態別の4版"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "summary_figure",
+      "blocks": [
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "heading",
+              "text": "（サンプル）相場まとめ"
+            }
+          ]
+        },
+        {
+          "type": "image",
+          "url": "https://example.com/sample/summary.png",
+          "width": 1200,
+          "height": 1500
+        },
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "note",
+              "text": "（サンプル）図をタップすると原寸で開きます"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "review",
+      "dense": true,
+      "blocks": [
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "heading",
+              "text": "（サンプル）前日総評＋答え合わせ"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "body",
+              "text": "（サンプル）前日の振り返り本文。的中ラインは "
+            },
+            {
+              "role": "key",
+              "text": "〇本中〇本"
+            },
+            {
+              "role": "body",
+              "text": "。"
+            }
+          ]
+        },
+        {
+          "type": "image",
+          "url": "https://example.com/sample/board.png",
+          "width": 1200,
+          "height": 900
+        }
+      ]
+    },
+    {
+      "kind": "seven",
+      "pairs": [
+        {
+          "pair": "gold",
+          "blocks": [
+            {
+              "type": "text",
+              "segments": [
+                {
+                  "role": "heading",
+                  "text": "（サンプル）ゴールドの節目7本"
+                }
+              ]
+            },
+            {
+              "type": "image",
+              "url": "https://example.com/sample/seven_gold.png",
+              "width": 1200,
+              "height": 600
+            },
+            {
+              "type": "text",
+              "segments": [
+                {
+                  "role": "note",
+                  "text": "（サンプル）ゴールドの注釈はここに入ります"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "pair": "usdjpy",
+          "blocks": [
+            {
+              "type": "text",
+              "segments": [
+                {
+                  "role": "heading",
+                  "text": "（サンプル）ドル円の節目7本"
+                }
+              ]
+            },
+            {
+              "type": "image",
+              "url": "https://example.com/sample/seven_usdjpy.png",
+              "width": 1200,
+              "height": 600
+            },
+            {
+              "type": "text",
+              "segments": [
+                {
+                  "role": "note",
+                  "text": "（サンプル）ドル円の注釈はここに入ります"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "seven",
+      "pairs": [
+        {
+          "pair": "silver",
+          "blocks": [
+            {
+              "type": "text",
+              "segments": [
+                {
+                  "role": "heading",
+                  "text": "（サンプル）シルバーの節目7本"
+                }
+              ]
+            },
+            {
+              "type": "image",
+              "url": "https://example.com/sample/seven_silver.png",
+              "width": 1200,
+              "height": 600
+            },
+            {
+              "type": "text",
+              "segments": [
+                {
+                  "role": "note",
+                  "text": "（サンプル）シルバーの注釈はここに入ります"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "pair": "usoil",
+          "blocks": [
+            {
+              "type": "text",
+              "segments": [
+                {
+                  "role": "heading",
+                  "text": "（サンプル）USオイルの節目7本"
+                }
+              ]
+            },
+            {
+              "type": "image",
+              "url": "https://example.com/sample/seven_usoil.png",
+              "width": 1200,
+              "height": 600
+            },
+            {
+              "type": "text",
+              "segments": [
+                {
+                  "role": "note",
+                  "text": "（サンプル）USオイルの注釈はここに入ります"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "pair": "btc",
+          "blocks": [
+            {
+              "type": "text",
+              "segments": [
+                {
+                  "role": "heading",
+                  "text": "（サンプル）BTCの節目7本"
+                }
+              ]
+            },
+            {
+              "type": "image",
+              "url": "https://example.com/sample/seven_btc.png",
+              "width": 1200,
+              "height": 600
+            },
+            {
+              "type": "text",
+              "segments": [
+                {
+                  "role": "note",
+                  "text": "（サンプル）BTCの注釈はここに入ります"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "lesson",
+      "blocks": [
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "heading",
+              "text": "（サンプル）わらしべ教室"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "body",
+              "text": "（サンプル）今日のテーマの解説本文がここに入ります。"
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "note",
+              "text": "（サンプル）用語の注釈"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "chart_figure",
+      "blocks": [
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "heading",
+              "text": "（サンプル）チャート考察図"
+            }
+          ]
+        },
+        {
+          "type": "image",
+          "url": "https://example.com/sample/chart.png",
+          "width": 1200,
+          "height": 800
+        },
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "body",
+              "text": "（サンプル）図の読み方の本文"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "edition",
+      "shift": "morning",
+      "blocks": [
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "heading",
+              "text": "（サンプル）朝勤のあなたへ"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "body",
+              "text": "（サンプル）朝勤向けの本文がここに入ります。重要な数字は "
+            },
+            {
+              "role": "key",
+              "text": "〇〇〇"
+            },
+            {
+              "role": "body",
+              "text": " のように太字で示します。"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "note",
+              "text": "（サンプル）朝勤版の注釈"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "edition",
+      "shift": "day",
+      "blocks": [
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "heading",
+              "text": "（サンプル）日勤のあなたへ"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "body",
+              "text": "（サンプル）日勤向けの本文がここに入ります。重要な数字は "
+            },
+            {
+              "role": "key",
+              "text": "〇〇〇"
+            },
+            {
+              "role": "body",
+              "text": " のように太字で示します。"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "note",
+              "text": "（サンプル）日勤版の注釈"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "edition",
+      "shift": "night",
+      "blocks": [
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "heading",
+              "text": "（サンプル）夜勤のあなたへ"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "body",
+              "text": "（サンプル）夜勤向けの本文がここに入ります。重要な数字は "
+            },
+            {
+              "role": "key",
+              "text": "〇〇〇"
+            },
+            {
+              "role": "body",
+              "text": " のように太字で示します。"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "note",
+              "text": "（サンプル）夜勤版の注釈"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "edition",
+      "shift": "full",
+      "blocks": [
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "heading",
+              "text": "（サンプル）専業のあなたへ"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "body",
+              "text": "（サンプル）専業向けの本文がここに入ります。重要な数字は "
+            },
+            {
+              "role": "key",
+              "text": "〇〇〇"
+            },
+            {
+              "role": "body",
+              "text": " のように太字で示します。"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "segments": [
+            {
+              "role": "note",
+              "text": "（サンプル）専業版の注釈"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

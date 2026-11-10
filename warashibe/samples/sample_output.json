@@ -1,0 +1,701 @@
+{
+  "type": "flex",
+  "altText": "朝刊わらしべ 第0号 考察配信（11月10日）",
+  "contents": {
+    "type": "carousel",
+    "contents": [
+      {
+        "type": "bubble",
+        "size": "mega",
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "spacing": "md",
+          "contents": [
+            {
+              "type": "text",
+              "text": "（サンプル）本日のおしながき",
+              "wrap": true,
+              "scaling": true,
+              "color": "#A8842C",
+              "size": "lg",
+              "weight": "bold",
+              "lineSpacing": "2px"
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）1. 相場まとめ\n2. 前日総評と答え合わせ\n3. 日足セブン\n4. わらしべ教室\n5. チャート考察\n6. 勤務形態別の4版",
+              "wrap": true,
+              "scaling": true,
+              "color": "#333333",
+              "size": "md",
+              "weight": "regular",
+              "lineSpacing": "6px"
+            }
+          ]
+        }
+      },
+      {
+        "type": "bubble",
+        "size": "mega",
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "spacing": "md",
+          "contents": [
+            {
+              "type": "text",
+              "text": "（サンプル）相場まとめ",
+              "wrap": true,
+              "scaling": true,
+              "color": "#A8842C",
+              "size": "lg",
+              "weight": "bold",
+              "lineSpacing": "2px"
+            },
+            {
+              "type": "image",
+              "url": "https://example.com/sample/summary.png",
+              "size": "full",
+              "aspectRatio": "1200:1500",
+              "aspectMode": "cover",
+              "action": {
+                "type": "uri",
+                "label": "原寸で見る",
+                "uri": "https://example.com/sample/summary.png"
+              }
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）図をタップすると原寸で開きます",
+              "wrap": true,
+              "scaling": true,
+              "color": "#888888",
+              "size": "sm",
+              "weight": "regular",
+              "lineSpacing": "5px"
+            }
+          ]
+        }
+      },
+      {
+        "type": "bubble",
+        "size": "mega",
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "spacing": "md",
+          "contents": [
+            {
+              "type": "text",
+              "text": "（サンプル）前日総評＋答え合わせ",
+              "wrap": true,
+              "scaling": true,
+              "color": "#A8842C",
+              "size": "lg",
+              "weight": "bold",
+              "lineSpacing": "2px"
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）前日の振り返り本文。的中ラインは 〇本中〇本。",
+              "wrap": true,
+              "scaling": true,
+              "color": "#333333",
+              "size": "sm",
+              "weight": "regular",
+              "lineSpacing": "6px",
+              "contents": [
+                {
+                  "type": "span",
+                  "text": "（サンプル）前日の振り返り本文。的中ラインは ",
+                  "color": "#333333",
+                  "weight": "regular",
+                  "size": "sm"
+                },
+                {
+                  "type": "span",
+                  "text": "〇本中〇本",
+                  "color": "#111111",
+                  "weight": "bold",
+                  "size": "sm"
+                },
+                {
+                  "type": "span",
+                  "text": "。",
+                  "color": "#333333",
+                  "weight": "regular",
+                  "size": "sm"
+                }
+              ]
+            },
+            {
+              "type": "image",
+              "url": "https://example.com/sample/board.png",
+              "size": "full",
+              "aspectRatio": "1200:900",
+              "aspectMode": "cover",
+              "action": {
+                "type": "uri",
+                "label": "原寸で見る",
+                "uri": "https://example.com/sample/board.png"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "bubble",
+        "size": "mega",
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "spacing": "md",
+          "contents": [
+            {
+              "type": "text",
+              "text": "（サンプル）ゴールドの節目7本",
+              "wrap": true,
+              "scaling": true,
+              "color": "#A8842C",
+              "size": "lg",
+              "weight": "bold",
+              "lineSpacing": "2px"
+            },
+            {
+              "type": "image",
+              "url": "https://example.com/sample/seven_gold.png",
+              "size": "full",
+              "aspectRatio": "1200:600",
+              "aspectMode": "cover",
+              "action": {
+                "type": "uri",
+                "label": "原寸で見る",
+                "uri": "https://example.com/sample/seven_gold.png"
+              }
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）ゴールドの注釈はここに入ります",
+              "wrap": true,
+              "scaling": true,
+              "color": "#888888",
+              "size": "sm",
+              "weight": "regular",
+              "lineSpacing": "5px"
+            },
+            {
+              "type": "separator",
+              "margin": "lg"
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）ドル円の節目7本",
+              "wrap": true,
+              "scaling": true,
+              "color": "#A8842C",
+              "size": "lg",
+              "weight": "bold",
+              "lineSpacing": "2px"
+            },
+            {
+              "type": "image",
+              "url": "https://example.com/sample/seven_usdjpy.png",
+              "size": "full",
+              "aspectRatio": "1200:600",
+              "aspectMode": "cover",
+              "action": {
+                "type": "uri",
+                "label": "原寸で見る",
+                "uri": "https://example.com/sample/seven_usdjpy.png"
+              }
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）ドル円の注釈はここに入ります",
+              "wrap": true,
+              "scaling": true,
+              "color": "#888888",
+              "size": "sm",
+              "weight": "regular",
+              "lineSpacing": "5px"
+            }
+          ]
+        }
+      },
+      {
+        "type": "bubble",
+        "size": "mega",
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "spacing": "md",
+          "contents": [
+            {
+              "type": "text",
+              "text": "（サンプル）シルバーの節目7本",
+              "wrap": true,
+              "scaling": true,
+              "color": "#A8842C",
+              "size": "lg",
+              "weight": "bold",
+              "lineSpacing": "2px"
+            },
+            {
+              "type": "image",
+              "url": "https://example.com/sample/seven_silver.png",
+              "size": "full",
+              "aspectRatio": "1200:600",
+              "aspectMode": "cover",
+              "action": {
+                "type": "uri",
+                "label": "原寸で見る",
+                "uri": "https://example.com/sample/seven_silver.png"
+              }
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）シルバーの注釈はここに入ります",
+              "wrap": true,
+              "scaling": true,
+              "color": "#888888",
+              "size": "sm",
+              "weight": "regular",
+              "lineSpacing": "5px"
+            },
+            {
+              "type": "separator",
+              "margin": "lg"
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）USオイルの節目7本",
+              "wrap": true,
+              "scaling": true,
+              "color": "#A8842C",
+              "size": "lg",
+              "weight": "bold",
+              "lineSpacing": "2px"
+            },
+            {
+              "type": "image",
+              "url": "https://example.com/sample/seven_usoil.png",
+              "size": "full",
+              "aspectRatio": "1200:600",
+              "aspectMode": "cover",
+              "action": {
+                "type": "uri",
+                "label": "原寸で見る",
+                "uri": "https://example.com/sample/seven_usoil.png"
+              }
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）USオイルの注釈はここに入ります",
+              "wrap": true,
+              "scaling": true,
+              "color": "#888888",
+              "size": "sm",
+              "weight": "regular",
+              "lineSpacing": "5px"
+            },
+            {
+              "type": "separator",
+              "margin": "lg"
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）BTCの節目7本",
+              "wrap": true,
+              "scaling": true,
+              "color": "#A8842C",
+              "size": "lg",
+              "weight": "bold",
+              "lineSpacing": "2px"
+            },
+            {
+              "type": "image",
+              "url": "https://example.com/sample/seven_btc.png",
+              "size": "full",
+              "aspectRatio": "1200:600",
+              "aspectMode": "cover",
+              "action": {
+                "type": "uri",
+                "label": "原寸で見る",
+                "uri": "https://example.com/sample/seven_btc.png"
+              }
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）BTCの注釈はここに入ります",
+              "wrap": true,
+              "scaling": true,
+              "color": "#888888",
+              "size": "sm",
+              "weight": "regular",
+              "lineSpacing": "5px"
+            }
+          ]
+        }
+      },
+      {
+        "type": "bubble",
+        "size": "mega",
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "spacing": "md",
+          "contents": [
+            {
+              "type": "text",
+              "text": "（サンプル）わらしべ教室",
+              "wrap": true,
+              "scaling": true,
+              "color": "#A8842C",
+              "size": "lg",
+              "weight": "bold",
+              "lineSpacing": "2px"
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）今日のテーマの解説本文がここに入ります。",
+              "wrap": true,
+              "scaling": true,
+              "color": "#333333",
+              "size": "md",
+              "weight": "regular",
+              "lineSpacing": "6px"
+            },
+            {
+              "type": "separator",
+              "margin": "md"
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）用語の注釈",
+              "wrap": true,
+              "scaling": true,
+              "color": "#888888",
+              "size": "sm",
+              "weight": "regular",
+              "lineSpacing": "5px"
+            }
+          ]
+        }
+      },
+      {
+        "type": "bubble",
+        "size": "mega",
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "spacing": "md",
+          "contents": [
+            {
+              "type": "text",
+              "text": "（サンプル）チャート考察図",
+              "wrap": true,
+              "scaling": true,
+              "color": "#A8842C",
+              "size": "lg",
+              "weight": "bold",
+              "lineSpacing": "2px"
+            },
+            {
+              "type": "image",
+              "url": "https://example.com/sample/chart.png",
+              "size": "full",
+              "aspectRatio": "1200:800",
+              "aspectMode": "cover",
+              "action": {
+                "type": "uri",
+                "label": "原寸で見る",
+                "uri": "https://example.com/sample/chart.png"
+              }
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）図の読み方の本文",
+              "wrap": true,
+              "scaling": true,
+              "color": "#333333",
+              "size": "md",
+              "weight": "regular",
+              "lineSpacing": "6px"
+            }
+          ]
+        }
+      },
+      {
+        "type": "bubble",
+        "size": "mega",
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "spacing": "md",
+          "contents": [
+            {
+              "type": "text",
+              "text": "（サンプル）朝勤のあなたへ",
+              "wrap": true,
+              "scaling": true,
+              "color": "#A8842C",
+              "size": "lg",
+              "weight": "bold",
+              "lineSpacing": "2px"
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）朝勤向けの本文がここに入ります。重要な数字は 〇〇〇 のように太字で示します。",
+              "wrap": true,
+              "scaling": true,
+              "color": "#333333",
+              "size": "md",
+              "weight": "regular",
+              "lineSpacing": "6px",
+              "contents": [
+                {
+                  "type": "span",
+                  "text": "（サンプル）朝勤向けの本文がここに入ります。重要な数字は ",
+                  "color": "#333333",
+                  "weight": "regular",
+                  "size": "md"
+                },
+                {
+                  "type": "span",
+                  "text": "〇〇〇",
+                  "color": "#111111",
+                  "weight": "bold",
+                  "size": "md"
+                },
+                {
+                  "type": "span",
+                  "text": " のように太字で示します。",
+                  "color": "#333333",
+                  "weight": "regular",
+                  "size": "md"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）朝勤版の注釈",
+              "wrap": true,
+              "scaling": true,
+              "color": "#888888",
+              "size": "sm",
+              "weight": "regular",
+              "lineSpacing": "5px"
+            }
+          ]
+        }
+      },
+      {
+        "type": "bubble",
+        "size": "mega",
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "spacing": "md",
+          "contents": [
+            {
+              "type": "text",
+              "text": "（サンプル）日勤のあなたへ",
+              "wrap": true,
+              "scaling": true,
+              "color": "#A8842C",
+              "size": "lg",
+              "weight": "bold",
+              "lineSpacing": "2px"
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）日勤向けの本文がここに入ります。重要な数字は 〇〇〇 のように太字で示します。",
+              "wrap": true,
+              "scaling": true,
+              "color": "#333333",
+              "size": "md",
+              "weight": "regular",
+              "lineSpacing": "6px",
+              "contents": [
+                {
+                  "type": "span",
+                  "text": "（サンプル）日勤向けの本文がここに入ります。重要な数字は ",
+                  "color": "#333333",
+                  "weight": "regular",
+                  "size": "md"
+                },
+                {
+                  "type": "span",
+                  "text": "〇〇〇",
+                  "color": "#111111",
+                  "weight": "bold",
+                  "size": "md"
+                },
+                {
+                  "type": "span",
+                  "text": " のように太字で示します。",
+                  "color": "#333333",
+                  "weight": "regular",
+                  "size": "md"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）日勤版の注釈",
+              "wrap": true,
+              "scaling": true,
+              "color": "#888888",
+              "size": "sm",
+              "weight": "regular",
+              "lineSpacing": "5px"
+            }
+          ]
+        }
+      },
+      {
+        "type": "bubble",
+        "size": "mega",
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "spacing": "md",
+          "contents": [
+            {
+              "type": "text",
+              "text": "（サンプル）夜勤のあなたへ",
+              "wrap": true,
+              "scaling": true,
+              "color": "#A8842C",
+              "size": "lg",
+              "weight": "bold",
+              "lineSpacing": "2px"
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）夜勤向けの本文がここに入ります。重要な数字は 〇〇〇 のように太字で示します。",
+              "wrap": true,
+              "scaling": true,
+              "color": "#333333",
+              "size": "md",
+              "weight": "regular",
+              "lineSpacing": "6px",
+              "contents": [
+                {
+                  "type": "span",
+                  "text": "（サンプル）夜勤向けの本文がここに入ります。重要な数字は ",
+                  "color": "#333333",
+                  "weight": "regular",
+                  "size": "md"
+                },
+                {
+                  "type": "span",
+                  "text": "〇〇〇",
+                  "color": "#111111",
+                  "weight": "bold",
+                  "size": "md"
+                },
+                {
+                  "type": "span",
+                  "text": " のように太字で示します。",
+                  "color": "#333333",
+                  "weight": "regular",
+                  "size": "md"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）夜勤版の注釈",
+              "wrap": true,
+              "scaling": true,
+              "color": "#888888",
+              "size": "sm",
+              "weight": "regular",
+              "lineSpacing": "5px"
+            }
+          ]
+        }
+      },
+      {
+        "type": "bubble",
+        "size": "mega",
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "spacing": "md",
+          "contents": [
+            {
+              "type": "text",
+              "text": "（サンプル）専業のあなたへ",
+              "wrap": true,
+              "scaling": true,
+              "color": "#A8842C",
+              "size": "lg",
+              "weight": "bold",
+              "lineSpacing": "2px"
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）専業向けの本文がここに入ります。重要な数字は 〇〇〇 のように太字で示します。",
+              "wrap": true,
+              "scaling": true,
+              "color": "#333333",
+              "size": "md",
+              "weight": "regular",
+              "lineSpacing": "6px",
+              "contents": [
+                {
+                  "type": "span",
+                  "text": "（サンプル）専業向けの本文がここに入ります。重要な数字は ",
+                  "color": "#333333",
+                  "weight": "regular",
+                  "size": "md"
+                },
+                {
+                  "type": "span",
+                  "text": "〇〇〇",
+                  "color": "#111111",
+                  "weight": "bold",
+                  "size": "md"
+                },
+                {
+                  "type": "span",
+                  "text": " のように太字で示します。",
+                  "color": "#333333",
+                  "weight": "regular",
+                  "size": "md"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "（サンプル）専業版の注釈",
+              "wrap": true,
+              "scaling": true,
+              "color": "#888888",
+              "size": "sm",
+              "weight": "regular",
+              "lineSpacing": "5px"
+            },
+            {
+              "type": "separator",
+              "margin": "lg"
+            },
+            {
+              "type": "text",
+              "text": "（サンプル免責文）これは編集長から正式な免責文を受け取るまでの仮の文面です。\n本配信は情報提供を目的としたもので、売買の推奨ではありません。",
+              "wrap": true,
+              "scaling": true,
+              "color": "#888888",
+              "size": "sm",
+              "weight": "regular",
+              "lineSpacing": "5px"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
