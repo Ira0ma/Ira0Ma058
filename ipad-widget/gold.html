@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="424eaf5668">
+<meta name="build" content="1a4c17e981">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -456,8 +456,8 @@ body.mkt-closed #chartBlink,body.mkt-closed .fibnow::after,body.mkt-closed .gmma
 /* ===== risk ===== */
 .dirlabel{font-size:12px;margin:8px 0 0;color:var(--muted)}
 .brokerrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-#brokerSeg{flex:1;min-width:0}#brokerSeg .seg{flex:1;min-width:0;border-radius:12px;padding:6px 8px;line-height:1.3;display:grid;gap:1px;text-align:center}
-#brokerSeg .seg b{font-size:12.5px}#brokerSeg .seg small{font-size:10px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#brokerSeg{flex:1;min-width:0}#brokerSeg .seg{flex:1;min-width:0;border-radius:12px;padding:6px 4px;line-height:1.3;display:grid;gap:1px;text-align:center}
+#brokerSeg .seg b{font-size:12px;line-height:1.3}#brokerSeg .seg small{font-size:9.5px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .form.lotrow{grid-template-columns:1fr auto;align-items:end}
 .form.lotrow .seg{padding:9px 12px;white-space:nowrap}
 #lotManual:not(:placeholder-shown){border-color:#8a6f32;background:#16130b}
@@ -742,9 +742,9 @@ html[data-theme="aurora"] .mini{background:rgba(5,7,15,.92)}
     <div class="cardhead"><div><div class="title">リスク・ロット計算<button type="button" class="gq" data-gloss="許容リスク" aria-label="用語集：許容リスク">?</button></div><div class="sub" id="riskHeadSub">価格とM15 ATRからSL/TPを算出</div></div><span class="tag">RISK</span></div>
     <div class="brokerrow"><span class="sub">口座</span>
       <div class="segmented" id="brokerSeg">
-        <button class="seg" data-broker="xmstd"><b>XM スタンダード</b><small>1000倍</small></button>
-        <button class="seg" data-broker="xm"><b>XM KIWAMI極</b><small>1000倍</small></button>
-        <button class="seg" data-broker="xs"><b>XS プロ</b><small>2000倍</small></button>
+        <button class="seg" data-broker="xmstd"><b>XM<br>スタンダード</b><small>1000倍・5.5</small></button>
+        <button class="seg" data-broker="xm"><b>XM<br>KIWAMI極</b><small>1000倍・2.5</small></button>
+        <button class="seg" data-broker="xs"><b>XS<br>プロ</b><small>2000倍・1.4</small></button>
       </div>
     </div>
     <div class="segmented" id="dirSeg">
@@ -1237,7 +1237,7 @@ function updateBrokerLabels(){
     const k=btn.dataset.broker,b=BROKERS[k];
     const lev=k===state.broker?$('leverage').value:savedLev(k);
     const spr=k===state.broker?$('spread').value:savedSpread(k);
-    btn.innerHTML='<b>'+b.name+' '+b.acct+'</b><small>'+(n(lev)||b.lev)+'倍・スプレッド '+(n(spr)||0)+'</small>';
+    btn.innerHTML='<b>'+b.name+'<br>'+b.acct+'</b><small>'+(n(lev)||b.lev)+'倍・'+(n(spr)||0)+'</small>';
   });
 }
 function savedSpread(k){  // 口座ごとに保存したスプレッド（以前の初期値のままなら今の初期値）
