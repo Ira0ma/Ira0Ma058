@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="08fd10ecf0">
+<meta name="build" content="40e8ef5c86">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -456,8 +456,8 @@ body.mkt-closed #chartBlink,body.mkt-closed .fibnow::after,body.mkt-closed .gmma
 /* ===== risk ===== */
 .dirlabel{font-size:12px;margin:8px 0 0;color:var(--muted)}
 .brokerrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-#brokerSeg{flex:1;min-width:0}#brokerSeg .seg{flex:1;min-width:0;border-radius:12px;padding:6px 8px;line-height:1.3;display:grid;gap:1px;text-align:center}
-#brokerSeg .seg b{font-size:12.5px}#brokerSeg .seg small{font-size:10px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#brokerSeg{flex:1;min-width:0}#brokerSeg .seg{flex:1;min-width:0;border-radius:12px;padding:6px 4px;line-height:1.3;display:grid;gap:1px;text-align:center}
+#brokerSeg .seg b{font-size:12px;line-height:1.3}#brokerSeg .seg small{font-size:9.5px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .form.lotrow{grid-template-columns:1fr auto;align-items:end}
 .form.lotrow .seg{padding:9px 12px;white-space:nowrap}
 #lotManual:not(:placeholder-shown){border-color:#8a6f32;background:#16130b}
@@ -742,8 +742,9 @@ html[data-theme="aurora"] .mini{background:rgba(5,7,15,.92)}
     <div class="cardhead"><div><div class="title">リスク・ロット計算<button type="button" class="gq" data-gloss="許容リスク" aria-label="用語集：許容リスク">?</button></div><div class="sub" id="riskHeadSub">価格とM15 ATRからSL/TPを算出</div></div><span class="tag">RISK</span></div>
     <div class="brokerrow"><span class="sub">口座</span>
       <div class="segmented" id="brokerSeg">
-        <button class="seg" data-broker="xm"><b>XM KIWAMI極</b><small>1000倍</small></button>
-        <button class="seg" data-broker="xs"><b>XS プロ</b><small>2000倍</small></button>
+        <button class="seg" data-broker="xmstd"><b>XM<br>スタンダード</b><small>1000倍・5.5</small></button>
+        <button class="seg" data-broker="xm"><b>XM<br>KIWAMI極</b><small>1000倍・2.5</small></button>
+        <button class="seg" data-broker="xs"><b>XS<br>プロ</b><small>2000倍・1.4</small></button>
       </div>
     </div>
     <div class="segmented" id="dirSeg">
@@ -791,7 +792,7 @@ html[data-theme="aurora"] .mini{background:rgba(5,7,15,.92)}
         <div class="segmented" id="riskModeSeg"><button type="button" class="seg" data-rmode="pct">%で指定</button><button type="button" class="seg" data-rmode="yen">円で指定</button></div>
         <div class="segmented" id="riskChips" aria-label="許容リスクのクイック選択"><button type="button" class="seg" data-rp="0.5">0.5%</button><button type="button" class="seg" data-rp="1">1%</button><button type="button" class="seg" data-rp="2">2%</button></div>
       </div>
-      <div class="autonote">契約量・レバレッジ・スプレッドは、選んだ口座（XM／XS）ごとに保存されます。<span id="sprNote"></span><span id="brokerNote">XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。</span>口座残高が増えると上限レバレッジが下がる業者もあるため、その場合はレバレッジ欄を変更してください。<span class="rnote">リスクの指定は2通りあります。%は資金に対する割合で、資金が増減すると1回の損失額も変わります。円は1回で失ってよい上限を金額で決める方法で、資金が変わっても額は固定です。</span></div>
+      <div class="autonote">契約量・レバレッジ・スプレッドは、選んだ口座（XMスタンダード／XM KIWAMI極／XS プロ）ごとに保存されます。<span id="sprNote"></span><span id="brokerNote">XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。</span>口座残高が増えると上限レバレッジが下がる業者もあるため、その場合はレバレッジ欄を変更してください。<span class="rnote">リスクの指定は2通りあります。%は資金に対する割合で、資金が増減すると1回の損失額も変わります。円は1回で失ってよい上限を金額で決める方法で、資金が変わっても額は固定です。</span></div>
     </details>
     <div id="atrNote" class="autonote">--</div>
   </section>
@@ -913,24 +914,24 @@ const $ = id => document.getElementById(id);
 /* 銘柄ごとの設定。同じページを usdjpy.html として配信すると USD/JPY 版になる（build.py が生成） */
 const INSTRUMENTS={
   gold:{key:'gold',site:'gold',title:'GOLD',label:'XAU / USD',short:'XAU',name:'ゴールド',sub:'XAU/USD専用｜自動更新｜iPad・iPhone・Android対応',
-    dp:2,pip:0.1,minTp:50,pipNote:'1pips＝$0.10',momTh:0.8,slMin:2,tolMin:.5,unit:'oz',contract:'100',cupHandle:true,patterns:true,spread:{xm:'2.6',xs:'1.4'},
+    dp:2,pip:0.1,minTp:50,pipNote:'1pips＝$0.10',momTh:0.8,slMin:2,tolMin:.5,unit:'oz',contract:'100',cupHandle:true,patterns:true,spread:{xmstd:'5.5',xm:'2.5',xs:'1.4'},lev:{xmstd:'1000',xm:'1000',xs:'2000'},
     brokerNote:'XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,2),
     footer:'データ: 価格はリアルタイム配信（OKX・BitfinexのXAUT、KrakenのPAXGを現物に補正）、配信がないときはGold API（30秒ごと。取れないときはXAUS、サイトの定期取得）／チャートはGitHub Actionsで定期取得したYahoo Finance足（先物を現物に換算。直近の1分足はOKXのXAUTで補う）・Forex Factory（経済指標）／Frankfurter（USD/JPY補助）。'},
   usdjpy:{key:'usdjpy',site:'usdjpy',title:'USDJPY',label:'USD / JPY',short:'USDJPY',name:'ドル円',sub:'USD/JPY専用｜自動更新｜iPad・iPhone・Android対応',
-    dp:3,pip:0.01,minTp:30,pipNote:'1pips＝0.01円',momTh:0.03,slMin:0.05,tolMin:.02,unit:'通貨',contract:'100000',patterns:true,spread:{xm:'1.4',xs:'0.9'},
+    dp:3,pip:0.01,minTp:30,pipNote:'1pips＝0.01円',momTh:0.03,slMin:0.05,tolMin:.02,unit:'通貨',contract:'100000',patterns:true,spread:{xmstd:'2.3',xm:'1.2',xs:'0.6'},lev:{xmstd:'1000',xm:'1000',xs:'2000'},
     brokerNote:'ドル円の1lotは多くの業者で10万通貨です。ご自身の口座の取引条件で確認してください。',
     dist:v=>(v/0.01).toFixed(1)+'pips',
     footer:'データ: 価格はGMOコイン外国為替FXのリアルタイム配信（売値に補正）、配信がないときはCoinbase（30秒ごと・売値に補正）、どちらもないときはサイトの定期取得／チャートはGitHub Actionsで定期取得したYahoo Finance足・Forex Factory（経済指標）。'},
   btc:{key:'btc',site:'btc',title:'BTCUSD',label:'BTC / USD',short:'BTC',name:'ビットコイン',asset:'BTC',sub:'BTC/USD専用｜24時間自動更新｜iPad・iPhone・Android対応',
-    dp:2,pip:1,minTp:300,pipNote:'1pips＝$1',momTh:20,slMin:40,tolMin:10,unit:'BTC',contract:'1',patterns:true,spread:{xm:'15',xs:'23.6'},
+    dp:2,pip:1,minTp:300,pipNote:'1pips＝$1',momTh:20,slMin:40,tolMin:10,unit:'BTC',contract:'1',patterns:true,spread:{xmstd:'40',xm:'15',xs:'23'},lev:{xmstd:'1000',xm:'1000',xs:'200'},
     brokerNote:'XMのBTCUSDは1lot＝1BTCです。XSの契約量・スプレッドはご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,0),
     footer:'データ: 価格はリアルタイム配信（Coinbase。つながらないときはKraken、OKXの順）、配信がないときはCoinbase（30秒ごと）、どちらもないときはサイトの定期取得／チャートはGitHub Actionsで定期取得したYahoo Finance足（直近の1分足はOKXで補う）・Forex Factory（経済指標）。'},
   // USオイル（WTI原油）：価格と足は OKX の WTI 連動パーペチュアル（読めないときはサイトの定期取得＝Yahoo CL=F 先物）。
   // サイト側の Swissquote XTI/USD の取得は止めてある（OIL_SPOT=None）。ブラウザから Swissquote は読めない（CORSなし）
   usoil:{key:'usoil',site:'usoil',title:'USOIL',label:'USOIL (WTI)',short:'USOIL',name:'USオイル',asset:'原油',sub:'USオイル（WTI原油）専用｜自動更新｜iPad・iPhone・Android対応',
-    dp:2,pip:0.01,minTp:15,pipNote:'1pips＝$0.01',momTh:0.02,slMin:0.05,tolMin:0.015,unit:'バレル',contract:'100',patterns:true,spread:{xm:'5',xs:'5'},
+    dp:2,pip:0.01,minTp:15,pipNote:'1pips＝$0.01',momTh:0.02,slMin:0.05,tolMin:0.015,unit:'バレル',contract:'100',patterns:true,spread:{xmstd:'5',xm:'3',xs:'30'},lev:{xmstd:'200',xm:'200',xs:'500'},
     brokerNote:'原油の1lotの量（バレル数）は業者・口座で違います。XMのOILCashなど、ご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,2),
     footer:'データ: 価格とチャートは OKX の WTI 連動パーペチュアル（CL-USDT-SWAP。リアルタイム配信、届かないときは30秒ごとの取得）。OKX が読めないときはサイトの定期取得（Yahoo Finance の WTI原油先物 CL=F・約15分ごと）。日足以上は CL=F の足をパーペチュアルとの差だけずらした足・Forex Factory（経済指標）。XM の OILCash の値そのものではありません。'},
@@ -938,8 +939,7 @@ const INSTRUMENTS={
   // 利確の基準は COMEX銀先物（SI=F）の実測（2016〜2026年）にもとづく：デイ（1時間足）は TP1 +50pips／TP2 +2R、
   // スイングは 4時間足なら TP1 +50pips、日足が近いときは TP1 1R（損切り幅と同幅）。minTp は型ごとに持つ（minTpBy）
   silver:{key:'silver',site:'silver',title:'SILVER',label:'XAG / USD',short:'SILVER',name:'シルバー',asset:'銀',sub:'XAG/USD専用｜自動更新｜iPad・iPhone・Android対応',
-    dp:2,pip:0.01,minTp:50,minTpBy:{short:50,day:50,swing:50,swingD1R:1},pipNote:'1pips＝$0.01',momTh:0.1,slMin:0.05,tolMin:.03,unit:'oz',contract:'5000',patterns:true,spread:{xm:'4.0',xs:'4.0'},
-    spreadSrc:'目安として入れた初期値（実測値ではありません）',
+    dp:2,pip:0.01,minTp:50,minTpBy:{short:50,day:50,swing:50,swingD1R:1},pipNote:'1pips＝$0.01',momTh:0.1,slMin:0.05,tolMin:.03,unit:'oz',contract:'5000',patterns:true,spread:{xmstd:'7.0',xm:'5.0',xs:'2.3'},lev:{xmstd:'400',xm:'400',xs:'2000'},
     brokerNote:'XMのシルバーは1lot＝5,000ozです。XSの契約量はご自身の口座の取引条件で確認してください。',
     dist:v=>'$'+fmt(v,2),
     footer:'データ: 価格はリアルタイム配信（OKXの銀連動パーペチュアルXAG-USDT-SWAPを現物に補正）、配信がないときはGold API・Swissquote（XAG現物。取れないときはサイトの定期取得）／チャートはGitHub Actionsで定期取得したYahoo Finance足（COMEX銀先物 SI=F を現物に換算）・Forex Factory（経済指標）／Frankfurter（USD/JPY補助）。利確の目安はCOMEX銀先物の実測にもとづく目安で、現物とは価格差があります（1時間足・4時間足の標本は約2年で、上昇局面に限られます）。'}
@@ -1217,14 +1217,17 @@ function loadCache(){
 const PREFS={capital:[LSP+'capital','100000'],riskPct:[LSP+'risk_pct','1.0'],riskYenIn:[LSP+'risk_yen',''],lotManual:[LSP+'lot_manual',''],
   slMult:[LSP+'sl_mult','1.2'],rrTarget:[LSP+'rr','2.0']};
 // 口座ごとの初期値（契約量oz・レバレッジ）。変更した値は口座ごとに保存
-// スプレッドの初期値：MT5の気配値で見た値（2026/10/23 20:23）。XM KIWAMI極 GOLD# 26・USDJPY# 14・BTCUSD# 1500ポイント、XS プロ XAUUSDp 14・USDJPYp 9・BTCUSDp 2360ポイント
-const BROKERS={xm:{name:'XM',acct:'KIWAMI極',src:INSTR.spreadSrc||'MT5で見た値（10/23 20:23）',contract:INSTR.contract,lev:'1000'},xs:{name:'XS',acct:'プロ',src:INSTR.spreadSrc||'MT5で見た値（10/23 20:23）',contract:INSTR.contract,lev:'2000'}};
-const OLD_SPREAD={xm:{gold:'2.3',usdjpy:'1.6',btc:'60'},xs:{gold:'1.2',usdjpy:'0.8',btc:'36'}};  // 以前の初期値。保存がこの値のままなら新しい初期値にする
+// スプレッドの初期値：MT5の気配値で実測（2026/11/10 17:42ごろ）。XMスタンダード GOLD 55・USDJPY 23・BTCUSD 4000・SILVER 70・OILCash 5ポイント、XM KIWAMI極 GOLD# 25・USDJPY# 12・BTCUSD# 1500・SILVER# 50・OILCash# 3ポイント、XS プロ XAUUSDp 14・USDJPYp 6・BTCUSDp 2300・XAGUSDp 23・USOILp 30ポイント（INSTR.spread は各銘柄の pip 定義で割った pips 値）
+// レバレッジの初期値（INSTR.lev）：各業者の銘柄ごとの上限（最初のティア）。XMはスタンダード・極とも GOLD／ドル円／BTC 1000倍・SILVER 400倍・OILCash 200倍（現物エネルギーは固定）、XS プロは GOLD／ドル円／SILVER 2000倍・USOIL 500倍・BTC 200倍
+const BROKERS={xmstd:{name:'XM',acct:'スタンダード',src:INSTR.spreadSrc||'MT5の気配値で見た値（2026/11/10 17:42ごろ）',contract:INSTR.contract,lev:INSTR.lev.xmstd},xm:{name:'XM',acct:'KIWAMI極',src:INSTR.spreadSrc||'MT5の気配値で見た値（2026/11/10 17:42ごろ）',contract:INSTR.contract,lev:INSTR.lev.xm},xs:{name:'XS',acct:'プロ',src:INSTR.spreadSrc||'MT5の気配値で見た値（2026/11/10 17:42ごろ）',contract:INSTR.contract,lev:INSTR.lev.xs}};
+const OLD_SPREAD={xmstd:{},xm:{gold:'2.6',usdjpy:'1.4',btc:'15',usoil:'5',silver:'4.0'},xs:{gold:'1.4',usdjpy:'0.9',btc:'23.6',usoil:'5',silver:'4.0'}};  // 以前の初期値。保存がこの値のままなら新しい初期値にする
+const OLD_LEV={xm:'1000',xs:'2000'};  // 以前の初期値（銘柄共通だった値）。保存がこの値のままなら銘柄ごとの初期値にする
+function savedLev(k){const s=lsGet(LSP+k+'_lev','');return (s===''||s===OLD_LEV[k])?BROKERS[k].lev:s}
 function brokerKey(k){return LSP+state.broker+'_'+k}
 function loadBroker(){
   const b=BROKERS[state.broker];
   $('contract').value=lsGet(brokerKey('contract'),state.broker==='xm'?lsGet(LSP+'contract',b.contract):b.contract);
-  $('leverage').value=lsGet(brokerKey('lev'),b.lev);
+  $('leverage').value=savedLev(state.broker);
   $('spread').value=savedSpread(state.broker);
   $('sprNote').textContent='スプレッドの初期値は'+b.name+' '+b.acct+'口座の'+b.src+'です（'+INSTR.spread[state.broker]+'pips）。早朝や指標発表の前後は広がるので、MT5で見た値に直してください。';
   setSegActive('#brokerSeg .seg','broker',state.broker);
@@ -1233,9 +1236,9 @@ function loadBroker(){
 function updateBrokerLabels(){
   document.querySelectorAll('#brokerSeg .seg').forEach(btn=>{
     const k=btn.dataset.broker,b=BROKERS[k];
-    const lev=k===state.broker?$('leverage').value:lsGet(LSP+k+'_lev',b.lev);
+    const lev=k===state.broker?$('leverage').value:savedLev(k);
     const spr=k===state.broker?$('spread').value:savedSpread(k);
-    btn.innerHTML='<b>'+b.name+' '+b.acct+'</b><small>'+(n(lev)||b.lev)+'倍・スプレッド '+(n(spr)||0)+'</small>';
+    btn.innerHTML='<b>'+b.name+'<br>'+b.acct+'</b><small>'+(n(lev)||b.lev)+'倍・'+(n(spr)||0)+'</small>';
   });
 }
 function savedSpread(k){  // 口座ごとに保存したスプレッド（以前の初期値のままなら今の初期値）

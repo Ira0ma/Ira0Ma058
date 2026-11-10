@@ -78,6 +78,12 @@ test("口座プリセット: 以前の初期値のまま保存されている端
   assert.match(GOLD, /function savedSpread\(k\)/);
 });
 
+test("口座プリセット: ボタンのラベルは見切れない短い形式（名前2行＋「倍・値」）", () => {
+  assert.match(GOLD, /btn\.innerHTML='<b>'\+b\.name\+'<br>'\+b\.acct\+'<\/b><small>'\+\(n\(lev\)\|\|b\.lev\)\+'倍・'\+\(n\(spr\)\|\|0\)\+'<\/small>'/);
+  assert.match(GOLD, /data-broker="xmstd"><b>XM<br>スタンダード<\/b>/);
+  assert.match(GOLD, /#brokerSeg \.seg small\{font-size:9\.5px/);
+});
+
 test("ロット図説: 全銘柄に3口座のスプレッド注記があり、日付スタンプが更新されている", () => {
   assert.match(LOTSIM, /var STAMP_DATE = "2026\.11\.11"/);
   const notes = [...LOTSIM.matchAll(/spreadNote:"([^"]+)"/g)].map((m) => m[1]);
