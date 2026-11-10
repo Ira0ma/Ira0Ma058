@@ -7,6 +7,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "*/5 * * * *"  # every 5 minutes (GitHub's minimum): refresh charts, analysis, calendar
+    # Second schedule, offset by 2 minutes: on 2026-11-09 21:44-22:30 UTC GitHub dropped the 5-minute runs for about
+    # 46 minutes and market.json stopped updating; a second line of schedules keeps the analysis going when one is skipped.
+    - cron: "2,12,22,32,42,52 * * * *"
     # Morning check at 7:00 JST: extra runs from 6:40 to 7:20 JST (21:40-22:20 UTC), around the
     # New York close (17:00 NY = 6:00 JST in summer, 7:00 JST in winter), so the day's previous close,
     # pivots and notes are fresh even when GitHub delays or skips the 5-minute runs.
@@ -57,6 +60,7 @@ jobs:
           cp ipad-widget/usdjpy.html _site/usdjpy.html
           cp ipad-widget/btc.html _site/btc.html
           cp ipad-widget/oil.html _site/oil.html  # the US oil dashboard (the same page as GOLD, for USOIL, with OILCash 補正表示)
+          cp ipad-widget/silver.html _site/silver.html  # the silver dashboard at its own path (until now served only as learn/silver.html)
           cp -r ipad-widget/learn _site/learn  # 学習の本（パターン図鑑・ドル円入門・FVG詳説）のデータと図。learn-src は公開しない
           cp ipad-widget/strategy.json _site/strategy.json || true  # daily recap and outlook (written by the morning report task)
       - name: Fetch economic calendar
