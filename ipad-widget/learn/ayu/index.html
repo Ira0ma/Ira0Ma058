@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="/Ira0Ma058/icon-cup.png">
 <link rel="icon" type="image/png" href="/Ira0Ma058/icon-cup.png">
-<meta name="build" content="7c848cdf15">
+<meta name="build" content="208059f768">
 <title>Desk of Ayu</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3325,7 +3325,20 @@ window.TD_THEME = (function () {
      read it, with the correction it applied (oilDiff, worked out there from btc_oil_adj). A fresh live price (3 minutes)
      is shown and the site's CL=F candles are moved onto it; otherwise the card shows the site's CL=F （現物は未取得） with
      the CL=F-based difference (btc_oil_adj, 35 days), never on a spot-converted price. The head opens the dashboard. */
-  var OIL_KEY = "ayu_btc_oil_adj", OIL_MAX = 35 * 86400000;
+  var OIL_KEY = "btc_oil_adj", OIL_MAX = 35 * 86400000;
+  /* キュー1（あゆ版オイルの保存キーずれの修正）：あゆ版のオイルのダッシュボードは、本体と同じ名前（btc_oil_adj・usoil_live_spot・
+     usoil_auto_cache_final。あゆ版の他のダッシュボードも同じく接頭辞なし）で保存するので、このホームもその名前で読む。
+     以前このホームが読んでいた ayu_ 付きの名前に値が残っていれば、新しい名前がまだ空のときだけ移してから使う（移したら古い名前は消す） */
+  (function ayuOilKeyMigrate() {
+    [["ayu_btc_oil_adj", "btc_oil_adj"], ["ayu_usoil_live_spot", "usoil_live_spot"], ["ayu_usoil_auto_cache_final", "usoil_auto_cache_final"]].forEach(function (kv) {
+      try {
+        var old = localStorage.getItem(kv[0]);
+        if (old === null) return;
+        if (localStorage.getItem(kv[1]) === null) localStorage.setItem(kv[1], old);
+        localStorage.removeItem(kv[0]);
+      } catch (e) {}
+    });
+  })();
   function oilAdj() {
     var h = null; try { h = JSON.parse(localStorage.getItem(OIL_KEY) || "null"); } catch (e) {}
     var r = h && Array.isArray(h.hist) && h.hist[0];
@@ -3333,18 +3346,18 @@ window.TD_THEME = (function () {
   }
   function oilDash() {  // the oil dashboard's live price (OKX perpetual), if fresh
     // まず配信の値（ダッシュボードが1秒ごとに保存する小さな値。15秒以内）、なければ定期取得の値（3分以内）
-    try { var l = JSON.parse(localStorage.getItem("ayu_usoil_live_spot") || "null");
+    try { var l = JSON.parse(localStorage.getItem("usoil_live_spot") || "null");
       if (l && l.live && +l.price && Date.now() - (+l.asof) <= 15000) return l; } catch (e) {}
     // ダッシュボードの保存が新しい値を持たないときは、このデスク自身の OKX CL 配信（15秒以内）を使う。
     // 価格の出どころはダッシュボードと同じパーペチュアルで、差（oilDiff）だけは保存側の最新の値を借りる
     if (homeOilTick && Date.now() - homeOilTick.asof <= 15000) {
       var df = null;
       try { if (l && l.oilDiff != null && isFinite(l.oilDiff)) df = +l.oilDiff; } catch (e) {}
-      try { var c0 = JSON.parse(localStorage.getItem("ayu_usoil_auto_cache_final") || "null"), s0 = c0 && c0.spot;
+      try { var c0 = JSON.parse(localStorage.getItem("usoil_auto_cache_final") || "null"), s0 = c0 && c0.spot;
         if (df === null && s0 && s0.oilDiff != null && isFinite(s0.oilDiff)) df = +s0.oilDiff; } catch (e) {}
       return { price: homeOilTick.price, asof: homeOilTick.asof, live: true, oilDiff: df, home: true };
     }
-    try { var c = JSON.parse(localStorage.getItem("ayu_usoil_auto_cache_final") || "null"), sp = c && c.spot;
+    try { var c = JSON.parse(localStorage.getItem("usoil_auto_cache_final") || "null"), sp = c && c.spot;
       return sp && sp.live && +sp.price && Date.now() - (+sp.asof) <= 3 * 60000 ? sp : null; } catch (e) { return null; }
   }
   var oilMk = new Market(document.getElementById("m-3"), "usoil");
@@ -3401,7 +3414,7 @@ window.TD_THEME = (function () {
     if (dd && base === oilBase && oilMk.live && oilMk.oilShown) { oilMk.asOf = +dd.asof / 1000; oilMk.applyLive(+dd.price + oilMk.oilShown.d); return; }
     oilBase = base; oilMk.feed(m);
   };
-  window.addEventListener("storage", function (e) { if (e.key === OIL_KEY || e.key === "ayu_usoil_auto_cache_final" || e.key === "ayu_usoil_live_spot") oilRefeed(); });  // saved by the oil dashboard
+  window.addEventListener("storage", function (e) { if (e.key === OIL_KEY || e.key === "usoil_auto_cache_final" || e.key === "usoil_live_spot") oilRefeed(); });  // saved by the oil dashboard
   setInterval(oilRefeed, 30000);  // freshness and the 35 days
   markets.push(oilMk);
   markets.push(silverMk);
@@ -3777,7 +3790,7 @@ window.TD_THEME = (function () {
     var now = Date.now(), read = function (k) { try { var c = JSON.parse(localStorage.getItem(k) || "null"); return c && c.spot; } catch (e) { return null; } };
     var b = read("btc_auto_cache_final");
     if (b && +b.price && now - +b.asof < 90000) surgeSample("btc", +b.price, +b.asof, "btc-dash");
-    var o = read("ayu_usoil_auto_cache_final"), m = market && (market.instruments || market).usoil;
+    var o = read("usoil_auto_cache_final"), m = market && (market.instruments || market).usoil;
     if (o && o.live && +o.price && now - +o.asof < 90000) surgeSample("usoil", +o.price, +o.asof, "oil-okx");  // OKXのWTI連動（補正前の値）
     else if (m && m.price && m.asOf) surgeSample("usoil", +m.price, m.asOf * 1000, "oil-site");  // サイトの CL=F（補正前）
     paintAlerts(); paintSurgeCards(); regimeTick();
