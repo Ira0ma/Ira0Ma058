@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-ayu.png">
 <link rel="icon" type="image/png" href="icon-ayu.png">
-<meta name="build" content="208059f768">
+<meta name="build" content="2b11876ef8">
 <title>Desk of Ayu</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2474,7 +2474,17 @@ window.TD_THEME = (function () {
      cycles the volume 大 → 中 → 小 → オフ and plays a sample; browsers only allow sound after a tap. */
   var SOUND = [{ k: "high", label: "大", g: 0.35 }, { k: "mid", label: "中", g: 0.16 }, { k: "low", label: "小", g: 0.05 }, { k: "off", label: "オフ", g: 0 }];
   var soundIdx = 1, actx = null;
-  try { var sv = localStorage.getItem("ayu_desk_sound"); SOUND.forEach(function (o, i) { if (o.k === sv) soundIdx = i; }); } catch (e) {}
+  /* キュー1.5：通知音の設定は、ダッシュボード（deskSoundJa）と同じ本体の名前 desk_sound で読み書きする。以前の ayu_desk_sound に
+     値が残っていれば、desk_sound がまだ空のときだけ移してから使う（移したら古い名前は消す。キュー1と同じ型） */
+  (function ayuSoundKeyMigrate() {
+    try {
+      var old = localStorage.getItem("ayu_desk_sound");
+      if (old === null) return;
+      if (localStorage.getItem("desk_sound") === null) localStorage.setItem("desk_sound", old);
+      localStorage.removeItem("ayu_desk_sound");
+    } catch (e) {}
+  })();
+  try { var sv = localStorage.getItem("desk_sound"); SOUND.forEach(function (o, i) { if (o.k === sv) soundIdx = i; }); } catch (e) {}
   function audio() {
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
@@ -2539,7 +2549,7 @@ window.TD_THEME = (function () {
   soundBtn.addEventListener("click", function (e) {
     e.stopPropagation();
     soundIdx = (soundIdx + 1) % SOUND.length;
-    try { localStorage.setItem("ayu_desk_sound", SOUND[soundIdx].k); } catch (er) {}
+    try { localStorage.setItem("desk_sound", SOUND[soundIdx].k); } catch (er) {}
     paintSound(); chime(true);
   });
   paintSound();
@@ -3667,10 +3677,38 @@ window.TD_THEME = (function () {
      15分ぶん持ち、core.js の surgeCheck で判定する。休場中・プレビュー・90秒を超える途切れでは判定しない。発報は
      バナー（黄＝注意／赤＝緊急）と、設定に従った音・端末通知。同じ向き・同じ段階は30分出さない（surgeGate）。
      当日の急変は td_surge_v1 にためて、ダッシュボードのチャートの⚡印と、確認（点滅を止める）に使う。 */
-  var SURGE_KEY = "ayu_td_surge_v1", IV_CLOSED = "ayu_desk_iv_closed", MV_CLOSED = "ayu_desk_mv_closed";
+  var SURGE_KEY = "td_surge_v1", IV_CLOSED = "ayu_desk_iv_closed", MV_CLOSED = "ayu_desk_mv_closed";
   var surgeBuf = {}, surgeGateSt = {}, surgeLast = {}, newsData = null, newsAt = 0, ivShown = null, mvShown = null, alertsBox = null;
   function lsRead(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
   function lsWrite(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  /* キュー1.5：急変の記録は、ダッシュボード（SG_KEY）と同じ本体の名前 td_surge_v1 で読み書きする。以前の ayu_td_surge_v1 に
+     記録が残っていれば移す。記録は { day, ev:[…] } の一覧なので、両方にあるときは統合する：
+     ・日付（day）が違えば新しい日付の側だけ残す（当日分しか使わないため）
+     ・同じ日付なら ev を id（銘柄-検知時刻）で重ね合わせ、同じ id は1件にまとめて「確認済み（ack）」はどちらかが確認済みなら確認済み
+     ・検知した順（at）に並べ、最後の30件を残す（保存時の上限と同じ）。移したら古い名前は消す */
+  (function ayuSurgeKeyMigrate() {
+    try {
+      var rawOld = localStorage.getItem("ayu_td_surge_v1");
+      if (rawOld === null) return;
+      var parse = function (r) { try { var o = JSON.parse(r || "null"); return o && typeof o.day === "string" && Array.isArray(o.ev) ? o : null; } catch (e) { return null; } };
+      var a = parse(rawOld), b = parse(localStorage.getItem(SURGE_KEY)), out = b;
+      if (a && !b) out = a;
+      else if (a && b && a.day !== b.day) out = a.day > b.day ? a : b;
+      else if (a && b) {
+        var byId = {}, list = [];
+        b.ev.concat(a.ev).forEach(function (e) {
+          if (!e || e.id == null) return;
+          var k = String(e.id), have = byId[k];
+          if (have) { if (e.ack) have.ack = true; return; }
+          byId[k] = e; list.push(e);
+        });
+        list.sort(function (x, y) { return (+x.at || 0) - (+y.at || 0); });
+        out = { day: b.day, ev: list.slice(-30) };
+      }
+      if (out && out !== b) localStorage.setItem(SURGE_KEY, JSON.stringify(out));
+      localStorage.removeItem("ayu_td_surge_v1");
+    } catch (e) {}
+  })();
   function surgeStore() {
     var st = null; try { st = JSON.parse(lsRead(SURGE_KEY) || "null"); } catch (e) {}
     var day = TDCore.dayKey(Date.now());
@@ -7266,7 +7304,7 @@ window.TD_THEME = (function () {
     signals: function () { return sigStore; }, saveSignals: saveSignals, saveFailed: saveFailed,
     live: function () { var o = {}; Object.keys(live).forEach(function (k) { o[k] = { open: !!live[k].ws, at: live[k].at, name: live[k].name || "" }; }); return o; },
     calendar: function () { return { events: calEvents, at: calUpdatedAt }; }, weatherAt: function () { return wxAt; },
-    notify: function () { return { permission: window.Notification ? Notification.permission : "unsupported", sound: localStorage.getItem("ayu_desk_sound") || "" }; },
+    notify: function () { return { permission: window.Notification ? Notification.permission : "unsupported", sound: localStorage.getItem("desk_sound") || "" }; },
     toast: function (t) { deskToast(t); }, entries: function () { return entryState; }, scores: function () { return scoreOf; },
     setPower: function (on) { document.documentElement.classList.toggle("lowpower", !!on); try { localStorage.setItem("ayu_td-power", on ? "low" : ""); } catch (e) {} },
     refresh: function (what) { ({ market: loadMarket, prices: loadPrices, calendar: loadCalendar, weather: loadWeather, report: loadReport })[what](); }
