@@ -32,11 +32,17 @@ test("在庫なしは価格が合っていても差異あり", () => {
   assert.equal(r.stock_status, "在庫なし");
 });
 
-test("在庫が読めないときは一致にせず取得不可（人の確認へ）", () => {
+test("在庫だけ読めないときは、価格・リンク先の一致を残して要確認", () => {
   const r = L.judge(target, page({ jsonLd: ld(product({ "@type": "Offer", price: 1980 })) }));
-  assert.equal(r.verdict, "取得不可");
-  assert.equal(r.fail.code, "no_stock_info");
+  assert.equal(r.verdict, "要確認（在庫のみ取得不可）");
+  assert.equal(r.fail, null);
   assert.equal(r.current_price_yen, 1980);
+  assert.equal(r.price_match, "一致");
+  assert.equal(r.link_match, "一致");
+  assert.equal(r.stock_status, "未確認");
+  // 在庫が読めなくても、価格が違えば差異ありが優先
+  const r2 = L.judge(target, page({ jsonLd: ld(product({ "@type": "Offer", price: 2000 })) }));
+  assert.equal(r2.verdict, "差異あり");
 });
 
 test("バリエーションで価格が違えば差異あり、選択肢と価格を返す", () => {
@@ -51,6 +57,21 @@ test("バリエーションで価格が違えば差異あり、選択肢と価�
   assert.deepEqual(r.variants, [{ name: "S", price: 1980, stock: "在庫あり" }, { name: "L", price: 2480, stock: "在庫なし" }]);
   assert.equal(r.stock_status, "在庫あり");
   assert.match(r.reasons.join(), /1980／2480円/);
+  // 出力にはバリエーション全点の価格一覧を必ず付ける
+  const row = L.toLogRow(target, { ...r, checkedAt: new Date() });
+  assert.match(row.note, /バリエーション全2点：S 1980円（在庫あり）、L 2480円（在庫なし）/);
+  const md = L.toMarkdown([{ target, result: { ...r, checkedAt: new Date() } }]);
+  assert.match(md, /バリエーション全2点：S 1980円（在庫あり）、L 2480円（在庫なし）/);
+});
+
+test("価格差のないバリエーションも、全点の一覧を出す（判定は一致のまま）", () => {
+  const r = L.judge(target, page({ jsonLd: ld({ "@type": "ProductGroup", hasVariant: [
+    { name: "赤", offers: { price: 1980, availability: "InStock" } },
+    { name: "青", offers: { price: 1980, availability: "InStock" } },
+    { name: "緑", offers: { availability: "InStock" } },
+  ] }) }));
+  assert.equal(r.verdict, "一致");
+  assert.equal(L.variantList(r), "バリエーション全3点：赤 1980円（在庫あり）、青 1980円（在庫あり）、緑 価格不明（在庫あり）");
 });
 
 test("AggregateOffer の価格幅は差異あり", () => {
@@ -92,6 +113,8 @@ test("取得不可の理由を分類する", () => {
     [{ status: 200, title: "reCAPTCHA", bodyText: "" }, "bot_check"],
     [{ status: 200, title: "楽天", bodyText: "ロボットではありませんか？確認してください" }, "bot_check"],
     [{ status: 429, title: "", bodyText: "" }, "bot_check"],
+    // 2026-11-10 に実際に楽天から返った制限画面の文言（HTTP 403）。200 で返っても止まること
+    [{ status: 200, title: "アクセスが集中しております", bodyText: "アクセスが集中し、ページを閲覧しにくい状態になっております Reference #18.x" }, "bot_check"],
     [{ status: 403, title: "", bodyText: "" }, "bot_check"],
     [{ status: 404, title: "", bodyText: "" }, "not_found"],
     [{ status: 200, title: "ページが見つかりません", bodyText: "" }, "not_found"],

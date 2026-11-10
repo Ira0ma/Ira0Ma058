@@ -2,7 +2,8 @@
 // ページから読み取った材料（snapshot）を受け取り、価格・在庫・バリエーション・リンク先を取り出して、
 // 基準値と突き合わせる。推測で値を埋めず、読めなかったものは null のまま返す。
 
-const VERDICT = { MATCH: "一致", DIFF: "差異あり", FAIL: "取得不可" };
+// 要確認＝価格とリンク先は一致したが、在庫だけ読めなかったもの（取得不可とは分けて人の確認へ）
+const VERDICT = { MATCH: "一致", DIFF: "差異あり", REVIEW: "要確認（在庫のみ取得不可）", FAIL: "取得不可" };
 
 // 取得不可の理由。stop: true のものは、それ以上アクセスを続けずに実行を止める
 const FAIL_REASON = {
@@ -11,7 +12,6 @@ const FAIL_REASON = {
   LOAD_FAILED: { code: "load_failed", label: "一時的な読み込み失敗", stop: false },
   NO_CONNECTION: { code: "no_connection", label: "接続不可（ネットワーク・プロキシ）", stop: true },
   NO_PRICE: { code: "no_price", label: "価格を読み取れず", stop: false },
-  NO_STOCK: { code: "no_stock_info", label: "在庫を読み取れず", stop: false },
   BAD_INPUT: { code: "bad_input", label: "入力不備", stop: false },
   NOT_RUN: { code: "not_run", label: "未実行（前の商品で停止）", stop: false },
 };
@@ -170,7 +170,7 @@ function judge(target, snapshot) {
   const baseline = toYen(target.baseline_price_yen);
   const base = {
     current_price_yen: null, diff_yen: null, stock_status: "未確認", final_url: snapshot.finalUrl || null,
-    variants: [], price_source: null, reasons: [], fail: null,
+    variants: [], price_source: null, reasons: [], fail: null, price_match: null, link_match: null,
   };
   if (!target.item_url || baseline === null) {
     return { ...base, verdict: VERDICT.FAIL, fail: { ...FAIL_REASON.BAD_INPUT, detail: "item_url と baseline_price_yen が必要" } };
@@ -196,6 +196,8 @@ function judge(target, snapshot) {
     variants: item.variants,
     price_source: item.source,
     page_item_name: item.name,
+    price_match: item.price === null ? null : item.price === baseline ? "一致" : "不一致",
+    link_match: urlMatch === null ? "未照合" : urlMatch ? "一致" : "不一致",
   };
 
   if (urlMatch === false) out.reasons.push(`リンク先不一致（期待 ${want}／実際 ${pageIds.join(", ")}）`);
@@ -212,7 +214,7 @@ function judge(target, snapshot) {
 
   if (out.reasons.length) return { ...out, verdict: VERDICT.DIFF };
   if (!item.stock) {
-    return { ...out, verdict: VERDICT.FAIL, fail: { ...FAIL_REASON.NO_STOCK, detail: "価格・リンク先は一致。在庫が読み取れないため人の確認へ" } };
+    return { ...out, verdict: VERDICT.REVIEW, reasons: ["価格一致・リンク先一致、在庫のみ取得不可（構造化データに在庫なし）"] };
   }
   return { ...out, verdict: VERDICT.MATCH };
 }
@@ -258,9 +260,17 @@ function jstParts(date) {
   return { date: `${p.year}-${p.month}-${p.day}`, time: `${p.hour}:${p.minute}:${p.second}` };
 }
 
-function note(r) {
+// バリエーション全点の価格一覧（価格差の有無にかかわらず、読めたものはすべて出す）
+function variantList(r) {
+  if (!r.variants || !r.variants.length) return "";
+  const items = r.variants.map((v) => `${v.name ?? "名称不明"} ${v.price === null ? "価格不明" : `${v.price}円`}（${v.stock ?? "在庫不明"}）`);
+  return `バリエーション全${r.variants.length}点：${items.join("、")}`;
+}
+
+function note(r, { withVariants = true } = {}) {
   const parts = [...r.reasons];
   if (r.fail) parts.unshift(`${r.fail.label}：${r.fail.detail}`);
+  if (withVariants && variantList(r)) parts.push(variantList(r));
   if (r.blocked_writes) parts.push(`書き込み系リクエストを${r.blocked_writes}件遮断`);
   return parts.join("／");
 }
@@ -287,21 +297,20 @@ function mdCell(v) {
 // 点検担当がそのまま使う表
 function toMarkdown(results) {
   const lines = [
-    "| # | post_id | 判定 | 理由 | 基準価格 | 実測価格 | 在庫 | バリエーション | 確認時刻(JST) | 対象URL |",
-    "|---|---|---|---|---|---|---|---|---|---|",
+    "| # | post_id | 判定 | 理由 | 基準価格 | 実測価格 | 価格 | リンク先 | 在庫 | バリエーション（全点） | 確認時刻(JST) | 対象URL |",
+    "|---|---|---|---|---|---|---|---|---|---|---|---|",
   ];
   results.forEach(({ target, result: r }, i) => {
     const t = jstParts(r.checkedAt);
-    const variants = r.variants.length ? r.variants.map((v) => `${v.name ?? "?"}:${v.price ?? "?"}円`).join("、") : "-";
-    lines.push(`| ${i + 1} | ${mdCell(target.post_id)} | ${r.verdict} | ${mdCell(note(r) || "-")} | ${mdCell(target.baseline_price_yen)} | ${r.current_price_yen ?? "-"} | ${r.stock_status} | ${mdCell(variants)} | ${t.date} ${t.time} | ${mdCell(target.item_url)} |`);
+    lines.push(`| ${i + 1} | ${mdCell(target.post_id)} | ${r.verdict} | ${mdCell(note(r, { withVariants: false }) || "-")} | ${mdCell(target.baseline_price_yen)} | ${r.current_price_yen ?? "-"} | ${r.price_match ?? "-"} | ${r.link_match ?? "-"} | ${r.stock_status} | ${mdCell(variantList(r) || "-")} | ${t.date} ${t.time} | ${mdCell(target.item_url)} |`);
   });
   const count = (v) => results.filter((x) => x.result.verdict === v).length;
-  lines.push("", `一致 ${count(VERDICT.MATCH)}件・差異あり ${count(VERDICT.DIFF)}件・取得不可 ${count(VERDICT.FAIL)}件。` +
-    "このツールの「一致」は人の最終照合の代わりではありません。差異あり・取得不可は必ず人がブラウザで確認してください。");
+  lines.push("", `一致 ${count(VERDICT.MATCH)}件・差異あり ${count(VERDICT.DIFF)}件・要確認 ${count(VERDICT.REVIEW)}件・取得不可 ${count(VERDICT.FAIL)}件。` +
+    "このツールの「一致」は人の最終照合の代わりではありません。差異あり・要確認・取得不可は必ず人がブラウザで確認してください。");
   return lines.join("\n") + "\n";
 }
 
 module.exports = {
   VERDICT, FAIL_REASON, itemIdentity, toYen, extractItem, classifyFailure, judge,
-  parseCsv, toCsv, toLogRow, toMarkdown, jstParts, LOG_COLUMNS, isLoopback,
+  parseCsv, toCsv, toLogRow, toMarkdown, jstParts, LOG_COLUMNS, isLoopback, variantList,
 };
