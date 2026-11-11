@@ -19,6 +19,8 @@ test("検索バー: CSSがステージ下の余白帯への配置とフロー表
 });
 
 test("検索バー: JSがバーを生成し、既存の遷移APIだけを使う", () => {
+  assert.match(HTML, /xauusd/);
+  assert.match(HTML, /通貨ペア/);
   assert.match(HTML, /bar\.id = "td-search";/);
   assert.match(HTML, /stage\.appendChild\(bar\);/);
   assert.match(HTML, /TDOpenDash\(act\.dash, input\)/);
