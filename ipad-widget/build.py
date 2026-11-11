@@ -1,6 +1,7 @@
 """Builds ipad.html (full-screen page for iPad home screen) from index.html,
 and stamps gold.html with a build id so open copies can tell when a newer one is published."""
 import hashlib
+import json
 import re
 from pathlib import Path
 
@@ -68,6 +69,27 @@ for old, new in [
     svl = svl.replace(old, new, 1)
 here.joinpath("learn", "silver.html").write_text(svl, encoding="utf-8")
 here.joinpath("learn", "core.js").write_bytes(here.joinpath("core.js").read_bytes())
+
+# home search index (learn/search-index.json): book titles + term names/readings,
+# read by the home search bar. Regenerated on every build so new books/terms are searchable.
+_books = []
+for _p in sorted(here.joinpath("learn").glob("*.json")):
+    if _p.name == "search-index.json":
+        continue
+    try:
+        _d = json.loads(_p.read_text(encoding="utf-8"))
+    except Exception:
+        continue
+    if not isinstance(_d, dict) or "title" not in _d or "chapters" not in _d:
+        continue
+    _terms = []
+    for _ch in _d["chapters"]:
+        for _t in _ch.get("terms", []):
+            if _t.get("name"):
+                _terms.append({"n": _t["name"], "i": _t.get("id") or _t["name"], "y": _t.get("yomi") or ""})
+    _books.append({"id": _d.get("id") or _p.stem, "title": _d["title"], "terms": _terms})
+here.joinpath("learn", "search-index.json").write_text(
+    json.dumps({"books": _books}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
 body = here.joinpath("index.html").read_text(encoding="utf-8").split("\n", 2)[2]  # drop <title> and claude meta
 # the sheets always open the current GOLD / USDJPY / BTCUSD / OIL pages, and a new one also refreshes the desk
