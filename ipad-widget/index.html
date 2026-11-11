@@ -1250,6 +1250,28 @@ html:not(.beginner) .step-note { display: none; }
 .dk-theme-btn { position: fixed; z-index: 30; right: calc(env(safe-area-inset-right, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 4px); font: inherit; font-size: 12px; font-weight: 700; color: var(--gold); background: rgba(var(--panel-rgb),.85); border: 1px solid rgba(var(--gold-rgb),.5); border-radius: 999px; padding: 3px 11px; line-height: 1.4; cursor: pointer; }
 .dk-theme-btn:hover, .dk-theme-btn:focus-visible { background: var(--gold); color: var(--on-accent); outline: none; }
 @media (pointer: coarse) { .dk-theme-btn { min-height: 36px; padding: 6px 14px; } }
+/* ---------- ホーム検索バー（バー常設型） ----------
+   カードの配置には触れず、ステージ下の余白帯（タブパネルの下）に置く。
+   色はテーマ変数に連動。スマホのフロー表示では JS が #flow の先頭へ移し、結果は下に開く。 */
+#td-search { position: absolute; left: 50%; transform: translateX(-50%); bottom: 3px; width: 430px; z-index: 4; }
+#td-search .tds-bar { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 14px; border-radius: 999px; background: rgba(var(--panel-rgb),.88); border: 1px solid rgba(var(--gold-rgb),.55); box-shadow: 0 8px 22px rgba(0,0,0,.4); }
+#td-search .tds-mag { font-size: 13px; flex: none; }
+#td-search input { flex: 1; min-width: 0; background: none; border: none; outline: none; color: var(--ink); font: inherit; font-size: 13.5px; }
+#td-search input::placeholder { color: var(--ink); opacity: .45; }
+#td-search .tds-pop { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); max-height: 380px; overflow-y: auto; background: rgba(var(--panel-rgb),.97); border: 1px solid rgba(var(--gold-rgb),.45); border-radius: 16px; box-shadow: 0 18px 44px rgba(0,0,0,.55); padding: 6px 12px 10px; }
+#td-search .tds-pop[hidden] { display: none; }
+#td-search .tds-grp { font-size: 10.5px; letter-spacing: .14em; color: var(--gold); margin: 10px 0 2px; }
+#td-search .tds-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid rgba(255,255,255,.07); color: var(--ink); font: inherit; font-size: 13.5px; padding: 7px 2px; cursor: pointer; }
+#td-search .tds-row span { flex: 1; min-width: 0; }
+#td-search .tds-row small { opacity: .55; font-size: 11px; white-space: nowrap; max-width: 38%; overflow: hidden; text-overflow: ellipsis; flex: none; }
+#td-search .tds-row:hover, #td-search .tds-row:focus-visible { background: rgba(var(--gold-rgb),.12); outline: none; }
+#td-search .tds-empty { opacity: .6; font-size: 12.5px; padding: 10px 2px; }
+html.flow #td-search { position: relative; left: auto; transform: none; bottom: auto; width: auto; margin: 10px 12px 2px; }
+html.flow #td-search .tds-bar { height: 42px; }
+html.flow #td-search input { font-size: 15.5px; }
+html.flow #td-search .tds-pop { bottom: auto; top: calc(100% + 8px); max-height: 46vh; }
+@media (pointer: coarse) { #td-search .tds-row { padding: 10px 2px; } }
+
 /* 狭い画面（iPhone SE級・縦375px）：ドックは5ボタン化（2026-11-06）で幅が増えたため、詰めて折り返し、右下のテーマボタンと重ならないようにする */
 @media (max-width: 640px) { .dk-dock { gap: 4px; left: calc(env(safe-area-inset-left, 0px) + 6px); flex-wrap: wrap; max-width: calc(100vw - 176px); } .dk-dock #layout-toggle, #tools-toggle, .dk-dock .dk-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; } .dk-theme-btn { font-size: 11px; padding: 4px 8px; min-height: 32px; right: calc(env(safe-area-inset-right, 0px) + 6px); max-width: 164px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
 
@@ -7132,5 +7154,171 @@ window.TD_THEME = (function () {
     if (on) dismissTpHint();
   });
   try { tpShow(tpName); } catch (e) {}
+})();
+</script>
+
+<script>
+/* ホーム検索バー：画面・学ぶ（本と項目）・記録（日誌と家計簿）を横断検索し、
+   既存の画面遷移（TDOpenDash / TDTools.open / openGlossary / 書斎）へそのまま渡す。
+   索引は build.py が learn/search-index.json に生成する（本のタイトル・項目名・読み）。
+   配置はステージ内（下の余白帯）。フロー表示では #flow の先頭へ移る。 */
+(function () {
+  var stage = document.getElementById("stage");
+  if (!stage) return;
+  var INDEX_URL = "learn/search-index.json";
+  var JOURNAL_KEY = "td-journal-v1", KAKEIBO_KEY = "td_kakeibo_v1";
+  var bar = document.createElement("div");
+  bar.id = "td-search";
+  bar.innerHTML = '<div class="tds-pop" hidden></div>' +
+    '<div class="tds-bar"><span class="tds-mag" aria-hidden="true">🔍</span>' +
+    '<input type="search" placeholder="Desk Oneを検索（画面・本・記録）" aria-label="Desk Oneを検索" autocomplete="off"></div>';
+  stage.appendChild(bar);
+  var input = bar.querySelector("input"), pop = bar.querySelector(".tds-pop");
+
+  /* 置き場所の同期：フロー表示では #flow の先頭へ、それ以外はステージ内（TDFlowDockSync と同じ流儀） */
+  function syncPlace() {
+    var fl = document.getElementById("flow");
+    if (document.documentElement.classList.contains("flow") && fl) {
+      if (bar.parentNode !== fl) fl.insertBefore(bar, fl.firstChild);
+    } else if (bar.parentNode !== stage) stage.appendChild(bar);
+  }
+  if (window.MutationObserver) new MutationObserver(syncPlace).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  syncPlace();
+
+  var norm = function (s) { return String(s == null ? "" : s).toLowerCase().normalize("NFKC").replace(/[ァ-ヶ]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0x60); }); };
+  var esc = function (s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); };
+
+  var SCREENS = [
+    { t: "GOLD ダッシュボード", sub: "画面・銘柄", kw: "gold ゴールド 金 ダッシュボード", act: { dash: "gold" } },
+    { t: "SILVER ダッシュボード", sub: "画面・銘柄", kw: "silver シルバー 銀 ダッシュボード", act: { dash: "silver" } },
+    { t: "ドル円 ダッシュボード", sub: "画面・銘柄", kw: "ドル円 usdjpy ダッシュボード", act: { dash: "usdjpy" } },
+    { t: "BTC ダッシュボード", sub: "画面・銘柄", kw: "btc ビットコイン ダッシュボード", act: { dash: "btc" } },
+    { t: "オイル ダッシュボード", sub: "画面・銘柄", kw: "オイル oil 原油 ダッシュボード", act: { dash: "oil" } },
+    { t: "週末ボード", sub: "画面", kw: "週末ボード 週末", act: { dash: "weekend" } },
+    { t: "ロット図説", sub: "画面・学ぶ", kw: "ロット図説 ロット 証拠金 計算", act: { dash: "lots" } },
+    { t: "小さな書斎（学ぶ）", sub: "画面", kw: "学ぶ 本 書斎 ライブラリ", act: { shelf: 1 } },
+    { t: "家計簿", sub: "ツール", kw: "家計簿 収支 生活 事業", act: { tab: "kakeibo" } },
+    { t: "確定申告", sub: "ツール", kw: "確定申告 税金 申告 医療費控除 住宅ローン控除", act: { tab: "tax" } },
+    { t: "トレード収支", sub: "ツール・記録", kw: "トレード収支 損益 収支", act: { tab: "pnl" } },
+    { t: "日誌", sub: "ツール・記録", kw: "日誌 ジャーナル 記録 振り返り", act: { tab: "journal" } },
+    { t: "資金管理", sub: "ツール", kw: "資金管理 リスク ロット", act: { tab: "money" } },
+    { t: "取引前チェック", sub: "ツール", kw: "取引前チェック チェック", act: { tab: "check" } },
+    { t: "市場時間", sub: "ツール", kw: "市場時間 時間", act: { tab: "hours" } },
+    { t: "設定", sub: "ツール", kw: "設定 テーマ バックアップ", act: { tab: "settings" } }
+  ];
+  var GLOSSARIES = [
+    { id: "fx", title: "FX用語集" },
+    { id: "eco", title: "経済用語集" }
+  ];
+
+  var learnBooks = null, learnLoading = false;
+  function ensureLearn() {
+    if (learnBooks || learnLoading) return;
+    learnLoading = true;
+    fetch(INDEX_URL).then(function (r) { return r.json(); }).then(function (d) {
+      learnBooks = (d && d.books) || []; render();
+    }).catch(function () { learnBooks = []; });
+  }
+
+  function learnHits(q) {
+    var out = [];
+    var books = GLOSSARIES.concat(learnBooks || []);
+    books.forEach(function (b) {
+      if (norm(b.title).indexOf(q) >= 0) out.push({ t: b.title, sub: "学ぶ", act: { book: b.id } });
+    });
+    if (learnBooks) learnBooks.forEach(function (b) {
+      b.terms.forEach(function (tm) {
+        if (norm(tm.n).indexOf(q) >= 0 || (tm.y && norm(tm.y).indexOf(q) >= 0))
+          out.push({ t: tm.n, sub: b.title, act: { term: b.id + ":" + tm.i } });
+      });
+    });
+    return out;
+  }
+
+  function recordHits(q) {
+    var out = [];
+    try {
+      var j = JSON.parse(localStorage.getItem(JOURNAL_KEY) || "[]");
+      if (Array.isArray(j)) j.forEach(function (e) {
+        if (!e) return;
+        var txt = [e.reason, e.result, e.reflection].filter(Boolean).join(" ");
+        if (txt && norm(txt).indexOf(q) >= 0)
+          out.push({ t: (e.day || "") + " " + txt.slice(0, 26), sub: "日誌", act: { tab: "journal" } });
+      });
+    } catch (e) {}
+    try {
+      var k = JSON.parse(localStorage.getItem(KAKEIBO_KEY) || "[]");
+      if (Array.isArray(k)) k.forEach(function (e) {
+        if (!e) return;
+        var txt = [e.memo, e.cat, e.payee].filter(Boolean).join(" ");
+        if (txt && norm(txt).indexOf(q) >= 0)
+          out.push({ t: (e.date || "") + " " + (e.memo || e.cat || ""), sub: "家計簿", act: { tab: "kakeibo" } });
+      });
+    } catch (e) {}
+    return out.slice(0, 8);
+  }
+
+  var lastRows = [];
+  function render() {
+    var q = norm(input.value.trim());
+    if (!q) { pop.hidden = true; pop.innerHTML = ""; lastRows = []; return; }
+    ensureLearn();
+    var groups = [
+      ["画面・ツール", SCREENS.filter(function (it) { return norm(it.t + " " + it.kw).indexOf(q) >= 0; })],
+      ["学ぶ（本と項目）", learnHits(q).slice(0, 14)],
+      ["記録", recordHits(q)]
+    ];
+    var h = "", rows = [];
+    groups.forEach(function (g) {
+      if (!g[1].length) return;
+      h += '<div class="tds-grp">' + g[0] + "</div>";
+      g[1].forEach(function (it) {
+        rows.push(it);
+        h += '<button type="button" class="tds-row" data-i="' + (rows.length - 1) + '"><span>' + esc(it.t) + "</span><small>" + esc(it.sub) + "</small></button>";
+      });
+    });
+    lastRows = rows;
+    pop.innerHTML = h || '<div class="tds-empty">見つかりませんでした。別の言葉で試してください。</div>';
+    pop.hidden = false;
+  }
+
+  var TOOLS_TAB_KEY = "td-tools-tab";
+  function openTab(tab) {
+    if (window.TDTools) { TDTools.open(tab, input); return; }
+    // tools.js は初回だけ遅れて読み込まれる。タブを保存キーに預けてからツールを開き、
+    // 読み込みが終わったら目的のタブでもう一度開く（開き直しは無害）。
+    try { localStorage.setItem(TOOLS_TAB_KEY, tab); } catch (e) {}
+    var b = document.getElementById("tools-toggle"); if (b) b.click();
+    var n = 0, iv = setInterval(function () {
+      if (window.TDTools) { clearInterval(iv); TDTools.open(tab, input); }
+      else if (++n > 25) clearInterval(iv);
+    }, 100);
+  }
+
+  function go(act) {
+    pop.hidden = true;
+    if (!act) return;
+    if (act.dash && window.TDOpenDash) { TDOpenDash(act.dash, input); return; }
+    if (act.tab) { openTab(act.tab); return; }
+    if (act.shelf) { var s = document.querySelector('[data-shf="open"]'); if (s) s.click(); return; }
+    if (act.book) {
+      var o = document.querySelector('[data-shf="open"]'); if (o) o.click();
+      setTimeout(function () { var sp = document.querySelector('[data-shf-book="' + act.book + '"]'); if (sp) sp.click(); }, 80);
+      return;
+    }
+    if (act.term && window.openGlossary) { openGlossary(act.term, input); return; }
+  }
+
+  pop.addEventListener("click", function (e) {
+    var b = e.target.closest(".tds-row");
+    if (b) go(lastRows[+b.getAttribute("data-i")].act);
+  });
+  input.addEventListener("input", render);
+  input.addEventListener("focus", function () { ensureLearn(); render(); });
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { var f = pop.querySelector(".tds-row"); if (f) f.click(); }
+    if (e.key === "Escape") { pop.hidden = true; input.blur(); }
+  });
+  document.addEventListener("pointerdown", function (e) { if (!bar.contains(e.target)) pop.hidden = true; }, true);
 })();
 </script>
