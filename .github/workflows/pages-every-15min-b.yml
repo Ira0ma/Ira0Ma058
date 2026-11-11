@@ -1,0 +1,33 @@
+name: Refresh the site every 15 minutes (offset chain)
+
+# Second starter chain, offset by 30 minutes from pages-every-15min.yml.
+# On 2026-11-11 the hourly starter began 48-61 minutes late all evening and,
+# because the chain is serial, market.json saw a 43-minute gap (21:44-22:27 JST).
+# Two chains starting 30 minutes apart keep a dispatch within about 15 minutes
+# even when GitHub starts an hourly run an hour late.
+on:
+  schedule:
+    - cron: "41 * * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write # to start pages.yml
+  contents: read
+
+concurrency:
+  group: pages-every-15min-b
+  cancel-in-progress: false # a late start waits for the running loop instead of piling up
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Start the Pages build now, then every 15 minutes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in 1 2 3 4; do
+            gh workflow run pages.yml --repo "${{ github.repository }}" --ref "${{ github.ref_name }}" || echo "start failed (next one in 15 minutes)"
+            if [ "$i" -lt 4 ]; then sleep 900; fi
+          done

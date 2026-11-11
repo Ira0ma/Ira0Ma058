@@ -5,6 +5,13 @@ name: Refresh the site every 15 minutes
 # This job starts pages.yml by hand (workflow_dispatch, which GitHub does not hold back) three
 # times, 15 minutes apart. Together with pages.yml's own hourly run that makes about every
 # 15 minutes. It only waits between the starts, so it costs no build work of its own.
+#
+# On 2026-11-11 GitHub started this hourly run 48-61 minutes late all evening. The chain is
+# serial (one concurrency group, no cancelling), and the loop used to wait 15 minutes before
+# its first start, so market.json went 43 minutes without an update (21:44-22:27 JST).
+# Since then the loop starts pages.yml at once and then every 15 minutes, and a second chain
+# (pages-every-15min-b.yml, 30 minutes offset) keeps a start within about 15 minutes even when
+# one hourly run is an hour late.
 on:
   schedule:
     - cron: "11 * * * *"  # once an hour (GitHub may start it late; the loop below covers the hour)
@@ -23,11 +30,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
-      - name: Start the Pages build 15, 30 and 45 minutes from now
+      - name: Start the Pages build now, then every 15 minutes
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          for i in 1 2 3; do
-            sleep 900
+          for i in 1 2 3 4; do
             gh workflow run pages.yml --repo "${{ github.repository }}" --ref "${{ github.ref_name }}" || echo "start failed (next one in 15 minutes)"
+            if [ "$i" -lt 4 ]; then sleep 900; fi
           done
