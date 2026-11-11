@@ -2129,9 +2129,27 @@ window.TD_THEME = (function () {
     // page names instead of dots: where you are, and a tap goes to that page
     var dots = document.createElement("nav"); dots.id = "pdots"; dots.setAttribute("aria-label", "ページ");
     dots.innerHTML = spec.map(function (cols, i) { return '<button type="button" data-page="' + i + '">' + (PAGE_NAMES[i] || "ページ" + (i + 1)) + "</button>"; }).join("");
+    var slidePagerTo = function (left) {  // ページ移動の横スライド：標準smoothより速く（最長330ms）。途中で触ったら止める
+          var from = pager.scrollLeft, d = left - from;
+          if (reduce || !d) { pager.scrollLeft = left; return; }
+          if (pager.__pgAnim) pager.__pgAnim = 0;
+          var token = {}; pager.__pgAnim = token;
+          var stop = function () { if (pager.__pgAnim === token) pager.__pgAnim = 0; };
+          pager.addEventListener("pointerdown", stop, { once: true });
+          pager.addEventListener("touchstart", stop, { once: true, passive: true });
+          var t0 = null, dur = Math.max(150, Math.min(330, Math.abs(d) * 0.5));
+          var step = function (ts) {
+            if (pager.__pgAnim !== token) return;
+            if (t0 == null) t0 = ts;
+            var p = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+            pager.scrollLeft = from + d * e;
+            if (p < 1) requestAnimationFrame(step); else pager.__pgAnim = 0;
+          };
+          requestAnimationFrame(step);
+        };
     dots.addEventListener("click", function (e) {
       var b = e.target.closest("[data-page]"); if (!b) return;
-      pager.scrollTo({ left: +b.getAttribute("data-page") * pager.clientWidth, behavior: reduce ? "auto" : "smooth" });
+      slidePagerTo(+b.getAttribute("data-page") * pager.clientWidth);
     });
     document.body.appendChild(pager); document.body.appendChild(dots);
     var paint = function () {
