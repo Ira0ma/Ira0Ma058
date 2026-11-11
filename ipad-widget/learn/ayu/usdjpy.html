@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="f5c858f042">
+<meta name="build" content="965966b63b">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4524,7 +4524,7 @@ $('maToggles').addEventListener('click',e=>{
 $('tlBtn').onclick=()=>{state.showTrend=!state.showTrend;$('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);savePrefs();drawChart();renderCombo()};
 $('comboBtns').onclick=e=>{const b=e.target.closest('[data-combo]');if(b)applyCombo(b.dataset.combo)};
 $('chNow').onclick=e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)};
-$('mtfScore').onclick=e=>{const b=e.target.closest('[data-tf]');if(!b)return;setTf(b.dataset.tf);$('secChart').scrollIntoView({behavior:'smooth',block:'start'})};
+$('mtfScore').onclick=e=>{const b=e.target.closest('[data-tf]');if(!b)return;setTf(b.dataset.tf);fastJump($('secChart'))};
 // 「?」：用語集のその用語を開く（トレードデスクの中ならデスクの用語集、単体ならデスクを開いて表示）
 document.addEventListener('click',e=>{const b=e.target.closest('[data-tip]');if(!b)return;e.preventDefault();e.stopPropagation();
   const host=b.closest('.reason,.sub,.ms-main')||b.parentElement,old=host.querySelector('.gtip');if(old){old.remove();return}
@@ -4891,6 +4891,37 @@ function oilActive(){try{const h=JSON.parse(lsGet('btc_oil_adj','null')),a=Array
   window.addEventListener('resize',()=>requestAnimationFrame(render));
   render();
 })();
+</script>
+<script>
+// セクションへのジャンプ：標準smoothより速く（最長330ms）。スクロールできる親かウィンドウを動かす
+function fastJump(el) {
+  if (!el) return;
+  var sc = el.parentElement;
+  while (sc && sc !== document.body) {
+    var st = getComputedStyle(sc);
+    if (/(auto|scroll)/.test(st.overflowY) && sc.scrollHeight > sc.clientHeight + 4) break;
+    sc = sc.parentElement;
+  }
+  var useWin = !sc || sc === document.body;
+  var er = el.getBoundingClientRect(), from, to;
+  if (useWin) { from = window.scrollY || document.documentElement.scrollTop; to = from + er.top; }
+  else { var sr = sc.getBoundingClientRect(); from = sc.scrollTop; to = from + (er.top - sr.top); }
+  var d = to - from;
+  var apply = function (v) { if (useWin) window.scrollTo(0, v); else sc.scrollTop = v; };
+  var rm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (rm || !d) { apply(to); return; }
+  if (el.__fjA) el.__fjA = 0;
+  var token = {}; el.__fjA = token;
+  var t0 = null, dur = Math.max(150, Math.min(330, Math.abs(d) * 0.5));
+  var step = function (ts) {
+    if (el.__fjA !== token) return;
+    if (t0 == null) t0 = ts;
+    var p = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+    apply(from + d * e);
+    if (p < 1) requestAnimationFrame(step); else el.__fjA = 0;
+  };
+  requestAnimationFrame(step);
+}
 </script>
 </body>
 </html>
