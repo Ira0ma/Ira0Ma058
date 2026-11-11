@@ -7641,15 +7641,15 @@ window.TD_THEME = (function () {
   if (window.MutationObserver) new MutationObserver(syncPlace).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
   syncPlace();
 
-  var norm = function (s) { return String(s == null ? "" : s).toLowerCase().normalize("NFKC").replace(/[ァ-ヶ]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0x60); }); };
+  var norm = function (s) { return String(s == null ? "" : s).toLowerCase().normalize("NFKC").replace(/[ァ-ヶ]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0x60); }).replace(/[\/\s・、,]/g, ""); };
   var esc = function (s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); };
 
   var SCREENS = [
-    { t: "GOLD ダッシュボード", sub: "画面・銘柄", kw: "gold ゴールド 金 ダッシュボード", act: { dash: "gold" } },
-    { t: "SILVER ダッシュボード", sub: "画面・銘柄", kw: "silver シルバー 銀 ダッシュボード", act: { dash: "silver" } },
-    { t: "ドル円 ダッシュボード", sub: "画面・銘柄", kw: "ドル円 usdjpy ダッシュボード", act: { dash: "usdjpy" } },
-    { t: "BTC ダッシュボード", sub: "画面・銘柄", kw: "btc ビットコイン ダッシュボード", act: { dash: "btc" } },
-    { t: "オイル ダッシュボード", sub: "画面・銘柄", kw: "オイル oil 原油 ダッシュボード", act: { dash: "oil" } },
+    { t: "GOLD ダッシュボード", sub: "画面・銘柄", kw: "gold ゴールド 金 xau xauusd ダッシュボード 通貨ペア ペア チャート 分析", act: { dash: "gold" } },
+    { t: "SILVER ダッシュボード", sub: "画面・銘柄", kw: "silver シルバー 銀 xag xagusd ダッシュボード 通貨ペア ペア チャート 分析", act: { dash: "silver" } },
+    { t: "ドル円 ダッシュボード", sub: "画面・銘柄", kw: "ドル円 usdjpy usd jpy 米ドル 円 ダッシュボード 通貨ペア ペア チャート 分析", act: { dash: "usdjpy" } },
+    { t: "BTC ダッシュボード", sub: "画面・銘柄", kw: "btc btcusd ビットコイン 暗号資産 仮想通貨 ダッシュボード 通貨ペア ペア チャート 分析", act: { dash: "btc" } },
+    { t: "オイル ダッシュボード", sub: "画面・銘柄", kw: "オイル oil usoil oilcash 原油 wti ダッシュボード 通貨ペア ペア チャート 分析", act: { dash: "oil" } },
     { t: "週末ボード", sub: "画面", kw: "週末ボード 週末", act: { dash: "weekend" } },
     { t: "ロット図説", sub: "画面・学ぶ", kw: "ロット図説 ロット 証拠金 計算", act: { dash: "lots" } },
     { t: "小さな書斎（学ぶ）", sub: "画面", kw: "学ぶ 本 書斎 ライブラリ", act: { shelf: 1 } },
