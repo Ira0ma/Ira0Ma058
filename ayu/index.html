@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-ayu.png">
 <link rel="icon" type="image/png" href="icon-ayu.png">
-<meta name="build" content="1f81fe1c39">
+<meta name="build" content="82694e7696">
 <title>Desk of Ayu</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1213,7 +1213,7 @@ html.flow .shf-spine, html.phone .shf-spine { flex: 1 1 140px; height: 198px; }
 .gb-prog { flex: 0 1 260px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; }
 .gb-prog i { display: block; height: 100%; background: var(--gold); width: 0; transition: width .2s; }
 .gb-measure { position: fixed; left: -9999px; top: 0; visibility: hidden; }
-#cal { left: 667px; top: 329px; width: 517px; height: 224px; padding: 11px 16px; display: grid; grid-template-columns: 1fr 1px 1fr; gap: 14px; }
+#cal { left: 667px; top: 329px; width: 517px; height: 199px; padding: 10px 16px; display: grid; grid-template-columns: 1fr 1px 1fr; gap: 14px; }
 #cal .sep { background: var(--glass-line); }
 .month { min-width: 0; }
 .cal-head { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
@@ -1221,20 +1221,20 @@ html.flow .shf-spine, html.phone .shf-spine { flex: 1 1 140px; height: 198px; }
 .cal-nav { display: flex; gap: 6px; }
 .cal-nav button { width: 26px; height: 26px; border: 0; border-radius: 50%; background: transparent; color: var(--ink-2); cursor: pointer; display: grid; place-items: center; }
 .cal-nav button:hover { background: rgba(255,255,255,.08); color: var(--gold); }
-.grid7 { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-top: 5px; row-gap: 1px; }
-.grid7 .wd { font-size: 11.5px; color: var(--ink-2); padding-bottom: 3px; border-bottom: 1px solid var(--glass-line); margin-bottom: 3px; }
+.grid7 { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-top: 3px; row-gap: 1px; }
+.grid7 .wd { font-size: 11.5px; color: var(--ink-2); padding-bottom: 2px; border-bottom: 1px solid var(--glass-line); margin-bottom: 2px; }
 .grid7 .wd.sun, .grid7 .wd.sat, .grid7 .d.sun, .grid7 .d.sat, .grid7 .d.hol { color: var(--gold); }
 .grid7 .d { position: relative; font-size: 13px; height: 22px; display: grid; place-items: center; }
 .grid7 .d.today::before { content: ""; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%,-50%); border-radius: 50%; border: 1.5px solid var(--gold); box-shadow: 0 0 10px rgba(var(--gold-rgb),.55), inset 0 0 8px rgba(var(--gold-rgb),.25); }
 /* 日付の印：下の点＝その日の指標（金色＝★3、灰色＝それ以外）、右上の輪＝米・英の市場休場（目安）。日本の祝日は金色の数字 */
-.grid7 .d { height: 20px; cursor: pointer; border-radius: 6px; }
+.grid7 .d { height: 17px; cursor: pointer; border-radius: 6px; }
 .grid7 .d:hover { background: rgba(255,255,255,.06); }
 .grid7 .d.sel { background: rgba(var(--gold-rgb),.16); }
-.grid7 .d.today::before { width: 20px; height: 20px; }
+.grid7 .d.today::before { width: 17px; height: 17px; }
 .grid7 .d.ev::after, .grid7 .d.ev3::after { content: ""; position: absolute; left: 50%; bottom: 0; width: 3px; height: 3px; margin-left: -1.5px; border-radius: 50%; background: var(--ink-3); }
 .grid7 .d.ev3::after { width: 5px; height: 5px; margin-left: -2.5px; bottom: -1px; background: var(--gold); }
 .grid7 .d.mh i { position: absolute; right: 3px; top: 2px; width: 5px; height: 5px; border-radius: 50%; border: 1px solid var(--ink-2); }
-.cal-legend { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 10px; line-height: 12px; color: var(--ink-3); margin-top: -8px; }
+.cal-legend { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 10px; line-height: 11px; color: var(--ink-3); margin-top: -10px; }
 .cal-legend i { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-right: 4px; vertical-align: 1px; }
 .cal-legend i.ev3 { background: var(--gold); } .cal-legend i.ev { width: 3px; height: 3px; background: var(--ink-3); } .cal-legend i.mh { border: 1px solid var(--ink-2); }
 .cal-legend b { color: var(--gold); font-weight: 600; }
@@ -1350,17 +1350,17 @@ html:not(.beginner) .step-note { display: none; }
 /* ---------- ホーム検索バー（バー常設型） ----------
    カードの配置には触れず、ステージ下の余白帯（タブパネルの下）に置く。
    色はテーマ変数に連動。スマホのフロー表示では JS が #flow の先頭へ移し、結果は下に開く。 */
-#td-search { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 44px); width: 430px; max-width: calc(100vw - 24px); z-index: 29; }
+#td-search { position: relative; flex: none; width: auto; max-width: none; margin: 8px 0 0; z-index: 5; } /* あゆ版の検索バーはタブパネルのフッター段として組み込む（画面固定にすると、画面比によって下ドックやパネル下端と重なるため） */
 #td-search .tds-bar { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 14px; border-radius: 999px; background: rgba(var(--panel-rgb),.88); border: 1.5px solid rgba(246,239,222,.9); box-shadow: 0 8px 22px rgba(0,0,0,.4); }
 /* あゆ版のみ：下ドック（.dk-dock）が画面下に固定（position:fixed）のため、バーも画面基準で
    ドックの上に固定する。ステージ内に置くと、画面が横長になるほどドックと重なるため。
    ページャー表示ではページ点（#pdots）が下44px付近にあるので、さらに上に逃がす */
-html.phone #td-search { bottom: calc(env(safe-area-inset-bottom, 0px) + 86px); }
 #td-search .tds-mag { font-size: 13px; flex: none; }
 #td-search input { flex: 1; min-width: 0; background: none; border: none; outline: none; color: var(--ink); font: inherit; font-size: 13.5px; }
 #td-search input::placeholder { color: var(--ink); opacity: .45; }
 #td-search .tds-pop { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); max-height: 380px; overflow-y: auto; background: rgba(var(--panel-rgb),.97); border: 1px solid rgba(var(--gold-rgb),.45); border-radius: 16px; box-shadow: 0 18px 44px rgba(0,0,0,.55); padding: 6px 12px 10px; }
 #td-search .tds-pop[hidden] { display: none; }
+#tabpanel #td-search .tds-pop { max-height: 216px; } /* パネル内では結果リストがパネルの上端をはみ出さないよう高さを抑える（中はスクロール） */
 #td-search .tds-grp { font-size: 10.5px; letter-spacing: .14em; color: var(--gold); margin: 10px 0 2px; }
 #td-search .tds-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid rgba(255,255,255,.07); color: var(--ink); font: inherit; font-size: 13.5px; padding: 7px 2px; cursor: pointer; }
 #td-search .tds-row span { flex: 1; min-width: 0; }
@@ -7674,7 +7674,8 @@ window.TD_THEME = (function () {
 /* ホーム検索バー：画面・学ぶ（本と項目）・記録（日誌と家計簿）を横断検索し、
    既存の画面遷移（TDOpenDash / TDTools.open / openGlossary / 書斎）へそのまま渡す。
    索引は build.py が learn/search-index.json に生成する（本のタイトル・項目名・読み）。
-   配置は画面下に固定（あゆ版の下ドックと重ならない位置）。フロー表示では #flow の先頭へ移る。 */
+   配置はタブパネルのフッター段（あゆ版は下ドックが画面固定のため、バーも固定にすると重なる）。
+   フロー表示では #flow の先頭へ移る。 */
 (function () {
   var stage = document.getElementById("stage");
   if (!stage) return;
@@ -7688,13 +7689,16 @@ window.TD_THEME = (function () {
   document.body.appendChild(bar);
   var input = bar.querySelector("input"), pop = bar.querySelector(".tds-pop");
 
-  /* 置き場所の同期：フロー表示では #flow の先頭へ、それ以外は body 直下（画面下に固定表示。
-     あゆ版の下ドックが画面固定のため、ステージ内に置くと画面比によって重なる） */
+  /* 置き場所の同期：フロー表示では #flow の先頭へ、それ以外はタブパネルのフッター段へ。
+     あゆ版は下ドックが画面固定で、バーを画面固定にすると画面比によって重なるため、パネルに組み込む */
   function syncPlace() {
     var fl = document.getElementById("flow");
     if (document.documentElement.classList.contains("flow") && fl) {
       if (bar.parentNode !== fl) fl.insertBefore(bar, fl.firstChild);
-    } else if (bar.parentNode !== document.body) document.body.appendChild(bar);
+    } else {
+      var panel = document.getElementById("tabpanel");
+      if (panel && bar.parentNode !== panel) panel.appendChild(bar);
+    }
   }
   if (window.MutationObserver) new MutationObserver(syncPlace).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
   syncPlace();

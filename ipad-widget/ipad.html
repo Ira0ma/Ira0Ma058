@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="d7b8fac2d0">
+<meta name="build" content="dab9d7491c">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1130,7 +1130,7 @@ html.flow .shf-spine, html.phone .shf-spine { flex: 1 1 140px; height: 198px; }
 .gb-prog { flex: 0 1 260px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; }
 .gb-prog i { display: block; height: 100%; background: var(--gold); width: 0; transition: width .2s; }
 .gb-measure { position: fixed; left: -9999px; top: 0; visibility: hidden; }
-#cal { left: 667px; top: 329px; width: 517px; height: 224px; padding: 11px 16px; display: grid; grid-template-columns: 1fr 1px 1fr; gap: 14px; }
+#cal { left: 667px; top: 329px; width: 517px; height: 199px; padding: 10px 16px; display: grid; grid-template-columns: 1fr 1px 1fr; gap: 14px; }
 #cal .sep { background: var(--glass-line); }
 .month { min-width: 0; }
 .cal-head { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
@@ -1138,20 +1138,20 @@ html.flow .shf-spine, html.phone .shf-spine { flex: 1 1 140px; height: 198px; }
 .cal-nav { display: flex; gap: 6px; }
 .cal-nav button { width: 26px; height: 26px; border: 0; border-radius: 50%; background: transparent; color: var(--ink-2); cursor: pointer; display: grid; place-items: center; }
 .cal-nav button:hover { background: rgba(255,255,255,.08); color: var(--gold); }
-.grid7 { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-top: 5px; row-gap: 1px; }
-.grid7 .wd { font-size: 11.5px; color: var(--ink-2); padding-bottom: 3px; border-bottom: 1px solid var(--glass-line); margin-bottom: 3px; }
+.grid7 { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-top: 3px; row-gap: 1px; }
+.grid7 .wd { font-size: 11.5px; color: var(--ink-2); padding-bottom: 2px; border-bottom: 1px solid var(--glass-line); margin-bottom: 2px; }
 .grid7 .wd.sun, .grid7 .wd.sat, .grid7 .d.sun, .grid7 .d.sat, .grid7 .d.hol { color: var(--gold); }
 .grid7 .d { position: relative; font-size: 13px; height: 22px; display: grid; place-items: center; }
 .grid7 .d.today::before { content: ""; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%,-50%); border-radius: 50%; border: 1.5px solid var(--gold); box-shadow: 0 0 10px rgba(var(--gold-rgb),.55), inset 0 0 8px rgba(var(--gold-rgb),.25); }
 /* 日付の印：下の点＝その日の指標（金色＝★3、灰色＝それ以外）、右上の輪＝米・英の市場休場（目安）。日本の祝日は金色の数字 */
-.grid7 .d { height: 20px; cursor: pointer; border-radius: 6px; }
+.grid7 .d { height: 17px; cursor: pointer; border-radius: 6px; }
 .grid7 .d:hover { background: rgba(255,255,255,.06); }
 .grid7 .d.sel { background: rgba(var(--gold-rgb),.16); }
-.grid7 .d.today::before { width: 20px; height: 20px; }
+.grid7 .d.today::before { width: 17px; height: 17px; }
 .grid7 .d.ev::after, .grid7 .d.ev3::after { content: ""; position: absolute; left: 50%; bottom: 0; width: 3px; height: 3px; margin-left: -1.5px; border-radius: 50%; background: var(--ink-3); }
 .grid7 .d.ev3::after { width: 5px; height: 5px; margin-left: -2.5px; bottom: -1px; background: var(--gold); }
 .grid7 .d.mh i { position: absolute; right: 3px; top: 2px; width: 5px; height: 5px; border-radius: 50%; border: 1px solid var(--ink-2); }
-.cal-legend { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 10px; line-height: 12px; color: var(--ink-3); margin-top: -8px; }
+.cal-legend { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 10px; line-height: 11px; color: var(--ink-3); margin-top: -10px; }
 .cal-legend i { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-right: 4px; vertical-align: 1px; }
 .cal-legend i.ev3 { background: var(--gold); } .cal-legend i.ev { width: 3px; height: 3px; background: var(--ink-3); } .cal-legend i.mh { border: 1px solid var(--ink-2); }
 .cal-legend b { color: var(--gold); font-weight: 600; }
