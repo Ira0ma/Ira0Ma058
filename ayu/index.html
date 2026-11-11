@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-ayu.png">
 <link rel="icon" type="image/png" href="icon-ayu.png">
-<meta name="build" content="0109e561e0">
+<meta name="build" content="1f81fe1c39">
 <title>Desk of Ayu</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1350,12 +1350,12 @@ html:not(.beginner) .step-note { display: none; }
 /* ---------- ホーム検索バー（バー常設型） ----------
    カードの配置には触れず、ステージ下の余白帯（タブパネルの下）に置く。
    色はテーマ変数に連動。スマホのフロー表示では JS が #flow の先頭へ移し、結果は下に開く。 */
-#td-search { position: absolute; left: 50%; transform: translateX(-50%); bottom: 3px; width: 430px; z-index: 4; }
+#td-search { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 44px); width: 430px; max-width: calc(100vw - 24px); z-index: 29; }
 #td-search .tds-bar { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 14px; border-radius: 999px; background: rgba(var(--panel-rgb),.88); border: 1.5px solid rgba(246,239,222,.9); box-shadow: 0 8px 22px rgba(0,0,0,.4); }
-/* あゆ版のみ：下端に横ドック（.dk-dock、ステージ座標で上端834）があるため、
-   タブパネル下端（806）とドック上端（834）の帯に収まるよう位置と高さを調整する */
-#td-search { bottom: 8px; }
-#td-search .tds-bar { height: 26px; }
+/* あゆ版のみ：下ドック（.dk-dock）が画面下に固定（position:fixed）のため、バーも画面基準で
+   ドックの上に固定する。ステージ内に置くと、画面が横長になるほどドックと重なるため。
+   ページャー表示ではページ点（#pdots）が下44px付近にあるので、さらに上に逃がす */
+html.phone #td-search { bottom: calc(env(safe-area-inset-bottom, 0px) + 86px); }
 #td-search .tds-mag { font-size: 13px; flex: none; }
 #td-search input { flex: 1; min-width: 0; background: none; border: none; outline: none; color: var(--ink); font: inherit; font-size: 13.5px; }
 #td-search input::placeholder { color: var(--ink); opacity: .45; }
@@ -1367,7 +1367,7 @@ html:not(.beginner) .step-note { display: none; }
 #td-search .tds-row small { opacity: .55; font-size: 11px; white-space: nowrap; max-width: 38%; overflow: hidden; text-overflow: ellipsis; flex: none; }
 #td-search .tds-row:hover, #td-search .tds-row:focus-visible { background: rgba(var(--gold-rgb),.12); outline: none; }
 #td-search .tds-empty { opacity: .6; font-size: 12.5px; padding: 10px 2px; }
-html.flow #td-search { position: relative; left: auto; transform: none; bottom: auto; width: auto; margin: 10px 12px 2px; }
+html.flow #td-search { position: relative; left: auto; transform: none; bottom: auto; width: auto; max-width: none; margin: 10px 12px 2px; }
 html.flow #td-search .tds-bar { height: 42px; }
 html.flow #td-search input { font-size: 15.5px; }
 html.flow #td-search .tds-pop { bottom: auto; top: calc(100% + 8px); max-height: 46vh; }
@@ -7674,7 +7674,7 @@ window.TD_THEME = (function () {
 /* ホーム検索バー：画面・学ぶ（本と項目）・記録（日誌と家計簿）を横断検索し、
    既存の画面遷移（TDOpenDash / TDTools.open / openGlossary / 書斎）へそのまま渡す。
    索引は build.py が learn/search-index.json に生成する（本のタイトル・項目名・読み）。
-   配置はステージ内（下の余白帯）。フロー表示では #flow の先頭へ移る。 */
+   配置は画面下に固定（あゆ版の下ドックと重ならない位置）。フロー表示では #flow の先頭へ移る。 */
 (function () {
   var stage = document.getElementById("stage");
   if (!stage) return;
@@ -7685,15 +7685,16 @@ window.TD_THEME = (function () {
   bar.innerHTML = '<div class="tds-pop" hidden></div>' +
     '<div class="tds-bar"><span class="tds-mag" aria-hidden="true">🔍</span>' +
     '<input type="search" placeholder="Desk Oneを検索（画面・本・記録）" aria-label="Desk Oneを検索" autocomplete="off"></div>';
-  stage.appendChild(bar);
+  document.body.appendChild(bar);
   var input = bar.querySelector("input"), pop = bar.querySelector(".tds-pop");
 
-  /* 置き場所の同期：フロー表示では #flow の先頭へ、それ以外はステージ内（TDFlowDockSync と同じ流儀） */
+  /* 置き場所の同期：フロー表示では #flow の先頭へ、それ以外は body 直下（画面下に固定表示。
+     あゆ版の下ドックが画面固定のため、ステージ内に置くと画面比によって重なる） */
   function syncPlace() {
     var fl = document.getElementById("flow");
     if (document.documentElement.classList.contains("flow") && fl) {
       if (bar.parentNode !== fl) fl.insertBefore(bar, fl.firstChild);
-    } else if (bar.parentNode !== stage) stage.appendChild(bar);
+    } else if (bar.parentNode !== document.body) document.body.appendChild(bar);
   }
   if (window.MutationObserver) new MutationObserver(syncPlace).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
   syncPlace();
