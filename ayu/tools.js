@@ -244,6 +244,34 @@
     }
   }, true);
   var $ = function (s) { return body.querySelector(s); };
+  function fastJumpEl(el) {  // ガイドへのジャンプ：標準smoothより速く（最長330ms）
+    if (!el) return;
+    var sc = el.parentElement;
+    while (sc && sc !== document.body) {
+      var st = getComputedStyle(sc);
+      if (/(auto|scroll)/.test(st.overflowY) && sc.scrollHeight > sc.clientHeight + 4) break;
+      sc = sc.parentElement;
+    }
+    var useWin = !sc || sc === document.body;
+    var er = el.getBoundingClientRect(), from, to;
+    if (useWin) { from = window.scrollY || document.documentElement.scrollTop; to = from + er.top; }
+    else { var sr = sc.getBoundingClientRect(); from = sc.scrollTop; to = from + (er.top - sr.top); }
+    var d = to - from;
+    var apply = function (v) { if (useWin) window.scrollTo(0, v); else sc.scrollTop = v; };
+    var rm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (rm || !d) { apply(to); return; }
+    if (el.__fjA) el.__fjA = 0;
+    var token = {}; el.__fjA = token;
+    var t0 = null, dur = Math.max(150, Math.min(330, Math.abs(d) * 0.5));
+    var step = function (ts) {
+      if (el.__fjA !== token) return;
+      if (t0 == null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur), e2 = 1 - Math.pow(1 - p, 3);
+      apply(from + d * e2);
+      if (p < 1) requestAnimationFrame(step); else el.__fjA = 0;
+    };
+    requestAnimationFrame(step);
+  }
   var field = function (id, label, val, type, extra) {
     return '<label class="f">' + esc(label) + '<input id="' + id + '" type="' + (type || "text") + '"' + (type === "number" ? ' inputmode="decimal" step="any"' : "") + ' value="' + esc(val == null ? "" : val) + '"' + (extra || "") + "></label>";
   };
@@ -1680,7 +1708,7 @@
         var lnCancel = $("#kb-lncancel"); if (lnCancel) lnCancel.addEventListener("click", function () { kbLoanEdit = null; VIEWS.kakeibo(); });
         $("#kb-lnlist").addEventListener("click", function (e) {
           var go = e.target.closest("[data-hcgo]");
-          if (go) { var gel = $("#kb-hcguide"); if (gel) gel.scrollIntoView({ block: "start", behavior: "smooth" }); return; }
+          if (go) { var gel = $("#kb-hcguide"); if (gel) fastJumpEl(gel); return; }
           var del = e.target.closest("[data-lndel]"), edb = e.target.closest("[data-lned]");
           if (del) { var did = del.getAttribute("data-lndel"); if (confirm("この借入を削除しますか？（元に戻せません）") && put(KAKEIBO_LOANS, kbLoans().filter(function (x) { return x.id !== did; }), "家計簿")) { if (kbLoanEdit && kbLoanEdit.id === did) kbLoanEdit = null; VIEWS.kakeibo(); } return; }
           if (edb) { kbLoanEdit = kbLoans().filter(function (x) { return x.id === edb.getAttribute("data-lned"); })[0] || null; VIEWS.kakeibo(); }
