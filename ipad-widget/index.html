@@ -3294,8 +3294,28 @@ window.TD_THEME = (function () {
     var row = document.getElementById("markets"), cue = row.querySelector(".mk-cue");
     var mark = function () { row.classList.toggle("at-end", row.scrollLeft + row.clientWidth >= row.scrollWidth - 4); };
     row.addEventListener("scroll", mark, { passive: true }); window.addEventListener("resize", mark); mark();
-    cue.addEventListener("click", function () { row.scrollTo({ left: row.scrollWidth, behavior: reduce ? "auto" : "smooth" }); });
+    cue.addEventListener("click", function () { mkSlideTo(row, row.scrollWidth); });
   })();
+  function mkSlideTo(row, left) {  // 目次チップ・›の横スライド：標準のsmooth（距離で600ms超）より速く、最長330msに収める。途中で触ったら止める
+    var max = Math.max(0, row.scrollWidth - row.clientWidth);
+    var to = Math.max(0, Math.min(left, max)), from = row.scrollLeft, d = to - from;
+    row.__mkAnim = 0;
+    if (reduce || !d) { row.scrollLeft = to; return; }
+    var token = {}; row.__mkAnim = token;
+    var stop = function () { if (row.__mkAnim === token) row.__mkAnim = 0; };
+    row.addEventListener("pointerdown", stop, { once: true });
+    row.addEventListener("wheel", stop, { once: true });
+    row.addEventListener("touchstart", stop, { once: true, passive: true });
+    var t0 = null, dur = Math.max(150, Math.min(330, Math.abs(d) * 0.5));
+    var step = function (ts) {
+      if (row.__mkAnim !== token) return;
+      if (t0 == null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      row.scrollLeft = from + d * e;
+      if (p < 1) requestAnimationFrame(step); else row.__mkAnim = 0;
+    };
+    requestAnimationFrame(step);
+  }
   function mkChipLabel(key) {  // 目次チップの短い名前（承認済みプレビューの形）。無い銘柄は銘柄表の名前を使う
     var s = { gold: "金", usdjpy: "ドル円", btc: "BTC", usoil: "オイル", silver: "銀" }[key];
     return s || (INST[key] ? (INST[key].pickName || INST[key].name) : key);
@@ -3320,7 +3340,7 @@ window.TD_THEME = (function () {
       b.type = "button"; b.className = "mk-chip";
       b.addEventListener("click", function () {
         var rr = row.getBoundingClientRect(), tr = el.getBoundingClientRect();
-        row.scrollTo({ left: row.scrollLeft + (tr.left - rr.left), behavior: reduce ? "auto" : "smooth" });
+        mkSlideTo(row, row.scrollLeft + (tr.left - rr.left));
       });
       bar.appendChild(b); return b;
     });
