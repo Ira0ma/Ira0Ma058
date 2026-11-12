@@ -39,8 +39,28 @@ test("位置バー: ptBarHtml の生成（両端ラベル・目盛り・印の�
   assert.match(html, /pm-bar-now" style="left:53\.8%"/); // (3900-3830)/(3960-3830)=53.8%
   assert.match(html, /pm-bar-tick" style="left:30\.8%"/); // S1 3870 の目盛り
   assert.match(html, /pm-bar-tick" style="left:73\.1%"/); // R1 3925 の目盛り
-  assert.equal(ptBarHtml("gold", { px: 3900, s: [], r: [3925] }), ""); // 片側だけでは出さない
+  assert.equal(ptBarHtml("gold", { px: 3900, s: [], r: [3925] }), ""); // 片側1本だけでは出さない
   assert.equal(ptBarHtml("gold", { px: 3900, s: [3870], r: [] }), "");
+});
+
+test("位置バー: 片側だけの水準でも出す（下なし／上なし）", () => {
+  const ptBarPos = eval("(" + extract("ptBarPos") + ")");
+  const ptVal = (key, v) => v.toFixed(1);
+  const ptBarHtml = eval("(" + extract("ptBarHtml") + ")");
+  // 下に水準なし（2026-11-13朝のゴールド実測形）：R1〜R2の間隔を1目盛りに左へ延長
+  const g = ptBarHtml("gold", { px: 3878.8, s: [], r: [3891.64, 3968.42] });
+  assert.match(g, /下なし/);
+  assert.match(g, /3968\.4 R2/);
+  assert.match(g, /pm-bar-now" style="left:41\.6%"/); // (3878.8-3814.86)/153.56
+  assert.match(g, /pm-bar-tick" style="left:50\.0%"/); // R1 3891.64 の目盛り
+  // 上に水準なし：S1〜S2の間隔を1目盛りに右へ延長
+  const u = ptBarHtml("usdjpy", { px: 97, s: [95, 90], r: [] });
+  assert.match(u, /S2 90\.0/);
+  assert.match(u, /上なし/);
+  assert.match(u, /pm-bar-now" style="left:70\.0%"/); // (97-90)/(100-90)
+  assert.match(u, /pm-bar-tick" style="left:50\.0%"/); // S1 95 の目盛り
+  // 間隔がゼロ（同値2本）では出さない
+  assert.equal(ptBarHtml("gold", { px: 3900, s: [], r: [3925, 3925] }), "");
 });
 
 test("位置バー: ptMap に組み込まれ、CSS がある", () => {

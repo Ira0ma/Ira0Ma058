@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="f11dc874c4">
+<meta name="build" content="2f5c6e0e79">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4988,13 +4988,30 @@ window.TD_THEME = (function () {
     var p = (px - lo) / (hi - lo) * 100;
     return p < 0 ? 0 : p > 100 ? 100 : p;
   }
-  function ptBarHtml(key, k) {  // 位置バー：いちばん外側の支持〜抵抗を両端に、内側の水準に目盛り、現在価格に金の印
-    if (!k.s.length || !k.r.length) return "";
-    var lo = k.s[k.s.length - 1], hi = k.r[k.r.length - 1], pos = ptBarPos(k.px, lo, hi);
+  function ptBarHtml(key, k) {  // 位置バー：水準の範囲の中で現在価格がどこにいるか。片側しか水準が無い日は、無い側の端を「下なし／上なし」とし、ある側の内側2本の間隔を1目盛りとして範囲を延長する
+    var s = k.s || [], r = k.r || [];
+    if (!s.length && !r.length) return "";
+    var lo, hi, loLab, hiLab, tickSrc;
+    if (s.length && r.length) {
+      lo = s[s.length - 1]; hi = r[r.length - 1];
+      loLab = "S" + s.length + " " + ptVal(key, lo); hiLab = ptVal(key, hi) + " R" + r.length;
+      tickSrc = [[s[0], "S1"], [r[0], "R1"]];
+    } else if (r.length >= 2) {
+      var ur = r[1] - r[0]; if (!(ur > 0)) return "";
+      lo = r[0] - ur; hi = r[r.length - 1];
+      loLab = "下なし"; hiLab = ptVal(key, hi) + " R" + r.length;
+      tickSrc = [[r[0], "R1"]]; if (r.length > 2) tickSrc.push([r[1], "R2"]);
+    } else if (s.length >= 2) {
+      var us = s[0] - s[1]; if (!(us > 0)) return "";
+      hi = s[0] + us; lo = s[s.length - 1];
+      loLab = "S" + s.length + " " + ptVal(key, lo); hiLab = "上なし";
+      tickSrc = [[s[0], "S1"]]; if (s.length > 2) tickSrc.push([s[1], "S2"]);
+    } else return "";
+    var pos = ptBarPos(k.px, lo, hi);
     if (pos == null) return "";
     var ticks = "";
-    [[k.s[0], "S1"], [k.r[0], "R1"]].forEach(function (x) { if (x[0] != null && x[0] !== lo && x[0] !== hi) { var tp = ptBarPos(x[0], lo, hi); if (tp != null) ticks += '<i class="pm-bar-tick" style="left:' + tp.toFixed(1) + '%" title="' + x[1] + " " + ptVal(key, x[0]) + '"></i>'; } });
-    return '<div class="pm-bar"><span class="pm-bar-lab s">S' + k.s.length + " " + ptVal(key, lo) + '</span><div class="pm-bar-track">' + ticks + '<b class="pm-bar-now" style="left:' + pos.toFixed(1) + '%"></b></div><span class="pm-bar-lab r">' + ptVal(key, hi) + " R" + k.r.length + "</span></div>";
+    tickSrc.forEach(function (x) { if (x[0] != null && x[0] !== lo && x[0] !== hi) { var tp = ptBarPos(x[0], lo, hi); if (tp != null) ticks += '<i class="pm-bar-tick" style="left:' + tp.toFixed(1) + '%" title="' + x[1] + " " + ptVal(key, x[0]) + '"></i>'; } });
+    return '<div class="pm-bar"><span class="pm-bar-lab s">' + loLab + '</span><div class="pm-bar-track">' + ticks + '<b class="pm-bar-now" style="left:' + pos.toFixed(1) + '%"></b></div><span class="pm-bar-lab r">' + hiLab + "</span></div>";
   }
   function ptMap(key, k) {
     var view = k.view > 0 ? "押し目買い目線（H1は120SMAの上）" : k.view < 0 ? "戻り売り目線（H1は120SMAの下）" : "目線はデータ待ち";
