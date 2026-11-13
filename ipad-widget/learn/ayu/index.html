@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="/Ira0Ma058/icon-cup.png">
 <link rel="icon" type="image/png" href="/Ira0Ma058/icon-cup.png">
-<meta name="build" content="3df46bfe14">
+<meta name="build" content="543e193b41">
 <title>Desk of Ayu</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1462,6 +1462,28 @@ html.flow #points.pt-expanded { position: relative; inset: auto; width: auto; he
 /* flow では .tp-wrap が static のためカード基準になる。タブ行＋次の指標の帯の下に出す */
 html.flow #tabpanel .xp-hint { top: 100px; right: 6px; }
 .ind-peak { flex: none; margin-top: 6px; padding: 5px 10px; border-left: 3px solid var(--gold); border-radius: 6px; background: rgba(var(--gold-rgb),.08); font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ind-next { flex: none; margin-top: 6px; }
+.ind-last { font-size: 12px; color: var(--ink-2); padding: 4px 10px; border-left: 3px solid #57d977; border-radius: 6px; background: rgba(87,217,119,.07); margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ind-last-k { color: #57d977; font-weight: 700; margin-right: 6px; }
+.ind-last b { color: var(--ink); }
+.ind-spot { display: flex; gap: 10px; align-items: flex-start; padding: 7px 10px; border-left: 3px solid var(--gold); border-radius: 6px; background: rgba(var(--gold-rgb),.08); }
+.ind-spot-t { font-size: 21px; font-weight: 700; line-height: 1.15; white-space: nowrap; }
+.ind-spot-t .date { font-size: 11px; color: var(--ink-2); display: block; font-weight: 600; }
+.ind-spot-cd { display: block; font-size: 12px; color: var(--gold); font-weight: 700; margin-top: 2px; }
+.ind-spot-b { min-width: 0; }
+.ind-spot-n { font-size: 13.5px; font-weight: 600; }
+.ind-spot-n .stars { margin-left: 6px; }
+.ind-spot-s { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+.ind-rest { margin-top: 5px; font-size: 11.5px; color: var(--ink-2); padding: 0 2px; }
+.isess-tick { position: absolute; top: 0; height: 100%; width: 9px; margin-left: -4.5px; z-index: 3; cursor: pointer; background: linear-gradient(90deg, transparent 3.5px, rgba(255,90,78,.85) 3.5px, rgba(255,90,78,.85) 5.5px, transparent 5.5px); }
+.isess-tick.s3 { background: linear-gradient(90deg, transparent 3px, #ff3b30 3px, #ff3b30 6px, transparent 6px); }
+.ind-evdetail { flex: none; margin-top: 6px; font-size: 12.5px; padding: 6px 10px; border-radius: 6px; background: rgba(255,255,255,.05); }
+.ind-evdetail .ind-evd-stars { color: #ffb547; }
+.ind-evd-g { margin-top: 3px; font-size: 11.5px; color: var(--ink-2); line-height: 1.5; }
+.ind-next .res-diff { display: inline-block; font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 0 7px; margin-left: 2px; }
+.ind-next .res-diff.strong { color: var(--on-accent); background: #5fd99a; }
+.ind-next .res-diff.weak { color: var(--on-accent); background: #ff9d90; }
+.ind-next .res-diff.same { color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--ink-3); }
 .ind-list li.min { padding: 4px 0; }
 .ind-list li.min .n { font-size: 12.5px; }
 .ind-list li.min .t { font-size: 12px; }
@@ -1681,11 +1703,13 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <div class="ind-week" id="ind-week" aria-label="今週の重要指標（★3）"></div>
     <div class="ind-peak" id="ind-peak" hidden></div>
     <div class="ind-review" id="ind-review" hidden></div>
+    <div class="ind-next" id="ind-next" hidden></div>
     <ul class="ind-list" id="ind-list">
       <li class="empty">今日の経済指標を読み込んでいます…</li>
     </ul>
     <p class="ind-note" title="★3＝最も重要・★2＝重要・★1＝参考。発表済みは結果つきで2時間残し、今日の予定が少ない日は今週このあとの指標（日付つき）も載せます。">★3＝最も重要・★2＝重要・★1＝参考｜発表済みは結果つきで2時間・予定が少ない日は今週の次も</p>
     <div class="ind-sess" id="ind-sess"></div>
+    <div class="ind-evdetail" id="ind-evdetail" hidden></div>
     <div class="ind-foot">
       <a class="more" href="https://jp.investing.com/economic-calendar/" target="_blank" rel="noopener">経済カレンダーを表示 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></a>
       <span class="ind-upd num" id="ind-upd"></span>
@@ -5137,6 +5161,21 @@ window.TD_THEME = (function () {
   function sessWinH(z, o, c, ref) { var p = tzPartsH(z, ref); var dow = new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay(); if (dow === 0 || dow === 6) return null; var st = zoneTsH(z, p.year, p.month, p.day, o[0], o[1]); var en = zoneTsH(z, p.year, p.month, p.day, c[0], c[1]); if (en <= st) en += 86400000; return [st, en]; }
   function coreAtH(c, ref) { var p = tzPartsH(c.z, ref); var dow = new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay(); if (dow === 0 || dow === 6) return null; return zoneTsH(c.z, p.year, p.month, p.day, c.h, c.m); }
   function coreTodayH(c, dayStart, dayEnd) { for (var dl = -1; dl <= 1; dl++) { var ts = coreAtH(c, dayStart + dl * 86400000 + 43200000); if (ts != null && ts >= dayStart && ts < dayEnd) return ts; } return null; }
+  var indTickEvs = {};
+  document.addEventListener("click", function (ev) {
+    var t = ev.target;
+    var hz = t && t.closest ? t.closest("[data-ind-gloss]") : null;
+    if (hz) { var bb = hz.closest(".ind-spot-b"); if (bb) { var gg = bb.querySelector(".gloss"); if (gg) gg.hidden = !gg.hidden; } return; }
+    var det = document.getElementById("ind-evdetail"); if (!det) return;
+    var tk = t && t.closest ? t.closest(".isess-tick") : null;
+    if (tk) {
+      var e2 = indTickEvs[tk.getAttribute("data-evt")]; if (!e2) return;
+      var sub2 = [e2.actual ? "結果 " + e2.actual : "", e2.forecast ? "予想 " + e2.forecast : "", e2.previous ? "前回 " + e2.previous : ""].filter(Boolean).join(" / ");
+      var gl4 = glossFor(e2);
+      det.innerHTML = '<b class="num">' + HHMM(e2.t) + '</b> <span class="ind-evd-stars">' + "★".repeat(e2.stars) + '</span> <b>' + esc(jaTitle(e2)) + "</b>" + (sub2 ? ' <span class="num">' + esc(sub2) + "</span>" : "") + (gl4 ? '<div class="ind-evd-g">' + esc(gl4) + "</div>" : "");
+      det.hidden = false;
+    } else if (t && t.closest && t.closest("#ind-sess")) det.hidden = true;
+  });
   function renderIndSess() {
     var box = document.getElementById("ind-sess"); if (!box) return;
     var now = Date.now(), devZ = (Intl.DateTimeFormat().resolvedOptions().timeZone) || "Asia/Tokyo";
@@ -5157,6 +5196,8 @@ window.TD_THEME = (function () {
     var nx = null;
     if (calEvents) { var fut = calEvents.filter(function (e) { return e.stars === 3 && e.t > now; }).sort(function (a, b) { return a.t - b.t; }); if (fut.length) nx = +fut[0].t; }
     if (nx && nx >= dayStart && nx < dayEnd) html += '<i class="isess-eve" style="left:' + ((nx - dayStart) / 864000).toFixed(2) + '%"></i>';
+    indTickEvs = {};
+    if (calEvents) calEvents.forEach(function (e) { var ts = +e.t; if (ts >= dayStart && ts < dayEnd && e.stars >= 2) { indTickEvs[ts] = e; html += '<i class="isess-tick' + (e.stars === 3 ? " s3" : "") + '" data-evt="' + ts + '" style="left:' + ((ts - dayStart) / 864000).toFixed(2) + '%"></i>'; } });
     html += '<i class="isess-now" style="left:' + pct.toFixed(2) + '%"></i></div></div>';
     var pill, rest = "";
     if (maint) { pill = '<span class="isess-pill"><i style="background:#5a6775"></i>CMEメンテナンス中</span>'; rest = maintEnd ? "あと" + durH(maintEnd - now) + "で終了（値が飛びやすい時間帯）" : "値が飛びやすい時間帯"; }
@@ -5227,6 +5268,8 @@ window.TD_THEME = (function () {
     var ipkF = document.getElementById("ind-peak"); if (ipkF && indDay) ipkF.hidden = true;
     try { renderIndSess(); renderIndReview(); } catch (e) {}
     if (indDay) {  // カレンダーの「この日の指標を一覧に表示」：その日だけ（「すべて表示」でいつでも元に戻る）
+      ulF.style.display = "";
+      var nxD = document.getElementById("ind-next"); if (nxD) nxD.hidden = true;
       var p = indDay.split("-"), dt = new Date(+p[0], +p[1] - 1, +p[2]), evs = eventsOn(indDay);
       document.getElementById("ind-day").textContent = (dt.getMonth() + 1) + "月" + dt.getDate() + "日(" + WD[dt.getDay()] + ")だけ";
       ulF.innerHTML = evs.map(function (e) {
@@ -5253,64 +5296,57 @@ window.TD_THEME = (function () {
       else ipk.textContent = "今日は指標発表なし・静かな日です";
       ipk.hidden = false;
     }
-    var upcoming = today.filter(function (e) { return e.t > now - IND_KEEP; });  // 発表済みは結果つきで2時間残す
-    var list = (upcoming.length ? upcoming : today);
-    if (list.length > 3) { // keep the most important ones, then show them in time order
-      list = list.slice().sort(function (a, b) { return b.stars - a.stars || a.t - b.t; }).slice(0, 3)
-        .sort(function (a, b) { return a.t - b.t; });
-    }
-    // a quiet day: fill the card with this week's next important releases (★2 and up), dated
-    var later = calEvents.filter(function (e) { return e.t >= day.end && e.stars >= 2; })
-      .sort(function (a, b) { return a.t - b.t; }).slice(0, Math.max(0, 3 - list.length));
-    later.forEach(function (e) { e.later = true; });
-    list = list.concat(later);
-    var ul = document.getElementById("ind-list");
-    if (!list.length) { ul.innerHTML = '<li class="empty">今週これからの米国・日本の指標発表はありません。</li>'; return; }
-    ul.innerHTML = "";
-    list.forEach(function (e) {
-      var li = document.createElement("li");
-      var mins = (e.t - now) / 60000;
-      if (mins < -30) li.classList.add("past", "min");  // just released: stay bright while the result comes in／30分を過ぎたら畳む
-      var hm = HHMM(e.t);
-      var sub = [e.forecast ? "予想 " + e.forecast : "", e.previous ? "前回 " + e.previous : ""].filter(Boolean).join(" / ");
-      li.innerHTML = '<div class="t num"></div><div class="stars"></div><div class="b"><div class="n"></div><div class="s num"></div></div>';
-      // every row carries its own date and time on one line: 11/4（水）00:16 JST
-      li.children[0].innerHTML = '<span class="date">' + MDW(e.t) + "</span>" + hm + '<span class="tz">JST</span>';
-      if (e.later) li.classList.add("later");
-      li.querySelector(".n").textContent = jaTitle(e) + (isEventOnly(e) ? "（イベント）" : "");
-      var s = li.querySelector(".s");
-      if (mins <= 0 && e.actual) {
-        var rd = resDiff(e), spk = TDCore.surpriseOf(e);
-        var cmp = "";
-        if (!rd) { var a = numOf(e.actual), f = numOf(e.forecast); cmp = a != null && f != null ? (a > f ? "（予想より上）" : a < f ? "（予想より下）" : "（予想どおり）") : ""; }
-        s.innerHTML = '<span class="res"></span>' + (rd ? '<span class="res-diff ' + (spk ? spk.kind : "same") + '"></span>' : "");
-        s.firstChild.textContent = "結果 " + e.actual + cmp;
-        if (rd) s.querySelector(".res-diff").textContent = rd;
-      } else if (mins <= 0 && isEventOnly(e)) {
-        s.textContent = "イベント（数値の発表なし）・開始済み";
-      } else if (mins <= 0 && mins > -30) {
-        s.innerHTML = '<span class="soon">発表済み・結果を取得中…</span>';
-      } else if (mins <= 0) {
-        s.textContent = "発表済み";  // 畳んだ行では予想・前回を出さない
-      } else if (mins > 0 && mins <= 60) {
-        s.innerHTML = '<span class="soon"></span>';
-        s.firstChild.textContent = "あと" + Math.ceil(mins) + "分" + (sub ? "｜" + sub : "");
-      } else s.textContent = sub || (isEventOnly(e) ? "イベント（数値の発表なし）" : "　");
-      var gl2 = glossFor(e);
-      if (gl2) { var gd2 = document.createElement("div"); gd2.className = "s gloss"; gd2.textContent = gl2; gd2.hidden = true; li.querySelector(".b").appendChild(gd2); var hint = document.createElement("span"); hint.className = "gloss-hint"; hint.textContent = "解説"; li.querySelector(".n").appendChild(hint); }
-      if (e.stars === 3 && mins > -30 && mins <= 60) {  // ★3：発表の前後（1時間前〜30分後）に注意を添える（ふだんは行を増やさない）
-        var w = document.createElement("div"); w.className = "s warn"; w.textContent = "発表前後は値動きとスプレッドに注意"; li.querySelector(".b").appendChild(w);
+    // 次の指標を大きく＋残りは1行に（小さい窓の縦スクロールをやめ、一目で分かる形へ）
+    if (ipk) ipk.hidden = true;
+    ulF.style.display = "none";
+    var nxBox = document.getElementById("ind-next");
+    if (nxBox) {
+      nxBox.hidden = false;
+      var up = today.filter(function (e) { return e.t > now; });
+      var nextEv = null;
+      for (var ui = 0; ui < up.length; ui++) { if (up[ui].stars >= 2) { nextEv = up[ui]; break; } }
+      if (!nextEv && up.length) nextEv = up[0];
+      var lastEv = null;
+      for (var lj = today.length - 1; lj >= 0; lj--) { var ce = today[lj]; if (ce.t <= now && now - ce.t < IND_KEEP && ce.actual) { lastEv = ce; break; } }
+      var laterEv = null;
+      if (!nextEv) {
+        var lt = calEvents.filter(function (e) { return e.t >= day.end && e.stars >= 2; }).sort(function (a, b) { return a.t - b.t; });
+        if (lt.length) laterEv = lt[0];
       }
-      // 追加D：発表済みの数値指標には材料ピル（向きを決められない・単位がそろわないときは付けない）、各行に影響と過去の反応
-      var sp = mins <= 0 ? TDCore.surpriseOf(e) : null, rl = rxLine(e);
-      if (sp || rl) { var x = document.createElement("div"); x.className = "s x"; x.innerHTML = (sp ? '<span class="pill ' + sp.kind + '">' + esc(sp.text) + "</span>" : "") + rl; li.querySelector(".b").appendChild(x); }
-      var st = li.querySelector(".stars"); st.setAttribute("data-v", e.stars); paintStars(st);
-      ul.appendChild(li);
-    });
-    // 材料ピルを出したときだけ、その意味（目安であること）を一覧の最後に1行
-    if (ul.querySelector(".pill")) { var dl = document.createElement("li"); dl.className = "ind-disc"; dl.textContent = "材料ピルは結果と予想の差からの目安で、実際の値動きを保証するものではありません。過去の反応＝発表直前の価格と発表後1時間の高値・安値の幅。"; ul.appendChild(dl); }
+      function cdTxt(t) { var mn = Math.max(1, Math.round((t - now) / 60000)); return mn >= 60 ? "あと" + Math.floor(mn / 60) + "時間" + (mn % 60 ? mn % 60 + "分" : "") : "あと" + mn + "分"; }
+      function subTxt(e) { return [e.forecast ? "予想 " + e.forecast : "", e.previous ? "前回 " + e.previous : ""].filter(Boolean).join(" / "); }
+      var h = "";
+      if (lastEv) {
+        var rd2 = resDiff(lastEv), spk2 = TDCore.surpriseOf(lastEv), cmp2 = "";
+        if (!rd2) { var a2 = numOf(lastEv.actual), f2 = numOf(lastEv.forecast); cmp2 = a2 != null && f2 != null ? (a2 > f2 ? "（予想より上）" : a2 < f2 ? "（予想より下）" : "（予想どおり）") : ""; }
+        h += '<div class="ind-last"><span class="ind-last-k">結果</span><span class="num">' + HHMM(lastEv.t) + "</span> " + esc(jaTitle(lastEv)) + ' <b class="num">結果 ' + esc(lastEv.actual) + cmp2 + "</b>" + (rd2 ? ' <span class="res-diff ' + (spk2 ? spk2.kind : "same") + ' num">' + esc(rd2) + "</span>" : "") + "</div>";
+      }
+      var spotEv = nextEv || laterEv;
+      if (spotEv) {
+        var gl3 = glossFor(spotEv);
+        h += '<div class="ind-spot"><div class="ind-spot-t num">' + (nextEv ? "" : '<span class="date">' + MDW(spotEv.t) + "</span>") + HHMM(spotEv.t) + '<span class="ind-spot-cd">' + (nextEv ? cdTxt(spotEv.t) : "今週の次") + "</span></div>"
+          + '<div class="ind-spot-b"><div class="ind-spot-n">' + esc(jaTitle(spotEv)) + '<span class="stars" data-v="' + spotEv.stars + '"></span>' + (gl3 ? '<span class="gloss-hint" data-ind-gloss>解説</span>' : "") + "</div>"
+          + '<div class="ind-spot-s num">' + esc(subTxt(spotEv) || (isEventOnly(spotEv) ? "イベント（数値の発表なし）" : "")) + "</div>"
+          + (gl3 ? '<div class="s gloss" hidden>' + esc(gl3) + "</div>" : "") + "</div></div>";
+        var rest = up.filter(function (e) { return e !== nextEv; });
+        if (nextEv && rest.length) {
+          var r3 = rest.filter(function (e) { return e.stars === 3; }), r2 = rest.filter(function (e) { return e.stars === 2; }), r1 = rest.filter(function (e) { return e.stars === 1; });
+          var parts = [];
+          if (r3.length) parts.push("★3 あと" + r3.length + "件（" + r3.map(function (e) { return HHMM(e.t); }).join("・") + "）");
+          if (r2.length) parts.push("★2 " + r2.length + "件");
+          if (r1.length) parts.push("★1 " + r1.length + "件");
+          if (parts.length) h += '<div class="ind-rest">今日は他に ' + parts.join("／") + "</div>";
+        } else if (nextEv) {
+          h += '<div class="ind-rest">今日の残りの指標はこれが最後です</div>';
+        }
+      } else if (!lastEv) {
+        h += '<div class="ind-spot"><div class="ind-spot-b"><div class="ind-spot-n">' + (today.length ? "今日の指標はすべて発表済みです" : "今日は指標発表なし・静かな日です") + "</div></div></div>";
+      }
+      nxBox.innerHTML = h;
+      nxBox.querySelectorAll(".stars").forEach(paintStars);
+    }
     // 表示の中身が変わったら、更新の時刻もその時刻にする（第2部 B4）
-    var sig = ul.textContent; if (sig !== indSig) { indSig = sig; indShownAt = Date.now(); paintUpdated(); }
+    var sig = nxBox ? nxBox.textContent : ""; if (sig !== indSig) { indSig = sig; indShownAt = Date.now(); paintUpdated(); }
   }
   /* Indicators refresh every 5 minutes, and every minute from 5 minutes before to 30 minutes after
      a release that has no result yet. Forex Factory's feed carries no results, so they are taken from
