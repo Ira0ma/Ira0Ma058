@@ -18,3 +18,9 @@ for (const [name, src] of [["gold", GOLD], ["ayu/gold", AYU_GOLD]]) {
     assert.match(src, /\['ma','big','大口決済の兆候'/);
   });
 }
+
+test("狭い画面（560px以下）では、操作パネルの表示・機能の行が横スクロール1行になる", () => {
+  for (const [name, src] of [["gold", GOLD], ["ayu/gold", AYU_GOLD]]) {
+    assert.match(src, /@media\(max-width:560px\)\{\.ctlPanel\{padding:6px 8px 7px\}\.ctlPanel \.matoggles\{flex-wrap:nowrap;overflow-x:auto/, name);
+  }
+});
