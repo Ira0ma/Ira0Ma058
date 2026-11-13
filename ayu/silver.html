@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="53e7d5cbad">
+<meta name="build" content="8f558026d0">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -316,7 +316,28 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .result-line b{font-size:16px;color:var(--gold2)}
 .result-line.wait{color:var(--amber);border-style:dashed}
 .relbox{margin-top:12px;display:grid;gap:8px}
-.relbox .rh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.upbox{margin-top:10px}.upbox:empty{display:none}
+.uprow{display:flex;gap:8px;align-items:baseline;font-size:12px;padding:5px 0;border-bottom:1px solid var(--line)}
+.uprow:last-child{border-bottom:none}
+.upt{flex:none;color:var(--muted);font-weight:700}
+.upn{flex:1;color:var(--text);min-width:0}
+.upa{flex:none;color:var(--gold2);font-weight:700}
+.uptag{font-size:10px;color:#b9a6ff;border:1px solid #b9a6ff;border-radius:5px;padding:0 4px;white-space:nowrap}
+.sessbox{margin-top:12px}
+.sessbar{position:relative;height:18px;background:#121820;border-radius:6px;overflow:hidden;margin-top:6px}
+.sessband{position:absolute;top:0;height:100%;opacity:.5}
+.sessband.maint{opacity:.9}
+.sessnow{position:absolute;top:0;height:100%;width:2px;background:#fff}
+.sesseve{position:absolute;top:0;height:100%;width:2px;background:#ff6969}
+.sesscore{position:absolute;top:0;height:100%;width:2px;background:var(--gold2)}
+.sessscale{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:2px}
+.sessleg{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:11px;color:var(--muted);margin-top:5px}
+.sessleg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px}
+.sesscore-leg{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.7}
+.sesscore-leg b{color:var(--gold2)}
+.coreitem{white-space:nowrap}
+.cored{display:block;font-size:10px;color:#7d8aa0;margin:-2px 0 3px 0}
+.relbox .rh,.upbox .rh,.sessbox .rh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
 .relbox .rh b{font-size:13px}.relbox .rh span{color:var(--muted);font-size:11px}
 .rel{background:#0d1217;border:1px solid #232d37;border-radius:11px;padding:9px 10px;font-size:12px;display:grid;gap:5px}
 .rel.fresh{border-color:#5d4a20;background:#16130b}
@@ -731,7 +752,7 @@ html[data-theme="grace"] .mini{background:rgba(7,10,28,.92)}
       <div class="cardhead"><div><div class="title">次の重要指標</div><div class="sub" id="nextSub">ゴールドに影響する米国指標｜端末の時刻で表示</div></div><span class="tag">NEXT</span></div>
       <div id="nextEv" class="nextev"><div class="sub">取得中...</div></div>
       <div class="sub" style="margin-top:8px"><span id="nextScope">米国の物価・雇用・景気・FRB関連の指標が対象です。</span>High指標は30分前〜15分後、Mediumは15分前〜5分後をCAUTIONとし、判定を自動でWAITにします。</div>
-      <div id="relBox" class="relbox"></div>
+      <div id="upBox" class="upbox"></div><div id="relBox" class="relbox"></div><div id="sessBox" class="sessbox"></div>
     </div>
   </section>
 
@@ -4413,7 +4434,7 @@ async function refreshLiveTalk(){
       out.push({t,title,source:'FinancialJuice（速報）',link:it.querySelector('link')?.textContent||'https://www.financialjuice.com/',who:w[1],tone,usdjpy:eff[0],gold:eff[1],live:true});
     });
     liveTalk=out;state.liveTalkAt=Date.now();renderTalk();
-    liveResults=res;if(applyLiveResults()){renderNext();renderEvents()}renderResults();
+    liveResults=res;if(applyLiveResults()){renderNext();renderEvents()}renderResults();renderUpcoming();renderSessions();
   }catch{}finally{liveBusy=false}
 }
 // 要人発言ニュース：見出し・時刻・誰の発言か・トーン・ふつう起きやすい値動き
@@ -4628,6 +4649,70 @@ function renderResults(){
   });
   box.innerHTML=html;
 }
+
+/* ===== このあとの予定・市場の時間帯・コア時間 ===== */
+const _tzf={};
+function tzFmt(zone){return _tzf[zone]||(_tzf[zone]=new Intl.DateTimeFormat('en-GB',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}))}
+function tzParts(zone,ts){const o={};tzFmt(zone).formatToParts(new Date(ts)).forEach(p=>{if(p.type!=='literal')o[p.type]=+p.value});return o}
+function zoneTs(zone,y,mo,d,h,mi){let g=Date.UTC(y,mo-1,d,h,mi||0,0);for(let i=0;i<3;i++){const p=tzParts(zone,g);const diff=Date.UTC(y,mo-1,d,h,mi||0,0)-Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute,p.second);if(!diff)break;g+=diff}return g}
+const SESS_DEF=[{n:'東京',z:'Asia/Tokyo',o:[9,0],c:[18,0],col:'#38b6ff'},{n:'ロンドン',z:'Europe/London',o:[8,0],c:[16,30],col:'#b9a6ff'},{n:'NY',z:'America/New_York',o:[9,30],c:[16,0],col:'#ffb547'}];
+const CORE_DEF=[{n:'仲値',z:'Asia/Tokyo',h:9,m:55,g:'東京',d:'ドル円の基準レート。実需の売買が集中する'},{n:'アーリーロンドン',z:'Europe/London',h:7,m:0,g:'ロンドン',d:'欧州勢の先行フローが入り始める'},{n:'ロンドン開始',z:'Europe/London',h:8,m:0,g:'ロンドン',d:'欧州市場の本格オープン'},{n:'LBMA AM',z:'Europe/London',h:10,m:30,g:'ロンドン',d:'金の基準価格を決める競売（午前）'},{n:'LBMA PM',z:'Europe/London',h:15,m:0,g:'ロンドン',d:'金の基準価格を決める競売（午後）'},{n:'ロンフィク',z:'Europe/London',h:16,m:0,g:'ロンドン',d:'為替の基準レート（WM/R）が決まる'},{n:'NYカット',z:'America/New_York',h:10,m:0,g:'NY',d:'通貨オプションの権利行使の締め'},{n:'COMEX清算',z:'America/New_York',h:13,m:30,g:'NY',d:'金先物の清算値が決まる'},{n:'NYクローズ',z:'America/New_York',h:17,m:0,g:'NY',d:'1日の境目。直後の1時間はCMEメンテ'}];
+function sessWin(z,o,c,refTs){const p=tzParts(z,refTs);const dow=new Date(Date.UTC(p.year,p.month-1,p.day)).getUTCDay();if(dow===0||dow===6)return null;const st=zoneTs(z,p.year,p.month,p.day,o[0],o[1]);let en=zoneTs(z,p.year,p.month,p.day,c[0],c[1]);if(en<=st)en+=86400000;return[st,en]}
+function sessSegs(devZ,now){
+  const dp=tzParts(devZ,now),dayStart=zoneTs(devZ,dp.year,dp.month,dp.day,0,0),dayEnd=dayStart+86400000,segs=[],open=[];let maint=false;
+  const push=(st,en,n,col,m)=>{if(now>=st&&now<en){if(m)maint=true;else if(!open.includes(n))open.push(n)}const a=Math.max(st,dayStart),b=Math.min(en,dayEnd);if(b>a)segs.push({n,col,m:!!m,l:(a-dayStart)/864000,w:(b-a)/864000})};
+  for(const sd of SESS_DEF)for(let dl=-1;dl<=0;dl++){const w=sessWin(sd.z,sd.o,sd.c,now+dl*86400000);if(w)push(w[0],w[1],sd.n,sd.col,0)}
+  for(let dl=-1;dl<=0;dl++){const w=sessWin('America/New_York',[17,0],[18,0],now+dl*86400000);if(w)push(w[0],w[1],'CMEメンテ','#5a6775',1)}
+  return{dayStart,dayEnd,segs,open,maint};
+}
+function coreAt(c,refTs){const p=tzParts(c.z,refTs);const dow=new Date(Date.UTC(p.year,p.month-1,p.day)).getUTCDay();if(dow===0||dow===6)return null;return zoneTs(c.z,p.year,p.month,p.day,c.h,c.m)}
+function coreToday(c,dayStart,dayEnd){for(let dl=-1;dl<=1;dl++){const ts=coreAt(c,dayStart+dl*86400000+43200000);if(ts!=null&&ts>=dayStart&&ts<dayEnd)return ts}return null}
+function coreNext(c,now){for(let dl=0;dl<=4;dl++){const ts=coreAt(c,now+dl*86400000);if(ts!=null&&ts>=now)return ts}return null}
+function renderUpcoming(){
+  const box=$('upBox');if(!box)return;const now=Date.now();
+  const resN=state.events.filter(e=>!e.speech&&goldRelevant(e)&&e.ts<=now&&e.ts>now-12*3600000).length;
+  const maxN=resN?2:3,first=upcomingEvent();
+  const list=state.events.filter(e=>goldRelevant(e)&&e.ts>now&&e!==first).sort((a,b)=>a.ts-b.ts).slice(0,maxN);
+  let html='';
+  if(list.length){
+    html='<div class="rh"><b>このあとの予定</b><span>指標と要人発言</span></div>'+list.map(e=>{
+      const d=new Date(e.ts),when=d.toDateString()===new Date(now).toDateString()?hhmm(e.ts):(d.getMonth()+1)+'/'+d.getDate()+' '+hhmm(e.ts);
+      const tag=e.speech?'<span class="uptag">発言</span>':`<span class="star ${e.impact==='High'?'high':'medium'}">${stars(e)}</span>`;
+      return `<div class="uprow"><span class="upt">${esc(when)}</span><span class="upn">${esc(e.currency)}｜${esc(evTitle(e))} ${tag}</span><span class="upa">あと ${esc(dur(e.ts-now))}</span></div>`}).join('');
+  }
+  if(box.__h!==html){box.innerHTML=html;box.__h=html}
+}
+function renderSessions(){
+  const box=$('sessBox');if(!box)return;const now=Date.now();
+  const devZ=(Intl.DateTimeFormat().resolvedOptions().timeZone)||'Asia/Tokyo';
+  const ev=upcomingEvent();
+  const mk=Math.floor(now/60000)+'|'+(ev?ev.ts:0)+'|'+state.events.length;
+  if(box.__mk===mk)return;box.__mk=mk;
+  const R=sessSegs(devZ,now),dayStart=R.dayStart,dayEnd=R.dayEnd;
+  let html='<div class="rh"><b>市場の時間帯とコア時間</b><span>端末の時刻</span></div>';
+  if(!R.segs.length){html+='<div class="sub">週末は主要市場が休みです。</div>'}
+  else{
+    html+='<div class="sessbar">'+R.segs.map(sg=>`<i class="sessband${sg.m?' maint':''}" style="left:${sg.l.toFixed(2)}%;width:${sg.w.toFixed(2)}%;background:${sg.col}" title="${esc(sg.n)}"></i>`).join('');
+    CORE_DEF.forEach(c=>{const ts=coreToday(c,dayStart,dayEnd);if(ts!=null)html+=`<i class="sesscore" style="left:${((ts-dayStart)/864000).toFixed(2)}%" title="${esc(c.n)}"></i>`});
+    if(ev&&ev.ts>=dayStart&&ev.ts<dayEnd)html+=`<i class="sesseve" style="left:${((ev.ts-dayStart)/864000).toFixed(2)}%" title="次の指標"></i>`;
+    html+=`<i class="sessnow" style="left:${((now-dayStart)/864000).toFixed(2)}%"></i></div>`;
+    html+='<div class="sessscale"><span>0時</span><span>6時</span><span>12時</span><span>18時</span><span>24時</span></div>';
+    html+='<div class="sessleg">'+SESS_DEF.map(sd=>`<span><i style="background:${sd.col}"></i>${sd.n}</span>`).join('')+'<span><i style="background:#5a6775"></i>CMEメンテ</span><span>白線＝いま／赤線＝次の指標／金の印＝コア時間</span></div>';
+    html+=`<div class="sub">${R.maint?'いまはCMEメンテナンス中（先物が止まり、値が飛びやすい時間帯）。':R.open.length?'いまは'+R.open.join(' と ')+'の時間帯。':'いまは主要市場が休みの静かな時間帯。'}</div>`;
+    const gd=tzParts(devZ,now).day%5===0;
+    for(const g of['東京','ロンドン','NY']){
+      const items=CORE_DEF.filter(c=>c.g===g).map(c=>{
+        const t0=coreToday(c,dayStart,dayEnd),ts=t0!=null?t0:coreNext(c,now);if(ts==null)return'';
+        const nm=c.n==='仲値'&&gd&&t0!=null?'仲値（ゴトー日）':c.n;
+        let dl2='';if(t0==null)dl2=ts<dayEnd+86400000?'明日 ':(new Date(ts).getMonth()+1)+'/'+new Date(ts).getDate()+' ';
+        const st=ts>now?'あと '+dur(ts-now):'済み';
+        return `<span class="coreitem">${nm} ${dl2}${hhmm(ts)}（${st}）<span class="cored">${c.d}</span></span>`;
+      }).filter(Boolean);
+      if(items.length)html+=`<div class="sesscore-leg"><b>${g}</b>　${items.join('　')}</div>`;
+    }
+  }
+  if(box.__h!==html){box.innerHTML=html;box.__h=html}
+}
 function updateCaution(){
   const e=nextCautionEvent(),box=$('caution');
   if(!e){box.classList.add('hidden');return}
@@ -4680,7 +4765,7 @@ function renderAll(){
   renderSnapshot();
   const reb=renderRebound();
   if(!sheetHidden()&&chartOnScreen)drawChart();  // デスクの裏に隠れている間・チャートが画面の外にある間は描かない（見えたときに描く）
-  renderEvents();renderNext();renderResults();
+  renderEvents();renderNext();renderResults();renderUpcoming();renderSessions();
   renderKeyLv();
   {const m=renderMtf();renderTech();checkAlerts(m)}
   renderGmmaNow();  // チャートが見えていない（デスクの裏で動いている）ときも、GMMAのクロスを確かめて知らせる
@@ -4711,7 +4796,7 @@ function scheduler(){
     $('nextInfo').innerHTML='<b class="warn">自動更新 停止中</b>';
   }
   if(state.auto&&calendarHot()&&state.nextCalendar-now>INTERVALS.calendarHot)state.nextCalendar=now+INTERVALS.calendarHot;
-  updateCaution();renderNext();
+  updateCaution();renderNext();renderUpcoming();renderSessions();
   if(chartOnScreen&&!sheetHidden())paintPriceTag();  // 足の確定カウントダウン（1秒ごと）
   if(now-(state.evRenderedAt||0)>=30000){state.evRenderedAt=now;renderEvents()}
   // CAUTIONの開始・終了で判定とチェックを即時反映
