@@ -76,7 +76,7 @@ function loadGold() {
   const ctx = vm.createContext(sandbox);
   vm.runInContext(CORE, ctx, { filename: "core.js" });
   const scripts = inlineScripts(GOLD);
-  const hook = ";window.__X={state,tzParts,zoneTs,sessSegs,coreAt,coreToday,coreNext,CORE_DEF,renderUpcoming,upcomingEvent,spotConsensus,els:document};";
+  const hook = ";window.__X={state,tzParts,zoneTs,sessSegs,coreAt,coreToday,coreNext,CORE_DEF,renderUpcoming,upcomingEvent,spotConsensus,siteCrossCheck,els:document};";
   // renderUpcoming は $('upBox') 経由で document の要素を書き換える。検証用に document 自体も返す
   scripts.forEach((s, i) => vm.runInContext(i === scripts.length - 1 ? s + hook : s, ctx, { filename: "gold.html#" + i }));
   return sandbox.__X;
@@ -190,5 +190,33 @@ test("スポット合議: 大きく食い違うときは Swissquote、近いと�
   // 片方だけ
   assert.deepEqual([...X.spotConsensus(0, 0, 3887, 200, 1.5)], [3887, 200, "Swissquote"]);
   assert.deepEqual([...X.spotConsensus(3890, 100, 0, 0, 1.5)], [3890, 100, "Gold API"]);
+  // サイト照合：単独 Gold API がサイト値（Swissquote優先）と新しさの範囲で大きく食い違うときだけサイト値を返す
+  const now = Date.now();
+  assert.equal(X.siteCrossCheck(3898.7, "Gold API", 3895.0, now - 60000, 1.5), 3895.0);
+  assert.equal(X.siteCrossCheck(3898.7, "Gold API", 3895.0, now - 9 * 60000, 1.5), 0);  // サイト値が古い
+  assert.equal(X.siteCrossCheck(3895.8, "Gold API", 3895.0, now - 60000, 1.5), 0);  // 差が小さい
+  assert.equal(X.siteCrossCheck(3898.7, "Swissquote", 3895.0, now - 60000, 1.5), 0);  // Swissquote は正
+  assert.equal(X.siteCrossCheck(0, "Gold API", 3895.0, now - 60000, 1.5), 0);
   assert.deepEqual([...X.spotConsensus(0, 0, 0, 0, 1.5)], [0, 0, ""]);
+});
+
+test("sessSegs: いまの区間に cur が付き、終了時刻と次の開始が分かる（3点セットの土台）", () => {
+  const X = loadGold();
+  const now = Date.UTC(2026, 10, 13, 11, 0); // 金曜 20:00 JST
+  const R = X.sessSegs("Asia/Tokyo", now);
+  const london = R.segs.find((s) => s.n === "ロンドン" && s.l > 50);
+  assert.equal(london.cur, true, "いま開いているロンドンは cur");
+  const tokyo = R.segs.find((s) => s.n === "東京");
+  assert.equal(tokyo.cur, false, "終わった東京は cur でない");
+  const oi = R.openInfo.find((o) => o.n === "ロンドン");
+  assert.equal(oi.en, Date.UTC(2026, 10, 13, 16, 30), "ロンドン終了は 16:30 GMT");
+  assert.equal(R.nextStart.n, "NY");
+  assert.equal(R.nextStart.ts, Date.UTC(2026, 10, 13, 14, 30), "次の開始は NY 9:30 EST");
+});
+
+test("セッション帯3点セット: 旗・ピル・現在区間の強調が描画とCSSにある", () => {
+  assert.match(GOLD, /sessflag/);
+  assert.match(GOLD, /sesspill/);
+  assert.match(GOLD, /▼ いま /);
+  assert.match(GOLD, /\.sessband\.cur\{opacity:\.95/);
 });

@@ -86,7 +86,8 @@ test("F9: ゴールド／シルバーの較正デッドロックを解く（ス�
     // 較正ドリフトの即時修正：補正後の値がスポットから大きく外れた tick が3回続いたら、最新の測定で較正し直す
     assert.match(src, /if \(L\.driftN >= 3\) \{ L\.offs = \[\[L\.raw - L\.spot, Date\.now\(\)\]\]; L\.driftN = 0;/);
     assert.match(src, /\[\["gold", "XAU"\], \["silver", "XAG"\]\]/);
-    assert.match(src, /liveCalibrate\(key, \+j\.price\)/);
+    assert.match(src, /anchorSpotH\(key, v\[0\], v\[1\]\)/);  // 較正アンカーは合議＋サイト照合を通す
+    assert.match(src, /liveCalibrate\(key, px\)/);
   }
 });
 

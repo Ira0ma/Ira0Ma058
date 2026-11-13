@@ -70,3 +70,37 @@ test("ホーム指標タブ: HHMM には Date を渡し、付随表示は try �
   const ri = extract("renderIndicators");
   assert.ok(ri.includes("try { renderIndSess(); renderIndReview(); } catch (e) {}"), "付随表示の例外で一覧を止めない");
 });
+
+test("ホーム較正アンカー: 合議は大きく食い違うとき Swissquote を正とする", () => {
+  const { spotConsensusH } = load("spotConsensusH");
+  assert.equal(spotConsensusH("gold", 3894.05, 3888.66), 3888.66); // 実測 2026-11-13 21:58 の乖離（Gold API が約5.4高い）
+  assert.equal(spotConsensusH("gold", 3894.05, 3893.9), 3894.05); // 小さな差は Gold API のまま
+  assert.equal(spotConsensusH("silver", 50.10, 50.02), 50.02); // 銀は 0.05 超で切替
+  assert.equal(spotConsensusH("gold", 0, 3888.66), 3888.66);
+  assert.equal(spotConsensusH("gold", 3894.05, 0), 3894.05);
+});
+
+test("ホーム較正アンカー: Gold API 単独のときだけサイト照合が効く", () => {
+  globalThis.market = { instruments: { gold: { price: 3889.57, asOf: Date.now() / 1000 - 60 }, silver: { price: 50.0, asOf: Date.now() / 1000 - 60 } } };
+  const F = load("spotConsensusH", "siteSpotH", "anchorSpotH");
+  assert.equal(F.anchorSpotH("gold", 3894.05, 0), 3889.57); // サイト値（8分以内）と大きく食い違えばサイトを正
+  assert.equal(F.anchorSpotH("gold", 3894.05, 3888.66), 3888.66); // 合議が成立していれば照合しない
+  globalThis.market = { instruments: { gold: { price: 3889.57, asOf: Date.now() / 1000 - 600 } } }; // 10分前は古くて使わない
+  assert.equal(F.anchorSpotH("gold", 3894.05, 0), 3894.05);
+  delete globalThis.market;
+});
+
+test("指標リストのスクロール: 窓いっぱい＋pan-y、縦並びではページ全体のスクロールに任せる", () => {
+  assert.match(HTML, /\.ind-list \{[^}]*touch-action: pan-y/);
+  assert.match(HTML, /\.ind-list \{[^}]*flex: 1 1 auto/);
+  assert.match(HTML, /\.flow #tabpanel:not\(\.tp-expanded\) #ind \.ind-list \{[^}]*overflow-y: visible/);
+});
+
+test("ホーム帯3点セット: 現在区間の強調・旗・ピル＋残り時間が出る", () => {
+  const sess = extract("renderIndSess");
+  assert.ok(sess.includes("isess-flag"), "▼旗");
+  assert.ok(sess.includes("isess-pill"), "ピル");
+  assert.ok(sess.includes('" cur"'), "現在区間の強調クラス");
+  assert.ok(sess.includes("で終了") && sess.includes("開始"), "残り時間の文言");
+  assert.match(HTML, /\.isess-band\.cur \{ opacity: \.95; \}/);
+});
