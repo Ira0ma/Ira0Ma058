@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="/Ira0Ma058/icon-cup.png">
 <link rel="icon" type="image/png" href="/Ira0Ma058/icon-cup.png">
-<meta name="build" content="0bcac32659">
+<meta name="build" content="01f2b00ed0">
 <title>Desk of Ayu</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -5064,7 +5064,7 @@ window.TD_THEME = (function () {
     html += '<div class="isess-line">' + (maint ? "いまはCMEメンテナンス中（値が飛びやすい時間帯）" : open.length ? "いまは" + open.join(" と ") + "の時間帯" : "いまは主要市場が休みの静かな時間帯") + "</div>";
     html += '<div class="isess-chips">' + CORE_H.map(function (c) {
       var zt = coreAtH(c, now); if (zt == null) return "";
-      var lbl = (zt >= dayStart && zt < dayEnd) ? HHMM(zt) : (zt < dayEnd + 86400000 ? "明日 " + HHMM(zt) : (new Date(zt).getMonth() + 1) + "/" + new Date(zt).getDate() + " " + HHMM(zt));
+      var lbl = (zt >= dayStart && zt < dayEnd) ? HHMM(new Date(zt)) : (zt < dayEnd + 86400000 ? "明日 " + HHMM(new Date(zt)) : (new Date(zt).getMonth() + 1) + "/" + new Date(zt).getDate() + " " + HHMM(new Date(zt)));
       return '<span class="' + (zt <= now ? "done" : "") + '"><b>' + c.n + "</b> " + lbl + "</span>";
     }).filter(Boolean).join("") + "</div>";
     if (box.__h !== html) { box.innerHTML = html; box.__h = html; }
@@ -5078,7 +5078,7 @@ window.TD_THEME = (function () {
       lines.push("<div><b>昨日の★3</b>　" + esc(parts.join("／")) + (yEv.length > 2 ? "　ほか" + (yEv.length - 2) + "件" : "") + "</div>");
     }
     var tEv = calEvents.filter(function (e) { return e.t >= day.end && e.t < day.end + 86400000 && e.stars === 3; }).sort(function (a, b) { return a.t - b.t; });
-    if (tEv.length) lines.push("<div><b>明日の山場</b>　" + HHMM(tEv[0].t) + " " + esc(jaTitle(tEv[0])) + (tEv.length > 1 ? "（★3は" + tEv.length + "件）" : "") + "</div>");
+    if (tEv.length) lines.push("<div><b>明日の山場</b>　" + HHMM(new Date(tEv[0].t)) + " " + esc(jaTitle(tEv[0])) + (tEv.length > 1 ? "（★3は" + tEv.length + "件）" : "") + "</div>");
     box.innerHTML = lines.join(""); box.hidden = !lines.length;
   }
   var EV_GLOSS = [
@@ -5115,7 +5115,7 @@ window.TD_THEME = (function () {
     var ulF = document.getElementById("ind-list");
     ulF.classList.toggle("filtered", !!indDay);
     var ipkF = document.getElementById("ind-peak"); if (ipkF && indDay) ipkF.hidden = true;
-    renderIndSess(); renderIndReview();
+    try { renderIndSess(); renderIndReview(); } catch (e) {}
     if (indDay) {  // カレンダーの「この日の指標を一覧に表示」：その日だけ（「すべて表示」でいつでも元に戻る）
       var p = indDay.split("-"), dt = new Date(+p[0], +p[1] - 1, +p[2]), evs = eventsOn(indDay);
       document.getElementById("ind-day").textContent = (dt.getMonth() + 1) + "月" + dt.getDate() + "日(" + WD[dt.getDay()] + ")だけ";
