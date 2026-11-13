@@ -76,7 +76,7 @@ function loadGold() {
   const ctx = vm.createContext(sandbox);
   vm.runInContext(CORE, ctx, { filename: "core.js" });
   const scripts = inlineScripts(GOLD);
-  const hook = ";window.__X={state,tzParts,zoneTs,sessSegs,coreToday,coreNext,CORE_DEF,renderUpcoming,upcomingEvent,els:document};";
+  const hook = ";window.__X={state,tzParts,zoneTs,sessSegs,coreAt,coreToday,coreNext,CORE_DEF,renderUpcoming,upcomingEvent,els:document};";
   // renderUpcoming は $('upBox') 経由で document の要素を書き換える。検証用に document 自体も返す
   scripts.forEach((s, i) => vm.runInContext(i === scripts.length - 1 ? s + hook : s, ctx, { filename: "gold.html#" + i }));
   return sandbox.__X;
@@ -163,4 +163,20 @@ test("このあとの予定: 先頭の指標は除き、結果が無いときは
   assert.ok(box.innerHTML.includes("パウエル議長"), "発言も並ぶ");
   assert.ok(box.innerHTML.includes("Three"), "3件目が出る");
   assert.ok(!box.innerHTML.includes("Four"), "結果が無いときでも最大3件");
+});
+
+test("コア時間: 凡例はその市場（ゾーン）の当日分で判定する（日付またぎで済みにならない）", () => {
+  const X = loadGold();
+  const evening = Date.UTC(2026, 10, 13, 11, 21); // 11/13 20:21 JST
+  const fix = X.CORE_DEF.find((c) => c.n === "ロンフィク");
+  // ロンドン 11/13 16:00 GMT = 11/14 1:00 JST（まだ先）
+  assert.equal(X.coreAt(fix, evening), Date.UTC(2026, 10, 13, 16, 0));
+  assert.ok(X.coreAt(fix, evening) > evening);
+  const cut = X.CORE_DEF.find((c) => c.n === "NYカット");
+  // NY 11/13 10:00 EST = 11/14 0:00 JST（まだ先）
+  assert.equal(X.coreAt(cut, evening), Date.UTC(2026, 10, 13, 15, 0));
+  const nakane = X.CORE_DEF.find((c) => c.n === "仲値");
+  // 仲値 11/13 9:55 JST はもう過ぎている
+  assert.equal(X.coreAt(nakane, evening), Date.UTC(2026, 10, 13, 0, 55));
+  assert.ok(X.coreAt(nakane, evening) < evening);
 });
