@@ -80,7 +80,7 @@ function loadGold(seed) {
   vm.runInContext(CORE, ctx, { filename: "core.js" });
   const scripts = inlineScripts(GOLD);
   assert.ok(scripts.some((s) => s.includes("applyCombo")), "gold.html の主スクリプトを取り出せている");
-  const hook = ";window.__X={state,COMBOS,MA_BTNS,comboNow,applyCombo,PLAN_COMBO,applyOmakase,applyBare};";
+  const hook = ";window.__X={state,COMBOS,MA_BTNS,comboNow,applyCombo,PLAN_COMBO,applyOmakase,applyBare,BTN_HELP};";
   scripts.forEach((s, i) => vm.runInContext(i === scripts.length - 1 ? s + hook : s, ctx, { filename: "gold.html#" + i }));
   return sandbox.__X;
 }
@@ -157,4 +157,14 @@ test("combo: すっぴんは全部オフにして、状態表示も「すっぴ�
   // すっぴんからチップを1つ入れると、すっぴんではなくなる（カスタム側へ）
   X.state.maOn.sma = true;
   assert.equal(X.comboNow(), null);
+});
+
+test("ボタンの説明に、組み合わせ全種とおまかせ・すっぴんの行がある", () => {
+  const X = loadGold();
+  const labels = X.BTN_HELP.filter((d) => d[0] === "btn" && d[1] === "comboBtns").map((d) => d[2]);
+  for (const name of ["おまかせ", "すっぴん", ...X.COMBOS.map((c) => c[0])]) {
+    assert.ok(labels.includes(name), "説明に " + name + " の行がある");
+    const row = X.BTN_HELP.find((d) => d[0] === "btn" && d[1] === "comboBtns" && d[2] === name);
+    assert.ok(row[4] && row[4].length >= 20, name + " の説明文が入っている");
+  }
 });
