@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="cef40d53d9">
+<meta name="build" content="333348e6b6">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -380,6 +380,15 @@ html.lowpower .surgeflag.blink{animation:none}
 body.chartfull{overflow:hidden}
 canvas{display:block;width:100%;height:340px;background:linear-gradient(180deg,#0c1116,#0e151c);border:1px solid #222c36;border-radius:13px;touch-action:none;cursor:grab}
 canvas.dragging{cursor:grabbing}
+.stepper{display:flex;gap:4px;align-items:stretch}
+.stepper input{flex:1;min-width:0}
+.stp{flex:none;width:36px;border-radius:9px;border:1px solid #34404c;background:#18222c;color:#e8eef4;font-size:17px;line-height:1;cursor:pointer;padding:0}
+.riskquick{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:2px 0 4px}
+.riskquick label{flex:1 1 128px;display:flex;flex-direction:column;gap:3px;font-size:12px;color:#9fb0bf}
+.riskquick input{padding:8px 10px;border-radius:9px;border:1px solid #34404c;background:#0d1319;color:#eef3f8;font:inherit;font-size:15px;width:100%}
+.riskquick .segmented{flex:0 0 auto}
+.risksummary{margin:10px 0 2px;padding:9px 11px;border:1px dashed rgba(227,179,65,.45);border-radius:10px;font-size:13.5px;line-height:1.65;color:#ece3c8}
+.risksummary[hidden]{display:none}
 .helpbtn{border-color:rgba(227,179,65,.55)!important;color:#e8cf8a!important;font-weight:700}
 .helpsheet{position:fixed;inset:0;z-index:80;background:rgba(5,8,11,.72);display:flex;align-items:flex-end;justify-content:center}
 .helpsheet[hidden]{display:none}
@@ -775,14 +784,21 @@ html[data-theme="grace"] .mini{background:rgba(7,10,28,.92)}
       <button class="seg" data-dir="sell">売り</button>
     </div>
     <div id="dirLabel" class="dirlabel">--</div>
+    <div class="riskquick">
+      <label>口座資金（円）<input id="capitalQ" type="number" inputmode="numeric"></label>
+      <label id="riskPctQW">許容リスク（%）<input id="riskPctQ" type="number" step="0.1" inputmode="decimal"></label>
+      <label id="riskYenQW" hidden>許容損失（円）<input id="riskYenQ" type="number" step="100" min="0" inputmode="numeric" placeholder="例 5000"></label>
+      <div class="segmented" id="riskChipsQ" aria-label="許容リスクのクイック選択"><button type="button" class="seg" data-rp="0.5">0.5%</button><button type="button" class="seg" data-rp="1">1%</button><button type="button" class="seg" data-rp="2">2%</button></div>
+    </div>
+    <div class="sub" style="margin:0 0 8px">よく使う設定はここに出してあります。%と円の切り替えや細かい設定は、下の「口座設定」の中にあります。</div>
     <div class="form">
-      <label>エントリー<input id="entry" type="number" step="any" inputmode="decimal"></label>
-      <label>損切り SL<input id="stop" type="number" step="any" inputmode="decimal"></label>
-      <label>利確 TP<input id="target" type="number" step="any" inputmode="decimal"></label>
+      <label>エントリー<span class="stepper"><button type="button" class="stp" data-t="entry" data-d="-1" aria-label="減らす">−</button><input id="entry" type="number" step="any" inputmode="decimal"><button type="button" class="stp" data-t="entry" data-d="1" aria-label="増やす">＋</button></span></label>
+      <label>損切り SL<span class="stepper"><button type="button" class="stp" data-t="stop" data-d="-1" aria-label="減らす">−</button><input id="stop" type="number" step="any" inputmode="decimal"><button type="button" class="stp" data-t="stop" data-d="1" aria-label="増やす">＋</button></span></label>
+      <label>利確 TP<span class="stepper"><button type="button" class="stp" data-t="target" data-d="-1" aria-label="減らす">−</button><input id="target" type="number" step="any" inputmode="decimal"><button type="button" class="stp" data-t="target" data-d="1" aria-label="増やす">＋</button></span></label>
     </div>
     <label class="inlinecheck"><input id="autoRisk" type="checkbox" checked> 価格・SL・TPを自動入力（OFFで手入力）</label>
     <div class="form lotrow">
-      <label>ロット（自分で入力）<input id="lotManual" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="空欄で自動計算（0.01刻み）"></label>
+      <label>ロット（自分で入力）<span class="stepper"><button type="button" class="stp" data-t="lotManual" data-d="-1" aria-label="減らす">−</button><input id="lotManual" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="空欄で自動計算（0.01刻み）"><button type="button" class="stp" data-t="lotManual" data-d="1" aria-label="増やす">＋</button></span></label>
       <button type="button" id="lotClear" class="seg">自動に戻す</button>
     </div>
     <div class="results">
@@ -795,7 +811,7 @@ html[data-theme="grace"] .mini{background:rgba(7,10,28,.92)}
       <div class="result"><span>必要証拠金</span><strong id="marginYen">--</strong><em id="marginSub">--</em></div>
       <div class="result"><span>証拠金維持率</span><strong id="marginLevel">--</strong><em id="marginWord">口座資金 ÷ 必要証拠金</em></div>
     </div>
-    <div class="planrec" id="planRecRow"><button type="button" id="planSave" class="seg">このプランで記録</button><span class="sub" id="planSaveMsg"></span></div>
+    <div id="riskSummary" class="risksummary" hidden></div><div class="planrec" id="planRecRow"><button type="button" id="planSave" class="seg">このプランで記録</button><button type="button" id="planCopy" class="seg">プランをコピー</button><span class="sub" id="planSaveMsg"></span></div>
     <div id="riskShare" class="riskshare" hidden></div>
     <div id="riskStreak" class="autonote" hidden></div>
     <details id="settings">
@@ -4842,6 +4858,43 @@ function renderBtnHelp(){
 $('btnHelp').onclick=()=>{renderBtnHelp();$('btnHelpSheet').hidden=false};
 $('btnHelpClose').onclick=()=>{$('btnHelpSheet').hidden=true};
 $('btnHelpSheet').addEventListener('click',e=>{if(e.target===$('btnHelpSheet'))$('btnHelpSheet').hidden=true});
+function syncRiskQuick(){
+  if($('capitalQ'))$('capitalQ').value=$('capital').value;
+  if($('riskPctQ'))$('riskPctQ').value=$('riskPct').value;
+  if($('riskYenQ'))$('riskYenQ').value=$('riskYenIn').value;
+  const yen=state.riskMode==='yen';
+  if($('riskPctQW'))$('riskPctQW').hidden=yen;
+  if($('riskYenQW'))$('riskYenQW').hidden=!yen;
+  if($('riskChipsQ')){$('riskChipsQ').hidden=yen;const rp=n($('riskPct').value);document.querySelectorAll('#riskChipsQ .seg').forEach(b=>b.classList.toggle('active',Math.abs(+b.dataset.rp-rp)<1e-9))}
+}
+[['capitalQ','capital'],['riskPctQ','riskPct'],['riskYenQ','riskYenIn']].forEach(([q,o])=>{
+  const qe=$(q),oe=$(o);if(!qe||!oe)return;
+  qe.addEventListener('input',()=>{oe.value=qe.value;savePrefs();const r=calcRisk();renderChecks(r);syncRiskQuick()});
+  oe.addEventListener('input',()=>{syncRiskQuick()});
+});
+if($('riskChipsQ'))$('riskChipsQ').addEventListener('click',e=>{const b=e.target.closest('[data-rp]');if(!b)return;$('riskPct').value=b.dataset.rp;savePrefs();const r=calcRisk();renderChecks(r);syncRiskQuick()});
+if($('riskModeSeg'))$('riskModeSeg').addEventListener('click',()=>setTimeout(syncRiskQuick,0));
+syncRiskQuick();
+const RSTEP={gold:1,usdjpy:0.05,btc:50,usoil:0.1,silver:0.05};
+document.querySelectorAll('.stp').forEach(b=>b.addEventListener('click',()=>{
+  const inp=$(b.dataset.t);if(!inp)return;
+  const isLot=b.dataset.t==='lotManual',st=isLot?0.01:(RSTEP[INSTR.key]||0.1);
+  let v=n(inp.value);if(isLot){if(!isFinite(v))v=0}else if(!isFinite(v)||v===0)v=n($('entry').value)||0;
+  v+=st*Number(b.dataset.d);if(isLot)v=Math.max(0.01,v);
+  inp.value=isLot?v.toFixed(2):v.toFixed(INSTR.dp);
+  if((b.dataset.t==='stop'||b.dataset.t==='target')&&$('autoRisk').checked)$('autoRisk').checked=false;
+  inp.dispatchEvent(new Event('input',{bubbles:true}));savePrefs();const r=calcRisk();renderChecks(r);
+}));
+function riskSummaryText(){
+  const lot=($('lotSize')||{}).textContent||'--';if(lot==='--')return '';
+  const dir=(($('dirLabel')||{}).textContent||'').split('｜')[0].replace('想定方向：','').trim();
+  const e=n($('entry').value),s=n($('stop').value),t=n($('target').value);
+  const px=x=>isFinite(x)&&x>0?x.toLocaleString('ja-JP',{minimumFractionDigits:INSTR.dp,maximumFractionDigits:INSTR.dp}):'--';
+  return (dir?dir+' ':'')+'E '+px(e)+'／SL '+px(s)+'／TP '+px(t)+'｜ロット '+lot+'｜最大損失 '+(($('riskYen')||{}).textContent||'--')+'（'+(($('riskSub')||{}).textContent||'')+'）｜想定利益 '+(($('profitYen')||{}).textContent||'--')+'（'+(($('rr')||{}).textContent||'')+'）｜'+INSTR.name;
+}
+function renderRiskSummary(){const el=$('riskSummary');if(!el)return;const tx=riskSummaryText();el.textContent=tx?('プラン要約：'+tx):'';el.hidden=!tx}
+setInterval(renderRiskSummary,1500);renderRiskSummary();
+if($('planCopy'))$('planCopy').onclick=async()=>{const tx=riskSummaryText();if(!tx)return;try{await navigator.clipboard.writeText(tx)}catch(_){const ta=document.createElement('textarea');ta.value=tx;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(__){}ta.remove()}$('planSaveMsg').textContent='プランをコピーしました'};
 chart.addEventListener('dblclick',()=>{resetView();state.hover=null;drawChart()});
 $('chartReset').onclick=()=>{resetView();state.hover=null;drawChart()};
 // チャートを画面いっぱいに（もう一度押すか Esc で戻る）
