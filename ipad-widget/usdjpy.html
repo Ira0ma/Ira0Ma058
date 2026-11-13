@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="cb2865b706">
+<meta name="build" content="0b061b21c5">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -380,6 +380,13 @@ html.lowpower .surgeflag.blink{animation:none}
 body.chartfull{overflow:hidden}
 canvas{display:block;width:100%;height:340px;background:linear-gradient(180deg,#0c1116,#0e151c);border:1px solid #222c36;border-radius:13px;touch-action:none;cursor:grab}
 canvas.dragging{cursor:grabbing}
+.guardbar{margin:6px 0 2px;padding:7px 10px;border-radius:8px;background:rgba(255,181,71,.13);border:1px solid rgba(255,181,71,.45);color:#ffd98a;font-size:12.5px;line-height:1.5}
+.guardbar b{color:#ffb547}
+.guardbar.calm{background:rgba(120,140,160,.10);border-color:rgba(120,140,160,.30);color:#aeb9c4}
+.planrec{margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.planlist{margin-top:10px}
+.planlist .plrow{padding:6px 8px;border:1px solid #232d36;border-radius:8px;margin-top:6px;background:rgba(255,255,255,.02);font-size:12px;color:#c9d2db;line-height:1.55}
+.planlist .plrow button{float:right}
 /* 強い水平線（3回以上止まった線）だけを重ねたキャンバスで点滅させる */
 /* 目にやさしく：3.2秒でゆっくり、明るさの幅は小さく（消えずに半分ほど暗くなるだけ） */
 #chartBlink{position:absolute;inset:0;width:100%;height:100%;background:none;border:0;pointer-events:none}
@@ -703,13 +710,13 @@ html[data-theme="aurora"] .mini{background:rgba(5,7,15,.92)}
     <div class="combo" id="comboRow" role="group" aria-label="組み合わせ（インジケーターのチップを一括で切り替える）"><span class="cl">組み合わせ<small id="comboNow" class="cn" aria-live="polite"></small></span><span id="comboBtns" class="cb"></span></div>
     <div class="tfcap">時間足｜下段＝ダウ理論のトレンドとST（スーパートレンド）の向き（別の見方なので、逆を向くことがあります）</div>
     <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
-    <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button><button type="button" id="fvgBtn" class="seg on" aria-pressed="true" title="FVG（3本の足で、1本目と3本目の値幅が重ならない帯）を表示"><i style="height:8px;background:linear-gradient(90deg,rgba(66,213,156,.55) 50%,rgba(255,105,105,.55) 50%)"></i>FVG</button><button type="button" id="spBtn" class="seg on" aria-pressed="true" title="要人発言の予定（チャート内の縦線と札）を表示"><i style="background:#b9a6ff"></i>発言</button><button type="button" class="gq" data-gloss="fvg:fvg-01" aria-label="FVG詳説：FVGとは">?</button></div>
+    <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button><button type="button" id="fvgBtn" class="seg on" aria-pressed="true" title="FVG（3本の足で、1本目と3本目の値幅が重ならない帯）を表示"><i style="height:8px;background:linear-gradient(90deg,rgba(66,213,156,.55) 50%,rgba(255,105,105,.55) 50%)"></i>FVG</button><button type="button" id="spBtn" class="seg on" aria-pressed="true" title="要人発言の予定（チャート内の縦線と札）を表示"><i style="background:#b9a6ff"></i>発言</button><button type="button" id="planBtn" class="seg on" aria-pressed="true" title="リスク計算のプラン（エントリー・SL・TP）をチャートに描く"><i style="background:#e3b341"></i>プラン</button><button type="button" id="guardBtn" class="seg on" aria-pressed="true" title="エントリー前の注意（重要指標・発言・急変）をチャートの上に表示"><i style="background:#ffb547"></i>ガード</button><button type="button" id="recBtn" class="seg on" aria-pressed="true" title="「このプランで記録」ボタンの表示"><i style="background:#42d59c"></i>記録</button><button type="button" class="gq" data-gloss="fvg:fvg-01" aria-label="FVG詳説：FVGとは">?</button></div>
     <div id="lvList" class="lvlist" role="group" aria-label="水平線を1本ずつ消す・戻す" hidden></div>
     <div id="chNow" class="chnow" role="group" aria-label="時間足ごとのチャネル" hidden></div>
     <div id="fibNow" class="fibnow" role="status" hidden></div>
     <div id="gmmaNow" class="gmmanow" role="status" hidden></div>
     <div id="gxToasts" class="gxtoasts" aria-live="polite"></div>
-    <button type="button" id="surgeFlag" class="surgeflag" hidden></button><div class="sub" id="oilChartNote" hidden style="margin:6px 2px"></div><div class="chartwrap"><canvas id="chart"></canvas><canvas id="chartBlink" aria-hidden="true"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
+    <button type="button" id="surgeFlag" class="surgeflag" hidden></button><div class="sub" id="oilChartNote" hidden style="margin:6px 2px"></div><div id="guardBar" class="guardbar" hidden></div><div class="chartwrap"><canvas id="chart"></canvas><canvas id="chartBlink" aria-hidden="true"></canvas><button id="chartReset" class="chartreset" type="button" hidden>表示をリセット</button></div>
     <canvas id="rsi" aria-label="RSI(14)"></canvas>
     <canvas id="atrPane" aria-label="ATR(14)"></canvas>
     <div id="chartInfo" class="chartinfo">--</div>
@@ -773,6 +780,7 @@ html[data-theme="aurora"] .mini{background:rgba(5,7,15,.92)}
       <div class="result"><span>必要証拠金</span><strong id="marginYen">--</strong><em id="marginSub">--</em></div>
       <div class="result"><span>証拠金維持率</span><strong id="marginLevel">--</strong><em id="marginWord">口座資金 ÷ 必要証拠金</em></div>
     </div>
+    <div class="planrec" id="planRecRow"><button type="button" id="planSave" class="seg">このプランで記録</button><span class="sub" id="planSaveMsg"></span></div>
     <div id="riskShare" class="riskshare" hidden></div>
     <div id="riskStreak" class="autonote" hidden></div>
     <details id="settings">
@@ -887,6 +895,7 @@ html[data-theme="aurora"] .mini{background:rgba(5,7,15,.92)}
     </div>
     <div id="checks" class="checks"></div>
     <div style="text-align:right"><button id="resetChecks" class="linkbtn">チェックをリセット</button></div>
+    <div id="planList" class="planlist"></div>
 
     <details id="reboundBox">
       <summary>120SMAタッチ後の反発（H1タッチ → M15追跡）</summary>
@@ -1256,6 +1265,9 @@ function loadPrefs(){
   state.showTrend=lsGet(LSP+'trend','1')==='1';
   state.showFvg=lsGet(LSP+'fvg','1')==='1';
   state.showSpeech=lsGet(LSP+'speech','1')==='1';
+  state.showPlan=lsGet(LSP+'plan','1')==='1';
+  state.showGuard=lsGet(LSP+'guard','1')==='1';
+  state.showRec=lsGet(LSP+'rec','1')==='1';
   loadMaOn();
   state.broker=BROKERS[lsGet(LSP+'broker','xm')]?lsGet(LSP+'broker','xm'):'xm';
   // 利確判定の型：短期・デイ・スイング（既定はデイ）。以前の保存は近い型へ：1時間足・すべて・両方→デイ、15分足・5分足→短期、デイトレード（4時間足・日足）→スイング
@@ -1268,7 +1280,7 @@ function loadPrefs(){
 function savePrefs(){
   Object.entries(PREFS).forEach(([id,[k]])=>lsSet(k,$(id).value));
   lsSet(LSP+'auto_risk',$('autoRisk').checked?'1':'0');lsSet(LSP+'risk_mode',state.riskMode||'pct');
-  lsSet(LSP+'dir',state.dir);lsSet(LSP+'ev_filter',state.evFilter);lsSet(LSP+'tf',state.tf);lsSet(LSP+'levels',state.showLevels?'1':'0');lsSet(LSP+'trend',state.showTrend?'1':'0');lsSet(LSP+'fvg',state.showFvg?'1':'0');lsSet(LSP+'speech',state.showSpeech?'1':'0');
+  lsSet(LSP+'dir',state.dir);lsSet(LSP+'ev_filter',state.evFilter);lsSet(LSP+'tf',state.tf);lsSet(LSP+'levels',state.showLevels?'1':'0');lsSet(LSP+'trend',state.showTrend?'1':'0');lsSet(LSP+'fvg',state.showFvg?'1':'0');lsSet(LSP+'speech',state.showSpeech?'1':'0');lsSet(LSP+'plan',state.showPlan?'1':'0');lsSet(LSP+'guard',state.showGuard?'1':'0');lsSet(LSP+'rec',state.showRec?'1':'0');
   lsSet(LSP+'broker',state.broker);lsSet(brokerKey('contract'),$('contract').value);lsSet(brokerKey('lev'),$('leverage').value);lsSet(brokerKey('spread'),$('spread').value);
   updateBrokerLabels();
 }
@@ -4152,6 +4164,24 @@ function drawChart(){
     state.priceTag={yy,W,P,H,price:state.spot.price};paintPriceTag(true);
   }else state.priceTag=null;
 
+  // プラン（リスク計算のエントリー・SL・TP）をチャートに描く。SL/TPの線はドラッグで動かせる
+  state.planGeo=null;
+  if(state.showPlan!==false){
+    const pe=parseFloat($('entry').value),ps=parseFloat($('stop').value),pt=parseFloat($('target').value);
+    if(isFinite(pe)&&isFinite(ps)&&isFinite(pt)&&ps!==pe&&pt!==pe){
+      ctx.save();ctx.beginPath();ctx.rect(P.l,P.t,W-P.l-P.r,H-P.t-P.b);ctx.clip();
+      const yE=y(pe),yS=y(ps),yT=y(pt);
+      ctx.fillStyle='rgba(66,213,156,.08)';ctx.fillRect(P.l,Math.min(yE,yT),W-P.l-P.r,Math.abs(yT-yE));
+      ctx.fillStyle='rgba(255,105,105,.08)';ctx.fillRect(P.l,Math.min(yE,yS),W-P.l-P.r,Math.abs(yS-yE));
+      const pl=(yy,col,dash)=>{ctx.strokeStyle=col;ctx.lineWidth=1.2;ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();ctx.setLineDash([])};
+      pl(yT,'rgba(66,213,156,.85)',[7,4]);pl(yS,'rgba(255,105,105,.85)',[7,4]);pl(yE,'rgba(232,232,232,.9)',[]);
+      ctx.font='bold 10.5px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';
+      const tag=(yy,txt,col)=>{const w=ctx.measureText(txt).width+10;ctx.fillStyle='rgba(10,13,16,.85)';ctx.fillRect(P.l+4,yy-8,w,16);ctx.fillStyle=col;ctx.fillText(txt,P.l+9,yy)};
+      tag(yT,'TP '+fmt(pt),'#42d59c');tag(yS,'SL '+fmt(ps),'#ff6969');tag(yE,'エントリー '+fmt(pe),'#e8e8e8');
+      ctx.restore();
+      state.planGeo={yE,yS,yT};
+    }
+  }
   const sgHit=sgMarks(ctx,bars,blank,x,P,W,H,step);  // 急変の⚡印と帯・発言予定の縦線
   const hi=state.hover!=null&&bars[state.hover]?state.hover:null;
   if(hi!=null){
@@ -4191,7 +4221,7 @@ function drawChart(){
   $('chartMeta').textContent=TF_NAME[state.tf]+'（'+state.tf.toUpperCase()+'）/ '+len+'SMA'+' / 10・20・80・200EMA'+'｜'+bars.length+'本'+(v.off>0?'｜'+v.off+'本前まで表示中':blank?'｜右に'+blank+'本分の余白':'｜最新');
   $('chartReset').hidden=!(v.off||v.count||v.yOff||v.yZoom!==1);
   renderTfGrid();renderFibNow();renderGmmaNow();
-  state.chartGeo={P,step,n:bars.length,W,H,priceSpan:max-min,plotH:H-P.t-P.b};
+  state.chartGeo={P,step,n:bars.length,W,H,priceSpan:max-min,plotH:H-P.t-P.b,minP:min,maxP:max};
   drawRsi(source,startIdx,endIdx,bars.length,P,step,hi);
   drawAtr(source,startIdx,endIdx,bars.length,P,step,hi);
   const lastBig=bigs.at(-1);
@@ -4668,6 +4698,19 @@ renderAlerts();
 $('lvList').onclick=e=>{const b=e.target.closest('.lvchip');if(!b)return;if(b.dataset.lv==='all'){hiddenLv=[];lsSet(LSP+'hidden_lv','[]');drawChart()}else toggleLv(+b.dataset.lv)};
 $('fvgBtn').onclick=()=>{state.showFvg=!state.showFvg;$('fvgBtn').classList.toggle('on',state.showFvg);$('fvgBtn').setAttribute('aria-pressed',state.showFvg);savePrefs();drawChart();renderCombo()};
 $('spBtn').onclick=()=>{state.showSpeech=!state.showSpeech;$('spBtn').classList.toggle('on',state.showSpeech);$('spBtn').setAttribute('aria-pressed',state.showSpeech);savePrefs();drawChart()};
+$('planBtn').onclick=()=>{state.showPlan=!state.showPlan;$('planBtn').classList.toggle('on',state.showPlan);$('planBtn').setAttribute('aria-pressed',state.showPlan);savePrefs();drawChart()};
+$('guardBtn').onclick=()=>{state.showGuard=!state.showGuard;$('guardBtn').classList.toggle('on',state.showGuard);$('guardBtn').setAttribute('aria-pressed',state.showGuard);savePrefs();renderGuard()};
+$('recBtn').onclick=()=>{state.showRec=!state.showRec;$('recBtn').classList.toggle('on',state.showRec);$('recBtn').setAttribute('aria-pressed',state.showRec);savePrefs();applyRecVis()};
+$('planSave').onclick=()=>{
+  const e=parseFloat($('entry').value),s=parseFloat($('stop').value),t=parseFloat($('target').value),msg=$('planSaveMsg');
+  if(!isFinite(e)||!isFinite(s)||!isFinite(t)||s===e||t===e){msg.textContent='エントリー・SL・TPをそろえてください';return}
+  const lot=parseFloat($('lotSize').textContent),now=new Date();
+  const note=[state.tf.toUpperCase(),($('dirLabel').textContent||'').trim(),($('nextEv').textContent||'').trim().replace(/\s+/g,' ').slice(0,70)].filter(Boolean).join('｜');
+  const rows=planLogRead();
+  rows.push({id:now.getTime(),time:now.toISOString(),day:now.toLocaleDateString('sv-SE',{timeZone:'Asia/Tokyo'}),key:INSTR.key,dir:s<e?'buy':'sell',entry:e,stop:s,target:t,lot:isFinite(lot)?lot:null,note,when:now.toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})});
+  localStorage.setItem('td-planlog-v1',JSON.stringify(rows.slice(-200)));
+  msg.textContent='記録しました';renderPlanList();
+};
 $('lvBtn').onclick=()=>{state.showLevels=!state.showLevels;$('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);savePrefs();drawChart();renderCombo()};
 document.querySelectorAll('#dirSeg .seg').forEach(b=>b.onclick=()=>{
   state.dir=b.dataset.dir;setSegActive('#dirSeg .seg','dir',state.dir);savePrefs();renderAll();
@@ -4753,6 +4796,24 @@ function barIndexAt(clientX){
 function setHover(i){if(i!==state.hover){state.hover=i;drawChart()}}
 // ドラッグ：左右=時間（過去へ）、上下=価格。右端の目盛り上で上下ドラッグ=縦の拡大縮小。2本指=横の拡大縮小
 const ptrs=new Map();let drag=null,pinch=null,lastTap=0;
+// チャート操作の高速化（2026-11-13）：パンは指の動きの1.5倍進み、離すと勢いで少し流れ、描画は1フレーム1回にまとめる
+const PAN_SPEED=1.5;
+let drawQueued=false,momentum=null;
+function queueDraw(){if(drawQueued)return;drawQueued=true;requestAnimationFrame(()=>{drawQueued=false;drawChart()})}
+function stopMomentum(){if(momentum){cancelAnimationFrame(momentum.raf);momentum=null}}
+function startMomentum(v){
+  stopMomentum();if(Math.abs(v)<0.35)return;
+  v=Math.max(-14,Math.min(14,v));
+  let pos=state.view.off,stall=0,frames=0;
+  const tick=()=>{
+    v*=0.94;pos+=v;frames++;
+    const off=Math.round(pos);
+    if(off!==state.view.off){state.view.off=off;drawChart();stall=0}else stall++;
+    if(Math.abs(v)<0.3||stall>=3||frames>240){momentum=null;return}
+    momentum={raf:requestAnimationFrame(tick)};
+  };
+  momentum={raf:requestAnimationFrame(tick)};
+}
 function curCount(){const g=state.chartGeo;return g?g.n+Math.max(0,-state.view.off):(state.view.count||60)}
 // 拡大縮小：右側の空白も同じ割合で伸び縮みさせ、ローソク足が数本だけにならないようにする
 function zoomTo(n,base){
@@ -4762,33 +4823,56 @@ function zoomTo(n,base){
   if(from.off<0)state.view.off=Math.round(from.off*count/from.count);
 }
 chart.addEventListener('pointerdown',e=>{
-  chart.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  chart.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});stopMomentum();
   const g=state.chartGeo;if(!g)return;
   if(ptrs.size===2){
     const [a,b]=[...ptrs.values()];pinch={d:Math.max(20,Math.abs(a.x-b.x)),count:curCount(),off:state.view.off};drag=null;return;
   }
+  if(state.showPlan!==false&&state.planGeo&&g.minP!=null&&ptrs.size===1){
+    const rr=chart.getBoundingClientRect(),yy=e.clientY-rr.top;
+    const line=(e.clientX-rr.left<g.W-g.P.r)?(Math.abs(yy-state.planGeo.yS)<=8?'sl':Math.abs(yy-state.planGeo.yT)<=8?'tp':null):null;
+    if(line){drag={planLine:line,moved:true,hist:[]};chart.classList.add('dragging');return}
+  }
   const r=chart.getBoundingClientRect();
   drag={x:e.clientX,y:e.clientY,off:state.view.off,yOff:state.view.yOff,yZoom:state.view.yZoom,
-    axis:e.clientX-r.left>g.W-g.P.r,moved:false,step:g.step,ppx:g.priceSpan/g.plotH};
+    axis:e.clientX-r.left>g.W-g.P.r,moved:false,step:g.step,ppx:g.priceSpan/g.plotH,hist:[]};
   chart.classList.add('dragging');
 });
 chart.addEventListener('pointermove',e=>{
   if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(pinch&&ptrs.size===2){
     const [a,b]=[...ptrs.values()],d=Math.max(20,Math.abs(a.x-b.x));
-    zoomTo(pinch.count*pinch.d/d,pinch);drawChart();return;
+    zoomTo(pinch.count*pinch.d/d,pinch);queueDraw();return;
+  }
+  if(drag&&drag.planLine){
+    const g2=state.chartGeo;
+    if(g2&&g2.minP!=null){
+      const r2=chart.getBoundingClientRect(),price=g2.maxP-(e.clientY-r2.top-g2.P.t)*(g2.maxP-g2.minP)/g2.plotH;
+      if(isFinite(price)&&price>0){
+        $(drag.planLine==='sl'?'stop':'target').value=(+price.toFixed(INSTR.dp));
+        if($('autoRisk').checked){$('autoRisk').checked=false;savePrefs()}
+        calcRisk();queueDraw();
+      }
+    }
+    return;
   }
   if(!drag){if(e.pointerType==='mouse')setHover(barIndexAt(e.clientX));return}
   const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
   if(!drag.moved&&Math.abs(dx)+Math.abs(dy)<6)return;
   drag.moved=true;
   if(drag.axis){state.view.yZoom=Math.max(.2,Math.min(8,drag.yZoom*Math.exp(dy/150)))}
-  else{state.view.off=drag.off+Math.round(dx/drag.step);state.view.yOff=drag.yOff+dy*drag.ppx}
-  drawChart();
+  else{state.view.off=drag.off+Math.round(dx*PAN_SPEED/drag.step);state.view.yOff=drag.yOff+dy*PAN_SPEED*drag.ppx;
+    drag.hist.push({t:performance.now(),off:state.view.off});if(drag.hist.length>6)drag.hist.shift()}
+  queueDraw();
 });
 function endPtr(e){
   ptrs.delete(e.pointerId);
   if(pinch){if(ptrs.size<2)pinch=null;drag=null;chart.classList.remove('dragging');return}
+  if(drag&&drag.planLine){drag=null;chart.classList.remove('dragging');return}
+  if(drag&&drag.moved&&drag.hist&&drag.hist.length>=2){
+    const h=drag.hist,a=h[0],b=h[h.length-1],dt=b.t-a.t;
+    if(dt>0&&performance.now()-b.t<100)startMomentum((b.off-a.off)/dt*16.7);
+  }
   if(drag&&!drag.moved){
     const now=Date.now();
     if(now-lastTap<300){resetView();state.hover=null;drawChart()}else setHover(barIndexAt(e.clientX));
@@ -4805,10 +4889,37 @@ chart.addEventListener('wheel',e=>{
   if(g&&e.clientX-r.left>g.W-g.P.r)state.view.yZoom=Math.max(.2,Math.min(8,state.view.yZoom*Math.exp(e.deltaY/300)));
   else if(Math.abs(e.deltaX)>Math.abs(e.deltaY)&&g)state.view.off=state.view.off+Math.round(e.deltaX/g.step);
   else zoomTo(curCount()*Math.exp(e.deltaY/400));
-  drawChart();
+  queueDraw();
 },{passive:false});
 // iOS: keep the page from scrolling while a finger moves the chart
 chart.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+function planLogRead(){try{const a=JSON.parse(localStorage.getItem('td-planlog-v1')||'[]');return Array.isArray(a)?a:[]}catch{return[]}}
+function renderPlanList(){
+  const el=$('planList');if(!el)return;
+  const rows=planLogRead().filter(p=>p.key===INSTR.key).slice(-5).reverse();
+  el.innerHTML=rows.length?'<div class="sub">保存したプラン（この銘柄・新しい順）</div>'+rows.map(p=>`<div class="plrow"><button type="button" class="linkbtn" data-pldel="${p.id}">消す</button><b>${esc(p.when)}</b> ${p.dir==='buy'?'買い':'売り'} エントリー ${fmt(p.entry)}・SL ${fmt(p.stop)}・TP ${fmt(p.target)}${p.lot?'・'+p.lot+'ロット':''}<div class="sub">${esc(p.note||'')}</div></div>`).join(''):'';
+  el.querySelectorAll('[data-pldel]').forEach(b=>b.onclick=()=>{localStorage.setItem('td-planlog-v1',JSON.stringify(planLogRead().filter(p=>String(p.id)!==b.dataset.pldel)));renderPlanList()});
+}
+function applyRecVis(){const r=$('planRecRow');if(r)r.hidden=state.showRec===false}
+function renderGuard(){
+  const bar=$('guardBar');if(!bar)return;
+  if(state.showGuard===false){bar.hidden=true;return}
+  const now=Date.now(),out=[];
+  const evs=(state.events||[]).filter(e=>e.ts>now).sort((a,b)=>a.ts-b.ts);
+  const mins=t=>Math.max(1,Math.round((t-now)/60000));
+  const big=evs.find(e=>e.impact==='High'&&!e.speech&&e.ts-now<=3600000);
+  if(big)out.push('<b>次の重要指標「'+esc(evTitle(big))+'」まであと'+mins(big.ts)+'分</b>');
+  const sp=evs.find(e=>e.speech&&e.ts-now<=3600000);
+  if(sp)out.push('<b>発言予定「'+esc(evTitle(sp))+'」まであと'+mins(sp.ts)+'分</b>');
+  const sg=sgEvents().filter(e=>now-e.t<=1800000&&now>=e.t).sort((a,b)=>b.t-a.t)[0];
+  if(sg)out.push('<b>急変から'+Math.max(0,Math.round((now-sg.t)/60000))+'分</b>（落ち着くまで新規は慎重に）');
+  if(out.length){bar.className='guardbar';bar.innerHTML='エントリー前の注意：'+out.join('｜');bar.hidden=false;return}
+  const nx=evs[0],m=nx?mins(nx.ts):0;
+  bar.className='guardbar calm';
+  bar.innerHTML=nx?('いま大きな注意材料はありません。次のイベントは「'+esc(evTitle(nx))+'」（あと'+(m>=120?Math.floor(m/60)+'時間'+(m%60)+'分':m+'分')+'）'):'いま大きな注意材料はありません';
+  bar.hidden=false;
+}
+setInterval(renderGuard,5000);
 chart.addEventListener('dblclick',()=>{resetView();state.hover=null;drawChart()});
 $('chartReset').onclick=()=>{resetView();state.hover=null;drawChart()};
 // チャートを画面いっぱいに（もう一度押すか Esc で戻る）
@@ -4909,6 +5020,10 @@ $('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-
 $('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);
 $('fvgBtn').classList.toggle('on',state.showFvg);$('fvgBtn').setAttribute('aria-pressed',state.showFvg);
 $('spBtn').classList.toggle('on',state.showSpeech);$('spBtn').setAttribute('aria-pressed',state.showSpeech);
+$('planBtn').classList.toggle('on',state.showPlan);$('planBtn').setAttribute('aria-pressed',state.showPlan);
+$('guardBtn').classList.toggle('on',state.showGuard);$('guardBtn').setAttribute('aria-pressed',state.showGuard);
+$('recBtn').classList.toggle('on',state.showRec);$('recBtn').setAttribute('aria-pressed',state.showRec);
+applyRecVis();renderPlanList();renderGuard();
 // 毎秒の価格更新で、内容が変わっていない欄は書き直さない（書き直すたびにページ全体の配置計算が走り、iPadで重くなる）
 (function(){
   const H=Object.getOwnPropertyDescriptor(Element.prototype,'innerHTML'),T=Object.getOwnPropertyDescriptor(Node.prototype,'textContent');
