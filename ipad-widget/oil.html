@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="2acb4c49dc">
+<meta name="build" content="6f24f8828a">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -703,7 +703,7 @@ html[data-theme="aurora"] .mini{background:rgba(5,7,15,.92)}
     <div class="combo" id="comboRow" role="group" aria-label="組み合わせ（インジケーターのチップを一括で切り替える）"><span class="cl">組み合わせ<small id="comboNow" class="cn" aria-live="polite"></small></span><span id="comboBtns" class="cb"></span></div>
     <div class="tfcap">時間足｜下段＝ダウ理論のトレンドとST（スーパートレンド）の向き（別の見方なので、逆を向くことがあります）</div>
     <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
-    <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button><button type="button" id="fvgBtn" class="seg on" aria-pressed="true" title="FVG（3本の足で、1本目と3本目の値幅が重ならない帯）を表示"><i style="height:8px;background:linear-gradient(90deg,rgba(66,213,156,.55) 50%,rgba(255,105,105,.55) 50%)"></i>FVG</button><button type="button" class="gq" data-gloss="fvg:fvg-01" aria-label="FVG詳説：FVGとは">?</button></div>
+    <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button><button type="button" id="fvgBtn" class="seg on" aria-pressed="true" title="FVG（3本の足で、1本目と3本目の値幅が重ならない帯）を表示"><i style="height:8px;background:linear-gradient(90deg,rgba(66,213,156,.55) 50%,rgba(255,105,105,.55) 50%)"></i>FVG</button><button type="button" id="spBtn" class="seg on" aria-pressed="true" title="要人発言の予定（チャート内の縦線と札）を表示"><i style="background:#b9a6ff"></i>発言</button><button type="button" class="gq" data-gloss="fvg:fvg-01" aria-label="FVG詳説：FVGとは">?</button></div>
     <div id="lvList" class="lvlist" role="group" aria-label="水平線を1本ずつ消す・戻す" hidden></div>
     <div id="chNow" class="chnow" role="group" aria-label="時間足ごとのチャネル" hidden></div>
     <div id="fibNow" class="fibnow" role="status" hidden></div>
@@ -1255,6 +1255,7 @@ function loadPrefs(){
   state.showLevels=lsGet(LSP+'levels','1')==='1';
   state.showTrend=lsGet(LSP+'trend','1')==='1';
   state.showFvg=lsGet(LSP+'fvg','1')==='1';
+  state.showSpeech=lsGet(LSP+'speech','1')==='1';
   loadMaOn();
   state.broker=BROKERS[lsGet(LSP+'broker','xm')]?lsGet(LSP+'broker','xm'):'xm';
   // 利確判定の型：短期・デイ・スイング（既定はデイ）。以前の保存は近い型へ：1時間足・すべて・両方→デイ、15分足・5分足→短期、デイトレード（4時間足・日足）→スイング
@@ -1267,7 +1268,7 @@ function loadPrefs(){
 function savePrefs(){
   Object.entries(PREFS).forEach(([id,[k]])=>lsSet(k,$(id).value));
   lsSet(LSP+'auto_risk',$('autoRisk').checked?'1':'0');lsSet(LSP+'risk_mode',state.riskMode||'pct');
-  lsSet(LSP+'dir',state.dir);lsSet(LSP+'ev_filter',state.evFilter);lsSet(LSP+'tf',state.tf);lsSet(LSP+'levels',state.showLevels?'1':'0');lsSet(LSP+'trend',state.showTrend?'1':'0');lsSet(LSP+'fvg',state.showFvg?'1':'0');
+  lsSet(LSP+'dir',state.dir);lsSet(LSP+'ev_filter',state.evFilter);lsSet(LSP+'tf',state.tf);lsSet(LSP+'levels',state.showLevels?'1':'0');lsSet(LSP+'trend',state.showTrend?'1':'0');lsSet(LSP+'fvg',state.showFvg?'1':'0');lsSet(LSP+'speech',state.showSpeech?'1':'0');
   lsSet(LSP+'broker',state.broker);lsSet(brokerKey('contract'),$('contract').value);lsSet(brokerKey('lev'),$('leverage').value);lsSet(brokerKey('spread'),$('spread').value);
   updateBrokerLabels();
 }
@@ -4666,6 +4667,7 @@ $('alertList').onchange=e=>{const f=e.target.dataset.al;if(!f||!e.target.isConne
 renderAlerts();
 $('lvList').onclick=e=>{const b=e.target.closest('.lvchip');if(!b)return;if(b.dataset.lv==='all'){hiddenLv=[];lsSet(LSP+'hidden_lv','[]');drawChart()}else toggleLv(+b.dataset.lv)};
 $('fvgBtn').onclick=()=>{state.showFvg=!state.showFvg;$('fvgBtn').classList.toggle('on',state.showFvg);$('fvgBtn').setAttribute('aria-pressed',state.showFvg);savePrefs();drawChart();renderCombo()};
+$('spBtn').onclick=()=>{state.showSpeech=!state.showSpeech;$('spBtn').classList.toggle('on',state.showSpeech);$('spBtn').setAttribute('aria-pressed',state.showSpeech);savePrefs();drawChart()};
 $('lvBtn').onclick=()=>{state.showLevels=!state.showLevels;$('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);savePrefs();drawChart();renderCombo()};
 document.querySelectorAll('#dirSeg .seg').forEach(b=>b.onclick=()=>{
   state.dir=b.dataset.dir;setSegActive('#dirSeg .seg','dir',state.dir);savePrefs();renderAll();
@@ -4710,7 +4712,7 @@ function sgMarks(ctx,bars,blank,x,P,W,H,step){
     hit.push({i:i1,col:`rgb(${col})`,text:`⚡ ${tx.level}：${tx.head} ${tx.size}（${hhmm(e.t)} JST 検知）`});
   });
   let prevR=-1e9,row=0;  // 名前が重なるときは1段下げる
-  if(ms<=144e5)(state.events||[]).filter(e=>e.speech&&goldRelevant(e)).sort((a,b)=>a.ts-b.ts).forEach(e=>{  // 時間単位までの足だけ（日足以上では細かすぎる）
+  if(ms<=144e5&&state.showSpeech!==false)(state.events||[]).filter(e=>e.speech&&goldRelevant(e)).sort((a,b)=>a.ts-b.ts).forEach(e=>{  // 時間単位までの足だけ（日足以上では細かすぎる）
     const xi=(e.ts-bars[n-1].t)/ms+(n-1);if(xi<-.5||xi>n-1+blank+.5)return;
     const xx=Math.round(P.l+step*(xi+.5))+.5,name=e.speech.ja+(/testifies/i.test(e.title)?' 議会証言':' 発言');
     ctx.strokeStyle='rgba(185,166,255,.75)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(xx,P.t+18);ctx.lineTo(xx,H-P.b);ctx.stroke();ctx.setLineDash([]);
@@ -4906,6 +4908,7 @@ renderMaToggles();
 $('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);
 $('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);
 $('fvgBtn').classList.toggle('on',state.showFvg);$('fvgBtn').setAttribute('aria-pressed',state.showFvg);
+$('spBtn').classList.toggle('on',state.showSpeech);$('spBtn').setAttribute('aria-pressed',state.showSpeech);
 // 毎秒の価格更新で、内容が変わっていない欄は書き直さない（書き直すたびにページ全体の配置計算が走り、iPadで重くなる）
 (function(){
   const H=Object.getOwnPropertyDescriptor(Element.prototype,'innerHTML'),T=Object.getOwnPropertyDescriptor(Node.prototype,'textContent');
