@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="/Ira0Ma058/icon-cup.png">
 <link rel="icon" type="image/png" href="/Ira0Ma058/icon-cup.png">
-<meta name="build" content="78b3251eb5">
+<meta name="build" content="6d5300e28e">
 <title>Desk of Ayu</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -488,7 +488,8 @@ html:not(.lowpower) .mreg .rg-dot { transition: left .6s ease; }
 #ind .card-title { gap: 8px; }
 .card-title .ico { width: 26px; height: 26px; flex: none; }
 .card-title .aside { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--ink-2); }
-.ind-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; flex: 0 1 auto; }  /* 3行が入りきらない高さでは、下の注記と「経済カレンダー」を押し出さない */
+.ind-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; flex: 1 1 auto; touch-action: pan-y; scrollbar-width: thin; }  /* 窓いっぱいに広げて縦ドラッグを受け付ける（touch-action: pan-y で横ページャ／ページ送りに奪われない） */
+.ind-list::-webkit-scrollbar { width: 4px; } .ind-list::-webkit-scrollbar-thumb { background: rgba(201,162,75,.45); border-radius: 2px; }  /* 3行が入りきらない高さでは、下の注記と「経済カレンダー」を押し出さない */
 .ind-list li { display: grid; grid-template-columns: 1fr auto; gap: 0 4px; align-items: start; padding: 9px 0; border-bottom: 1px solid var(--glass-line); }
 .ind-list .t { font-size: 14px; font-weight: 600; white-space: nowrap; }
 .ind-list .t .date { font-weight: 600; color: var(--gold); }
@@ -523,8 +524,15 @@ html:not(.lowpower) .mreg .rg-dot { transition: left .6s ease; }
 .ind-sess { flex: none; margin-top: 10px; }
 .ind-sess:empty { display: none; }
 .isess-bar { position: relative; height: 12px; border-radius: 6px; background: rgba(255,255,255,.05); overflow: hidden; }
-.isess-band { position: absolute; top: 0; height: 100%; opacity: .45; }
-.isess-now { position: absolute; top: 0; height: 100%; width: 2px; background: #fff; }
+.isess-band { position: absolute; top: 0; height: 100%; opacity: .22; }
+.isess-band.cur { opacity: .95; }
+.isess-wrap { position: relative; }
+.isess-flag { position: absolute; top: -8px; transform: translateX(-50%); font-size: 8px; line-height: 1; color: #fff; font-style: normal; text-shadow: 0 1px 3px rgba(0,0,0,.85); z-index: 2; }
+.isess-pill { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16); border-radius: 999px; padding: 1px 8px; font-weight: 700; color: #e8e4da; }
+.isess-pill i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex: none; }
+.isess-ima { color: var(--gold); font-weight: 700; margin-right: 5px; }
+.isess-rest { margin-left: 6px; }
+.isess-now { position: absolute; top: 0; height: 100%; width: 3px; background: #fff; box-shadow: 0 0 4px rgba(255,255,255,.9); }
 .isess-eve { position: absolute; top: 0; height: 100%; width: 2px; background: #ff6969; }
 .isess-core { position: absolute; top: 0; height: 100%; width: 2px; background: var(--gold); }
 .isess-line { font-size: 11px; color: var(--ink-3); margin-top: 4px; }
@@ -1496,6 +1504,7 @@ html.phone .dk-dock .dk-btn, html.phone .dk-dock #layout-toggle, html.phone #too
 .flow #tabpanel { height: auto; }
 .flow .tp-wrap { position: static; }
 .flow #tabpanel #ind, .flow #tabpanel #xfeed { position: relative; inset: auto; height: auto; overflow: visible; }
+.flow #tabpanel:not(.tp-expanded) #ind .ind-list { overflow-y: visible; flex: none; overscroll-behavior: auto; touch-action: auto; }  /* 縦並びでは一覧を内側の窓で囲わずページ全体のスクロールに任せる（内側の overflow＋contain が指の動きを吸って縦スクロールが死ぬのを防ぐ） */
 .dk-theme-pop { position: fixed; z-index: 60; right: calc(env(safe-area-inset-right, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 48px); width: 228px; background: rgba(var(--panel-rgb),.97); border: 1px solid rgba(var(--gold-rgb),.55); border-radius: 14px; padding: 8px; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
 .dk-theme-pop h4 { margin: 2px 6px 6px; font-size: 11px; color: var(--ink-3); font-weight: 700; letter-spacing: .04em; }
 .dk-theme-pop button { display: flex; width: 100%; align-items: center; gap: 8px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); background: none; border: 0; border-radius: 9px; padding: 7px 8px; cursor: pointer; text-align: left; }
@@ -2297,11 +2306,11 @@ window.TD_THEME = (function () {
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=12d939b256", title: "GOLD分析" },
-    silver: { src: "silver.html?v=e0a1f9f0a3", title: "シルバー分析" },
-    usdjpy: { src: "usdjpy.html?v=b2fd384466", title: "ドル円分析" },
-    btc: { src: "btc.html?v=e6ef8624f7", title: "BTC分析" },
-    oil: { src: "oil.html?v=671d5876a4", title: "オイル分析" },
+    gold: { src: "gold.html?v=e2528d933b", title: "GOLD分析" },
+    silver: { src: "silver.html?v=ee149fae2c", title: "シルバー分析" },
+    usdjpy: { src: "usdjpy.html?v=11c8980946", title: "ドル円分析" },
+    btc: { src: "btc.html?v=3dad5c6fb1", title: "BTC分析" },
+    oil: { src: "oil.html?v=e3bf714045", title: "オイル分析" },
     lots: { src: "lotsim.html", title: "ロット図説" },
     weekend: { src: "weekend.html", title: "週末ボード" }
   };
@@ -3242,6 +3251,34 @@ window.TD_THEME = (function () {
      切り替わっていると較正が止まり、注目ポイントの現在価格まで生配信に載れなくなる。パネル表示に
      依らない較正を1分に1回だけ別に回し、較正済みかどうか（＝liveFresh）だけを保つ。表示価格そのものは
      ここでは動かさない（カードは loadPrices と配信が担う）。休場中は配信と同じく止める */
+  /* ゴールド／シルバーの較正アンカーの合議（ダッシュボードの spotConsensus と同じ規則）。
+     Gold API と Swissquote を両方取り、しきい値（金1.5ドル／銀0.05）を超えて食い違えば
+     Swissquote の仲値を正とする（Gold API は遅れて高く張り付くことが実測で分かっている）。
+     端末の回線で Swissquote に届かず Gold API 単独になったときは、サイトの定期取得
+     （サーバー側は Swissquote 優先で算出・8分以内）とも照合し、大きく食い違えばそちらを正とする */
+  function spotConsensusH(key, apiPx, sqPx) {
+    if (apiPx && sqPx) return Math.abs(apiPx - sqPx) > (key === "gold" ? 1.5 : 0.05) ? sqPx : apiPx;
+    return apiPx || sqPx || 0;
+  }
+  function siteSpotH(key) {
+    var m = market && (market.instruments || market)[key];
+    if (!m || !m.price || !m.asOf) return 0;
+    return Date.now() / 1000 - m.asOf <= 480 ? +m.price : 0;
+  }
+  function anchorSpotH(key, apiPx, sqPx) {
+    var px = spotConsensusH(key, apiPx, sqPx);
+    if (apiPx && !sqPx) {  // Gold API 単独のときだけサイト照合（合議が単独値になる穴を塞ぐ）
+      var sp = siteSpotH(key);
+      if (sp && Math.abs(apiPx - sp) > (key === "gold" ? 1.5 : 0.05)) px = sp;
+    }
+    return px;
+  }
+  function fetchSqH(sym) {
+    return fetch("https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/" + sym + "/USD", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (q) { var p = q && q[0] && q[0].spreadProfilePrices && q[0].spreadProfilePrices[0]; return p && p.bid && p.ask ? (p.bid + p.ask) / 2 : 0; })
+      .catch(function () { return 0; });
+  }
   var liveSpotAt = 0;
   function liveSpotCalibrate() {
     if (!window.fetch || document.hidden) return;
@@ -3249,14 +3286,16 @@ window.TD_THEME = (function () {
     [["gold", "XAU"], ["silver", "XAG"]].forEach(function (pair) {
       var key = pair[0];
       if (marketClosed(key)) return;
-      fetch("https://api.gold-api.com/price/" + pair[1], { cache: "no-store" })
+      var apiP = fetch("https://api.gold-api.com/price/" + pair[1], { cache: "no-store" })
         .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-        .then(function (j) {
-          if (!j || !j.price) return;
-          var L = live[key] || (live[key] = { raw: 0, at: 0, offs: [], drawn: 0, tries: 0, ws: null, timer: 0 });
-          L.spot = +j.price; L.spotAt = Date.now(); liveCalibrate(key, +j.price);
-        })
-        .catch(function () {});
+        .then(function (j) { return j && j.price ? +j.price : 0; })
+        .catch(function () { return 0; });
+      Promise.all([apiP, fetchSqH(pair[1])]).then(function (v) {
+        var px = anchorSpotH(key, v[0], v[1]);
+        if (!px) return;
+        var L = live[key] || (live[key] = { raw: 0, at: 0, offs: [], drawn: 0, tries: 0, ws: null, timer: 0 });
+        L.spot = px; L.spotAt = Date.now(); liveCalibrate(key, px);
+      });
     });
   }
   function loadPrices() {
@@ -3287,6 +3326,12 @@ window.TD_THEME = (function () {
       if (!spot) return;
       var use = function (price, asOf, prov) {
         if (!price || mk.key !== key) return;
+        if ((key === "gold" || key === "silver") && prov && prov.src === "Gold API") {
+          // Gold API 単独の値は遅れて高く張り付きやすい。サイトの定期取得（Swissquote優先・
+          // 8分以内）と大きく食い違えば、そちらを正として表示と較正に使う（サイト照合）
+          var mX = market && (market.instruments || market)[key], spX = siteSpotH(key);
+          if (spX && Math.abs(price - spX) > (key === "gold" ? 1.5 : 0.05)) { price = spX; if (mX && mX.asOf) asOf = mX.asOf; prov = { src: "照合（サイト・Swissquote優先）", type: "サイトの定期取得と照合した値" }; }
+        }
         if (key === "gold" || key === "silver") {
           var L = live[key] || (live[key] = { raw: 0, at: 0, offs: [], drawn: 0, tries: 0, ws: null, timer: 0 });
           L.spot = price; L.spotAt = Date.now(); liveCalibrate(key, price);
@@ -3304,7 +3349,14 @@ window.TD_THEME = (function () {
         .then(function (j) {
           if (!j || !j.price) return Promise.reject();
           srcMark("goldapi", true);
-          use(+j.price, j.updatedAt ? Date.parse(j.updatedAt) / 1000 : Date.now() / 1000, { src: "Gold API", type: "提供元の現在値（Bid/Askの区別は非公開）" });
+          var apiPx = +j.price, apiAt = j.updatedAt ? Date.parse(j.updatedAt) / 1000 : Date.now() / 1000;
+          // ダッシュボードと同じ合議：Swissquote も取り、大きく食い違えばその仲値を正とする。
+          // 4秒で返らなければ Gold API で進む（use 側のサイト照合が単独時の穴を塞ぐ）
+          var sqSlow = new Promise(function (res) { setTimeout(function () { res(0); }, 4000); });
+          return Promise.race([fetchSqH(spot), sqSlow]).then(function (sqPx) {
+            if (sqPx && Math.abs(apiPx - sqPx) > (key === "gold" ? 1.5 : 0.05)) { srcMark("swissquote", true); use(sqPx, Date.now() / 1000, { src: "Swissquote", type: "仲値（Bid・Askの中間）" }); }
+            else use(apiPx, apiAt, { src: "Gold API", type: "提供元の現在値（Bid/Askの区別は非公開）" });
+          });
         })
         // backup: Swissquote's public quote (middle of bid and ask)
         .catch(function () {
@@ -5089,18 +5141,35 @@ window.TD_THEME = (function () {
     var box = document.getElementById("ind-sess"); if (!box) return;
     var now = Date.now(), devZ = (Intl.DateTimeFormat().resolvedOptions().timeZone) || "Asia/Tokyo";
     var dp = tzPartsH(devZ, now), dayStart = zoneTsH(devZ, dp.year, dp.month, dp.day, 0, 0), dayEnd = dayStart + 86400000;
-    var segs = [], open = [], maint = false;
-    function push(st, en, col, m) { if (now >= st && now < en && m) maint = true; var a = Math.max(st, dayStart), b = Math.min(en, dayEnd); if (b > a) segs.push({ l: (a - dayStart) / 864000, w: (b - a) / 864000, col: col }); }
-    SESS_H.forEach(function (sd) { [-1, 0].forEach(function (dl) { var w = sessWinH(sd.z, sd.o, sd.c, now + dl * 86400000); if (w) { if (now >= w[0] && now < w[1] && open.indexOf(sd.n) < 0) open.push(sd.n); push(w[0], w[1], sd.col, 0); } }); });
-    [-1, 0].forEach(function (dl) { var w = sessWinH("America/New_York", [17, 0], [18, 0], now + dl * 86400000); if (w) push(w[0], w[1], "#5a6775", 1); });
+    var segs = [], open = [], openInfo = [], maint = false, maintEnd = 0, nextStart = null;
+    function push(st, en, col, m, n) {
+      var cur = now >= st && now < en;
+      if (cur) { if (m) { maint = true; maintEnd = en; } else if (open.indexOf(n) < 0) { open.push(n); openInfo.push({ n: n, col: col, en: en }); } }
+      var a = Math.max(st, dayStart), b = Math.min(en, dayEnd); if (b > a) segs.push({ l: (a - dayStart) / 864000, w: (b - a) / 864000, col: col, cur: cur && !m });
+    }
+    SESS_H.forEach(function (sd) { [-1, 0, 1, 2, 3].forEach(function (dl) { var w = sessWinH(sd.z, sd.o, sd.c, now + dl * 86400000); if (!w) return; if (dl <= 0) push(w[0], w[1], sd.col, 0, sd.n); if (w[0] > now && (!nextStart || w[0] < nextStart.ts)) nextStart = { n: sd.n, ts: w[0] }; }); });
+    [-1, 0].forEach(function (dl) { var w = sessWinH("America/New_York", [17, 0], [18, 0], now + dl * 86400000); if (w) push(w[0], w[1], "#5a6775", 1, "CMEメンテ"); });
     if (!segs.length) { box.innerHTML = ""; return; }
-    var html = '<div class="isess-bar">' + segs.map(function (sg) { return '<i class="isess-band" style="left:' + sg.l.toFixed(2) + '%;width:' + sg.w.toFixed(2) + '%;background:' + sg.col + '"></i>'; }).join("");
+    function durH(ms) { var mn = Math.max(1, Math.round(ms / 60000)); return mn >= 60 ? Math.floor(mn / 60) + "時間" + (mn % 60 ? mn % 60 + "分" : "") : mn + "分"; }
+    var pct = (now - dayStart) / 864000, flagL = Math.min(96, Math.max(4, pct));
+    var html = '<div class="isess-wrap"><i class="isess-flag" style="left:' + flagL.toFixed(2) + '%">▼</i><div class="isess-bar">' + segs.map(function (sg) { return '<i class="isess-band' + (sg.cur ? " cur" : "") + '" style="left:' + sg.l.toFixed(2) + '%;width:' + sg.w.toFixed(2) + '%;background:' + sg.col + '"></i>'; }).join("");
     CORE_H.forEach(function (c) { var ts = coreTodayH(c, dayStart, dayEnd); if (ts != null) html += '<i class="isess-core" style="left:' + ((ts - dayStart) / 864000).toFixed(2) + '%"></i>'; });
     var nx = null;
     if (calEvents) { var fut = calEvents.filter(function (e) { return e.stars === 3 && e.t > now; }).sort(function (a, b) { return a.t - b.t; }); if (fut.length) nx = +fut[0].t; }
     if (nx && nx >= dayStart && nx < dayEnd) html += '<i class="isess-eve" style="left:' + ((nx - dayStart) / 864000).toFixed(2) + '%"></i>';
-    html += '<i class="isess-now" style="left:' + ((now - dayStart) / 864000).toFixed(2) + '%"></i></div>';
-    html += '<div class="isess-line">' + (maint ? "いまはCMEメンテナンス中（値が飛びやすい時間帯）" : open.length ? "いまは" + open.join(" と ") + "の時間帯" : "いまは主要市場が休みの静かな時間帯") + '<span class="isess-more">コア時間 ' + (box.__open ? "▴" : "▾") + "</span></div>";
+    html += '<i class="isess-now" style="left:' + pct.toFixed(2) + '%"></i></div></div>';
+    var pill, rest = "";
+    if (maint) { pill = '<span class="isess-pill"><i style="background:#5a6775"></i>CMEメンテナンス中</span>'; rest = maintEnd ? "あと" + durH(maintEnd - now) + "で終了（値が飛びやすい時間帯）" : "値が飛びやすい時間帯"; }
+    else if (open.length) {
+      pill = '<span class="isess-pill">' + openInfo.map(function (o) { return '<i style="background:' + o.col + '"></i>' + o.n; }).join(" ") + "</span>";
+      var chEnd = null; openInfo.forEach(function (o) { if (!chEnd || o.en < chEnd.en) chEnd = o; });
+      if (nextStart && (!chEnd || nextStart.ts < chEnd.en)) rest = "あと" + durH(nextStart.ts - now) + "で" + nextStart.n + "開始";
+      else if (chEnd) rest = "あと" + durH(chEnd.en - now) + "で" + chEnd.n + "終了";
+    } else {
+      pill = '<span class="isess-pill"><i style="background:#8a93a3"></i>静かな時間帯</span>';
+      rest = nextStart ? "次の" + nextStart.n + "まで あと" + durH(nextStart.ts - now) : "主要市場は休み";
+    }
+    html += '<div class="isess-line"><span class="isess-ima">いま</span>' + pill + (rest ? '<span class="isess-rest">' + rest + "</span>" : "") + '<span class="isess-more">コア時間 ' + (box.__open ? "▴" : "▾") + "</span></div>";
     html += '<div class="isess-chips"' + (box.__open ? "" : " hidden") + ">" + CORE_H.map(function (c) {
       var zt = coreAtH(c, now); if (zt == null) return "";
       var lbl = (zt >= dayStart && zt < dayEnd) ? HHMM(new Date(zt)) : (zt < dayEnd + 86400000 ? "明日 " + HHMM(new Date(zt)) : (new Date(zt).getMonth() + 1) + "/" + new Date(zt).getDate() + " " + HHMM(new Date(zt)));
