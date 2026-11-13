@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="d0f0e7d4f2">
+<meta name="build" content="b05c62a339">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -380,6 +380,17 @@ html.lowpower .surgeflag.blink{animation:none}
 body.chartfull{overflow:hidden}
 canvas{display:block;width:100%;height:340px;background:linear-gradient(180deg,#0c1116,#0e151c);border:1px solid #222c36;border-radius:13px;touch-action:none;cursor:grab}
 canvas.dragging{cursor:grabbing}
+.helpbtn{border-color:rgba(227,179,65,.55)!important;color:#e8cf8a!important;font-weight:700}
+.helpsheet{position:fixed;inset:0;z-index:80;background:rgba(5,8,11,.72);display:flex;align-items:flex-end;justify-content:center}
+.helpsheet[hidden]{display:none}
+.helpbox{background:#10161d;border:1px solid #2b3641;border-radius:16px 16px 0 0;max-width:640px;width:100%;max-height:86vh;overflow:auto;padding:16px 16px 24px;color:#dbe4ec}
+.helpbox h3{margin:0 0 4px;font-size:16px;color:#f0e2b6}
+.helpbox .hrow{display:flex;gap:9px;padding:8px 0;border-bottom:1px solid #1d262f;align-items:flex-start}
+.helpbox .hrow i{flex:none;width:11px;height:11px;border-radius:3px;margin-top:4px}
+.helpbox .hrow b{color:#eef3f8}
+.helpbox .hrow span{font-size:13px;line-height:1.55;color:#b9c5d0}
+.helpbox .hsec{margin:14px 0 2px;font-size:12px;letter-spacing:.08em;color:#8fa1b1}
+.helpclose{float:right}
 .guardbar{margin:6px 0 2px;padding:7px 10px;border-radius:8px;background:rgba(255,181,71,.13);border:1px solid rgba(255,181,71,.45);color:#ffd98a;font-size:12.5px;line-height:1.5}
 .guardbar b{color:#ffb547}
 .guardbar.calm{background:rgba(120,140,160,.10);border-color:rgba(120,140,160,.30);color:#aeb9c4}
@@ -710,7 +721,7 @@ html[data-theme="aurora"] .mini{background:rgba(5,7,15,.92)}
     <div class="combo" id="comboRow" role="group" aria-label="組み合わせ（インジケーターのチップを一括で切り替える）"><span class="cl">組み合わせ<small id="comboNow" class="cn" aria-live="polite"></small></span><span id="comboBtns" class="cb"></span></div>
     <div class="tfcap">時間足｜下段＝ダウ理論のトレンドとST（スーパートレンド）の向き（別の見方なので、逆を向くことがあります）</div>
     <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
-    <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button><button type="button" id="fvgBtn" class="seg on" aria-pressed="true" title="FVG（3本の足で、1本目と3本目の値幅が重ならない帯）を表示"><i style="height:8px;background:linear-gradient(90deg,rgba(66,213,156,.55) 50%,rgba(255,105,105,.55) 50%)"></i>FVG</button><button type="button" id="spBtn" class="seg on" aria-pressed="true" title="要人発言の予定（チャート内の縦線と札）を表示"><i style="background:#b9a6ff"></i>発言</button><button type="button" id="planBtn" class="seg on" aria-pressed="true" title="リスク計算のプラン（エントリー・SL・TP）をチャートに描く"><i style="background:#e3b341"></i>プラン</button><button type="button" id="guardBtn" class="seg on" aria-pressed="true" title="エントリー前の注意（重要指標・発言・急変）をチャートの上に表示"><i style="background:#ffb547"></i>ガード</button><button type="button" id="recBtn" class="seg on" aria-pressed="true" title="「このプランで記録」ボタンの表示"><i style="background:#42d59c"></i>記録</button><button type="button" class="gq" data-gloss="fvg:fvg-01" aria-label="FVG詳説：FVGとは">?</button></div>
+    <div class="matoggles" role="group" aria-label="チャートの表示"><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button><button type="button" id="fvgBtn" class="seg on" aria-pressed="true" title="FVG（3本の足で、1本目と3本目の値幅が重ならない帯）を表示"><i style="height:8px;background:linear-gradient(90deg,rgba(66,213,156,.55) 50%,rgba(255,105,105,.55) 50%)"></i>FVG</button><button type="button" id="spBtn" class="seg on" aria-pressed="true" title="要人発言の予定（チャート内の縦線と札）を表示"><i style="background:#b9a6ff"></i>発言</button><button type="button" id="planBtn" class="seg on" aria-pressed="true" title="リスク計算のプラン（エントリー・SL・TP）をチャートに描く"><i style="background:#e3b341"></i>プラン</button><button type="button" id="guardBtn" class="seg on" aria-pressed="true" title="エントリー前の注意（重要指標・発言・急変）をチャートの上に表示"><i style="background:#ffb547"></i>ガード</button><button type="button" id="recBtn" class="seg on" aria-pressed="true" title="「このプランで記録」ボタンの表示"><i style="background:#42d59c"></i>記録</button><button type="button" class="gq" data-gloss="fvg:fvg-01" aria-label="FVG詳説：FVGとは">?</button><button type="button" id="btnHelp" class="seg helpbtn">？ ボタンの説明</button></div><div id="btnHelpSheet" class="helpsheet" hidden><div class="helpbox"><button type="button" id="btnHelpClose" class="seg helpclose">閉じる</button><h3>チャートのボタンの説明</h3><div class="sub">このダッシュボードに実際にあるボタンだけを説明します。表示のボタンは押すたびにオン／オフが切り替わり、状態は保存されます。</div><div id="btnHelpList"></div></div></div>
     <div id="lvList" class="lvlist" role="group" aria-label="水平線を1本ずつ消す・戻す" hidden></div>
     <div id="chNow" class="chnow" role="group" aria-label="時間足ごとのチャネル" hidden></div>
     <div id="fibNow" class="fibnow" role="status" hidden></div>
@@ -4920,6 +4931,44 @@ function renderGuard(){
   bar.hidden=false;
 }
 setInterval(renderGuard,5000);
+const BTN_HELP=[
+ ['ma','sma','SMA（単純移動平均）','#f5d76e','一定期間の終値の平均の線。価格が線の上か下かで、地合いの向きを見る基本の線です。期間は時間足ごとに決まっています。'],
+ ['ma','ema','EMA（指数移動平均）','linear-gradient(90deg,#ff8fd1,#3d8bff)','新しい価格を重く見た移動平均。10・20は短期の押し目・戻りの目安、80・200は大きな流れと節目を見る線です。'],
+ ['ma','st','スーパートレンド','linear-gradient(90deg,#42d59c 50%,#ff6969 50%)','ATR（値幅）から引く線。足の下に緑で出れば上昇トレンド、上に赤で出れば下降トレンドの目安です。'],
+ ['ma','rsi','RSI(14)','#b48cff','チャート下の別枠に出ます。70以上は買われすぎ、30以下は売られすぎの目安です。'],
+ ['ma','atr','ATR(14)','#ffa94d','チャート下の別枠に出ます。値動きの大きさ（ボラティリティ）の線で、損切り幅の計算にも使っています。'],
+ ['ma','fib','フィボナッチ','#ffd666','直近の上昇・下落に対する押し目・戻りの目安の線（38.2%・半値・61.8%）を描きます。'],
+ ['ma','ch','チャネル','#4fc3f7','値動きを挟む2本の斜め線（上弦・下弦）。価格がチャネルのどこにいるかも情報欄に出ます。'],
+ ['ma','swingN','直近高値・安値','linear-gradient(90deg,#42d59c 50%,#ff6969 50%)','ダウ理論の判定に使う、直近の山（高値）・谷（安値）の印と価格です。切り上げ・切り下げを矢印で示します。'],
+ ['ma','swingP','前回高値・安値','#93a0ad','1つ前の山・谷。直近と比べて高値・安値が切り上がったか、切り下がったかを見るための印です。'],
+ ['ma','gmmaS','GMMA短期','#5cc8ff','短期のEMAの束。束の広がりと向きで勢いを見ます（最初は非表示）。'],
+ ['ma','gmmaL','GMMA長期','#ff6b6b','長期のEMAの束。短期組の束との上下関係でトレンドを見ます（最初は非表示）。'],
+ ['ma','big','大口決済の兆候','#ffb547','出来高の急増などから、大口の決済・買い戻しの兆候があった足に印を付けます（ゴールドのみ）。'],
+ ['btn','lvBtn','水平線','linear-gradient(90deg,#ff6969 50%,#42d59c 50%)','過去に何度も止まった価格の線。赤は抵抗（上値の壁）、緑は支持（下値の支え）。情報欄のチップで1本ずつ消したり戻したりできます。'],
+ ['btn','tlBtn','トレンドライン','linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)','高値同士・安値同士を結んだ斜め線。シアンは上昇、紫は下降です。'],
+ ['btn','fvgBtn','FVG','linear-gradient(90deg,rgba(66,213,156,.55) 50%,rgba(255,105,105,.55) 50%)','3本の足の値幅が重ならない「窓」の帯。価格が戻って埋めに来やすい場所です。詳しくは横の「？」ボタンで読めます。'],
+ ['btn','spBtn','発言','#b9a6ff','要人発言の予定時刻に、チャート内に縦線と札を出します。急変の印はこのボタンと無関係に常時出ます。'],
+ ['btn','planBtn','プラン','#e3b341','ロット計算のエントリー・SL・TPを、チャートに線と帯で描きます。SLとTPの線は指でドラッグして動かせます（動かすと自動入力が外れて、手入力のプランになります）。'],
+ ['btn','guardBtn','ガード','#ffb547','チャートのすぐ上の注意帯の表示です。重要指標・発言が60分以内、急変が30分以内にある時だけ警告し、何も無い時は次のイベントまでの時間が出ます。'],
+ ['btn','recBtn','記録','#42d59c','「このプランで記録」ボタン（ロット計算の下）の表示・非表示です。記録したプランはチェック欄の下に残ります。']
+];
+function renderBtnHelp(){
+  const el=$('btnHelpList');if(!el)return;
+  const has=(t,k)=>t==='ma'?(k==='ema'?(typeof EMAS!=='undefined'&&EMAS.length>0):(state.maOn&&k in state.maOn)):!!$(k);
+  let h='<div class="hsec">表示の切り替え（チャートの上のボタン）</div>';
+  BTN_HELP.filter(d=>has(d[0],d[1])).forEach(d=>{h+='<div class="hrow"><i style="background:'+d[3]+'"></i><div><b>'+d[2]+'</b><br><span>'+d[4]+'</span></div></div>'});
+  h+='<div class="hsec">チャートの操作</div>'
+   +'<div class="hrow"><i style="background:#8fa1b1"></i><div><b>時間足のボタン</b><br><span>5分足・15分足・1時間足など、表示する足の長さを切り替えます。</span></div></div>'
+   +'<div class="hrow"><i style="background:#8fa1b1"></i><div><b>ドラッグ／スワイプ</b><br><span>左右に動かすと前後の足へ移動します。速くはらうと勢いで流れます。上下は価格の表示位置をずらします。</span></div></div>'
+   +'<div class="hrow"><i style="background:#8fa1b1"></i><div><b>ピンチ（2本指）</b><br><span>広げると拡大、つまむと縮小します。チャート右端の価格の軸を上下にドラッグすると、価格の目盛りだけ拡大・縮小します。</span></div></div>'
+   +'<div class="hrow"><i style="background:#8fa1b1"></i><div><b>表示をリセット</b><br><span>ずらした表示や拡大を最初の状態に戻します。チャートをダブルタップ（2回続けてタップ）しても同じです。</span></div></div>'
+   +'<div class="hrow"><i style="background:#8fa1b1"></i><div><b>大きく表示</b><br><span>チャートを画面いっぱいに広げます。もう一度押すと戻ります。</span></div></div>'
+   +'<div class="hrow"><i style="background:#8fa1b1"></i><div><b>TradingViewで開く</b><br><span>いま見ている銘柄・時間足のチャートをTradingViewで開きます（別のタブ）。</span></div></div>';
+  el.innerHTML=h;
+}
+$('btnHelp').onclick=()=>{renderBtnHelp();$('btnHelpSheet').hidden=false};
+$('btnHelpClose').onclick=()=>{$('btnHelpSheet').hidden=true};
+$('btnHelpSheet').addEventListener('click',e=>{if(e.target===$('btnHelpSheet'))$('btnHelpSheet').hidden=true});
 chart.addEventListener('dblclick',()=>{resetView();state.hover=null;drawChart()});
 $('chartReset').onclick=()=>{resetView();state.hover=null;drawChart()};
 // チャートを画面いっぱいに（もう一度押すか Esc で戻る）
