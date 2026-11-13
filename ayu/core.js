@@ -533,13 +533,13 @@
      保存するので、その実際の名前も対象に入れる（ayu_ 付きの名前は、ホーム自身の設定と古いバックアップの読み込みのために残す） */
   var GROUPS = {
     display: [/^ayu_desk-layout$/, /^ayu_mkt-v1$/, /^ayu_wx-loc-v1$/, /^ayu_gloss-book$/, /^ayu_learn-[a-z]+-page$/, /^ayu_desk_eq_closed$/, /^ayu_td-display-v1$/, /^ayu_td-power$/,
-      /^ayu_(gold|usdjpy|btc)_(tf|levels|trend|fvg|ma|hidden_lv|ev_filter|dir|tv_layout|tv_sc_name|chart_src)$/, /^ayu_tv_via_shortcut$/,
-      /^(gold|usdjpy|btc|usoil|silver)_(tf|levels|trend|fvg|ma|hidden_lv|ev_filter|dir|tv_layout|tv_sc_name|chart_src)$/, /^tv_via_shortcut$/],
+      /^ayu_(gold|usdjpy|btc)_(tf|levels|trend|fvg|speech|plan|guard|rec|ma|hidden_lv|ev_filter|dir|tv_layout|tv_sc_name|chart_src)$/, /^ayu_tv_via_shortcut$/,
+      /^(gold|usdjpy|btc|usoil|silver)_(tf|levels|trend|fvg|speech|plan|guard|rec|ma|hidden_lv|ev_filter|dir|tv_layout|tv_sc_name|chart_src)$/, /^tv_via_shortcut$/],
     notify: [/^ayu_desk_sound$/, /^ayu_desk_notify$/, /^ayu_(gold|usdjpy|btc)_alerts$/, /^ayu_td-notify-v1$/,
       /^desk_sound$/, /^(gold|usdjpy|btc|usoil|silver)_alerts$/],
     trading: [/^ayu_(gold|usdjpy|btc)_(capital|risk_pct|lot_manual|sl_mult|rr|auto_risk|broker|contract|tp_basis|tp_basis_v|checks|xm_.*|xs_.*)$/, /^ayu_pt-v1$/,
       /^(gold|usdjpy|btc|usoil|silver)_(capital|risk_pct|risk_yen|risk_mode|lot_manual|sl_mult|rr|auto_risk|broker|contract|tp_basis|tp_basis_v|checks|xm_.*|xs_.*)$/,
-      /^ayu_td-journal-v1$/, /^ayu_td-daily-v1$/, /^ayu_td-signals-v1$/, /^ayu_td-checks-v1$/, /^ayu_td-risk-v1$/,
+      /^ayu_td-journal-v1$/, /^td-planlog-v1$/, /^ayu_td-daily-v1$/, /^ayu_td-signals-v1$/, /^ayu_td-checks-v1$/, /^ayu_td-risk-v1$/,
       /^ayu_td_kakeibo_v1$/, /^ayu_td_kakeibo_loans_v1$/, /^ayu_td_kakeibo_assets_v1$/, /^ayu_td_kakeibo_hcguide_v1$/, /^ayu_td_tax_v1$/]
   };
   var CACHE = [/_auto_cache_final$/, /^ayu_quote-/];
