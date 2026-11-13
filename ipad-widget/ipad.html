@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="1a5939c512">
+<meta name="build" content="ae9750bbef">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3032,6 +3032,20 @@ window.TDFontApply();
       return;
     }
     var sc = key === "usdjpy" ? 1000 : 100, px = Math.round((L.raw - liveOffset(key)) * sc) / sc;
+    if ((key === "gold" || key === "silver") && L.spot && Date.now() - L.spotAt < 30000 && Math.abs(L.raw - L.spot) <= (key === "gold" ? 40 : 0.6)) {
+      // 補正後の値が最新のスポット測定から大きく外れ続けたら、較正の中央値が急変に追いついて
+      // いない証拠。3 tick 続いたら中央値を待たず、最新の測定（生値−スポット）で較正し直す
+      if (Math.abs(px - L.spot) > (key === "gold" ? 4 : 0.08)) {
+        L.driftN = (L.driftN || 0) + 1;
+        if (L.driftN >= 3) { L.offs = [[L.raw - L.spot, Date.now()]]; L.driftN = 0; px = Math.round((L.raw - liveOffset(key)) * sc) / sc; }
+      } else L.driftN = 0;
+    }
+    if ((key === "gold" || key === "silver") && L.spot && Date.now() - L.spotAt < 30000) {
+      // 急変時は金連動トークンの乖離が広がり、較正（中央値）が追いつくまで表示が現物から数ドル
+      // 遅れる。新しいスポットがある間は、補正後の値をスポット±10ドル（銀は±0.2）の外に出さない
+      var soft = key === "gold" ? 10 : 0.2;
+      if (px - L.spot > soft) px = Math.round((L.spot + soft) * sc) / sc; else if (L.spot - px > soft) px = Math.round((L.spot - soft) * sc) / sc;
+    }
     markets.forEach(function (mk) {
       var band = key === "gold" ? 30 : key === "silver" ? 0.6 : key === "btc" ? mk.price * 0.02 : 0.5;
       // 照合相手はカードの現在値。ただしゴールド／シルバーは、カードが古いファイル価格のままだと
@@ -3105,7 +3119,7 @@ window.TDFontApply();
   var liveSpotAt = 0;
   function liveSpotCalibrate() {
     if (!window.fetch || document.hidden) return;
-    var now = Date.now(); if (now - liveSpotAt < 60000) return; liveSpotAt = now;
+    var now = Date.now(); if (now - liveSpotAt < 20000) return; liveSpotAt = now;  // 20秒間隔：急変時にトークンの乖離が広がっても、較正が1分以上古くならないように
     [["gold", "XAU"], ["silver", "XAG"]].forEach(function (pair) {
       var key = pair[0];
       if (marketClosed(key)) return;

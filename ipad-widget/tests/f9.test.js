@@ -80,7 +80,11 @@ test("F9: ゴールド／シルバーの較正デッドロックを解く（ス�
     // パネル表示に依らない較正（1分間隔・liveWatch から呼ばれる）
     assert.match(src, /function liveSpotCalibrate\(\)/);
     assert.match(src, /liveSpotCalibrate\(\);/);  // liveWatch からの呼び出し
-    assert.match(src, /now - liveSpotAt < 60000/);
+    assert.match(src, /now - liveSpotAt < 20000/);
+    // 急変時のソフトクランプ：新しいスポットがある間、補正後の値はスポット±10ドル（銀±0.2）の外に出ない
+    assert.match(src, /var soft = key === "gold" \? 10 : 0\.2;/);
+    // 較正ドリフトの即時修正：補正後の値がスポットから大きく外れた tick が3回続いたら、最新の測定で較正し直す
+    assert.match(src, /if \(L\.driftN >= 3\) \{ L\.offs = \[\[L\.raw - L\.spot, Date\.now\(\)\]\]; L\.driftN = 0;/);
     assert.match(src, /\[\["gold", "XAU"\], \["silver", "XAG"\]\]/);
     assert.match(src, /liveCalibrate\(key, \+j\.price\)/);
   }
