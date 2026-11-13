@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="3c0b04c618">
+<meta name="build" content="b2fd384466">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1606,6 +1606,14 @@ async function closedSpot(){
   state.health.spot=true;state.lastOk=Date.now();state.nextSpot=Date.now()+INTERVALS.spot;
   setStatus('live','休場中');showError('');if(changed){saveCache();renderAll()}
 }
+// スポットの出どころの合議：Gold API と Swissquote が大きく食い違うときは銀行フィード（Swissquote）を正とする
+// （Gold API は速い相場で遅れて乖離することがある。2026-11-13夜の実測：Gold API 3895.4／Swissquote 3887.3 で約8ドルの差）
+function spotConsensus(apiPx,apiAt,sqPx,sqAt,thresh){
+  if(apiPx&&sqPx)return Math.abs(apiPx-sqPx)>thresh?[sqPx,sqAt,'Swissquote']:[apiPx,apiAt,'Gold API'];
+  if(apiPx)return[apiPx,apiAt,'Gold API'];
+  if(sqPx)return[sqPx,sqAt,'Swissquote'];
+  return[0,0,''];
+}
 async function refreshSpot(){
   if(mktClosed&&!IS_BTC){try{await closedSpot()}catch(e){state.nextSpot=Date.now()+15000}return}
   if(IS_OIL){
@@ -1681,13 +1689,11 @@ async function refreshSpot(){
   }
   try{
     let usd=0,jpyOz=0,fx=0,asof=Date.now(),freshness='fresh',src='';
-    // 1) gold-api.com（ブラウザから直接・最も新しい）
-    try{const g=await getJSON(URLS.goldApi,8000);usd=n(g.price);asof=toMs(g.updatedAt)||Date.now();src='Gold API'}catch{}
-    // 1b) Swissquote の公開レート（スポットの売値・買値の中値）
-    if(!usd){try{
-      const q=await getJSON(URLS.sqSpot,8000),p=q?.[0]?.spreadProfilePrices?.[0];
-      if(p&&n(p.bid)&&n(p.ask)){usd=(n(p.bid)+n(p.ask))/2;asof=toMs(q[0].ts)||Date.now();src='Swissquote'}
-    }catch{}}
+    // 1) gold-api と Swissquote を両方取り、合議で決める（大きく食い違うときは Swissquote）
+    let apiPx=0,apiAt=0,sqPx=0,sqAt=0;
+    try{const g=await getJSON(URLS.goldApi,8000);apiPx=n(g.price);apiAt=toMs(g.updatedAt)||Date.now()}catch{}
+    try{const q=await getJSON(URLS.sqSpot,8000),p=q?.[0]?.spreadProfilePrices?.[0];if(p&&n(p.bid)&&n(p.ask)){sqPx=(n(p.bid)+n(p.ask))/2;sqAt=toMs(q[0].ts)||Date.now()}}catch{}
+    {const pk=spotConsensus(apiPx,apiAt,sqPx,sqAt,IS_SILVER?0.05:1.5);usd=pk[0];if(pk[1])asof=pk[1];src=pk[2]}
     // 2) XAUS
     let xaus=null;
     if(!usd){try{xaus=await getJSON(URLS.xausSpot+'&fresh='+Math.floor(Date.now()/30000))}catch{}}
