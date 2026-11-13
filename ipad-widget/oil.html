@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="5a973c9494">
+<meta name="build" content="a6cad115ba">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1575,12 +1575,21 @@ function spotConsensus(apiPx,apiAt,sqPx,sqAt,thresh){
   if(sqPx)return[sqPx,sqAt,'Swissquote'];
   return[0,0,''];
 }
+// サイト照合：端末の回線で Swissquote に届かず Gold API だけが取れているとき、合議は単独値に
+// なり、遅れた Gold API の水準に張り付く（XM との数ドルの差の主因）。サイト側はサーバーが
+// Swissquote 優先で算出しているので、その値が新しく（8分以内）大きく食い違う場合は正とする。
+function siteCrossCheck(usd,src,sitePx,siteAt,thresh){
+  if(!usd||src!=='Gold API'||!sitePx||!siteAt)return 0;
+  if(Date.now()-siteAt>=8*60000)return 0;
+  return Math.abs(usd-sitePx)>thresh?sitePx:0;
+}
 async function refreshSpotSilver(){
   let px=0,asof=Date.now(),src='';
   let apiPx=0,apiAt=0,sqPx=0,sqAt=0;
   try{const g=await getJSON(URLS.silverApi,8000);apiPx=n(g.price);apiAt=toMs(g.updatedAt)||Date.now()}catch{}
   try{const q=await getJSON(URLS.sqSilver,8000),p=q?.[0]?.spreadProfilePrices?.[0];if(p&&n(p.bid)&&n(p.ask)){sqPx=(n(p.bid)+n(p.ask))/2;sqAt=toMs(q[0].ts)||Date.now()}}catch{}
   {const pk=spotConsensus(apiPx,apiAt,sqPx,sqAt,0.05);px=pk[0];if(pk[1])asof=pk[1];src=pk[2]}
+  if(px&&src==='Gold API'&&!sqPx){try{const g=(await getSite()).instruments.silver;const cx=siteCrossCheck(px,src,n(g.price),toMs(g.asOf),0.05);if(cx){px=cx;asof=toMs(g.asOf);src='照合（サイト・Swissquote優先）'}}catch{}}
   if(!px){const g=(await getSite()).instruments.silver;px=n(g.price);asof=toMs(g.asOf)||Date.now();src='サイト（定期取得）'}
   if(!px)throw new Error('SILVER price missing');
   return {px,asof,src};
@@ -1761,6 +1770,7 @@ async function refreshSpot(){
     try{const g=await getJSON(URLS.goldApi,8000);apiPx=n(g.price);apiAt=toMs(g.updatedAt)||Date.now()}catch{}
     try{const q=await getJSON(URLS.sqSpot,8000),p=q?.[0]?.spreadProfilePrices?.[0];if(p&&n(p.bid)&&n(p.ask)){sqPx=(n(p.bid)+n(p.ask))/2;sqAt=toMs(q[0].ts)||Date.now()}}catch{}
     {const pk=spotConsensus(apiPx,apiAt,sqPx,sqAt,IS_SILVER?0.05:1.5);usd=pk[0];if(pk[1])asof=pk[1];src=pk[2]}
+    if(usd&&src==='Gold API'&&!sqPx){try{const g=(await getSite()).instruments[IS_SILVER?'silver':'gold'];const cx=siteCrossCheck(usd,src,n(g.price),toMs(g.asOf),IS_SILVER?0.05:1.5);if(cx){usd=cx;asof=toMs(g.asOf);src='照合（サイト・Swissquote優先）'}}catch{}}
     // 2) XAUS
     let xaus=null;
     if(!usd){try{xaus=await getJSON(URLS.xausSpot+'&fresh='+Math.floor(Date.now()/30000))}catch{}}
