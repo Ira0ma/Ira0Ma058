@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-ayu.png">
 <link rel="icon" type="image/png" href="icon-ayu.png">
-<meta name="build" content="01f2b00ed0">
+<meta name="build" content="d133a74d63">
 <title>Desk of Ayu</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -531,6 +531,10 @@ html:not(.lowpower) .mreg .rg-dot { transition: left .6s ease; }
 .isess-chips { display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 10.5px; color: var(--ink-3); margin-top: 3px; }
 .isess-chips .done { opacity: .45; }
 .isess-chips b { color: var(--ink-2); font-weight: 600; }
+.isess-chips[hidden] { display: none; }
+.isess-more { float: right; color: var(--gold); font-size: 10.5px; }
+#tabpanel #ind .ind-list { min-height: 44px; }
+#ind-sess { cursor: pointer; }
 .ind-list .gloss { white-space: normal; color: var(--ink-2); font-size: 11.5px; line-height: 1.55; }
 .gloss-hint { font-size: 9.5px; color: var(--gold); border: 1px solid rgba(var(--gold-rgb),.5); border-radius: 5px; padding: 0 4px; margin-left: 6px; vertical-align: 2px; white-space: nowrap; }
 .ind-foot .more { margin-top: 0; }
@@ -5061,14 +5065,16 @@ window.TD_THEME = (function () {
     if (calEvents) { var fut = calEvents.filter(function (e) { return e.stars === 3 && e.t > now; }).sort(function (a, b) { return a.t - b.t; }); if (fut.length) nx = +fut[0].t; }
     if (nx && nx >= dayStart && nx < dayEnd) html += '<i class="isess-eve" style="left:' + ((nx - dayStart) / 864000).toFixed(2) + '%"></i>';
     html += '<i class="isess-now" style="left:' + ((now - dayStart) / 864000).toFixed(2) + '%"></i></div>';
-    html += '<div class="isess-line">' + (maint ? "いまはCMEメンテナンス中（値が飛びやすい時間帯）" : open.length ? "いまは" + open.join(" と ") + "の時間帯" : "いまは主要市場が休みの静かな時間帯") + "</div>";
-    html += '<div class="isess-chips">' + CORE_H.map(function (c) {
+    html += '<div class="isess-line">' + (maint ? "いまはCMEメンテナンス中（値が飛びやすい時間帯）" : open.length ? "いまは" + open.join(" と ") + "の時間帯" : "いまは主要市場が休みの静かな時間帯") + '<span class="isess-more">コア時間 ' + (box.__open ? "▴" : "▾") + "</span></div>";
+    html += '<div class="isess-chips"' + (box.__open ? "" : " hidden") + ">" + CORE_H.map(function (c) {
       var zt = coreAtH(c, now); if (zt == null) return "";
       var lbl = (zt >= dayStart && zt < dayEnd) ? HHMM(new Date(zt)) : (zt < dayEnd + 86400000 ? "明日 " + HHMM(new Date(zt)) : (new Date(zt).getMonth() + 1) + "/" + new Date(zt).getDate() + " " + HHMM(new Date(zt)));
       return '<span class="' + (zt <= now ? "done" : "") + '"><b>' + c.n + "</b> " + lbl + "</span>";
     }).filter(Boolean).join("") + "</div>";
     if (box.__h !== html) { box.innerHTML = html; box.__h = html; }
   }
+  var sessBox0 = document.getElementById("ind-sess");
+  if (sessBox0) sessBox0.addEventListener("click", function () { sessBox0.__open = !sessBox0.__open; renderIndSess(); });
   function renderIndReview() {
     var box = document.getElementById("ind-review"); if (!box || !calEvents) return;
     var day = tradingDay(new Date()), lines = [];
