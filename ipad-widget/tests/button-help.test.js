@@ -8,7 +8,7 @@ const AYU_GOLD = readFileSync(new URL("../../ayu/gold.html", import.meta.url), "
 
 for (const [name, src] of [["gold", GOLD], ["ayu/gold", AYU_GOLD]]) {
   test(`ボタンの説明 (${name}): ボタン・シート・一覧生成がそろっている`, () => {
-    assert.match(src, /id="btnHelp" class="seg helpbtn"/);
+    assert.match(src, /id="btnHelp" class="helpbtn">？ 説明</);
     assert.match(src, /id="btnHelpSheet" class="helpsheet" hidden/);
     assert.match(src, /id="btnHelpList"/);
     assert.match(src, /const BTN_HELP=\[/);
