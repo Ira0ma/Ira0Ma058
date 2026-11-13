@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-ayu.png">
 <link rel="icon" type="image/png" href="icon-ayu.png">
-<meta name="build" content="de169e6d08">
+<meta name="build" content="19672372a2">
 <title>Desk of Ayu</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3694,30 +3694,46 @@ window.TD_THEME = (function () {
         .catch(function () { finish(); });
     }, fail, { timeout: 15000, maximumAge: 30 * 60000 });
   }
-  var wxLoaded = false, wxAt = 0;
+  var wxLoaded = false, wxAt = 0, wxAutoRetried = false;
+  function wxFetch(url) {  // 応答が固まったままの接続で天気だけ止まらないよう、8秒で見切る
+    if (!window.AbortController) return fetch(url);
+    var ctl = new AbortController(), to = setTimeout(function () { ctl.abort(); }, 8000);
+    return fetch(url, { signal: ctl.signal }).finally(function () { clearTimeout(to); });
+  }
+  function wxPaint(v) {  // v = { temp, code, hour, hi, lo, rows, at }
+    var q = function (k) { return document.querySelector('[data-wx="' + k + '"]'); };
+    q("temp").textContent = v.temp;
+    q("desc").textContent = DESC(v.code);
+    var main = document.querySelector("[data-wx-main]");
+    main.setAttribute("viewBox", "0 0 26 22");
+    main.innerHTML = ICON[codeIcon(v.code, v.hour)];
+    q("hi").textContent = v.hi;
+    q("lo").textContent = v.lo;
+    renderHours(v.rows);
+    q("at").textContent = "時間ごとの気温は予報・" + updAt(new Date(v.at));
+  }
   function loadWeather() {
     if (!window.fetch) return;
     showCity();
-    fetch("https://api.open-meteo.com/v1/forecast?latitude=" + loc.lat + "&longitude=" + loc.lon + "&current=temperature_2m,weather_code&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1")
+    var wxLast = null;
+    try { wxLast = JSON.parse(localStorage.getItem("wx-last-v1") || "null"); } catch (e) {}
+    if (!wxLoaded && wxLast && wxLast.name === loc.name) wxPaint(wxLast);  // 前回取れた天気を先に出しておく（取得中も「--」にしない）
+    wxFetch("https://api.open-meteo.com/v1/forecast?latitude=" + loc.lat + "&longitude=" + loc.lon + "&current=temperature_2m,weather_code&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1")
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (j) {
-        var q = function (k) { return document.querySelector('[data-wx="' + k + '"]'); };
-        q("temp").textContent = Math.round(j.current.temperature_2m);
-        q("desc").textContent = DESC(j.current.weather_code);
-        var main = document.querySelector("[data-wx-main]");  // the big icon follows the current weather too
-        main.setAttribute("viewBox", "0 0 26 22");
-        main.innerHTML = ICON[codeIcon(j.current.weather_code, j.current.time ? +j.current.time.slice(11, 13) : new Date().getHours())];  // local hour at that place
-        q("hi").textContent = Math.round(j.daily.temperature_2m_max[0]);
-        q("lo").textContent = Math.round(j.daily.temperature_2m_min[0]);
-        renderHours([10, 13, 16, 19, 22].map(function (hr) {
-          return [hr, codeIcon(j.hourly.weather_code[hr], hr), Math.round(j.hourly.temperature_2m[hr])];
-        }));
-        wxLoaded = true; wxAt = Date.now(); srcMark("weather", true);
-        q("at").textContent = "時間ごとの気温は予報・" + updAt(new Date(wxAt));
+        var v = { name: loc.name, temp: Math.round(j.current.temperature_2m), code: j.current.weather_code,
+          hour: j.current.time ? +j.current.time.slice(11, 13) : new Date().getHours(),
+          hi: Math.round(j.daily.temperature_2m_max[0]), lo: Math.round(j.daily.temperature_2m_min[0]),
+          rows: [10, 13, 16, 19, 22].map(function (hr) { return [hr, codeIcon(j.hourly.weather_code[hr], hr), Math.round(j.hourly.temperature_2m[hr])]; }),
+          at: Date.now() };
+        wxPaint(v);
+        wxLoaded = true; wxAt = v.at; wxAutoRetried = false; srcMark("weather", true);
+        try { localStorage.setItem("wx-last-v1", JSON.stringify(v)); } catch (e) {}
       })
       .catch(function () {
         srcMark("weather", false);
-        if (!wxLoaded && !PREVIEW) document.querySelector('[data-wx="desc"]').innerHTML = "天気を取得できませんでした " + '<button type="button" class="retry" data-retry="weather">再読み込み</button>';
+        if (!wxLoaded && !wxAutoRetried) { wxAutoRetried = true; setTimeout(loadWeather, 6000); }  // 一度だけ自動で取り直す
+        if (!wxLoaded && !PREVIEW && !wxLast) document.querySelector('[data-wx="desc"]').innerHTML = "天気を取得できませんでした " + '<button type="button" class="retry" data-retry="weather">再読み込み</button>';
       });
   }
 
