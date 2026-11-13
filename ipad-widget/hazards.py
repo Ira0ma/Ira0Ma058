@@ -156,8 +156,45 @@ def pollen(old):
     return {"season": True, "date": day, "updated": int(time.time()), "cities": cities}
 
 
+
+def wx_icon(code, hour):
+    if code >= 51:
+        return "rain"
+    if code >= 3:
+        return "cloud"
+    if hour >= 18 or hour < 5:
+        return "moon"
+    return "part" if code >= 1 else "sun"
+
+
+def wxfallback(old):
+    # Direct Open-Meteo fetches from some home networks stall or fail; the desk then falls back to
+    # this copy, fetched here (in the Pages workflow) for every prefectural capital. Refreshed at
+    # most every 30 minutes; the client's own fetch stays the primary, live source.
+    if old and time.time() - old.get("updated", 0) < 1800:
+        print("weather-fallback: keeping the copy from", datetime.fromtimestamp(old["updated"], JST).strftime("%H:%M"))
+        return old
+    cities, fails = [], 0
+    for _code, name, lat, lon in CAPITALS:
+        try:
+            j = json.loads(get("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&current=temperature_2m,weather_code&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1" % (lat, lon), timeout=10))
+            cur = j["current"]
+            hour = int(cur["time"][11:13])
+            rows = [[h, wx_icon(j["hourly"]["weather_code"][h], h), round(j["hourly"]["temperature_2m"][h])] for h in (10, 13, 16, 19, 22)]
+            cities.append({"name": name, "lat": lat, "lon": lon, "temp": round(cur["temperature_2m"]),
+                           "code": cur["weather_code"], "hour": hour,
+                           "hi": round(j["daily"]["temperature_2m_max"][0]), "lo": round(j["daily"]["temperature_2m_min"][0]),
+                           "rows": rows})
+        except Exception:
+            fails += 1
+    print("weather-fallback:", len(cities), "cities,", fails, "failed")
+    if not cities:
+        raise RuntimeError("no weather data")
+    return {"updated": int(time.time()), "cities": cities}
+
 for name, fn in (("typhoon.json", lambda: {"updated": int(time.time()), "items": typhoons()}),
-                 ("pollen.json", lambda: pollen(prev("pollen.json")))):
+                 ("pollen.json", lambda: pollen(prev("pollen.json"))),
+                 ("weather-fallback.json", lambda: wxfallback(prev("weather-fallback.json")))):
     try:
         save(name, fn())
     except Exception as e:

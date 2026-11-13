@@ -3604,8 +3604,23 @@ window.TDFontApply();
       .catch(function () {
         srcMark("weather", false);
         if (!wxLoaded && !wxAutoRetried) { wxAutoRetried = true; setTimeout(loadWeather, 6000); }  // 一度だけ自動で取り直す
-        if (!wxLoaded && !PREVIEW && !wxLast) document.querySelector('[data-wx="desc"]').innerHTML = "天気を取得できませんでした " + '<button type="button" class="retry" data-retry="weather">再読み込み</button>';
+        wxFallback();  // 直接取れないときは、サイト側で定期取得した天気（同じ配信元）で出す
       });
+  }
+  function wxFailUI() {
+    if (!wxLoaded && !PREVIEW && !wxLast) document.querySelector('[data-wx="desc"]').innerHTML = "天気を取得できませんでした " + '<button type="button" class="retry" data-retry="weather">再読み込み</button>';
+  }
+  function wxFallback() {
+    if (wxLoaded) return;
+    fetch("weather-fallback.json?t=" + Date.now()).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (fbj) {
+      if (wxLoaded) return;
+      var best = null, bd = 1e9;
+      (fbj.cities || []).forEach(function (c) { var d = Math.abs(c.lat - loc.lat) + Math.abs(c.lon - loc.lon); if (d < bd) { bd = d; best = c; } });
+      if (!best || bd > 1.2) { wxFailUI(); return; }
+      var v = { name: loc.name, temp: best.temp, code: best.code, hour: best.hour, hi: best.hi, lo: best.lo, rows: best.rows, at: (fbj.updated || 0) * 1000 };
+      wxPaint(v); wxLoaded = true; wxAt = v.at; srcMark("weather", true);
+      try { localStorage.setItem("wx-last-v1", JSON.stringify(v)); } catch (e) {}
+    }).catch(function () { wxFailUI(); });
   }
 
   /* ---------- earthquakes ----------
