@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="c84ba8c8e1">
+<meta name="build" content="ee149fae2c">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -325,9 +325,17 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .uptag{font-size:10px;color:#b9a6ff;border:1px solid #b9a6ff;border-radius:5px;padding:0 4px;white-space:nowrap}
 .sessbox{margin-top:12px}
 .sessbar{position:relative;height:18px;background:#121820;border-radius:6px;overflow:hidden;margin-top:6px}
-.sessband{position:absolute;top:0;height:100%;opacity:.5}
+.sesswrap{position:relative;margin-top:15px}
+.sesswrap .sessbar{margin-top:0}
+.sessflag{position:absolute;top:-14px;transform:translateX(-50%);font-size:9.5px;font-weight:700;color:#fff;font-style:normal;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,.85);z-index:2}
+.sessband{position:absolute;top:0;height:100%;opacity:.26}
+.sessband.cur{opacity:.95;filter:brightness(1.12)}
 .sessband.maint{opacity:.9}
-.sessnow{position:absolute;top:0;height:100%;width:2px;background:#fff}
+.sessnow{position:absolute;top:0;height:100%;width:3px;background:#fff;box-shadow:0 0 4px rgba(255,255,255,.9)}
+.sessnowline{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.sessima{color:var(--gold2);font-weight:700}
+.sesspill{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:1px 9px;font-weight:700;color:#e8e4da}
+.sesspill i{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none}
 .sesseve{position:absolute;top:0;height:100%;width:2px;background:#ff6969}
 .sesscore{position:absolute;top:0;height:100%;width:2px;background:var(--gold2)}
 .sessscale{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:2px}
@@ -4674,11 +4682,11 @@ const SESS_DEF=[{n:'東京',z:'Asia/Tokyo',o:[9,0],c:[18,0],col:'#38b6ff'},{n:'�
 const CORE_DEF=[{n:'仲値',z:'Asia/Tokyo',h:9,m:55,g:'東京',d:'ドル円の基準レート。実需の売買が集中する'},{n:'アーリーロンドン',z:'Europe/London',h:7,m:0,g:'ロンドン',d:'欧州勢の先行フローが入り始める'},{n:'ロンドン開始',z:'Europe/London',h:8,m:0,g:'ロンドン',d:'欧州市場の本格オープン'},{n:'LBMA AM',z:'Europe/London',h:10,m:30,g:'ロンドン',d:'金の基準価格を決める競売（午前）'},{n:'LBMA PM',z:'Europe/London',h:15,m:0,g:'ロンドン',d:'金の基準価格を決める競売（午後）'},{n:'ロンフィク',z:'Europe/London',h:16,m:0,g:'ロンドン',d:'為替の基準レート（WM/R）が決まる'},{n:'NYカット',z:'America/New_York',h:10,m:0,g:'NY',d:'通貨オプションの権利行使の締め'},{n:'COMEX清算',z:'America/New_York',h:13,m:30,g:'NY',d:'金先物の清算値が決まる'},{n:'NYクローズ',z:'America/New_York',h:17,m:0,g:'NY',d:'1日の境目。直後の1時間はCMEメンテ'}];
 function sessWin(z,o,c,refTs){const p=tzParts(z,refTs);const dow=new Date(Date.UTC(p.year,p.month-1,p.day)).getUTCDay();if(dow===0||dow===6)return null;const st=zoneTs(z,p.year,p.month,p.day,o[0],o[1]);let en=zoneTs(z,p.year,p.month,p.day,c[0],c[1]);if(en<=st)en+=86400000;return[st,en]}
 function sessSegs(devZ,now){
-  const dp=tzParts(devZ,now),dayStart=zoneTs(devZ,dp.year,dp.month,dp.day,0,0),dayEnd=dayStart+86400000,segs=[],open=[];let maint=false;
-  const push=(st,en,n,col,m)=>{if(now>=st&&now<en){if(m)maint=true;else if(!open.includes(n))open.push(n)}const a=Math.max(st,dayStart),b=Math.min(en,dayEnd);if(b>a)segs.push({n,col,m:!!m,l:(a-dayStart)/864000,w:(b-a)/864000})};
-  for(const sd of SESS_DEF)for(let dl=-1;dl<=0;dl++){const w=sessWin(sd.z,sd.o,sd.c,now+dl*86400000);if(w)push(w[0],w[1],sd.n,sd.col,0)}
+  const dp=tzParts(devZ,now),dayStart=zoneTs(devZ,dp.year,dp.month,dp.day,0,0),dayEnd=dayStart+86400000,segs=[],open=[],openInfo=[];let maint=false,maintEnd=0,nextStart=null;
+  const push=(st,en,n,col,m)=>{const cur=now>=st&&now<en;if(cur){if(m){maint=true;maintEnd=en}else if(!open.includes(n)){open.push(n);openInfo.push({n,col,en})}}const a=Math.max(st,dayStart),b=Math.min(en,dayEnd);if(b>a)segs.push({n,col,m:!!m,cur:cur&&!m,l:(a-dayStart)/864000,w:(b-a)/864000})};
+  for(const sd of SESS_DEF)for(let dl=-1;dl<=3;dl++){const w=sessWin(sd.z,sd.o,sd.c,now+dl*86400000);if(!w)continue;if(dl<=0)push(w[0],w[1],sd.n,sd.col,0);if(w[0]>now&&(!nextStart||w[0]<nextStart.ts))nextStart={n:sd.n,ts:w[0]}}
   for(let dl=-1;dl<=0;dl++){const w=sessWin('America/New_York',[17,0],[18,0],now+dl*86400000);if(w)push(w[0],w[1],'CMEメンテ','#5a6775',1)}
-  return{dayStart,dayEnd,segs,open,maint};
+  return{dayStart,dayEnd,segs,open,openInfo,maint,maintEnd,nextStart};
 }
 function coreAt(c,refTs){const p=tzParts(c.z,refTs);const dow=new Date(Date.UTC(p.year,p.month-1,p.day)).getUTCDay();if(dow===0||dow===6)return null;return zoneTs(c.z,p.year,p.month,p.day,c.h,c.m)}
 function coreToday(c,dayStart,dayEnd){for(let dl=-1;dl<=1;dl++){const ts=coreAt(c,dayStart+dl*86400000+43200000);if(ts!=null&&ts>=dayStart&&ts<dayEnd)return ts}return null}
@@ -4707,13 +4715,18 @@ function renderSessions(){
   let html='<div class="rh"><b>市場の時間帯とコア時間</b><span>端末の時刻</span></div>';
   if(!R.segs.length){html+='<div class="sub">週末は主要市場が休みです。</div>'}
   else{
-    html+='<div class="sessbar">'+R.segs.map(sg=>`<i class="sessband${sg.m?' maint':''}" style="left:${sg.l.toFixed(2)}%;width:${sg.w.toFixed(2)}%;background:${sg.col}" title="${esc(sg.n)}"></i>`).join('');
+    const pctS=(now-dayStart)/864000,flagLS=Math.min(96,Math.max(4,pctS));
+    html+='<div class="sesswrap"><i class="sessflag" style="left:'+flagLS.toFixed(2)+'%">▼ いま '+hhmm(now)+'</i><div class="sessbar">'+R.segs.map(sg=>`<i class="sessband${sg.m?' maint':''}${sg.cur?' cur':''}" style="left:${sg.l.toFixed(2)}%;width:${sg.w.toFixed(2)}%;background:${sg.col}" title="${esc(sg.n)}"></i>`).join('');
     CORE_DEF.forEach(c=>{const ts=coreToday(c,dayStart,dayEnd);if(ts!=null)html+=`<i class="sesscore" style="left:${((ts-dayStart)/864000).toFixed(2)}%" title="${esc(c.n)}"></i>`});
     if(ev&&ev.ts>=dayStart&&ev.ts<dayEnd)html+=`<i class="sesseve" style="left:${((ev.ts-dayStart)/864000).toFixed(2)}%" title="次の指標"></i>`;
-    html+=`<i class="sessnow" style="left:${((now-dayStart)/864000).toFixed(2)}%"></i></div>`;
+    html+=`<i class="sessnow" style="left:${((now-dayStart)/864000).toFixed(2)}%"></i></div></div>`;
     html+='<div class="sessscale"><span>0時</span><span>6時</span><span>12時</span><span>18時</span><span>24時</span></div>';
     html+='<div class="sessleg">'+SESS_DEF.map(sd=>`<span><i style="background:${sd.col}"></i>${sd.n}</span>`).join('')+'<span><i style="background:#5a6775"></i>CMEメンテ</span><span>白線＝いま／赤線＝次の指標／金の印＝コア時間</span></div>';
-    html+=`<div class="sub">${R.maint?'いまはCMEメンテナンス中（先物が止まり、値が飛びやすい時間帯）。':R.open.length?'いまは'+R.open.join(' と ')+'の時間帯。':'いまは主要市場が休みの静かな時間帯。'}</div>`;
+    {let pill,rest='';
+     if(R.maint){pill=`<span class="sesspill"><i style="background:#5a6775"></i>CMEメンテナンス中</span>`;rest=R.maintEnd?`あと ${dur(R.maintEnd-now)}で終了（先物が止まり、値が飛びやすい時間帯）`:'先物が止まり、値が飛びやすい時間帯'}
+     else if(R.open.length){pill=`<span class="sesspill">${R.openInfo.map(o=>`<i style="background:${o.col}"></i>${o.n}`).join(' ')}</span>`;const ce=R.openInfo.reduce((a,o)=>!a||o.en<a.en?o:a,null);if(R.nextStart&&(!ce||R.nextStart.ts<ce.en))rest=`あと ${dur(R.nextStart.ts-now)}で${R.nextStart.n}開始`;else if(ce)rest=`あと ${dur(ce.en-now)}で${ce.n}終了`}
+     else{pill=`<span class="sesspill"><i style="background:#8a93a3"></i>静かな時間帯</span>`;rest=R.nextStart?`次の${R.nextStart.n}まで あと ${dur(R.nextStart.ts-now)}`:'主要市場は休み'}
+     html+=`<div class="sub sessnowline"><span class="sessima">いま</span>${pill}${rest?`<span>${rest}</span>`:''}</div>`}
     const gd=tzParts(devZ,now).day%5===0;
     for(const g of['東京','ロンドン','NY']){
       const items=CORE_DEF.filter(c=>c.g===g).map(c=>{
