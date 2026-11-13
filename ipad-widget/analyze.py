@@ -652,6 +652,7 @@ def one(key, sym, spot_sym, fixture, prev=None):
     # futures-to-spot gap. Without a spot quote this hour, the last known gap is reused for a while.
     spot, shift, adjusted, hist = None, None, None, None
     spot_ts = None
+    pub_spot, pub_ts = None, None  # oil only: live ticker price for publication (no basis shift)
     if spot_sym and fixture is None and h1:
         hist = [h for h in SPOT_HIST.get(key, []) if h[0] > time.time() - SPOT_HIST_DAYS * 86400]
         SPOT_HIST[key] = hist
@@ -682,6 +683,19 @@ def one(key, sym, spot_sym, fixture, prev=None):
                 for r in rows:
                     r[1:] = [v + shift for v in r[1:]]
         adjusted = shift is not None
+    if key == "usoil" and fixture is None:
+        # Oil has no working spot quote (Swissquote's public feed returns no oil prices, so
+        # OIL_SPOT stays None and the candles keep their CL=F basis — the basis machinery above
+        # is deliberately not engaged for oil). For the published price only, use the OKX CL
+        # perpetual ticker: the same live reference the oil dashboard itself shows as its spot.
+        try:
+            t = get_json("https://www.okx.com/api/v5/market/ticker?instId=CL-USDT-SWAP")["data"][0]
+            b, a = float(t.get("bidPx") or 0), float(t.get("askPx") or 0)
+            pub_spot = (b + a) / 2 if b and a else float(t["last"])
+            pub_ts = int(int(t["ts"]) / 1000)
+            print(key, f"published price from OKX CL ticker {pub_spot}")
+        except Exception as e:
+            print(key, "okx ticker unavailable:", e)
     fill_gaps(m15, m5, 900)  # a 15m candle Yahoo left out is built from its three 5m candles
     widen_hours(m15, m5, sec=900)  # first the 15m candles from 5m, then the hours from both
     widen_hours(h1, m5, m15)
@@ -700,6 +714,8 @@ def one(key, sym, spot_sym, fixture, prev=None):
         # were basis-shifted onto it. The candle close above stays the fallback when no spot
         # quote answered this run (spot is None then), and the sanity check keeps the candle value.
         price, as_of = spot, spot_ts
+    elif pub_spot is not None and pub_ts:
+        price, as_of = pub_spot, pub_ts  # oil: the OKX CL ticker fetched above
     if key not in UTC_DAY and len(h1) > 24 * 60:
         d1 = ny_daily(h1)
         if key in CHECK:  # daily candles far outside the usual range: a bad tick would carry into weeks and months
