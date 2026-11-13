@@ -67,9 +67,16 @@ test("F9: ゴールド／シルバーの較正デッドロックを解く（ス�
     // ティックの異常値ゲート：カード値が古いファイル価格のままでも、新しいスポット値と帯内で一致すれば通す
     assert.match(src, /var okRef = Math\.abs\(px - mk\.price\) <= band \|\| \(\(key === "gold" \|\| key === "silver"\) && L\.spot && Date\.now\(\) - L\.spotAt < 60000 && Math\.abs\(px - L\.spot\) <= band\);/);
     assert.match(src, /var band = key === "gold" \? 30 : key === "silver" \? 0\.6 : key === "btc" \? mk\.price \* 0\.02 : 0\.5;/);
-    // スポット定期取得：カードが生値で動くまでは表示に使う（従来の mk.price 条件だとファイル価格のまま固まる）
-    assert.match(src, /if \(liveFresh\(key\) && mk\.live\) return;/);
+    // スポット定期取得：カードが生値で動くまでは表示に使う（従来の mk.price 条件だとファイル価格のまま固まる）。
+    // カードがスポットと帯の外まで離れていたら配信側が古い較正で止まっているとみて、スポットで再同期する
+    assert.match(src, /if \(liveFresh\(key\) && mk\.live && Math\.abs\(mk\.price - price\) <= \(key === "gold" \? 30 : 0\.6\)\) return;/);
     assert.doesNotMatch(src, /if \(liveFresh\(key\) && mk\.price\) return;/);
+    // 較正の標本は時刻つきで持ち、3分で失効させる（古い中央値が固まるのを防ぐ）
+    assert.match(src, /L\.offs\.push\(\[L\.raw - spot, nowC\]\)/);
+    assert.match(src, /L\.offs\.filter\(function \(s\) \{ return nowO - s\[1\] < 180000; \}\)/);
+    // 帯の外の tick が5回続けて互いに近ければ、較正を作り直して再同期する
+    assert.match(src, /if \(L\.rejN < 5\) return;/);
+    assert.match(src, /L\.offs = \[\]; L\.rejN = 0;/);
     // パネル表示に依らない較正（1分間隔・liveWatch から呼ばれる）
     assert.match(src, /function liveSpotCalibrate\(\)/);
     assert.match(src, /liveSpotCalibrate\(\);/);  // liveWatch からの呼び出し
