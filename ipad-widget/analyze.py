@@ -651,11 +651,13 @@ def one(key, sym, spot_sym, fixture, prev=None):
     # Futures trade above spot (XM/XS quote spot), so metals are moved onto the spot price by the
     # futures-to-spot gap. Without a spot quote this hour, the last known gap is reused for a while.
     spot, shift, adjusted, hist = None, None, None, None
+    spot_ts = None
     if spot_sym and fixture is None and h1:
         hist = [h for h in SPOT_HIST.get(key, []) if h[0] > time.time() - SPOT_HIST_DAYS * 86400]
         SPOT_HIST[key] = hist
         try:
             spot, src, ts = spot_price(spot_sym)
+            spot_ts = ts
             if not hist or ts > hist[-1][0]:
                 hist.append([ts, round(spot, 3)])
             shift = spot - (m1 or m15 or h1)[-1][4]
@@ -691,6 +693,13 @@ def one(key, sym, spot_sym, fixture, prev=None):
             check(key, price, h1, m15, as_of)
         except Exception as e:  # a log line must never cost the data
             print(key, "check failed:", e)
+    if spot is not None and spot_ts:
+        # Publish the live spot quote itself, not the freshest candle close. The futures feed
+        # behind the candles can trail the market by ten minutes or more (Yahoo GC=F is delayed),
+        # which left the site price for gold visibly behind the live spot even though the candles
+        # were basis-shifted onto it. The candle close above stays the fallback when no spot
+        # quote answered this run (spot is None then), and the sanity check keeps the candle value.
+        price, as_of = spot, spot_ts
     if key not in UTC_DAY and len(h1) > 24 * 60:
         d1 = ny_daily(h1)
         if key in CHECK:  # daily candles far outside the usual range: a bad tick would carry into weeks and months
