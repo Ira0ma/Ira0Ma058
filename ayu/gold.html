@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="8ac20fe56f">
+<meta name="build" content="adafc31222">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2286,12 +2286,13 @@ function loadMaOn(){let o={};try{o=JSON.parse(lsGet(LSP+'ma','{}'))||{}}catch{}
 const COMBOS=[['基本',['sma','e200','st','rsi'],{lv:1}],['流れ',['sma','e80','e200','st','ch','atr'],{lv:1,tl:1}],['GMMA',['gmmaS','gmmaL','sma','rsi'],{lv:1}],
   ['節目',['sma','fib','swingN','swingP','rsi'],{lv:1,fvg:1}],['シンプル',['sma'],{lv:1}]];
 function comboNow(){  // いまのチップが、どの組み合わせとちょうど同じか（どれでもなければ null＝カスタム）
+  if(MA_BTNS.every(b=>!state.maOn[b.key])&&!state.showLevels&&!state.showTrend&&!state.showFvg)return 'すっぴん';  // 全部オフ＝ローソク足だけ
   const c=COMBOS.find(([,ma,ex])=>MA_BTNS.every(b=>!!state.maOn[b.key]===ma.includes(b.key))&&state.showLevels===!!ex.lv&&state.showTrend===!!ex.tl&&state.showFvg===!!ex.fvg);
   return c?c[0]:null;
 }
 function renderCombo(){
   const now=comboNow(),el=$('comboBtns');if(!el)return;
-  const h=COMBOS.map(([n])=>`<button type="button" data-combo="${n}" class="${n===now?'on':''}" aria-pressed="${n===now}">${n}</button>`).join('');
+  const h=`<button type="button" data-omakase="1" title="利確判定の型に合う組み合わせを当てる（短期→流れ／デイ→基本／スイング→節目）">おまかせ</button>`+COMBOS.map(([n])=>`<button type="button" data-combo="${n}" class="${n===now?'on':''}" aria-pressed="${n===now}">${n}</button>`).join('')+`<button type="button" data-bare="1" class="${now==='すっぴん'?'on':''}" aria-pressed="${now==='すっぴん'}" title="ローソク足だけにする（チップ・線・発言・プランを全部オフ）">すっぴん</button>`;
   if(el.__h!==h){el.innerHTML=h;el.__h=h}
   $('comboNow').innerHTML='いま：<b>'+(now||'カスタム')+'</b>';
 }
@@ -2300,6 +2301,16 @@ function applyCombo(name){
   MA_BTNS.forEach(b=>state.maOn[b.key]=ma.includes(b.key));lsSet(LSP+'ma',JSON.stringify(state.maOn));
   state.showLevels=!!ex.lv;state.showTrend=!!ex.tl;state.showFvg=!!ex.fvg;
   [['lvBtn',state.showLevels],['tlBtn',state.showTrend],['fvgBtn',state.showFvg]].forEach(([id,on])=>{$(id).classList.toggle('on',on);$(id).setAttribute('aria-pressed',on)});
+  savePrefs();renderMaToggles();renderTfGrid();renderFibNow();renderGmmaNow();drawChart();
+}
+// おまかせ：利確判定の型に合う組み合わせを当てる（短期＝流れ／デイ＝基本／スイング＝節目）
+const PLAN_COMBO={short:'流れ',day:'基本',swing:'節目'};
+function applyOmakase(){applyCombo(PLAN_COMBO[state.tpBasis]||'基本')}
+// すっぴん：ローソク足だけにする（チップ全部・水平線・トレンドライン・FVG・発言・プランをオフ。ガードと記録は表示機能なので触らない）
+function applyBare(){
+  MA_BTNS.forEach(b=>state.maOn[b.key]=false);lsSet(LSP+'ma',JSON.stringify(state.maOn));
+  state.showLevels=false;state.showTrend=false;state.showFvg=false;state.showSpeech=false;state.showPlan=false;
+  [['lvBtn',0],['tlBtn',0],['fvgBtn',0],['spBtn',0],['planBtn',0]].forEach(([id,on])=>{$(id).classList.toggle('on',on);$(id).setAttribute('aria-pressed',on)});
   savePrefs();renderMaToggles();renderTfGrid();renderFibNow();renderGmmaNow();drawChart();
 }
 function renderMaToggles(){
@@ -4601,7 +4612,7 @@ $('maToggles').addEventListener('click',e=>{
   const k=btn.dataset.ma;state.maOn[k]=!state.maOn[k];lsSet(LSP+'ma',JSON.stringify(state.maOn));renderMaToggles();renderTfGrid();renderFibNow();renderGmmaNow();drawChart();
 });
 $('tlBtn').onclick=()=>{state.showTrend=!state.showTrend;$('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);savePrefs();drawChart();renderCombo()};
-$('comboBtns').onclick=e=>{const b=e.target.closest('[data-combo]');if(b)applyCombo(b.dataset.combo)};
+$('comboBtns').onclick=e=>{if(e.target.closest('[data-omakase]')){applyOmakase();return}if(e.target.closest('[data-bare]')){applyBare();return}const b=e.target.closest('[data-combo]');if(b)applyCombo(b.dataset.combo)};
 $('chNow').onclick=e=>{const b=e.target.closest('[data-tf]');if(b)setTf(b.dataset.tf)};
 $('mtfScore').onclick=e=>{const b=e.target.closest('[data-tf]');if(!b)return;setTf(b.dataset.tf);fastJump($('secChart'))};
 // 「?」：用語集のその用語を開く（トレードデスクの中ならデスクの用語集、単体ならデスクを開いて表示）
@@ -4860,7 +4871,9 @@ const BTN_HELP=[
  ['btn','spBtn','発言','#b9a6ff','要人発言の予定時刻に、チャート内に縦線と札を出します。急変の印はこのボタンと無関係に常時出ます。'],
  ['btn','planBtn','プラン','#e3b341','ロット計算のエントリー・SL・TPを、チャートに線と帯で描きます。SLとTPの線は指でドラッグして動かせます（動かすと自動入力が外れて、手入力のプランになります）。'],
  ['btn','guardBtn','ガード','#ffb547','チャートのすぐ上の注意帯の表示です。重要指標・発言が60分以内、急変が30分以内にある時だけ警告し、何も無い時は次のイベントまでの時間が出ます。'],
- ['btn','recBtn','記録','#42d59c','「このプランで記録」ボタン（ロット計算の下）の表示・非表示です。記録したプランはチェック欄の下に残ります。']
+ ['btn','recBtn','記録','#42d59c','「このプランで記録」ボタン（ロット計算の下）の表示・非表示です。記録したプランはチェック欄の下に残ります。'],
+ ['btn','comboBtns','おまかせ','#e3b341','組み合わせの行の先頭のボタンです。利確判定の型に合う組み合わせを当てます（短期→流れ／デイ→基本／スイング→節目）。当たった組み合わせは「いま：○○」に出ます。'],
+ ['btn','comboBtns','すっぴん','#f0c8b8','組み合わせの行の最後のボタンです。チャートをローソク足だけにします（チップ全部・水平線・トレンドライン・FVG・発言・プランを全部オフ）。戻すときは、組み合わせやチップを押し直してください。']
 ];
 function renderBtnHelp(){
   const el=$('btnHelpList');if(!el)return;
