@@ -80,7 +80,7 @@ function loadGold(seed) {
   vm.runInContext(CORE, ctx, { filename: "core.js" });
   const scripts = inlineScripts(GOLD);
   assert.ok(scripts.some((s) => s.includes("applyCombo")), "gold.html の主スクリプトを取り出せている");
-  const hook = ";window.__X={state,COMBOS,MA_BTNS,comboNow,applyCombo};";
+  const hook = ";window.__X={state,COMBOS,MA_BTNS,comboNow,applyCombo,PLAN_COMBO,applyOmakase,applyBare};";
   scripts.forEach((s, i) => vm.runInContext(i === scripts.length - 1 ? s + hook : s, ctx, { filename: "gold.html#" + i }));
   return sandbox.__X;
 }
@@ -129,5 +129,32 @@ test("combo: 適用後にチップを1つでも手動で変えると「カスタ
 
 test("combo: 開いた直後は組み合わせを勝手に適用しない（既定のチップ状態はどの組み合わせとも一致しない）", () => {
   const X = loadGold();
+  assert.equal(X.comboNow(), null);
+});
+
+test("combo: おまかせは利確判定の型に合う組み合わせを当てる（短期→流れ／デイ→基本／スイング→節目）", () => {
+  const X = loadGold();
+  assert.deepEqual({ ...X.PLAN_COMBO }, { short: "流れ", day: "基本", swing: "節目" });
+  for (const name of Object.values(X.PLAN_COMBO)) assert.ok(X.COMBOS.some((c) => c[0] === name), name + " は実在の組み合わせ");
+  for (const [tp, name] of Object.entries(X.PLAN_COMBO)) {
+    X.state.tpBasis = tp;
+    X.applyOmakase();
+    assert.equal(X.comboNow(), name, tp + " のおまかせは " + name);
+  }
+});
+
+test("combo: すっぴんは全部オフにして、状態表示も「すっぴん」になる", () => {
+  const X = loadGold();
+  X.applyCombo("流れ"); // 何かしらオンの状態から
+  X.applyBare();
+  for (const b of X.MA_BTNS) assert.equal(!!X.state.maOn[b.key], false, b.key + " がオフ");
+  assert.equal(X.state.showLevels, false);
+  assert.equal(X.state.showTrend, false);
+  assert.equal(X.state.showFvg, false);
+  assert.equal(X.state.showSpeech, false);
+  assert.equal(X.state.showPlan, false);
+  assert.equal(X.comboNow(), "すっぴん");
+  // すっぴんからチップを1つ入れると、すっぴんではなくなる（カスタム側へ）
+  X.state.maOn.sma = true;
   assert.equal(X.comboNow(), null);
 });
