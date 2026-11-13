@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-ayu.png">
 <link rel="icon" type="image/png" href="icon-ayu.png">
-<meta name="build" content="5902f8d699">
+<meta name="build" content="c1f643d297">
 <title>Desk of Ayu</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2318,8 +2318,11 @@ window.TD_THEME = (function () {
     else if (mode === "flow") layoutFlow();
     else {
       var cs = getComputedStyle(fit);
-      var aw = fit.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-      var ah = fit.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      var pl = parseFloat(cs.paddingLeft), pr = parseFloat(cs.paddingRight), pt = parseFloat(cs.paddingTop), pb = parseFloat(cs.paddingBottom);
+      var aw = fit.clientWidth - pl - pr;
+      var ah = fit.clientHeight - pt - pb;
+      var vv = window.visualViewport;  // 端末で実際に見えている範囲でも測る（ブラウザのバーの裏側まで含んだ寸法だと下端が見切れる）
+      if (vv) { aw = Math.min(aw, vv.width - pl - pr); ah = Math.min(ah, vv.height - pt - pb); }
       scale = Math.min(aw / W, ah / H);
       stage.style.transform = "scale(" + scale + ")";
       stage.style.margin = ((H * scale - H) / 2) + "px " + ((W * scale - W) / 2) + "px";
@@ -7788,6 +7791,7 @@ window.TD_THEME = (function () {
     }
   }, 1000);
   window.addEventListener("resize", layout);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", layout);  // バーの出入で見える範囲が変わったら拡縮を合わせ直す
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
 })();
 </script>
