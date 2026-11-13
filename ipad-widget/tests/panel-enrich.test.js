@@ -82,9 +82,9 @@ test("結果チップ: resDiff の数値差（単位がそろうときだけ）"
   assert.equal(resDiff({ actual: "", forecast: "3.2%" }), null);
 });
 
-test("結果チップ: 結果行に差し込まれ、色は材料ピルと同じ kind を使う", () => {
-  assert.match(HTML, /resDiff\(e\), spk = TDCore\.surpriseOf\(e\)/);
-  assert.match(HTML, /class="res-diff ' \+ \(spk \? spk\.kind : "same"\)/);
-  assert.match(HTML, /\.ind-list \.res-diff\.strong \{/);
-  assert.match(HTML, /\.ind-list \.res-diff\.weak \{/);
+test("結果チップ: スポットライトの結果行に差し込まれ、色は材料ピルと同じ kind を使う", () => {
+  assert.match(HTML, /resDiff\(lastEv\), spk2 = TDCore\.surpriseOf\(lastEv\)/);
+  assert.match(HTML, /class="res-diff ' \+ \(spk2 \? spk2\.kind : "same"\)/);
+  assert.match(HTML, /\.ind-next \.res-diff\.strong \{/);
+  assert.match(HTML, /\.ind-next \.res-diff\.weak \{/);
 });

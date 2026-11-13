@@ -106,3 +106,42 @@ test("ホーム帯3点セット: 現在区間の強調・旗・ピル＋残り�
   assert.ok(HTML.includes("HHMM(new Date(now))"), "home flag shows current time");
   assert.match(HTML, /\.isess-flag \{ position: absolute; top: -10px/);
 });
+
+test("次の指標の拡大表示: 置き場所があり、既定表示ではリストを隠してスポットライトを出す", () => {
+  assert.ok(HTML.includes('id="ind-next"'), "スポットライトの置き場所");
+  assert.ok(HTML.includes('id="ind-evdetail"'), "帯マーカー詳細の置き場所");
+  const ri = extract("renderIndicators");
+  assert.ok(ri.includes('ulF.style.display = "none"'), "既定表示では一覧を隠す");
+  assert.ok(ri.includes("ind-spot-cd"), "カウントダウンつきで大きく出す");
+  assert.ok(ri.includes("cdTxt"), "あとX時間Y分の整形");
+  assert.ok(ri.includes("今日は他に"), "残りは1行に圧縮");
+});
+
+test("帯の指標マーカー: 今日の★2以上に印が立ち、★1には立たない", () => {
+  const names = ["tzFmtH", "tzPartsH", "zoneTsH", "sessWinH", "coreAtH", "coreTodayH", "renderIndSess"];
+  const hhmm = HTML.slice(HTML.indexOf("var HHMM = function"), HTML.indexOf("};", HTML.indexOf("var HHMM = function")) + 2);
+  const src = "var TZF = {}; var indTickEvs = {};\n" + hhmm + "\n" + names.map(extract).join("\n")
+    + "\nvar SESS_H = " + HTML.slice(HTML.indexOf("var SESS_H = ") + 13, HTML.indexOf("];", HTML.indexOf("var SESS_H = ")) + 1) + ";"
+    + "\nvar CORE_H = " + HTML.slice(HTML.indexOf("var CORE_H = ") + 13, HTML.indexOf("];", HTML.indexOf("var CORE_H = ")) + 1) + ";";
+  let out = "";
+  const box = { __open: false, set innerHTML(v) { out = v; }, get innerHTML() { return out; } };
+  globalThis.document = { getElementById: () => box, addEventListener: () => {} };
+  const F0 = eval("var TZF = {};\n" + ["tzFmtH", "tzPartsH", "zoneTsH"].map(extract).join("\n") + "\n;({ zoneTsH })");
+  const devZ = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Tokyo";
+  const dp = new Date();
+  const dayStart = F0.zoneTsH(devZ, dp.getFullYear(), dp.getMonth() + 1, dp.getDate(), 0, 0);
+  const ev3 = { t: new Date(dayStart + 10 * 3600000), stars: 3, title: "Core PPI m/m" };
+  const ev2 = { t: new Date(dayStart + 12 * 3600000), stars: 2, title: "FOMC Member Speech" };
+  const ev1 = { t: new Date(dayStart + 14 * 3600000), stars: 1, title: "Minor Speech" };
+  globalThis.calEvents = [ev3, ev2, ev1];
+  try {
+    eval(src + "\n;renderIndSess()");
+  } finally {
+    delete globalThis.document; delete globalThis.calEvents;
+  }
+  const ticks = out.match(/isess-tick/g) || [];
+  assert.equal(ticks.length, 2, "★2以上の2件だけに印");
+  assert.ok(out.includes('data-evt="' + (+ev3.t) + '"'), "★3の時刻で引ける");
+  assert.ok(out.includes("isess-tick s3"), "★3は太い印");
+  assert.ok(!out.includes('data-evt="' + (+ev1.t) + '"'), "★1には印なし");
+});
