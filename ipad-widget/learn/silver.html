@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="476901f79b">
+<meta name="build" content="85e1c0bab8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -387,6 +387,8 @@ canvas.dragging{cursor:grabbing}
 .riskquick label{flex:1 1 128px;display:flex;flex-direction:column;gap:3px;font-size:12px;color:#9fb0bf}
 .riskquick input{padding:8px 10px;border-radius:9px;border:1px solid #34404c;background:#0d1319;color:#eef3f8;font:inherit;font-size:15px;width:100%}
 .riskquick .segmented{flex:0 0 auto}
+.risksteps{font-size:12px;color:#9fb0bf;margin:0 0 8px;line-height:1.6}
+.risksteps b{color:#e8cf8a;font-weight:700}
 .risksummary{margin:10px 0 2px;padding:9px 11px;border:1px dashed rgba(227,179,65,.45);border-radius:10px;font-size:13.5px;line-height:1.65;color:#ece3c8}
 .risksummary[hidden]{display:none}
 .helpbtn{border-color:rgba(227,179,65,.55)!important;color:#e8cf8a!important;font-weight:700}
@@ -766,7 +768,8 @@ html[data-theme="aurora"] .mini{background:rgba(5,7,15,.92)}
 
   <!-- ===== リスク・ロット ===== -->
   <section id="secRisk" class="panel s4">
-    <div class="cardhead"><div><div class="title">リスク・ロット計算<button type="button" class="gq" data-gloss="許容リスク" aria-label="用語集：許容リスク">?</button></div><div class="sub" id="riskHeadSub">価格とM15 ATRからSL/TPを算出</div></div><span class="tag">RISK</span></div>
+    <div class="cardhead"><div><div class="title">リスク・ロット計算<button type="button" class="gq" data-gloss="許容リスク" aria-label="用語集：許容リスク">?</button></div><div class="sub" id="riskHeadSub">価格とM15 ATRからSL/TPを算出</div></div><button type="button" id="riskHelpBtn" class="seg helpbtn">？ 使い方</button><span class="tag">RISK</span></div>
+    <div class="risksteps"><b>使い方</b>： <b>1</b> 口座と方向 → <b>2</b> 資金とリスクを入れる → <b>3</b> ロットと要約を確認。詳しくは右上の「？ 使い方」から読めます。</div>
     <div class="brokerrow"><span class="sub">口座</span>
       <div class="segmented" id="brokerSeg">
         <button class="seg" data-broker="xmstd"><b>XM<br>スタンダード</b><small>1000倍・5.5</small></button>
@@ -830,6 +833,25 @@ html[data-theme="aurora"] .mini{background:rgba(5,7,15,.92)}
       <div class="autonote">契約量・レバレッジ・スプレッドは、選んだ口座（XMスタンダード／XM KIWAMI極／XS プロ）ごとに保存されます。<span id="sprNote"></span><span id="brokerNote">XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。</span>口座残高が増えると上限レバレッジが下がる業者もあるため、その場合はレバレッジ欄を変更してください。<span class="rnote">リスクの指定は2通りあります。%は資金に対する割合で、資金が増減すると1回の損失額も変わります。円は1回で失ってよい上限を金額で決める方法で、資金が変わっても額は固定です。</span></div>
     </details>
     <div id="atrNote" class="autonote">--</div>
+<div id="riskHelpSheet" class="helpsheet" hidden><div class="helpbox"><button type="button" id="riskHelpClose" class="seg helpclose">閉じる</button>
+<h3>リスク・ロット計算の使い方</h3><div class="sub">「1回で失ってよい金額」から、ちょうどよいロットを逆算する道具です。</div>
+<div class="hsec">流れ（3ステップ）</div>
+<div class="hrow"><i style="background:#e3b341"></i><div><b>1. 口座と方向</b><br><span>使っている口座（XMスタンダード／KIWAMI極／XSプロ）を選びます。スプレッドやレバレッジは口座ごとに保存されます。方向は「シグナル連動」のままでも、買い・売りを自分で選んでも大丈夫です。</span></div></div>
+<div class="hrow"><i style="background:#e3b341"></i><div><b>2. 資金とリスク</b><br><span>口座資金と、「1回のトレードで失ってよい上限」を入れます。%（資金に対する割合）か円（金額）で指定でき、切り替えは「口座設定」の中にあります。迷ったら1%から始めるのが無難です。チップで0.5%・1%・2%をすぐ選べます。</span></div></div>
+<div class="hrow"><i style="background:#e3b341"></i><div><b>3. ロットと要約を確認</b><br><span>エントリー・SL・TPは価格と値幅（ATR）から自動で入ります。出てきた目安ロットと最大損失を見て、プラン要約の1行で全体を確認したら準備完了です。</span></div></div>
+<div class="hsec">入力の調整</div>
+<div class="hrow"><i style="background:#8fa1b1"></i><div><b>自動入力と手入力</b><br><span>「価格・SL・TPを自動入力」のチェックを外すと手入力モードになります。各欄の横の −／＋ ボタンで少しずつ動かせます。チャート上のSL・TPの線をドラッグして動かしても同じで、その場合は自動入力が自動で外れます。</span></div></div>
+<div class="hrow"><i style="background:#8fa1b1"></i><div><b>ロットを自分で決める</b><br><span>「ロット（自分で入力）」に数字を入れると、そのロットで損失・利益・証拠金を計算し直します。空欄に戻す（「自動に戻す」）と逆算に戻ります。</span></div></div>
+<div class="hsec">結果の読み方</div>
+<div class="hrow"><i style="background:#42d59c"></i><div><b>目安ロット</b><br><span>資金とリスクから逆算した注文量です（0.01刻み）。このロットで入ると、SLに当たった時の損失がほぼ許容額に収まります。</span></div></div>
+<div class="hrow"><i style="background:#42d59c"></i><div><b>最大損失</b><br><span>SLに当たった時に失う金額です（スプレッド込み）。</span></div></div>
+<div class="hrow"><i style="background:#42d59c"></i><div><b>想定利益とRR</b><br><span>TPまで届いた時の利益と、損失に対する利益の倍率です。RR 2.0 は「損失1に対して利益2」という意味です。</span></div></div>
+<div class="hrow"><i style="background:#42d59c"></i><div><b>証拠金維持率</b><br><span>口座資金 ÷ 必要証拠金です。低いほど強制決済（ロスカット）に近づくので、余裕を見るための数字です。</span></div></div>
+<div class="hrow"><i style="background:#42d59c"></i><div><b>プラン要約と記録</b><br><span>結果の下の1行がプラン全体の要約です。「プランをコピー」でメモなどに貼れて、「このプランで記録」でチェック欄の下に残せます。</span></div></div>
+<div class="hsec">こんな表示が出たら</div>
+<div class="hrow"><i style="background:#ff6969"></i><div><b>「最小ロットでも上限超え」</b><br><span>一番小さい0.01ロットでも許容損失を超える状態です。SLを狭めるか、許容リスクを見直すか、そのトレード自体を見送る判断材料にしてください。</span></div></div>
+<div class="hrow"><i style="background:#ff6969"></i><div><b>連敗の目安</b><br><span>「口座設定」の下に「このロットで連敗したら」の目安が出ます。ロットを大きくする前に、連敗した時の減り方を確認してください。</span></div></div>
+</div></div>
   </section>
 
   <!-- ===== 総合判定・マルチタイムフレーム ===== -->
@@ -5022,6 +5044,9 @@ function riskSummaryText(){
 function renderRiskSummary(){const el=$('riskSummary');if(!el)return;const tx=riskSummaryText();el.textContent=tx?('プラン要約：'+tx):'';el.hidden=!tx}
 setInterval(renderRiskSummary,1500);renderRiskSummary();
 if($('planCopy'))$('planCopy').onclick=async()=>{const tx=riskSummaryText();if(!tx)return;try{await navigator.clipboard.writeText(tx)}catch(_){const ta=document.createElement('textarea');ta.value=tx;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(__){}ta.remove()}$('planSaveMsg').textContent='プランをコピーしました'};
+if($('riskHelpBtn'))$('riskHelpBtn').onclick=()=>{$('riskHelpSheet').hidden=false};
+if($('riskHelpClose'))$('riskHelpClose').onclick=()=>{$('riskHelpSheet').hidden=true};
+if($('riskHelpSheet'))$('riskHelpSheet').addEventListener('click',e=>{if(e.target===$('riskHelpSheet'))$('riskHelpSheet').hidden=true});
 chart.addEventListener('dblclick',()=>{resetView();state.hover=null;drawChart()});
 $('chartReset').onclick=()=>{resetView();state.hover=null;drawChart()};
 // チャートを画面いっぱいに（もう一度押すか Esc で戻る）
