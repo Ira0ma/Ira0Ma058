@@ -76,7 +76,7 @@ function loadGold() {
   const ctx = vm.createContext(sandbox);
   vm.runInContext(CORE, ctx, { filename: "core.js" });
   const scripts = inlineScripts(GOLD);
-  const hook = ";window.__X={state,tzParts,zoneTs,sessSegs,coreAt,coreToday,coreNext,CORE_DEF,renderUpcoming,upcomingEvent,els:document};";
+  const hook = ";window.__X={state,tzParts,zoneTs,sessSegs,coreAt,coreToday,coreNext,CORE_DEF,renderUpcoming,upcomingEvent,spotConsensus,els:document};";
   // renderUpcoming は $('upBox') 経由で document の要素を書き換える。検証用に document 自体も返す
   scripts.forEach((s, i) => vm.runInContext(i === scripts.length - 1 ? s + hook : s, ctx, { filename: "gold.html#" + i }));
   return sandbox.__X;
@@ -179,4 +179,16 @@ test("コア時間: 凡例はその市場（ゾーン）の当日分で判定す
   // 仲値 11/13 9:55 JST はもう過ぎている
   assert.equal(X.coreAt(nakane, evening), Date.UTC(2026, 10, 13, 0, 55));
   assert.ok(X.coreAt(nakane, evening) < evening);
+});
+
+test("スポット合議: 大きく食い違うときは Swissquote、近いときは Gold API", () => {
+  const X = loadGold();
+  // 2026-11-13夜の実測形：Gold API 3895.4 / Swissquote 3887.6（差7.8 > 1.5）→ Swissquote
+  assert.deepEqual([...X.spotConsensus(3895.4, 100, 3887.6, 200, 1.5)], [3887.6, 200, "Swissquote"]);
+  // 差0.8（しきい値以内）→ Gold API
+  assert.deepEqual([...X.spotConsensus(3890, 100, 3889.2, 200, 1.5)], [3890, 100, "Gold API"]);
+  // 片方だけ
+  assert.deepEqual([...X.spotConsensus(0, 0, 3887, 200, 1.5)], [3887, 200, "Swissquote"]);
+  assert.deepEqual([...X.spotConsensus(3890, 100, 0, 0, 1.5)], [3890, 100, "Gold API"]);
+  assert.deepEqual([...X.spotConsensus(0, 0, 0, 0, 1.5)], [0, 0, ""]);
 });
