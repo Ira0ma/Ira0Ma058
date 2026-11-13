@@ -711,6 +711,12 @@ html:not(.lowpower) .mreg .rg-dot { transition: left .6s ease; }
 #points .pt-foot { position: static; margin-top: 6px; flex: none; }
 #points .pt-list { flex: 0 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .pt-next { margin-top: auto; flex: none; border: 0; border-top: 1px solid var(--glass-line); background: none; color: inherit; font: inherit; text-align: left; padding: 9px 0 2px; display: flex; flex-direction: column; gap: 2px; cursor: pointer; }
+#points .pt-near { flex: none; margin-top: auto; padding-top: 2px; font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#points .pt-near b { color: var(--gold); font-weight: 700; }
+#points .pt-near[hidden] { display: none; }
+#points .pt-near:not([hidden]) + .pt-next { margin-top: 6px; }
+#off-pill { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 50%; transform: translateX(-50%); z-index: 65; background: rgba(20,16,8,.92); color: var(--gold); border: 1px solid rgba(var(--gold-rgb),.6); border-radius: 999px; padding: 5px 14px; font-size: 12px; font-weight: 700; pointer-events: none; }
+#off-pill[hidden] { display: none; }
 .pt-next .pn-h { font-size: 11px; color: var(--ink-3); font-weight: 600; }
 .pt-next .pn-l1 { font-size: 14px; font-weight: 600; }
 .pt-next .pn-l2 { font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -822,6 +828,33 @@ html:not(.lowpower) .mreg .rg-dot { transition: left .6s ease; }
 .gb-term h3 { margin: 0; font-size: 16px; color: #2b241a; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .gb-term h3 span { font-size: 11.5px; font-weight: 600; color: var(--gold-deep); }
 .gb-term p { margin: 5px 0 0; font-size: 13.5px; line-height: 1.75; color: #3c3326; }
+/* 文字の大きさ（td_font_size: std/l/xl、あゆ版の data-ayufs と同じ設計・同じ効き先） */
+html[data-tdfs="l"] .gb-term p { font-size: 15.5px; }
+html[data-tdfs="l"] .gb-term h3 { font-size: 18.4px; }
+html[data-tdfs="l"] .gb-term h3 span { font-size: 13.2px; }
+html[data-tdfs="l"] .gb-pts, html[data-tdfs="l"] .gb-table, html[data-tdfs="l"] .gb-chhead p { font-size: 14.4px; }
+html[data-tdfs="l"] .gb-note { font-size: 12.1px; }
+html[data-tdfs="xl"] .gb-term p { font-size: 17.6px; }
+html[data-tdfs="xl"] .gb-term h3 { font-size: 20.8px; }
+html[data-tdfs="xl"] .gb-term h3 span { font-size: 15px; }
+html[data-tdfs="xl"] .gb-pts, html[data-tdfs="xl"] .gb-table, html[data-tdfs="xl"] .gb-chhead p { font-size: 16.3px; }
+html[data-tdfs="xl"] .gb-note { font-size: 13.7px; }
+html[data-tdfs="l"] .pt-list p { font-size: 13.8px; }
+html[data-tdfs="l"] .pt-list h3 { font-size: 15.5px; }
+html[data-tdfs="l"] .pt-next .pn-l1 { font-size: 16.1px; }
+html[data-tdfs="l"] .pt-next .pn-l2 { font-size: 13.8px; }
+html[data-tdfs="l"] .ind-list .t, html[data-tdfs="l"] .ind-list .n { font-size: 16.1px; }
+html[data-tdfs="l"] .ind-list .s { font-size: 13.2px; }
+html[data-tdfs="l"] .wx-desc { font-size: 14.4px; }
+html[data-tdfs="xl"] .pt-list p { font-size: 15.6px; }
+html[data-tdfs="xl"] .pt-list h3 { font-size: 17.6px; }
+html[data-tdfs="xl"] .pt-next .pn-l1 { font-size: 18.2px; }
+html[data-tdfs="xl"] .pt-next .pn-l2 { font-size: 15.6px; }
+html[data-tdfs="xl"] .ind-list .t, html[data-tdfs="xl"] .ind-list .n { font-size: 18.2px; }
+html[data-tdfs="xl"] .ind-list .s { font-size: 15px; }
+html[data-tdfs="xl"] .wx-desc { font-size: 16.3px; }
+html[data-tdfs="l"] #layout-toggle, html[data-tdfs="l"] #tools-toggle, html[data-tdfs="l"] .dk-dock .dk-btn { font-size: 13.8px; }
+html[data-tdfs="xl"] #layout-toggle, html[data-tdfs="xl"] #tools-toggle, html[data-tdfs="xl"] .dk-dock .dk-btn { font-size: 15.6px; }
 .gb-figbox { margin: 8px 0 2px; padding: 8px 6px 4px; background: rgba(255,255,255,.55); border: 1px solid #e6d8b6; border-radius: 10px; }
 .gb-fig { display: block; width: 100%; height: auto; font-family: inherit; }
 .gb-pts { margin: 6px 0 0; padding-left: 1.2em; font-size: 12.5px; line-height: 1.65; color: #3c3326; }
@@ -1419,6 +1452,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 <div class="td-floor-glow fg-r" aria-hidden="true"></div>
 <div class="td-top-glow tg-l" aria-hidden="true"></div>
 <div class="td-top-glow tg-r" aria-hidden="true"></div>
+<div id="off-pill" hidden>オフライン表示中（前回のデータを表示しています）</div>
 <div id="fit">
 <div id="stage">
 
@@ -1592,6 +1626,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     </ul>
     <div class="rep" id="rep" hidden role="dialog" aria-label="前日の振り返りと今日の予想"><div class="rep-h"><b>本日のトレード戦略</b><small id="rep-when"></small><button type="button" class="rep-close">閉じる</button></div><div class="rep-body" id="rep-body"></div></div>
     <!-- 次の重要指標までのカウントダウン（注目ポイントの下に）：タップで今日の重要指標へ -->
+    <div class="pt-near" id="pt-near" hidden></div>
     <button type="button" class="pt-next" id="pt-next" aria-label="次の★3指標（タップで今日の重要指標の一覧へ）"><span class="pn-h">次の★3指標</span><span class="pn-l1">指標データを読み込んでいます…</span><span class="pn-l2"></span></button>
     <div class="pt-foot" id="pt-foot"></div>
   </section>
@@ -1704,6 +1739,15 @@ window.TD_THEME = (function () {
   }
   return { mode: mode, id: id, byDate: byDate, NAMES: NAMES };
 })();
+</script>
+<script>
+/* 文字の大きさ：保存した設定 td_font_size（std/l/xl）を html の data-tdfs に反映する。ツールの設定画面と同じキー。 */
+window.TDFontApply = function () {
+  var fs = "std";
+  try { var v = localStorage.getItem("td_font_size"); if (v === "l" || v === "xl") fs = v; } catch (e) {}
+  document.documentElement.setAttribute("data-tdfs", fs);
+};
+window.TDFontApply();
 </script>
 <script>
 /* 舞う粒子（テーマの飾り）：桜・落ち葉・雪・金粉。neon は香港ネオンの火花（小さく光る点）。current では出さない。動きを減らす設定でも出さない。 */
@@ -2430,6 +2474,12 @@ window.TD_THEME = (function () {
      (in front or in the background); on iPhone / iPad only from the desk added to the Home Screen (iOS 16.4+). */
   var NOTIFY_KEY = "desk_notify", notifyBtn = document.getElementById("notify-btn");
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function () {});
+  /* オフライン表示の札：回線が切れたら出し、戻ったら消す（中身は sw.js が前回分を返す） */
+  (function () {
+    var pill = document.getElementById("off-pill"); if (!pill) return;
+    var upd = function () { pill.hidden = navigator.onLine !== false; };
+    window.addEventListener("online", upd); window.addEventListener("offline", upd); upd();
+  })();
   function notifyOn() { try { return localStorage.getItem(NOTIFY_KEY) === "1" && !!window.Notification && Notification.permission === "granted"; } catch (e) { return false; } }
   function sysNotify(title, body, tag) {
     if (!notifyOn()) return;
@@ -4968,6 +5018,17 @@ window.TD_THEME = (function () {
     if (best) best.near = best.d <= PT_NEAR[key];
     return best;
   }
+  function ptNearLine(nears, pxOf) {  // 「近い水準」1行分：全銘柄の最接近水準を、銘柄ごとの基準 PT_NEAR に対する割合で比べて選ぶ
+    var best = null;
+    PT_TABS.forEach(function (key) {
+      var n = nears[key]; if (!n) return;
+      var px = pxOf(key); if (px == null) return;
+      var ratio = n.d / (PT_NEAR[key] || n.d || 1);
+      if (!best || ratio < best.ratio) best = { key: key, nm: n.nm, v: n.v, px: px, ratio: ratio };
+    });
+    if (!best) return null;
+    return "近い水準：<b>" + esc(INST[best.key].name) + " " + best.nm + " " + ptVal(best.key, best.v) + "</b>（あと " + ptDist(best.key, best.v - best.px) + "）";
+  }
   function ptBarPos(px, lo, hi) {  // 位置バー用：支持（lo）〜抵抗（hi）の中で現在価格が何％の位置か（範囲外は端に寄せる）
     if (px == null || !(hi > lo)) return null;
     var p = (px - lo) / (hi - lo) * 100;
@@ -5042,6 +5103,11 @@ window.TD_THEME = (function () {
     var tabs = document.querySelector("#pt-map .pm-tabs"), bodyEl = document.querySelector("#pt-map .pm-body"); if (!tabs) return;
     var nears = {};
     PT_TABS.forEach(function (key) { var k = keyLv[key]; if (k && k.px) { var n = ptNear(key, ptEffK(key, k)); if (n) nears[key] = n; } });
+    var nearEl = document.getElementById("pt-near");
+    if (nearEl) {
+      var nl = ptNearLine(nears, function (key) { var kk = keyLv[key] ? ptEffK(key, keyLv[key]) : null; return kk ? kk.px : null; });
+      if (nl) { nearEl.hidden = false; if (nearEl.__t !== nl) { nearEl.innerHTML = nl; nearEl.__t = nl; } } else nearEl.hidden = true;
+    }
     // 既定のタブ：基準以内の水準があるうち、基準に対していちばん近い銘柄。どれも近くなければゴールド（タブを押したあとはその銘柄のまま）
     if (!ptTabByUser) { var best = "gold", bd = Infinity; PT_TABS.forEach(function (key) { var n = nears[key]; if (n && n.near && n.d / PT_NEAR[key] < bd) { bd = n.d / PT_NEAR[key]; best = key; } }); ptTab = best; }
     var th = PT_TABS.map(function (key) { var on = key === ptTab, nr = nears[key] && nears[key].near; return '<button type="button" role="tab" data-pmt="' + key + '" aria-selected="' + on + '" class="' + (on ? "on" : "") + (nr ? " near" : "") + '"' + (nr ? ' title="水準に接近（' + PT_NEAR_TXT[key] + '以内）"' : "") + ">" + esc({ gold: "ゴールド", usdjpy: "ドル円", btc: "BTC", usoil: "オイル" }[key]) + "</button>"; }).join("");

@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="/Ira0Ma058/icon-cup.png">
 <link rel="icon" type="image/png" href="/Ira0Ma058/icon-cup.png">
-<meta name="build" content="415f42a978">
+<meta name="build" content="a720a19d61">
 <title>Desk of Ayu</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -808,6 +808,12 @@ html[data-ayufs="xl"] #layout-toggle, html[data-ayufs="xl"] #tools-toggle, html[
 .ayu-greet-btn { font: inherit; font-size: 14px; font-weight: 800; color: #14100a; background: var(--gold); border: none; border-radius: 999px; padding: 9px 34px; cursor: pointer; }
 
 .pt-next { margin-top: auto; flex: none; border: 0; border-top: 1px solid var(--glass-line); background: none; color: inherit; font: inherit; text-align: left; padding: 9px 0 2px; display: flex; flex-direction: column; gap: 2px; cursor: pointer; }
+#points .pt-near { flex: none; margin-top: auto; padding-top: 2px; font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#points .pt-near b { color: var(--gold); font-weight: 700; }
+#points .pt-near[hidden] { display: none; }
+#points .pt-near:not([hidden]) + .pt-next { margin-top: 6px; }
+#off-pill { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 50%; transform: translateX(-50%); z-index: 65; background: rgba(20,16,8,.92); color: var(--gold); border: 1px solid rgba(var(--gold-rgb),.6); border-radius: 999px; padding: 5px 14px; font-size: 12px; font-weight: 700; pointer-events: none; }
+#off-pill[hidden] { display: none; }
 .pt-next .pn-h { font-size: 11px; color: var(--ink-3); font-weight: 600; }
 .pt-next .pn-l1 { font-size: 14px; font-weight: 600; }
 .pt-next .pn-l2 { font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1510,6 +1516,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 <div class="td-floor-glow fg-r" aria-hidden="true"></div>
 <div class="td-top-glow tg-l" aria-hidden="true"></div>
 <div class="td-top-glow tg-r" aria-hidden="true"></div>
+<div id="off-pill" hidden>オフライン表示中（前回のデータを表示しています）</div>
 <div id="fit">
 <div id="stage">
 
@@ -1683,6 +1690,7 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     </ul>
     <div class="rep" id="rep" hidden role="dialog" aria-label="前日の振り返りと今日の予想"><div class="rep-h"><b>本日のトレード戦略</b><small id="rep-when"></small><button type="button" class="rep-close">閉じる</button></div><div class="rep-body" id="rep-body"></div></div>
     <!-- 次の重要指標までのカウントダウン（注目ポイントの下に）：タップで今日の重要指標へ -->
+    <div class="pt-near" id="pt-near" hidden></div>
     <button type="button" class="pt-next" id="pt-next" aria-label="次の★3指標（タップで今日の重要指標の一覧へ）"><span class="pn-h">次の★3指標</span><span class="pn-l1">指標データを読み込んでいます…</span><span class="pn-l2"></span></button>
     <div class="pt-foot" id="pt-foot"></div>
   </section>
@@ -2561,6 +2569,12 @@ window.TD_THEME = (function () {
      (in front or in the background); on iPhone / iPad only from the desk added to the Home Screen (iOS 16.4+). */
   var NOTIFY_KEY = "ayu_desk_notify", notifyBtn = document.getElementById("notify-btn");
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function () {});
+  /* オフライン表示の札：回線が切れたら出し、戻ったら消す（中身は sw.js が前回分を返す） */
+  (function () {
+    var pill = document.getElementById("off-pill"); if (!pill) return;
+    var upd = function () { pill.hidden = navigator.onLine !== false; };
+    window.addEventListener("online", upd); window.addEventListener("offline", upd); upd();
+  })();
   function notifyOn() { try { return localStorage.getItem(NOTIFY_KEY) === "1" && !!window.Notification && Notification.permission === "granted"; } catch (e) { return false; } }
   function sysNotify(title, body, tag) {
     if (!notifyOn()) return;
@@ -5247,6 +5261,17 @@ window.TD_THEME = (function () {
     if (best) best.near = best.d <= PT_NEAR[key];
     return best;
   }
+  function ptNearLine(nears, pxOf) {  // 「近い水準」1行分：全銘柄の最接近水準を、銘柄ごとの基準 PT_NEAR に対する割合で比べて選ぶ
+    var best = null;
+    PT_TABS.forEach(function (key) {
+      var n = nears[key]; if (!n) return;
+      var px = pxOf(key); if (px == null) return;
+      var ratio = n.d / (PT_NEAR[key] || n.d || 1);
+      if (!best || ratio < best.ratio) best = { key: key, nm: n.nm, v: n.v, px: px, ratio: ratio };
+    });
+    if (!best) return null;
+    return "近い水準：<b>" + esc(INST[best.key].name) + " " + best.nm + " " + ptVal(best.key, best.v) + "</b>（あと " + ptDist(best.key, best.v - best.px) + "）";
+  }
   function ptBarPos(px, lo, hi) {  // 位置バー用：支持（lo）〜抵抗（hi）の中で現在価格が何％の位置か（範囲外は端に寄せる）
     if (px == null || !(hi > lo)) return null;
     var p = (px - lo) / (hi - lo) * 100;
@@ -5326,6 +5351,11 @@ window.TD_THEME = (function () {
     var tabs = document.querySelector("#pt-map .pm-tabs"), bodyEl = document.querySelector("#pt-map .pm-body"); if (!tabs) return;
     var nears = {};
     PT_TABS.forEach(function (key) { var k = keyLv[key]; if (k && k.px) { var n = ptNear(key, ptEffK(key, k)); if (n) nears[key] = n; } });
+    var nearEl = document.getElementById("pt-near");
+    if (nearEl) {
+      var nl = ptNearLine(nears, function (key) { var kk = keyLv[key] ? ptEffK(key, keyLv[key]) : null; return kk ? kk.px : null; });
+      if (nl) { nearEl.hidden = false; if (nearEl.__t !== nl) { nearEl.innerHTML = nl; nearEl.__t = nl; } } else nearEl.hidden = true;
+    }
     // 既定のタブ：基準以内の水準があるうち、基準に対していちばん近い銘柄。どれも近くなければゴールド（タブを押したあとはその銘柄のまま）
     if (!ptTabByUser) { var best = "gold", bd = Infinity; PT_TABS.forEach(function (key) { var n = nears[key]; if (n && n.near && n.d / PT_NEAR[key] < bd) { bd = n.d / PT_NEAR[key]; best = key; } }); ptTab = best; }
     var th = PT_TABS.map(function (key) { var on = key === ptTab, nr = nears[key] && nears[key].near; return '<button type="button" role="tab" data-pmt="' + key + '" aria-selected="' + on + '" class="' + (on ? "on" : "") + (nr ? " near" : "") + '"' + (nr ? ' title="水準に接近（' + PT_NEAR_TXT[key] + '以内）"' : "") + ">" + esc({ gold: "ゴールド", usdjpy: "ドル円", btc: "BTC", usoil: "オイル" }[key]) + "</button>"; }).join("");
