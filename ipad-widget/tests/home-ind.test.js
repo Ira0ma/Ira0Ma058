@@ -62,3 +62,11 @@ test("ホーム指標タブ: 帯・振り返りの置き場所と呼び出しが
   assert.ok(HTML.includes("renderIndSess"), "帯の描画関数");
   assert.ok(HTML.includes("明日の山場") && HTML.includes("昨日の★3"), "振り返りの文言");
 });
+
+test("ホーム指標タブ: HHMM には Date を渡し、付随表示は try で守る（2026-11-13夜の実バグ回帰）", () => {
+  const sess = extract("renderIndSess");
+  assert.ok(!/HHMM\(zt\)/.test(sess), "ms のまま HHMM に渡さない");
+  assert.ok(sess.includes("HHMM(new Date(zt))"), "Date に包んで渡す");
+  const ri = extract("renderIndicators");
+  assert.ok(ri.includes("try { renderIndSess(); renderIndReview(); } catch (e) {}"), "付随表示の例外で一覧を止めない");
+});
