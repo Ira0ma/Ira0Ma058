@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="a34f18fb70">
+<meta name="build" content="cbfd7b67cb">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2378,7 +2378,7 @@ function applyOmakase(){applyCombo(PLAN_COMBO[state.tpBasis]||'基本')}
 function applyBare(){
   MA_BTNS.forEach(b=>state.maOn[b.key]=false);lsSet(LSP+'ma',JSON.stringify(state.maOn));
   state.showLevels=false;state.showTrend=false;state.showFvg=false;state.showSpeech=false;state.showPlan=false;
-  [['lvBtn',0],['tlBtn',0],['fvgBtn',0],['spBtn',0],['planBtn',0]].forEach(([id,on])=>{$(id).classList.toggle('on',on);$(id).setAttribute('aria-pressed',on)});
+  [['lvBtn',false],['tlBtn',false],['fvgBtn',false],['spBtn',false],['planBtn',false]].forEach(([id,on])=>{$(id).classList.toggle('on',on);$(id).setAttribute('aria-pressed',on)});
   savePrefs();renderMaToggles();renderTfGrid();renderFibNow();renderGmmaNow();drawChart();
 }
 function renderMaToggles(){
