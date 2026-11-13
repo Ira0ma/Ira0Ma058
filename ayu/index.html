@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-ayu.png">
 <link rel="icon" type="image/png" href="icon-ayu.png">
-<meta name="build" content="6d5300e28e">
+<meta name="build" content="3df46bfe14">
 <title>Desk of Ayu</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -521,13 +521,13 @@ html:not(.lowpower) .mreg .rg-dot { transition: left .6s ease; }
 .ind-foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .ind-review { flex: none; margin-top: 6px; display: grid; gap: 2px; font-size: 12px; color: var(--ink-2); }
 .ind-review b { color: var(--gold); font-weight: 600; }
-.ind-sess { flex: none; margin-top: 10px; }
+.ind-sess { flex: none; margin-top: 12px; }
 .ind-sess:empty { display: none; }
 .isess-bar { position: relative; height: 12px; border-radius: 6px; background: rgba(255,255,255,.05); overflow: hidden; }
 .isess-band { position: absolute; top: 0; height: 100%; opacity: .22; }
 .isess-band.cur { opacity: .95; }
 .isess-wrap { position: relative; }
-.isess-flag { position: absolute; top: -8px; transform: translateX(-50%); font-size: 8px; line-height: 1; color: #fff; font-style: normal; text-shadow: 0 1px 3px rgba(0,0,0,.85); z-index: 2; }
+.isess-flag { position: absolute; top: -10px; transform: translateX(-50%); font-size: 9px; line-height: 1; font-weight: 700; white-space: nowrap; background: rgba(10,12,16,.85); padding: 1px 4px; border-radius: 3px; color: #fff; font-style: normal; text-shadow: 0 1px 3px rgba(0,0,0,.85); z-index: 2; }
 .isess-pill { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16); border-radius: 999px; padding: 1px 8px; font-weight: 700; color: #e8e4da; }
 .isess-pill i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex: none; }
 .isess-ima { color: var(--gold); font-weight: 700; margin-right: 5px; }
@@ -5151,8 +5151,8 @@ window.TD_THEME = (function () {
     [-1, 0].forEach(function (dl) { var w = sessWinH("America/New_York", [17, 0], [18, 0], now + dl * 86400000); if (w) push(w[0], w[1], "#5a6775", 1, "CMEメンテ"); });
     if (!segs.length) { box.innerHTML = ""; return; }
     function durH(ms) { var mn = Math.max(1, Math.round(ms / 60000)); return mn >= 60 ? Math.floor(mn / 60) + "時間" + (mn % 60 ? mn % 60 + "分" : "") : mn + "分"; }
-    var pct = (now - dayStart) / 864000, flagL = Math.min(96, Math.max(4, pct));
-    var html = '<div class="isess-wrap"><i class="isess-flag" style="left:' + flagL.toFixed(2) + '%">▼</i><div class="isess-bar">' + segs.map(function (sg) { return '<i class="isess-band' + (sg.cur ? " cur" : "") + '" style="left:' + sg.l.toFixed(2) + '%;width:' + sg.w.toFixed(2) + '%;background:' + sg.col + '"></i>'; }).join("");
+    var pct = (now - dayStart) / 864000, flagL = Math.min(91, Math.max(9, pct));
+    var html = '<div class="isess-wrap"><i class="isess-flag" style="left:' + flagL.toFixed(2) + '%">▼ いま ' + HHMM(new Date(now)) + '</i><div class="isess-bar">' + segs.map(function (sg) { return '<i class="isess-band' + (sg.cur ? " cur" : "") + '" style="left:' + sg.l.toFixed(2) + '%;width:' + sg.w.toFixed(2) + '%;background:' + sg.col + '"></i>'; }).join("");
     CORE_H.forEach(function (c) { var ts = coreTodayH(c, dayStart, dayEnd); if (ts != null) html += '<i class="isess-core" style="left:' + ((ts - dayStart) / 864000).toFixed(2) + '%"></i>'; });
     var nx = null;
     if (calEvents) { var fut = calEvents.filter(function (e) { return e.stars === 3 && e.t > now; }).sort(function (a, b) { return a.t - b.t; }); if (fut.length) nx = +fut[0].t; }
