@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="8f558026d0">
+<meta name="build" content="387b9fea8a">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4677,7 +4677,7 @@ function renderUpcoming(){
   if(list.length){
     html='<div class="rh"><b>このあとの予定</b><span>指標と要人発言</span></div>'+list.map(e=>{
       const d=new Date(e.ts),when=d.toDateString()===new Date(now).toDateString()?hhmm(e.ts):(d.getMonth()+1)+'/'+d.getDate()+' '+hhmm(e.ts);
-      const tag=e.speech?'<span class="uptag">発言</span>':`<span class="star ${e.impact==='High'?'high':'medium'}">${stars(e)}</span>`;
+      const tag=e.speech?'':`<span class="star ${e.impact==='High'?'high':'medium'}">${stars(e)}</span>`;
       return `<div class="uprow"><span class="upt">${esc(when)}</span><span class="upn">${esc(e.currency)}｜${esc(evTitle(e))} ${tag}</span><span class="upa">あと ${esc(dur(e.ts-now))}</span></div>`}).join('');
   }
   if(box.__h!==html){box.innerHTML=html;box.__h=html}
@@ -4702,9 +4702,10 @@ function renderSessions(){
     const gd=tzParts(devZ,now).day%5===0;
     for(const g of['東京','ロンドン','NY']){
       const items=CORE_DEF.filter(c=>c.g===g).map(c=>{
-        const t0=coreToday(c,dayStart,dayEnd),ts=t0!=null?t0:coreNext(c,now);if(ts==null)return'';
-        const nm=c.n==='仲値'&&gd&&t0!=null?'仲値（ゴトー日）':c.n;
-        let dl2='';if(t0==null)dl2=ts<dayEnd+86400000?'明日 ':(new Date(ts).getMonth()+1)+'/'+new Date(ts).getDate()+' ';
+        const zt=coreAt(c,now);let ts=zt!=null?zt:coreNext(c,now);if(ts==null)return'';
+        const sameDay=ts>=dayStart&&ts<dayEnd;
+        const nm=c.n==='仲値'&&gd&&sameDay?'仲値（ゴトー日）':c.n;
+        let dl2='';if(!sameDay)dl2=ts>=dayStart-86400000&&ts<dayStart?'昨日 ':(ts<dayEnd+86400000?'明日 ':(new Date(ts).getMonth()+1)+'/'+new Date(ts).getDate()+' ');
         const st=ts>now?'あと '+dur(ts-now):'済み';
         return `<span class="coreitem">${nm} ${dl2}${hhmm(ts)}（${st}）<span class="cored">${c.d}</span></span>`;
       }).filter(Boolean);

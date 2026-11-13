@@ -504,6 +504,21 @@ html:not(.lowpower) .mreg .rg-dot { transition: left .6s ease; }
 .more { margin-top: auto; font-size: 13px; color: var(--ink-2); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
 .more:hover { color: var(--gold); }
 .ind-foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ind-review { flex: none; margin-top: 6px; display: grid; gap: 2px; font-size: 12px; color: var(--ink-2); }
+.ind-review b { color: var(--gold); font-weight: 600; }
+.ind-sess { flex: none; margin-top: 10px; }
+.ind-sess:empty { display: none; }
+.isess-bar { position: relative; height: 12px; border-radius: 6px; background: rgba(255,255,255,.05); overflow: hidden; }
+.isess-band { position: absolute; top: 0; height: 100%; opacity: .45; }
+.isess-now { position: absolute; top: 0; height: 100%; width: 2px; background: #fff; }
+.isess-eve { position: absolute; top: 0; height: 100%; width: 2px; background: #ff6969; }
+.isess-core { position: absolute; top: 0; height: 100%; width: 2px; background: var(--gold); }
+.isess-line { font-size: 11px; color: var(--ink-3); margin-top: 4px; }
+.isess-chips { display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 10.5px; color: var(--ink-3); margin-top: 3px; }
+.isess-chips .done { opacity: .45; }
+.isess-chips b { color: var(--ink-2); font-weight: 600; }
+.ind-list .gloss { white-space: normal; color: var(--ink-2); font-size: 11.5px; line-height: 1.55; }
+.gloss-hint { font-size: 9.5px; color: var(--gold); border: 1px solid rgba(var(--gold-rgb),.5); border-radius: 5px; padding: 0 4px; margin-left: 6px; vertical-align: 2px; white-space: nowrap; }
 .ind-foot .more { margin-top: 0; }
 .ind-upd { font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
 .ind-upd i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--up-green); box-shadow: 0 0 8px rgba(67,210,127,.8); margin-right: 5px; vertical-align: 1px; }
@@ -1633,10 +1648,12 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     </div>
     <div class="ind-week" id="ind-week" aria-label="今週の重要指標（★3）"></div>
     <div class="ind-peak" id="ind-peak" hidden></div>
+    <div class="ind-review" id="ind-review" hidden></div>
     <ul class="ind-list" id="ind-list">
       <li class="empty">今日の経済指標を読み込んでいます…</li>
     </ul>
     <p class="ind-note" title="★3＝最も重要・★2＝重要・★1＝参考。発表済みは結果つきで2時間残し、今日の予定が少ない日は今週このあとの指標（日付つき）も載せます。">★3＝最も重要・★2＝重要・★1＝参考｜発表済みは結果つきで2時間・予定が少ない日は今週の次も</p>
+    <div class="ind-sess" id="ind-sess"></div>
     <div class="ind-foot">
       <a class="more" href="https://jp.investing.com/economic-calendar/" target="_blank" rel="noopener">経済カレンダーを表示 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></a>
       <span class="ind-upd num" id="ind-upd"></span>
@@ -5004,17 +5021,93 @@ window.TD_THEME = (function () {
     if (Math.abs(d) < Math.pow(10, -dec) / 2) return "予想どおり";
     return "予想比 " + (d > 0 ? "+" : "-") + Math.abs(d).toFixed(dec) + a.unit;
   }
+  /* 市場の時間帯（細い帯）・コア時間・昨日の結果と明日の山場・指標のミニ解説（ホーム指標タブ用、控えめ表示） */
+  var TZF = {};
+  function tzFmtH(zone) { return TZF[zone] || (TZF[zone] = new Intl.DateTimeFormat("en-GB", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" })); }
+  function tzPartsH(zone, ts) { var o = {}; tzFmtH(zone).formatToParts(new Date(ts)).forEach(function (p) { if (p.type !== "literal") o[p.type] = +p.value; }); return o; }
+  function zoneTsH(zone, y, mo, d, h, mi) { var g = Date.UTC(y, mo - 1, d, h, mi || 0, 0); for (var i = 0; i < 3; i++) { var p = tzPartsH(zone, g); var diff = Date.UTC(y, mo - 1, d, h, mi || 0, 0) - Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second); if (!diff) break; g += diff; } return g; }
+  var SESS_H = [{ n: "東京", z: "Asia/Tokyo", o: [9, 0], c: [18, 0], col: "#38b6ff" }, { n: "ロンドン", z: "Europe/London", o: [8, 0], c: [16, 30], col: "#b9a6ff" }, { n: "NY", z: "America/New_York", o: [9, 30], c: [16, 0], col: "#ffb547" }];
+  var CORE_H = [{ n: "仲値", z: "Asia/Tokyo", h: 9, m: 55 }, { n: "アーリーロンドン", z: "Europe/London", h: 7, m: 0 }, { n: "ロンドン開始", z: "Europe/London", h: 8, m: 0 }, { n: "LBMA AM", z: "Europe/London", h: 10, m: 30 }, { n: "LBMA PM", z: "Europe/London", h: 15, m: 0 }, { n: "ロンフィク", z: "Europe/London", h: 16, m: 0 }, { n: "NYカット", z: "America/New_York", h: 10, m: 0 }, { n: "COMEX清算", z: "America/New_York", h: 13, m: 30 }, { n: "NYクローズ", z: "America/New_York", h: 17, m: 0 }];
+  function sessWinH(z, o, c, ref) { var p = tzPartsH(z, ref); var dow = new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay(); if (dow === 0 || dow === 6) return null; var st = zoneTsH(z, p.year, p.month, p.day, o[0], o[1]); var en = zoneTsH(z, p.year, p.month, p.day, c[0], c[1]); if (en <= st) en += 86400000; return [st, en]; }
+  function coreAtH(c, ref) { var p = tzPartsH(c.z, ref); var dow = new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay(); if (dow === 0 || dow === 6) return null; return zoneTsH(c.z, p.year, p.month, p.day, c.h, c.m); }
+  function coreTodayH(c, dayStart, dayEnd) { for (var dl = -1; dl <= 1; dl++) { var ts = coreAtH(c, dayStart + dl * 86400000 + 43200000); if (ts != null && ts >= dayStart && ts < dayEnd) return ts; } return null; }
+  function renderIndSess() {
+    var box = document.getElementById("ind-sess"); if (!box) return;
+    var now = Date.now(), devZ = (Intl.DateTimeFormat().resolvedOptions().timeZone) || "Asia/Tokyo";
+    var dp = tzPartsH(devZ, now), dayStart = zoneTsH(devZ, dp.year, dp.month, dp.day, 0, 0), dayEnd = dayStart + 86400000;
+    var segs = [], open = [], maint = false;
+    function push(st, en, col, m) { if (now >= st && now < en && m) maint = true; var a = Math.max(st, dayStart), b = Math.min(en, dayEnd); if (b > a) segs.push({ l: (a - dayStart) / 864000, w: (b - a) / 864000, col: col }); }
+    SESS_H.forEach(function (sd) { [-1, 0].forEach(function (dl) { var w = sessWinH(sd.z, sd.o, sd.c, now + dl * 86400000); if (w) { if (now >= w[0] && now < w[1] && open.indexOf(sd.n) < 0) open.push(sd.n); push(w[0], w[1], sd.col, 0); } }); });
+    [-1, 0].forEach(function (dl) { var w = sessWinH("America/New_York", [17, 0], [18, 0], now + dl * 86400000); if (w) push(w[0], w[1], "#5a6775", 1); });
+    if (!segs.length) { box.innerHTML = ""; return; }
+    var html = '<div class="isess-bar">' + segs.map(function (sg) { return '<i class="isess-band" style="left:' + sg.l.toFixed(2) + '%;width:' + sg.w.toFixed(2) + '%;background:' + sg.col + '"></i>'; }).join("");
+    CORE_H.forEach(function (c) { var ts = coreTodayH(c, dayStart, dayEnd); if (ts != null) html += '<i class="isess-core" style="left:' + ((ts - dayStart) / 864000).toFixed(2) + '%"></i>'; });
+    var nx = null;
+    if (calEvents) { var fut = calEvents.filter(function (e) { return e.stars === 3 && e.t > now; }).sort(function (a, b) { return a.t - b.t; }); if (fut.length) nx = +fut[0].t; }
+    if (nx && nx >= dayStart && nx < dayEnd) html += '<i class="isess-eve" style="left:' + ((nx - dayStart) / 864000).toFixed(2) + '%"></i>';
+    html += '<i class="isess-now" style="left:' + ((now - dayStart) / 864000).toFixed(2) + '%"></i></div>';
+    html += '<div class="isess-line">' + (maint ? "いまはCMEメンテナンス中（値が飛びやすい時間帯）" : open.length ? "いまは" + open.join(" と ") + "の時間帯" : "いまは主要市場が休みの静かな時間帯") + "</div>";
+    html += '<div class="isess-chips">' + CORE_H.map(function (c) {
+      var zt = coreAtH(c, now); if (zt == null) return "";
+      var lbl = (zt >= dayStart && zt < dayEnd) ? HHMM(zt) : (zt < dayEnd + 86400000 ? "明日 " + HHMM(zt) : (new Date(zt).getMonth() + 1) + "/" + new Date(zt).getDate() + " " + HHMM(zt));
+      return '<span class="' + (zt <= now ? "done" : "") + '"><b>' + c.n + "</b> " + lbl + "</span>";
+    }).filter(Boolean).join("") + "</div>";
+    if (box.__h !== html) { box.innerHTML = html; box.__h = html; }
+  }
+  function renderIndReview() {
+    var box = document.getElementById("ind-review"); if (!box || !calEvents) return;
+    var day = tradingDay(new Date()), lines = [];
+    var yEv = calEvents.filter(function (e) { return e.t >= day.start - 86400000 && e.t < day.start && e.stars === 3 && e.actual; }).sort(function (a, b) { return a.t - b.t; });
+    if (yEv.length) {
+      var parts = yEv.slice(0, 2).map(function (e) { var rd = resDiff(e); return shortTitle(e) + " " + e.actual + (rd ? "（" + rd + "）" : ""); });
+      lines.push("<div><b>昨日の★3</b>　" + esc(parts.join("／")) + (yEv.length > 2 ? "　ほか" + (yEv.length - 2) + "件" : "") + "</div>");
+    }
+    var tEv = calEvents.filter(function (e) { return e.t >= day.end && e.t < day.end + 86400000 && e.stars === 3; }).sort(function (a, b) { return a.t - b.t; });
+    if (tEv.length) lines.push("<div><b>明日の山場</b>　" + HHMM(tEv[0].t) + " " + esc(jaTitle(tEv[0])) + (tEv.length > 1 ? "（★3は" + tEv.length + "件）" : "") + "</div>");
+    box.innerHTML = lines.join(""); box.hidden = !lines.length;
+  }
+  var EV_GLOSS = [
+    [/Non-Farm|Employment Change/i, "米国の雇用者数の増減。雇用統計の本体で、金・ドル円が最も大きく動く"],
+    [/Unemployment Rate/i, "米国の失業率。雇用の強さを見る"],
+    [/Average Hourly Earnings/i, "米国の平均時給。伸びが強いとインフレ圧力と見られやすい"],
+    [/Core CPI|\bCPI\b/i, "米国の物価（消費者物価）。強いと利下げが遠のき、ドル高・金安に振れやすい"],
+    [/Core PCE|\bPCE\b/i, "米国の個人消費の物価。FRBが最も重視するインフレ指標"],
+    [/Core PPI|\bPPI\b/i, "米国の生産者物価。川上の物価で、CPIの先行材料"],
+    [/Federal Funds Rate|FOMC Statement/i, "米国の政策金利と声明。金利見通しも同時に動く"],
+    [/FOMC Press/i, "FRB議長の会見。金利の先行きへの言及で動く"],
+    [/\bGDP\b/i, "米国の国内総生産。景気の総合点"],
+    [/Retail Sales/i, "米国の小売売上高。個人消費の勢いを見る"],
+    [/Durable Goods/i, "米国の耐久財受注。企業の設備投資の先行指標"],
+    [/ISM Manufacturing/i, "米国の製造業の景況感（50が境目）"],
+    [/ISM Services|ISM Non-Manufacturing/i, "米国のサービス業の景況感（50が境目）"],
+    [/JOLTS/i, "米国の求人数。雇用の熱さを見る"],
+    [/ADP/i, "米国の民間雇用者数。雇用統計の前哨"],
+    [/Jobless Claims|Unemployment Claims/i, "米国の新規失業保険申請。毎週出る雇用の速報"],
+    [/Consumer Confidence|Consumer Sentiment/i, "米国の消費者の景気マインド"],
+    [/BOJ Policy Rate|Monetary Policy Statement/i, "日銀の政策金利と声明。ドル円が大きく動く"],
+    [/BOJ Press|BOJ Gov/i, "日銀総裁の会見・発言。金利の先行きへの言及で動く"],
+    [/Tokyo Core CPI|National Core CPI/i, "日本の物価（消費者物価）。日銀の利上げ判断の材料"],
+    [/Tankan/i, "日銀短観。日本企業の景況感"],
+    [/Trade Balance/i, "貿易収支。円の需給材料"],
+    [/Crude Oil Inventories/i, "米国の原油在庫。原油価格が動く"],
+    [/Speaks|Testifies/i, "要人の発言。金利や政策への言及で相場が動くことがある"]
+  ];
+  function glossFor(e) { for (var i = 0; i < EV_GLOSS.length; i++) if (EV_GLOSS[i][0].test(e.title)) return EV_GLOSS[i][1]; return ""; }
+  var ulG = document.getElementById("ind-list");
+  if (ulG) ulG.addEventListener("click", function (ev) { var li = ev.target && ev.target.closest ? ev.target.closest("li") : null; if (!li) return; var g = li.querySelector(".gloss"); if (g) g.hidden = !g.hidden; });
   function renderIndicators() {
     if (!calEvents) return;
     var ulF = document.getElementById("ind-list");
     ulF.classList.toggle("filtered", !!indDay);
     var ipkF = document.getElementById("ind-peak"); if (ipkF && indDay) ipkF.hidden = true;
+    renderIndSess(); renderIndReview();
     if (indDay) {  // カレンダーの「この日の指標を一覧に表示」：その日だけ（「すべて表示」でいつでも元に戻る）
       var p = indDay.split("-"), dt = new Date(+p[0], +p[1] - 1, +p[2]), evs = eventsOn(indDay);
       document.getElementById("ind-day").textContent = (dt.getMonth() + 1) + "月" + dt.getDate() + "日(" + WD[dt.getDay()] + ")だけ";
       ulF.innerHTML = evs.map(function (e) {
         var sub = [e.actual ? "結果 " + e.actual : "", e.forecast ? "予想 " + e.forecast : "", e.previous ? "前回 " + e.previous : ""].filter(Boolean).join(" / ");
-        return '<li><div class="t num"><span class="date">' + MDW(e.t) + "</span>" + HHMM(e.t) + '<span class="tz">JST</span></div><div class="stars" data-v="' + e.stars + '"></div><div class="b"><div class="n">' + esc(jaTitle(e)) + '</div><div class="s num">' + esc(sub || (isEventOnly(e) ? "イベント（数値の発表なし）" : "　")) + '</div></div></li>';
+        var gl = glossFor(e);
+        return '<li><div class="t num"><span class="date">' + MDW(e.t) + "</span>" + HHMM(e.t) + '<span class="tz">JST</span></div><div class="stars" data-v="' + e.stars + '"></div><div class="b"><div class="n">' + esc(jaTitle(e)) + (gl ? '<span class="gloss-hint">解説</span>' : "") + '</div><div class="s num">' + esc(sub || (isEventOnly(e) ? "イベント（数値の発表なし）" : "　")) + '</div>' + (gl ? '<div class="s gloss" hidden>' + esc(gl) + "</div>" : "") + "</div></li>";
       }).join("") + '<li class="empty"><button type="button" class="retry" data-ind-all>すべて表示</button></li>';
       ulF.querySelectorAll(".stars").forEach(paintStars);
       return;
@@ -5078,6 +5171,8 @@ window.TD_THEME = (function () {
         s.innerHTML = '<span class="soon"></span>';
         s.firstChild.textContent = "あと" + Math.ceil(mins) + "分" + (sub ? "｜" + sub : "");
       } else s.textContent = sub || (isEventOnly(e) ? "イベント（数値の発表なし）" : "　");
+      var gl2 = glossFor(e);
+      if (gl2) { var gd2 = document.createElement("div"); gd2.className = "s gloss"; gd2.textContent = gl2; gd2.hidden = true; li.querySelector(".b").appendChild(gd2); var hint = document.createElement("span"); hint.className = "gloss-hint"; hint.textContent = "解説"; li.querySelector(".n").appendChild(hint); }
       if (e.stars === 3 && mins > -30 && mins <= 60) {  // ★3：発表の前後（1時間前〜30分後）に注意を添える（ふだんは行を増やさない）
         var w = document.createElement("div"); w.className = "s warn"; w.textContent = "発表前後は値動きとスプレッドに注意"; li.querySelector(".b").appendChild(w);
       }
