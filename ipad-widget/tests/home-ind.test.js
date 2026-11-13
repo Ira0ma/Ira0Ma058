@@ -103,4 +103,6 @@ test("ホーム帯3点セット: 現在区間の強調・旗・ピル＋残り�
   assert.ok(sess.includes('" cur"'), "現在区間の強調クラス");
   assert.ok(sess.includes("で終了") && sess.includes("開始"), "残り時間の文言");
   assert.match(HTML, /\.isess-band\.cur \{ opacity: \.95; \}/);
+  assert.ok(HTML.includes("HHMM(new Date(now))"), "home flag shows current time");
+  assert.match(HTML, /\.isess-flag \{ position: absolute; top: -10px/);
 });
