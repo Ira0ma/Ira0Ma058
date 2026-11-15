@@ -44,4 +44,8 @@ test("ホーム：nd が有効化され、カードの質感と使い方ボタ�
   assert.ok(HOME.includes('window.HOWTO_VIDEO["howto-app"]') || HOME.includes("HOWTO_VIDEO"));
   assert.ok(HOME.includes('"howto-app"'), "ホームの受け口キーは howto-app");
   assert.ok(HOME.includes(".howto-btn{display:none}"), "ボタンは nd のときだけ出る");
+  // ボタンは時計カードではなくタブバー側にある（時計カード内だと通知・音量ボタンに被るため）
+  const clockSeg = HOME.slice(HOME.indexOf('id="clock"'), HOME.indexOf('id="markets"'));
+  assert.ok(!clockSeg.includes("howtoBtn"), "時計カード内にボタンはない");
+  assert.ok(HOME.indexOf('id="howtoBtn"') > HOME.indexOf('class="tp-tabs"'), "ボタンはタブバーの中にある");
 });
