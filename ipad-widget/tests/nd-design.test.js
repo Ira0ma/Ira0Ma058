@@ -83,3 +83,9 @@ test("ホームのドック：ステージ内の持ち場に必ず収まる構�
   assert.ok(fit1 <= slot, `fit1 の総高 ${fit1}px が持ち場 ${slot}px に収まる`);
   assert.ok(fit2 <= slot, `fit2 の総高 ${fit2}px が持ち場 ${slot}px に収まる`);
 });
+
+test("注目ポイント：「近い水準」の行は銘柄ボタン行の枠線と被らない間隔を持つ", () => {
+  const m = HOME.match(/#points \.pt-near \{[^}]*padding-top: (\d+)px/);
+  assert.ok(m, "pt-near の padding-top が読める");
+  assert.ok(+m[1] >= 6, `padding-top は 6px 以上（現在 ${m[1]}px）：margin-top:auto が0になる満杯時でも枠線と文字が離れる`);
+});
