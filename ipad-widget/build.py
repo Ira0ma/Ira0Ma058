@@ -63,6 +63,8 @@ for old, new in [
      "location.hostname.endsWith('github.io') ? '/Ira0Ma058/' : 'https://ira0ma.github.io/Ira0Ma058/'"),
     ("fetch('reactions.json", "fetch(SITE+'reactions.json"),
     ("fetch('holidays.json", "fetch(SITE+'holidays.json"),
+    ('window.HOWTO_VIDEO["howto-silver"] = "videos/silver-guide.mp4";',
+     'window.HOWTO_VIDEO["howto-silver"] = (location.hostname.endsWith(\'github.io\') ? \'/Ira0Ma058/\' : \'https://ira0ma.github.io/Ira0Ma058/\') + "videos/silver-guide.mp4";'),
 ]:
     if svl.count(old) != 1:
         raise SystemExit("build.py: silver detour pattern not found exactly once: %r" % old)
