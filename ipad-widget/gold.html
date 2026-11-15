@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="7412cd77d6">
+<meta name="build" content="ffc6c5eada">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,13 +16,14 @@
    判定色・ローソク足の色・計算には一切触らない。current（基本デザイン）と未設定のときは従来の見た目のまま。
    ホームでテーマを変えると storage イベントで開いているダッシュボードにもその場で追随する。 */
 window.TD_THEME = (function () {
-  var NAMES = ["current", "neon", "spring", "autumn", "xmas", "newyear", "winter", "shippu", "aurora"];
+  var NAMES = ["current", "neon", "spring", "yozakura", "tsuyu", "autumn", "halloween", "xmas", "newyear", "winter", "shippu", "aurora"];
   function byDate(d) {
     var m = d.getMonth() + 1, day = d.getDate();
     if ((m === 12 && day >= 29) || (m === 1 && day <= 3)) return "newyear";
     if (m === 12) return "xmas";
     if (m >= 3 && m <= 5) return "spring";
     if (m >= 6 && m <= 8) return "neon";
+    if (m === 10 && day >= 16) return "halloween";
     if (m >= 9 && m <= 11) return "autumn";
     return "winter";
   }
@@ -45,6 +46,12 @@ window.TD_THEME = (function () {
   window.addEventListener("focus", apply);
   return { id: id, byDate: byDate, NAMES: NAMES, apply: apply };
 })();
+</script>
+<script>
+/* 新デザイン（nd）の先行適用：GOLDダッシュボードだけに効かせる。
+   有効化はファイル名（gold.html）で行い、メインスクリプトの直前で INSTR_KEY による最終確認をする。
+   色はテーマ変数（--gold 等）を使うので、季節テーマは差し色としてそのまま効く。 */
+if (location.pathname.indexOf("gold.html") >= 0) document.documentElement.classList.add("nd");
 </script>
 <style>
 :root{--safe-top:env(safe-area-inset-top,0px);
@@ -635,12 +642,24 @@ html[data-theme="autumn"]{--bg:#0a0705;--panel:#291b12;--panel2:#1e130b;--line:#
 html[data-theme="autumn"],html[data-theme="autumn"] body{background:radial-gradient(circle at top,#1d1108 0,#120b06 30%,#0a0705 100%)}
 html[data-theme="autumn"] .panel{background:linear-gradient(180deg,rgba(41,27,18,.97),rgba(30,19,12,.97));border-color:#453019}
 html[data-theme="autumn"] .mini{background:rgba(10,7,5,.92)}
+html[data-theme="yozakura"]{--bg:#070a18;--panel:#191c33;--panel2:#11142a;--line:#353a5e;--gold:#ff9ec4;--gold2:#ffc9dd}
+html[data-theme="yozakura"],html[data-theme="yozakura"] body{background:radial-gradient(circle at top,#131736 0,#0b0e22 30%,#070a18 100%)}
+html[data-theme="yozakura"] .panel{background:linear-gradient(180deg,rgba(25,28,51,.97),rgba(17,20,42,.97));border-color:#353a5e}
+html[data-theme="yozakura"] .mini{background:rgba(7,10,24,.92)}
+html[data-theme="tsuyu"]{--bg:#0a0e12;--panel:#1a222c;--panel2:#121920;--line:#31435c;--gold:#9db8e8;--gold2:#c9dcf7}
+html[data-theme="tsuyu"],html[data-theme="tsuyu"] body{background:radial-gradient(circle at top,#141e2c 0,#0d141c 30%,#0a0e12 100%)}
+html[data-theme="tsuyu"] .panel{background:linear-gradient(180deg,rgba(26,34,44,.97),rgba(18,25,32,.97));border-color:#31435c}
+html[data-theme="tsuyu"] .mini{background:rgba(10,14,18,.92)}
+html[data-theme="halloween"]{--bg:#0a0610;--panel:#211331;--panel2:#170d24;--line:#453064;--gold:#ff8c2e;--gold2:#ffb02e}
+html[data-theme="halloween"],html[data-theme="halloween"] body{background:radial-gradient(ellipse 70% 45% at 85% -6%,rgba(150,80,255,.12),rgba(0,0,0,0) 60%),radial-gradient(circle at top,#170b26 0,#0f0819 30%,#0a0610 100%)}
+html[data-theme="halloween"] .panel{background:linear-gradient(180deg,rgba(33,19,49,.97),rgba(23,13,36,.97));border-color:#453064}
+html[data-theme="halloween"] .mini{background:rgba(10,6,16,.92)}
 html[data-theme="xmas"]{--bg:#050907;--panel:#16241a;--panel2:#0e1a11;--line:#2f4530;--gold:#f0c85a;--gold2:#f7dd96}
 html[data-theme="xmas"],html[data-theme="xmas"] body{background:radial-gradient(circle at top,#0d1a10 0,#081008 30%,#050907 100%)}
 html[data-theme="xmas"] .panel{background:linear-gradient(180deg,rgba(22,36,25,.97),rgba(14,26,17,.97));border-color:#2f4530}
 html[data-theme="xmas"] .mini{background:rgba(5,9,7,.92)}
 html[data-theme="newyear"]{--bg:#090606;--panel:#281a12;--panel2:#1e120c;--line:#463322;--gold:#f5c85f;--gold2:#f9dc9b}
-html[data-theme="newyear"],html[data-theme="newyear"] body{background:radial-gradient(circle at top,#1a0f08 0,#100807 30%,#090606 100%)}
+html[data-theme="newyear"],html[data-theme="newyear"] body{background:radial-gradient(ellipse 60% 40% at 85% -6%,rgba(232,58,46,.12),rgba(0,0,0,0) 60%),radial-gradient(circle at top,#1a0f08 0,#100807 30%,#090606 100%)}
 html[data-theme="newyear"] .panel{background:linear-gradient(180deg,rgba(40,26,18,.97),rgba(30,18,12,.97));border-color:#463322}
 html[data-theme="newyear"] .mini{background:rgba(9,6,6,.92)}
 html[data-theme="winter"]{--bg:#06090e;--panel:#16202e;--panel2:#0e1622;--line:#263c56;--gold:#a5d7ff;--gold2:#cfeaff}
@@ -655,6 +674,32 @@ html[data-theme="aurora"]{--bg:#05070f;--panel:#111924;--panel2:#0a1018;--line:#
 html[data-theme="aurora"],html[data-theme="aurora"] body{background:radial-gradient(ellipse 90% 55% at 50% -8%,rgba(90,255,170,.12),rgba(0,0,0,0) 60%),radial-gradient(circle at top,#0a1420 0,#060a12 30%,#05070f 100%)}
 html[data-theme="aurora"] .panel{background:linear-gradient(180deg,rgba(17,25,34,.97),rgba(10,16,24,.97));border-color:#274a3a}
 html[data-theme="aurora"] .mini{background:rgba(5,7,15,.92)}
+
+/* ===== 新デザイン（nd）GOLD先行：配置と形だけを変え、色はテーマ変数に従う ===== */
+html.nd body{background:radial-gradient(900px 480px at 88% -5%,color-mix(in srgb,var(--gold) 16%,transparent),transparent 60%),radial-gradient(700px 500px at -10% 40%,rgba(70,90,200,.12),transparent 60%),radial-gradient(600px 600px at 110% 85%,rgba(150,60,180,.08),transparent 60%),var(--bg)}
+html.nd .panel{background:linear-gradient(165deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:18px}
+html.nd #secOverview{border-radius:22px}
+html.nd #secChart{border-radius:22px}
+html.nd .cardhead .title{letter-spacing:.05em}
+html.nd .tag{border:1px solid var(--line);border-radius:999px;color:var(--gold2)}
+html.nd .logo{background:linear-gradient(145deg,var(--gold),var(--gold2));color:#141005;border-radius:14px}
+html.nd header{position:relative}
+.howto-btn{display:none}
+html.nd .howto-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(90deg,var(--gold),var(--gold2));color:#141005;font-weight:800;font-size:13px;border:none;border-radius:999px;padding:9px 16px;cursor:pointer;font-family:inherit}
+.howtonote{display:none}
+html.nd .howtonote.open{display:block;position:absolute;top:calc(100% + 6px);right:0;z-index:40;max-width:min(420px,90vw);background:var(--panel);border:1px solid var(--gold);border-radius:12px;padding:10px 12px;font-size:12.5px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+@media (min-width:1150px){
+html.nd .shell{display:grid;grid-template-columns:200px minmax(0,1fr);column-gap:14px;grid-template-areas:"head head" "meta meta" "side notice" "side caution" "side regime" "side main" "side foot"}
+html.nd .shell>header{grid-area:head}
+html.nd .shell>.metaline{grid-area:meta}
+html.nd .shell>.quicknav{grid-area:side;flex-direction:column;flex-wrap:nowrap;overflow:visible;position:sticky;top:12px;align-self:start;background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:18px;padding:12px;gap:6px}
+html.nd .shell>.quicknav a{display:block;padding:9px 12px;font-size:13px}
+html.nd .shell>#notice{grid-area:notice}
+html.nd .shell>#caution{grid-area:caution}
+html.nd .shell>#regimeBand{grid-area:regime}
+html.nd .shell>main{grid-area:main;min-width:0}
+html.nd .shell>footer{grid-area:foot}
+}
 </style>
 </head>
 <body>
@@ -677,6 +722,8 @@ html[data-theme="aurora"] .mini{background:rgba(5,7,15,.92)}
     <div class="pill"><span id="mainDot" class="dot"></span><b id="mainStatus">接続中</b></div>
     <button id="autoBtn" class="toggle on" aria-pressed="true"><span class="knob"></span>AUTO</button>
     <button id="refreshBtn" class="primary">⟳ 今すぐ更新</button>
+    <button id="howtoBtn" class="howto-btn" type="button" title="この画面の使い方をアニメ動画で見る（項目ごとの説明動画とは別です）">▶ 使い方をアニメで見る</button>
+    <div id="howtoNote" class="howtonote" hidden>使い方動画は制作中です。完成したら、このボタンから見られるようになります。</div>
   </div>
 </header>
 
@@ -1003,6 +1050,22 @@ html[data-theme="aurora"] .mini{background:rgba(5,7,15,.92)}
 </div>
 
 <script src="core.js"></script>
+<script>
+/* 新デザインの最終確認：ペア用ファイル（INSTR_KEY あり）では nd を外す。GOLD（未設定）だけが残る */
+if (window.INSTR_KEY && window.INSTR_KEY !== "gold") document.documentElement.classList.remove("nd");
+/* 使い方動画ボタン：動画の受け口。完成した動画のURLを HOWTO_VIDEO に入れるとボタンがそのまま開く */
+window.HOWTO_VIDEO = window.HOWTO_VIDEO || {};
+document.addEventListener("DOMContentLoaded", function () {
+  var b = document.getElementById("howtoBtn");
+  if (!b) return;
+  b.addEventListener("click", function () {
+    var url = window.HOWTO_VIDEO["howto-" + (window.INSTR_KEY || "gold")];
+    if (url) { window.open(url, "_blank", "noopener"); return; }
+    var n = document.getElementById("howtoNote");
+    if (n) { var open = n.classList.toggle("open"); n.hidden = !open; }
+  });
+});
+</script>
 <script>
 const $ = id => document.getElementById(id);
 /* 銘柄ごとの設定。同じページを usdjpy.html として配信すると USD/JPY 版になる（build.py が生成） */
