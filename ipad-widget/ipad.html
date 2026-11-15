@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="91036f06fc">
+<meta name="build" content="efe190e2d5">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -73,6 +73,38 @@ html[data-theme="autumn"] {
   --head-points: #ffaa50; --head-weather: #ff8c5a; --head-ind: #ffc85a; --head-cal: #ff7864; --head-x: #ffaa6e; --head-books: #e6785a;
   --strip-bg: radial-gradient(circle at 4px 50%, #ff963c 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 30px 50%, #dc5028 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 56px 50%, #ffbe50 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 82px 50%, #aa3c23 0 2.8px, rgba(0,0,0,0) 3.4px); --strip-size: 104px 7px;
 }
+html[data-theme="yozakura"] {
+  /* 夜桜：春の夜バージョン。深い藍の夜空に、差し色は桜ピンクと月明かりの銀。手動でのみ選べる（自動割当には入れない）。
+     粒子は桜の花びらを夜色で。判定色（--up-red/--up-green/--star）の意味は他のテーマと同じに保つ */
+  --night: #070a18; --glass: rgba(12, 15, 33, 0.88); --glass-line: rgba(255, 158, 196, 0.30);
+  --ink: #f4f2fa; --ink-2: rgba(244, 242, 250, 0.72); --ink-3: rgba(244, 242, 250, 0.48);
+  --gold: #ff9ec4; --gold-rgb: 255, 158, 196; --gold-soft: rgba(255, 158, 196, 0.22); --gold-deep: #c46a94;
+  --on-accent: #2b0f1e; --panel-rgb: 15, 17, 34;
+  --up-red: #ff6e78; --up-green: #6eeb96; --star: #ffe9a8;
+  --head-points: #a8e6b0; --head-weather: #ffb7d5; --head-ind: #ffd9a0; --head-cal: #c9b8ff; --head-x: #a8d4ff; --head-books: #ffabc2;
+  --strip-bg: radial-gradient(circle at 4px 50%, #ff9ec4 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 30px 50%, #f2ecff 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 56px 50%, #d9a0ff 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 82px 50%, #ffc9dd 0 2.8px, rgba(0,0,0,0) 3.4px); --strip-size: 104px 7px;
+}
+html[data-theme="tsuyu"] {
+  /* 梅雨：灰青からスレートの背景に、紫陽花の青紫と雨の水色。手動でのみ選べる。
+     粒子は細い雨粒で、量・透明度は控えめ（文字の読みやすさを損なわない範囲） */
+  --night: #0a0e12; --glass: rgba(14, 19, 25, 0.88); --glass-line: rgba(141, 178, 224, 0.30);
+  --ink: #eef3f8; --ink-2: rgba(238, 243, 248, 0.72); --ink-3: rgba(238, 243, 248, 0.48);
+  --gold: #9db8e8; --gold-rgb: 157, 184, 232; --gold-soft: rgba(157, 184, 232, 0.22); --gold-deep: #6884b8;
+  --on-accent: #0e1a2a; --panel-rgb: 15, 21, 29;
+  --up-red: #ff7882; --up-green: #5aebaa; --star: #c8d8ff;
+  --head-points: #8fe3b8; --head-weather: #8fd0ff; --head-ind: #ffd9a0; --head-cal: #b49ae8; --head-x: #7dd8e8; --head-books: #c9a8ff;
+  --strip-bg: radial-gradient(circle at 4px 50%, #9db8e8 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 30px 50%, #b49ae8 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 56px 50%, #8fd0ff 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 82px 50%, #d5e6ff 0 2.8px, rgba(0,0,0,0) 3.4px); --strip-size: 104px 7px;
+}
+html[data-theme="halloween"] {
+  /* ハロウィン：黒から深紫の背景に、かぼちゃの橙と紫。自動割当は10月16〜31日だけ（10月前半は秋のまま）。粒子は控えめ */
+  --night: #0a0610; --glass: rgba(17, 10, 25, 0.88); --glass-line: rgba(255, 140, 46, 0.32);
+  --ink: #faf3ec; --ink-2: rgba(250, 243, 236, 0.72); --ink-3: rgba(250, 243, 236, 0.48);
+  --gold: #ff8c2e; --gold-rgb: 255, 140, 46; --gold-soft: rgba(255, 140, 46, 0.22); --gold-deep: #c25e14;
+  --on-accent: #2b1402; --panel-rgb: 23, 13, 33;
+  --up-red: #ff5f4d; --up-green: #7ee787; --star: #ffb02e;
+  --head-points: #ffb02e; --head-weather: #c39bff; --head-ind: #ffcf5a; --head-cal: #ff7847; --head-x: #b26bff; --head-books: #ff9e57;
+  --strip-bg: radial-gradient(circle at 4px 50%, #ff8c2e 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 30px 50%, #b26bff 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 56px 50%, #f5f0ff 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 82px 50%, #ffb02e 0 2.8px, rgba(0,0,0,0) 3.4px); --strip-size: 104px 7px;
+}
 html[data-theme="xmas"] {
   --night: #050907; --glass: rgba(10, 17, 13, 0.88); --glass-line: rgba(240, 200, 90, 0.32);
   --ink: #f5f8f0; --ink-2: rgba(245, 248, 240, 0.72); --ink-3: rgba(245, 248, 240, 0.48);
@@ -89,7 +121,7 @@ html[data-theme="newyear"] {
   --on-accent: #241a03; --panel-rgb: 30, 18, 12;
   --up-red: #ff645f; --up-green: #6eeb8c; --star: #ffcd55;
   --head-points: #ff9678; --head-weather: #ffcd82; --head-ind: #ffbe5a; --head-cal: #ff826e; --head-x: #ffdc96; --head-books: #ffa082;
-  --strip-bg: radial-gradient(circle at 4px 50%, #ffcd6e 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 30px 50%, #ff6e5f 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 56px 50%, #fff0d2 0 2.8px, rgba(0,0,0,0) 3.4px), radial-gradient(circle at 82px 50%, #ffaa5a 0 2.8px, rgba(0,0,0,0) 3.4px); --strip-size: 104px 7px;
+  --strip-bg: radial-gradient(circle at 4px 50%, #ffcf5a 0 3.2px, rgba(0,0,0,0) 3.9px), radial-gradient(circle at 30px 50%, #e83a2e 0 3.2px, rgba(0,0,0,0) 3.9px), radial-gradient(circle at 56px 50%, #ffffff 0 3.2px, rgba(0,0,0,0) 3.9px), radial-gradient(circle at 82px 50%, #ff8a5a 0 3.2px, rgba(0,0,0,0) 3.9px); --strip-size: 104px 8px;
 }
 html[data-theme="winter"] {
   --night: #06090e; --glass: rgba(11, 16, 24, 0.88); --glass-line: rgba(165, 215, 255, 0.30);
@@ -169,7 +201,9 @@ html[data-theme]:not([data-theme="current"]) .pm-map::before { width: 2px; backg
 /* 舞う粒子（桜・落ち葉・雪・金粉）。操作は妨げない */
 .td-particles { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; }
 .td-particles span { position: absolute; top: -4vh; display: block; animation-name: td-fall; animation-timing-function: linear; animation-iteration-count: infinite; will-change: transform; }
+html.lowpower .td-particles { display: none; }  /* 省電力モードでは舞う飾り（桜・雨・雪・金粉など）を止める（設定画面の説明どおり） */
 @keyframes td-fall { 0% { transform: translate3d(0, -4vh, 0) rotate(0deg); } 100% { transform: translate3d(var(--sw, 3vw), 106vh, 0) rotate(300deg); } }
+@keyframes td-rain { 0% { transform: translate3d(0, -4vh, 0); } 100% { transform: translate3d(var(--sw, 0.4vw), 106vh, 0); } }
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { height: 100%; }
@@ -1793,16 +1827,17 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 </div>
 
 <script>
-/* テーマ判定：保存した設定 td_theme（auto/current/neon/spring/summer/autumn/xmas/newyear/winter/shippu/aurora）と日付から決める。
+/* テーマ判定：保存した設定 td_theme（auto/current/neon/spring/yozakura/summer/tsuyu/autumn/halloween/xmas/newyear/winter/shippu/aurora）と日付から決める。
    ?theme= は確認用の一時上書き（保存しない）。current = 基本デザイン。shippu = 利確の炎、aurora = 安らぎのオーロラ（どちらも手動のみ、季節の自動切替には入らない）。 */
 window.TD_THEME = (function () {
-  var NAMES = ["current", "neon", "spring", "autumn", "xmas", "newyear", "winter", "shippu", "aurora"];
+  var NAMES = ["current", "neon", "spring", "yozakura", "tsuyu", "autumn", "halloween", "xmas", "newyear", "winter", "shippu", "aurora"];
   function byDate(d) {
     var m = d.getMonth() + 1, day = d.getDate();
     if ((m === 12 && day >= 29) || (m === 1 && day <= 3)) return "newyear";
     if (m === 12) return "xmas";
     if (m >= 3 && m <= 5) return "spring";
     if (m >= 6 && m <= 8) return "neon";
+    if (m === 10 && day >= 16) return "halloween";
     if (m >= 9 && m <= 11) return "autumn";
     return "winter";
   }
@@ -1848,14 +1883,17 @@ window.TDFontApply();
     spring: { cols: ["#ffb7c5", "#ffdde8", "#fff0f4"], petal: true },
     autumn: { cols: ["#e87830", "#cd5028", "#f2a246", "#b84a28"], petal: true },
     xmas: { cols: ["#ffffff"], snow: true },
-    newyear: { cols: ["#ffd782", "#fff0d2", "#ffb46e"], dust: true },
+    newyear: { cols: ["#ffd782", "#fff0d2", "#ffb46e", "#ff6a5a", "#ffffff"], dust: true, n: 52 },
     winter: { cols: ["#ffffff"], snow: true },
-    shippu: { cols: ["#ffb03a", "#ff7a3c", "#ffd76a"], spark: true }
+    shippu: { cols: ["#ffb03a", "#ff7a3c", "#ffd76a"], spark: true },
+    yozakura: { cols: ["#e88bb0", "#f4b8d0", "#aab6ff"], petal: true },
+    tsuyu: { cols: ["#aebfe0", "#c3d4ee"], rain: true },
+    halloween: { cols: ["#ff8c2e", "#b26bff", "#ffd76a"], spark: true, dim: true }
   };
   var K = KIND[id]; if (!K) return;
   var layer = document.createElement("div");
   layer.className = "td-particles"; layer.setAttribute("aria-hidden", "true");
-  for (var i = 0; i < 34; i++) {
+  for (var i = 0, N = (K.n || 34); i < N; i++) {
     var sp = document.createElement("span"), r = Math.random;
     var sz = K.snow ? 2.5 + r() * 3 : K.dust ? 2.5 + r() * 2.5 : K.spark ? 2 + r() * 2.5 : 5 + r() * 5;
     sp.style.left = (r() * 100) + "vw";
@@ -1871,6 +1909,16 @@ window.TDFontApply();
       sp.style.opacity = (0.45 + r() * 0.4).toFixed(2);
       sp.style.animationDuration = (15 + r() * 10).toFixed(1) + "s";
     }
+    if (K.rain) {  // 梅雨の雨粒：細い筋で速く薄く落とす。回転させない専用アニメーション（td-rain）で、揺れも小さく
+      sp.style.width = "1.6px"; sp.style.height = (9 + r() * 7).toFixed(1) + "px";
+      sp.style.borderRadius = "2px";
+      sp.style.opacity = (0.14 + r() * 0.22).toFixed(2);
+      sp.style.setProperty("--sw", ((r() * 0.8 - 0.4).toFixed(2)) + "vw");
+      sp.style.animationName = "td-rain";
+      sp.style.animationDuration = (1.5 + r() * 1.1).toFixed(2) + "s";
+      sp.style.animationDelay = (-r() * 3).toFixed(1) + "s";
+    }
+    if (K.dim) sp.style.opacity = (0.28 + r() * 0.3).toFixed(2);  // ハロウィンの火花は控えめに薄くする
     layer.appendChild(sp);
   }
   document.body.appendChild(layer);
@@ -2091,8 +2139,8 @@ window.TDFontApply();
   new MutationObserver(function () { syncFlowDock(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
   syncFlowDock();
   /* theme switch (plan A: a button at the bottom-right with a list). The dock holds the five main buttons (four until 2026-11-06), so the theme lives on its own at the right. Same setting as the tools screen (td_theme). */
-  var THEME_LABELS = [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["summer", "夏"], ["autumn", "秋"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"], ["shippu", "利確の炎🔥"], ["aurora", "🌌 安らぎのオーロラ"]];
-  var THEME_NAMES = { current: "基本デザイン", neon: "アゲアゲ⭐︎ネオン", spring: "春", summer: "夏", autumn: "秋", xmas: "クリスマス", newyear: "正月", winter: "冬", shippu: "利確の炎🔥", aurora: "安らぎのオーロラ" };
+  var THEME_LABELS = [["auto", "自動（季節で切替）"], ["current", "基本デザイン"], ["neon", "アゲアゲ⭐︎ネオン"], ["spring", "春"], ["yozakura", "夜桜"], ["summer", "夏"], ["tsuyu", "梅雨"], ["autumn", "秋"], ["halloween", "ハロウィン"], ["xmas", "クリスマス"], ["newyear", "正月"], ["winter", "冬"], ["shippu", "利確の炎🔥"], ["aurora", "🌌 安らぎのオーロラ"]];
+  var THEME_NAMES = { current: "基本デザイン", neon: "アゲアゲ⭐︎ネオン", spring: "春", yozakura: "夜桜", summer: "夏", tsuyu: "梅雨", autumn: "秋", halloween: "ハロウィン", xmas: "クリスマス", newyear: "正月", winter: "冬", shippu: "利確の炎🔥", aurora: "安らぎのオーロラ" };
   var themeModeNow = function () { try { return localStorage.getItem("td_theme") || "auto"; } catch (e) { return "auto"; } };
   var themeBtn = document.createElement("button"); themeBtn.type = "button"; themeBtn.className = "dk-theme-btn"; themeBtn.id = "theme-toggle";
   themeBtn.title = "ホーム画面のテーマを切り替えます（ツール画面の設定と同じ）";
@@ -2278,11 +2326,11 @@ window.TDFontApply();
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=7412cd77d6", title: "GOLD分析" },
-    silver: { src: "learn/silver.html?v=e7922598b8", title: "シルバー分析" },
-    usdjpy: { src: "usdjpy.html?v=1b8b3cae9e", title: "ドル円分析" },
-    btc: { src: "btc.html?v=9c86cc9934", title: "BTC分析" },
-    oil: { src: "oil.html?v=e2e81ec5c5", title: "オイル分析" },
+    gold: { src: "gold.html?v=ffc6c5eada", title: "GOLD分析" },
+    silver: { src: "learn/silver.html?v=b2626464db", title: "シルバー分析" },
+    usdjpy: { src: "usdjpy.html?v=15d274d84f", title: "ドル円分析" },
+    btc: { src: "btc.html?v=b571a7bcaa", title: "BTC分析" },
+    oil: { src: "oil.html?v=5324147804", title: "オイル分析" },
     lots: { src: "learn/lotsim.html", title: "ロット図説" },
     weekend: { src: "learn/weekend.html", title: "週末ボード" }
   };
@@ -4250,6 +4298,9 @@ window.TDFontApply();
       xmas: { base: "#050907", dot: "255,240,210", glows: [["rgba(240,200,90,.12)", 0.5, 0, 0.55], ["rgba(255,90,90,.10)", 0.92, 0.05, 0.5], ["rgba(80,240,130,.10)", 0.08, 0.95, 0.5]] },
       newyear: { base: "#090606", dot: "255,220,150", glows: [["rgba(245,200,95,.14)", 0.15, 0.05, 0.55], ["rgba(255,100,95,.10)", 0.9, 0.08, 0.5], ["rgba(255,170,90,.08)", 0.85, 0.95, 0.5]] },
       winter: { base: "#06090e", dot: "205,232,255", glows: [["rgba(140,200,255,.13)", 0.15, 0.05, 0.55], ["rgba(90,130,255,.12)", 0.9, 0.05, 0.5], ["rgba(120,220,255,.08)", 0.85, 0.95, 0.5]] },
+      yozakura: { base: "#070a18", dot: "255,190,220", glows: [["rgba(255,120,180,.13)", 0.15, 0.05, 0.55], ["rgba(120,130,255,.10)", 0.9, 0.05, 0.5], ["rgba(230,235,255,.07)", 0.85, 0.95, 0.5]] },
+      tsuyu: { base: "#0a0e12", dot: "180,205,240", glows: [["rgba(120,160,230,.12)", 0.15, 0.05, 0.55], ["rgba(150,120,230,.09)", 0.9, 0.9, 0.5], ["rgba(140,210,255,.07)", 0.85, 0.05, 0.45]] },
+      halloween: { base: "#0a0610", dot: "255,190,120", glows: [["rgba(255,130,40,.13)", 0.15, 0.05, 0.55], ["rgba(150,80,255,.11)", 0.9, 0.05, 0.5], ["rgba(255,170,60,.07)", 0.85, 0.95, 0.5]] },
       shippu: { inferno: 1, base: "#0a0202", dot: "255,176,58", glows: [] },
       aurora: { auroraScene: 1, base: "#05070f", dot: "190,214,255", glows: [] }
     };
