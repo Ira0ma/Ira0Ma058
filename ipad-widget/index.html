@@ -1554,9 +1554,10 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 html.nd .card{background:linear-gradient(165deg,rgba(var(--panel-rgb),.94),rgba(var(--panel-rgb),.68))}
 html.nd .card-title{color:var(--gold);letter-spacing:.14em}
 .howto-btn{display:none}
-html.nd .howto-btn{display:inline-flex;align-items:center;gap:8px;margin-left:auto;background:linear-gradient(90deg,var(--gold),color-mix(in srgb,var(--gold) 55%,#fff));color:#141005;font-weight:800;font-size:12.5px;border:none;border-radius:999px;padding:8px 14px;cursor:pointer;font-family:inherit;white-space:nowrap}
+html.nd .howto-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-left:auto;background:linear-gradient(90deg,var(--gold),color-mix(in srgb,var(--gold) 55%,#fff));color:#141005;font-weight:800;font-size:12.5px;border:none;border-radius:999px;padding:8px 14px;cursor:pointer;font-family:inherit;white-space:nowrap}
 .howtonote{display:none}
-html.nd .howtonote.open{display:block;position:absolute;top:54px;right:12px;z-index:4;width:min(400px,86%);background:rgba(var(--panel-rgb),.97);border:1px solid var(--gold);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--ink);box-shadow:0 10px 30px rgba(0,0,0,.45)}
+html.nd .vdock .howto-btn{width:100%;margin-top:4px}
+html.nd .howtonote.open{display:block;position:absolute;left:0;right:0;bottom:calc(100% + 6px);z-index:60;width:auto;background:rgba(var(--panel-rgb),.97);border:1px solid var(--gold);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--ink);box-shadow:0 10px 30px rgba(0,0,0,.45)}
 </style>
 
 <canvas id="bg" aria-hidden="true"></canvas>
@@ -1689,9 +1690,7 @@ html.nd .howtonote.open{display:block;position:absolute;top:54px;right:12px;z-in
       <button type="button" class="tp-tab" data-tp="ind" role="tab">📊 指標</button>
       <button type="button" class="tp-tab" data-tp="learn" role="tab">📚 学ぶ</button>
       <button type="button" class="tp-x" id="tp-expand" aria-label="パネルを大きく読む"><span class="tp-x-i" aria-hidden="true">⤢</span><span class="tp-x-t">大きく読む</span></button>
-      <button id="howtoBtn" class="howto-btn" type="button" title="Desk One全体の使い方をアニメ動画で見る（項目ごとの説明動画とは別です）">▶ 使い方をアニメで見る</button>
     </div>
-    <div id="howtoNote" class="howtonote" hidden>使い方動画は制作中です。完成したら、このボタンから見られるようになります。</div>
     <div class="tp-wrap">
       <div class="xp-hint" id="tp-hint" role="note" hidden><span class="xp-hint-t">押すと、パネルが大きくなって一覧が読みやすくなります</span><span class="xp-hint-x" aria-hidden="true">✕</span></div>
   <section id="ind" class="tp-pane" aria-label="今日の重要指標">
@@ -2116,6 +2115,14 @@ window.TDFontApply();
   paintLayoutBtn(); dock.appendChild(layoutBtn); dock.appendChild(toolsBtn);
   dock.appendChild(grpOf("rec", "記録", [jnBtn, plBtn, kbBtn]));
   dock.appendChild(grpOf("opn", "開く", [roomBtn, lotBtn, appRow, appsBtn]));
+  // 使い方動画ボタン（新デザイン）：ドックの最下部に金色の行として置く。動画の受け口は HOWTO_VIDEO["howto-app"]
+  var howtoBtn = document.createElement("button"); howtoBtn.type = "button"; howtoBtn.id = "howtoBtn"; howtoBtn.className = "howto-btn";
+  howtoBtn.textContent = "▶ 使い方をアニメで見る";
+  howtoBtn.title = "Desk One全体の使い方をアニメ動画で見る（項目ごとの説明動画とは別です）";
+  dock.appendChild(howtoBtn);
+  var howtoNote = document.createElement("div"); howtoNote.id = "howtoNote"; howtoNote.className = "howtonote"; howtoNote.hidden = true;
+  howtoNote.textContent = "使い方動画は制作中です。完成したら、このボタンから見られるようになります。";
+  dock.appendChild(howtoNote);
   document.body.appendChild(dock);
   /* 縦並び（flow）では、ドックの実測の高さに合わせて本文（#flow）の下端と初心者注記の位置を決める。
      ROOM登録やアプリ表示でドックが伸びても、最後のカードがドック裏に隠れないようにする（2026-11-09 F6） */

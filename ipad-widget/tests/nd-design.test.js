@@ -40,12 +40,13 @@ test("使い方動画ボタン：1つだけあり、受け口（HOWTO_VIDEO）�
 test("ホーム：nd が有効化され、カードの質感と使い方ボタンが入っている", () => {
   assert.ok(HOME.includes('document.documentElement.classList.add("nd")'));
   assert.ok(HOME.includes("html.nd .card{background:linear-gradient(165deg,rgba(var(--panel-rgb)"));
-  assert.equal(HOME.split('id="howtoBtn"').length - 1, 1);
+  assert.ok(HOME.includes('howtoBtn.className = "howto-btn"'), "ボタンはドック構築JSで作る");
   assert.ok(HOME.includes('window.HOWTO_VIDEO["howto-app"]') || HOME.includes("HOWTO_VIDEO"));
   assert.ok(HOME.includes('"howto-app"'), "ホームの受け口キーは howto-app");
   assert.ok(HOME.includes(".howto-btn{display:none}"), "ボタンは nd のときだけ出る");
-  // ボタンは時計カードではなくタブバー側にある（時計カード内だと通知・音量ボタンに被るため）
+  // ボタンは時計カードにもタブバーにもなく、左ドックの最下部に金色の行として置く（オーナー決定）
   const clockSeg = HOME.slice(HOME.indexOf('id="clock"'), HOME.indexOf('id="markets"'));
   assert.ok(!clockSeg.includes("howtoBtn"), "時計カード内にボタンはない");
-  assert.ok(HOME.indexOf('id="howtoBtn"') > HOME.indexOf('class="tp-tabs"'), "ボタンはタブバーの中にある");
+  assert.ok(HOME.includes("dock.appendChild(howtoBtn)"), "ボタンはドックへ追加される");
+  assert.ok(HOME.indexOf("dock.appendChild(howtoBtn)") > HOME.indexOf('grpOf("opn", "開く"'), "ボタンはドックの最後のグループより後＝最下部");
 });
