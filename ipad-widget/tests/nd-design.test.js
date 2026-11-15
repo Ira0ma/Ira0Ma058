@@ -8,6 +8,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const DASH = fs.readFileSync(path.join(__dirname, "..", "gold.html"), "utf8");
+const HOME = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 
 test("nd：headの早期スクリプトで全ペアに有効化する", () => {
   assert.ok(DASH.includes('document.documentElement.classList.add("nd")'));
@@ -34,4 +35,13 @@ test("使い方動画ボタン：1つだけあり、受け口（HOWTO_VIDEO）�
   // 既定では隠れていて、nd のときだけ出る
   assert.ok(DASH.includes(".howto-btn{display:none}"));
   assert.ok(DASH.includes("html.nd .howto-btn{display:inline-flex"));
+});
+
+test("ホーム：nd が有効化され、カードの質感と使い方ボタンが入っている", () => {
+  assert.ok(HOME.includes('document.documentElement.classList.add("nd")'));
+  assert.ok(HOME.includes("html.nd .card{background:linear-gradient(165deg,rgba(var(--panel-rgb)"));
+  assert.equal(HOME.split('id="howtoBtn"').length - 1, 1);
+  assert.ok(HOME.includes('window.HOWTO_VIDEO["howto-app"]') || HOME.includes("HOWTO_VIDEO"));
+  assert.ok(HOME.includes('"howto-app"'), "ホームの受け口キーは howto-app");
+  assert.ok(HOME.includes(".howto-btn{display:none}"), "ボタンは nd のときだけ出る");
 });
