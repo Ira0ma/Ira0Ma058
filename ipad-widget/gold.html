@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="998e2b0015">
+<meta name="build" content="e829ba7ec7">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -267,6 +267,9 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .reasons{display:grid;gap:5px;margin-top:8px}
 .reason{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#0d1217;border:1px solid #222b35;border-radius:10px;padding:7px 9px}
 .reason{flex-wrap:wrap}.reason .rdet{flex-basis:100%;font-size:10.5px;color:var(--muted);line-height:1.45}.reason .rdet:empty{display:none}
+.headvideo{display:inline-block;margin-top:6px;padding:3px 10px;border:1px solid var(--gold);border-radius:999px;color:var(--gold2);font-size:11.5px;text-decoration:none}
+.videobtn{display:inline-block;margin-top:8px;padding:4px 12px;border:1px solid var(--gold);border-radius:999px;color:var(--gold2);font-size:12px;text-decoration:none}
+.gtip-video{display:inline-block;margin-left:8px;padding:1px 8px;border:1px solid var(--gold);border-radius:999px;color:var(--gold2);font-size:11px;text-decoration:none;white-space:nowrap}
 .gtip{display:block;margin:4px 0 2px;padding:6px 8px;border-radius:8px;background:#0d1217;border:1px solid #2a3440;font-size:11px;font-weight:500;color:var(--text);line-height:1.55;letter-spacing:0;text-align:left}
 .reason span{font-size:11px;color:var(--muted)}.reason b{font-size:12px;text-align:right}
 .patlist{display:grid;gap:4px;margin-top:6px}
@@ -783,7 +786,7 @@ html.nd .shell>footer{grid-area:foot}
       <div class="meter"><i id="meter"></i></div>
       <div class="sub">条件のそろい具合<button type="button" class="gq" data-tip="そろい具合：3つの条件（120SMA・モメンタム・レンジ位置）がどれだけ同じ向きを向いているか。100%でも、利確余地が足りないなど他の理由で見送ることがあります。エントリーしてよいかどうかの数字ではありません。" aria-label="説明">?</button> <b id="confidence">--</b></div>
       <div class="tpbasis"><span>利確判定の型<button type="button" class="gq" data-gloss="ch:トレードスタイル" aria-label="用語集：トレードスタイル">?</button></span><div class="segmented" id="tpBasisSeg">
-        <button class="seg" data-tpb="short" title="5分足と15分足の水平線（手前の線）で利確余地を判定">短期（5分足・15分足）</button><button class="seg" data-tpb="day" title="1時間足の水平線で利確余地を判定">デイ（1時間足）</button><button class="seg" data-tpb="swing" title="4時間足と日足の水平線（手前の線）で利確余地を判定">スイング（4時間足・日足）</button></div></div>
+        <button class="seg" data-tpb="short" title="5分足と15分足の水平線（手前の線）で利確余地を判定">短期（5分足・15分足）</button><button class="seg" data-tpb="day" title="1時間足の水平線で利確余地を判定">デイ（1時間足）</button><button class="seg" data-tpb="swing" title="4時間足と日足の水平線（手前の線）で利確余地を判定">スイング（4時間足・日足）</button></div><a class="headvideo" href="learn/videos/trade-style-cinematic.mp4" target="_blank" rel="noopener">▶ アニメで見る</a></div>
       <div class="reasons">
         <div class="reason"><span>① H1 120SMA<button type="button" class="gq" data-gloss="SMA" aria-label="用語集：SMA">?</button></span><b id="reasonSma">--</b><small class="rdet" id="detSma"></small></div>
         <div class="reason"><span>② H1モメンタム(3本)<button type="button" class="gq" data-tip="モメンタム：値動きの勢い。ここでは1時間足の終値が3本前からどれだけ動いたか。上がっていれば上昇、下がっていれば下降。" aria-label="説明">?</button></span><b id="reasonMom">--</b><small class="rdet" id="detMom"></small></div>
@@ -851,7 +854,7 @@ html.nd .shell>footer{grid-area:foot}
 
   <!-- ===== リスク・ロット ===== -->
   <section id="secRisk" class="panel s4">
-    <div class="cardhead"><div><div class="title">リスク・ロット計算<button type="button" class="gq" data-gloss="許容リスク" aria-label="用語集：許容リスク">?</button></div><div class="sub" id="riskHeadSub">価格とM15 ATRからSL/TPを算出</div></div><button type="button" id="riskHelpBtn" class="seg helpbtn">？ 使い方</button><span class="tag">RISK</span></div>
+    <div class="cardhead"><div><div class="title">リスク・ロット計算<button type="button" class="gq" data-gloss="許容リスク" aria-label="用語集：許容リスク">?</button></div><div class="sub" id="riskHeadSub">価格とM15 ATRからSL/TPを算出</div><a class="headvideo" href="learn/videos/shokokin-cinematic.mp4" target="_blank" rel="noopener">▶ 証拠金</a> <a class="headvideo" href="learn/videos/cashback-cinematic.mp4" target="_blank" rel="noopener">▶ キャッシュバック</a></div><button type="button" id="riskHelpBtn" class="seg helpbtn">？ 使い方</button><span class="tag">RISK</span></div>
     <div class="risksteps"><b>使い方</b>： <b>1</b> 口座と方向 → <b>2</b> 資金とリスクを入れる → <b>3</b> ロットと要約を確認。詳しくは右上の「？ 使い方」から読めます。</div>
     <div class="brokerrow"><span class="sub">口座</span>
       <div class="segmented" id="brokerSeg">
@@ -979,7 +982,7 @@ html.nd .shell>footer{grid-area:foot}
 
   <!-- ===== アラート ===== -->
   <section id="secAlert" class="panel s12">
-    <div class="cardhead"><div><div class="title">アラート・通知設定</div><div class="sub">オンにした条件がそろうと、画面の下に通知を出して音で知らせます（この端末に銘柄ごとに保存）</div></div><span class="tag">ALERT</span></div>
+    <div class="cardhead"><div><div class="title">アラート・通知設定</div><div class="sub">オンにした条件がそろうと、画面の下に通知を出して音で知らせます（この端末に銘柄ごとに保存）</div><a class="headvideo" href="learn/videos/kinkyu-alert-cinematic.mp4" target="_blank" rel="noopener">▶ 緊急アラート</a></div><span class="tag">ALERT</span></div>
     <div id="alertList" class="alertgrid"></div>
     <div class="alerthist"><b>最近の通知</b><div id="alertHist" class="sub">まだありません</div></div>
     <p class="sub" id="alSoundNote" style="margin:8px 2px 0">音のつながり：ホーム（デスク）の中で開いているときは、このページのアラートもエントリー・急変・地震も、ホームの音量（大・中・小・オフ）の1つの設定で鳴ります（ここの「通知音」の切替は効きません）。このページを単体で開いたときは、ここの「通知音」の切替だけで鳴り（音量は固定）、ホームの音量とは別々です。急変と地震の音はホームだけが鳴らします。</p>
@@ -3670,7 +3673,7 @@ const DXY_GUIDE=`<div class="dxyguide"><h4>DXYの使い分け</h4>
 <ol><li>1週間の値で、いまドルと逆相関が効いているか（−0.5以下か）を見る。</li>
 <li>効いているなら、DXYの向きがエントリーと合うか確認する。<b>買いはドル安</b>、<b>売りはドル高</b>なら追い風。逆なら見送りか、ロットを控えめに。DXYがほぼ横ばいならドル要因の後押しは小さい。</li>
 <li>1日の値が1週間から${CORR_DIV.toFixed(1)}以上ずれていたら（注意書きが出たら）、落ち着くまで様子見。</li></ol>
-<div class="warn">※相関は「これまで一緒にどう動いたか」を示すだけで、先の値動きを予測するものではありません。セットアップ判定やトレード前チェックの条件には入っていません。</div></div>`;
+<div class="warn">※相関は「これまで一緒にどう動いたか」を示すだけで、先の値動きを予測するものではありません。セットアップ判定やトレード前チェックの条件には入っていません。</div><a class="videobtn" href="learn/videos/dxy-guide-cinematic.mp4" target="_blank" rel="noopener">▶ アニメで見る</a></div>`;
 // 結論の1行：必ず1週間の値から（1日の値では出さない）
 function dxyConclusion(rw,dd){
   const b=corrBand(rw),other=IS_BTC?'リスク回避（株安）や暗号資産そのものの材料':IS_OIL?'景気の見通しや在庫・産油国の動き':'リスク回避（有事の買い）や金利';
@@ -3718,7 +3721,7 @@ const MAT_GUIDE=`<div class="dxyguide"><h4>米金利との相関の使い分け<
 <dl><dt>1週間（H1）</dt><dd><b>基本の判断に使う</b>（結論の1行の「金利」の強さはこの値）。＋0.5以上（相関が効いている）なら「米金利が上がる＝ドル円も上がる」が効いている状態で、米金利の向きをドル円の方向の確認に使えます。−0.2〜＋0.2（連動ほぼなし）なら金利は判断材料から外します。</dd>
 <dt>1日（H1）</dt><dd><b>変化の早期発見</b>。1週間との差が${CORR_DIV.toFixed(1)}以上あるときは、指標や要人発言でいつもの関係が崩れている合図です（注意書きが出ます）。1日の値だけで判断しないこと。</dd>
 <dt>1か月（H4）</dt><dd><b>大きな流れ（背景）の確認</b>。1週間と同じ帯なら、その関係は当面続きやすいと考えます。</dd></dl>
-<div class="warn">※相関は「これまで一緒にどう動いたか」を示すだけで、先の値動きを予測するものではありません。このパネルは材料の読み取り専用で、セットアップ判定やトレード前チェックの条件には入っていません。</div></div>`;
+<div class="warn">※相関は「これまで一緒にどう動いたか」を示すだけで、先の値動きを予測するものではありません。このパネルは材料の読み取り専用で、セットアップ判定やトレード前チェックの条件には入っていません。</div><a class="videobtn" href="learn/videos/beikinri-guide-cinematic.mp4" target="_blank" rel="noopener">▶ アニメで見る</a></div>`;
 function renderFxMat(){
   const el=$('fxMat');if(!IS_FX){el.hidden=true;return}
   const all=siteCache.d?.instruments;if(!all||state.h1.length<30){el.hidden=true;return}
@@ -4932,7 +4935,10 @@ $('mtfScore').onclick=e=>{const b=e.target.closest('[data-tf]');if(!b)return;set
 // 「?」：用語集のその用語を開く（トレードデスクの中ならデスクの用語集、単体ならデスクを開いて表示）
 document.addEventListener('click',e=>{const b=e.target.closest('[data-tip]');if(!b)return;e.preventDefault();e.stopPropagation();
   const host=b.closest('.reason,.sub,.ms-main')||b.parentElement,old=host.querySelector('.gtip');if(old){old.remove();return}
-  const t=document.createElement('span');t.className='gtip';t.textContent=b.dataset.tip;host.appendChild(t)},true);
+  const t=document.createElement('span');t.className='gtip';t.textContent=b.dataset.tip;
+  const TV={"そろい具合":"soroi","モメンタム":"momentum","利確余地":"rikaku-yochi","一致度":"icchido"};
+  for(const k in TV){if(b.dataset.tip.indexOf(k+"：")===0){const a=document.createElement('a');a.className='gtip-video';a.href='learn/videos/'+TV[k]+'-cinematic.mp4';a.target='_blank';a.rel='noopener';a.textContent='▶ アニメで見る';t.appendChild(a);break}}
+  host.appendChild(t)},true);
 document.addEventListener('click',e=>{const g=e.target.closest('[data-gloss]');if(!g)return;e.preventDefault();e.stopPropagation();const term=g.dataset.gloss;
   if(window.parent!==window){try{window.parent.postMessage({type:'dash-gloss',key:INSTR.key,term},'*')}catch{}}else location.href='./#gloss='+encodeURIComponent(term)},true);
 $('alertList').onclick=e=>{if(e.target.closest('[data-altest]')){alertTest();return}const all=e.target.closest('[data-alall]');if(all){const v=all.dataset.alall==='1';ALERT_DEF.forEach(d=>alertCfg[d.k]=v);saveAlerts();renderAlerts();return}
