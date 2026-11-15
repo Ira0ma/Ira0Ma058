@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="b571a7bcaa">
+<meta name="build" content="6904147a13">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -48,10 +48,9 @@ window.TD_THEME = (function () {
 })();
 </script>
 <script>
-/* 新デザイン（nd）の先行適用：GOLDダッシュボードだけに効かせる。
-   有効化はファイル名（gold.html）で行い、メインスクリプトの直前で INSTR_KEY による最終確認をする。
+/* 新デザイン（nd）：全ペアのダッシュボードに適用する（2026-11-15 GOLD先行→全ペア展開）。
    色はテーマ変数（--gold 等）を使うので、季節テーマは差し色としてそのまま効く。 */
-if (location.pathname.indexOf("gold.html") >= 0) document.documentElement.classList.add("nd");
+document.documentElement.classList.add("nd");
 </script>
 <style>
 :root{--safe-top:env(safe-area-inset-top,0px);
@@ -1051,8 +1050,6 @@ html.nd .shell>footer{grid-area:foot}
 
 <script src="core.js"></script>
 <script>
-/* 新デザインの最終確認：ペア用ファイル（INSTR_KEY あり）では nd を外す。GOLD（未設定）だけが残る */
-if (window.INSTR_KEY && window.INSTR_KEY !== "gold") document.documentElement.classList.remove("nd");
 /* 使い方動画ボタン：動画の受け口。完成した動画のURLを HOWTO_VIDEO に入れるとボタンがそのまま開く */
 window.HOWTO_VIDEO = window.HOWTO_VIDEO || {};
 document.addEventListener("DOMContentLoaded", function () {
