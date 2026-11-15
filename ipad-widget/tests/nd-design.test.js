@@ -1,7 +1,7 @@
 // node --test ipad-widget/tests
-// 新デザイン（nd）のGOLD先行適用の検証。
-// 全ペア共通の gold.html に、GOLDだけ新デザインが効く仕掛け（ファイル名で有効化＋
-// INSTR_KEYで最終確認）が入っていること、他のペアでは外れることを文字列で担保する。
+// 新デザイン（nd）の全ペア適用の検証。
+// 2026-11-15にGOLD先行で本番確認し、同日中に全ペアへ展開した。
+// 全ペア共通の gold.html で無条件に有効化され、ペアで外す仕掛けが残っていないことを担保する。
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -9,17 +9,12 @@ const path = require("node:path");
 
 const DASH = fs.readFileSync(path.join(__dirname, "..", "gold.html"), "utf8");
 
-test("nd：有効化は gold.html のファイル名で行う（headの早期スクリプト）", () => {
-  assert.ok(DASH.includes('location.pathname.indexOf("gold.html") >= 0'));
+test("nd：headの早期スクリプトで全ペアに有効化する", () => {
   assert.ok(DASH.includes('document.documentElement.classList.add("nd")'));
 });
 
-test("nd：INSTR_KEY があるペアでは nd を外す（最終確認がメインスクリプトより前）", () => {
-  const guard = DASH.indexOf('classList.remove("nd")');
-  const main = DASH.indexOf("const $ = id =>");
-  assert.ok(guard >= 0, "remove側の記述がある");
-  assert.ok(DASH.includes('window.INSTR_KEY && window.INSTR_KEY !== "gold"'));
-  assert.ok(guard < main, "最終確認はメインスクリプトより前にある");
+test("nd：ペアで外す仕掛けは残っていない（全ペア展開の担保）", () => {
+  assert.ok(!DASH.includes('classList.remove("nd")'), "nd を外す記述がない");
 });
 
 test("nd：CSS層はテーマ変数で組み、サイドバーのグリッド配置を持つ", () => {
