@@ -911,6 +911,7 @@ html:not(.lowpower) .mreg .rg-dot { transition: left .6s ease; }
 .gb-chhead small { display: block; font-size: 12px; font-weight: 700; color: var(--gold-deep); letter-spacing: .12em; }
 .gb-chhead h2 { margin: 4px 0 4px; font-size: 24px; color: #2b241a; line-height: 1.25; }
 .gb-chhead p { margin: 0; font-size: 12.5px; color: #7b6b52; }
+.gb-video{display:inline-block;margin-top:8px;padding:4px 12px;border:1px solid #d4af37;border-radius:999px;background:transparent;color:#8a6d1f;font-size:12.5px;cursor:pointer}
 .gb-term { padding: 9px 0 10px; border-bottom: 1px dashed #e0d2b2; }
 .gb-term:last-child { border-bottom: 0; }
 .gb-term h3 { margin: 0; font-size: 16px; color: #2b241a; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
@@ -7101,6 +7102,10 @@ window.TDFontApply();
         out.innerHTML = "値幅 " + (diff >= 0 ? "+" : "") + fmt(diff / 0.01, 1) + " pips、損益 <b>" + (pl >= 0 ? "+" : "") + fmt(pl) + " 円</b>（コスト・滑り前）。";
       }
     }
+    // 説明動画：用語集・レッスンの項目に「▶ アニメで見る」を出す対応表（名前／レッスンID → 動画ファイル名）
+    var GLOSS_VIDEO = {"水平線":"suiheisen","SMA":"sma","レンジ":"range","ネックライン":"neckline","許容リスク":"kyoyo-risk","マルチタイムフレーム分析":"mtf","GMMA":"gmma","ATR":"atr","CHOCH":"choch","BOS":"choch-bos","チャネル":"channel","フィボナッチ・リトレースメント":"fibonacci","三尊（ヘッドアンドショルダー）":"sanzon","逆三尊":"gyaku-sanzon","ダブルトップ":"double-top","ダブルボトム":"double-bottom","カップウィズハンドル":"cup-handle","証拠金":"shokokin","証拠金維持率":"shokokin","経済指標":"keizai"};
+    var GLOSS_VIDEO_ID = {"p01":"sanzon","p02":"gyaku-sanzon","p03":"double-top","p04":"double-bottom","p22":"cup-handle","p23":"gyaku-cup","p24":"channel","p25":"channel","p72":"neckline","p73":"fibonacci","fvg-01":"fvg","gold-intro-19":"shokokin","usdjpy-10":"shokokin","usdjpy-14":"double-top","usdjpy-15":"double-bottom","ind-06":"sma","ind-11":"gmma","ind-34":"atr","gold-intro-43":"range"};
+    var gbVideoBtn = function (name, id) { var f = (id && GLOSS_VIDEO_ID[id]) || (name && GLOSS_VIDEO[name]); return f ? '<button type="button" class="gb-video" data-video="learn/videos/' + f + '-cinematic.mp4">▶ アニメで見る</button>' : ''; };
     var learnHtml = function (t, L) {
       var lv = L.level ? '<em class="lt-lv lv' + (LV[L.level] || 2) + '">' + esc(L.level) + '</em>' : "";
       var head = '<h3>' + (L.no ? '<i class="lt-no">' + (L.id.charAt(0) === "p" ? "No." : "") + ("0" + L.no).slice(-2) + '</i>' : '') + esc(t[0]) + lv + '</h3>' + (L.aka && L.aka.length ? '<p class="lt-aka">' + esc(L.aka.join("・")) + '</p>' : '');
@@ -7119,7 +7124,7 @@ window.TDFontApply();
       if (L.hide) s += '<p class="lt-note">' + esc(L.hide) + '</p>';
       if (L.calc) s += '<details class="lt-calcbox"><summary>計算してみる（数字を入れて試せます）</summary>' + calcHtml(L.calc) + '</details>';
       if (L.more) s += '<details class="lt-more"><summary>くわしい判定メモ</summary><dl class="lt-dl">' + L.more.map(function (d) { return '<dt>' + esc(d[0]) + '</dt><dd>' + esc(d[1]) + '</dd>'; }).join("") + '</dl></details>';
-      return '<div class="gb-term lt" data-term="' + esc(t[0]) + '">' + head + s + relHtml(L.rel) + '</div>';
+      return '<div class="gb-term lt" data-term="' + esc(t[0]) + '">' + head + s + relHtml(L.rel) + gbVideoBtn(null, L.id) + '</div>';
     };
     var termHtml = function (t) {
       var o = t[3] || {}, extra = "";
@@ -7128,7 +7133,7 @@ window.TDFontApply();
       if (o.pts) extra += '<ul class="gb-pts">' + o.pts.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join("") + '</ul>';
       if (o.table) extra += '<table class="gb-table"><thead><tr>' + o.table.head.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join("") + '</tr></thead><tbody>' +
         o.table.rows.map(function (r) { return '<tr' + (o.table.low.indexOf(r[0]) >= 0 ? ' class="low"' : '') + '>' + r.map(function (c, k) { return '<td>' + esc(c) + (k === 0 ? '年' : '') + '</td>'; }).join("") + '</tr>'; }).join("") + '</tbody></table><p class="gb-note">※2026年は10月28日まで。赤字は変動率の低い年</p>';
-      return '<div class="gb-term" data-term="' + esc(t[0]) + '"><h3>' + esc(t[0]) + (t[1] ? '<span>' + esc(t[1]) + '</span>' : '') + '</h3><p>' + esc(t[2]) + '</p>' + extra + relHtml(o.rel) + '</div>';
+      return '<div class="gb-term" data-term="' + esc(t[0]) + '"><h3>' + esc(t[0]) + (t[1] ? '<span>' + esc(t[1]) + '</span>' : '') + '</h3><p>' + esc(t[2]) + '</p>' + extra + relHtml(o.rel) + gbVideoBtn(t[0], null) + '</div>';
     };
     // ページの大きさ：見開き（横長の広い画面）なら2ページ、ほかは1ページ。中身は実際の大きさで測ってページに分ける
     function pageSize() {
@@ -7293,6 +7298,7 @@ window.TDFontApply();
       if (r && BOOKS[r.book].data) { ensureAll(); goTo(r, from); book.querySelector('[data-gl="close"]').focus(); return; }
       ensureAll().then(function () { goTo(resolve(term) || { book: "fx", key: "" }, from); book.querySelector('[data-gl="close"]').focus(); });
     };
+    spread.addEventListener("click", function (e) { var v = e.target.closest(".gb-video"); if (v) window.open(v.getAttribute("data-video"), "_blank", "noopener"); });
     // 図の拡大：タップで画面いっぱいに。もう一度タップで2倍（指で動かせる）
     var zoom = document.getElementById("gb-zoom"), zoomImg = zoom.querySelector("img"), zoomFrom = null;
     function openZoom(btn) {
