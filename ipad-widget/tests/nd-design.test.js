@@ -50,3 +50,36 @@ test("ホーム：nd が有効化され、カードの質感と使い方ボタ�
   assert.ok(HOME.includes("dock.insertBefore(howtoBtn, dock.firstChild)"), "ボタンはドックの先頭へ差し込まれる");
   assert.ok(HOME.indexOf("dock.insertBefore(howtoBtn, dock.firstChild)") > HOME.indexOf("dock.appendChild(layoutBtn)"), "生成コードはレイアウトボタンの追加より後で実行され、先頭へ差し込まれる");
 });
+
+test("ホームのドック：ステージ内の持ち場に必ず収まる構造（見切れ再発防止）", () => {
+  // 持ち場は固定：ステージ841px − ドック上端557px − 下マージン8px ＝ 276px
+  const stageH = +HOME.match(/#stage\s*\{[^}]*height:\s*(\d+)px/)[1];
+  const dockTop = +HOME.match(/\.vdock\s*\{[^}]*top:\s*(\d+)px/)[1];
+  const dockBottom = +HOME.match(/html\.nd \.vdock\{bottom:(\d+)px/)[1];
+  const slot = stageH - dockTop - dockBottom;
+  assert.equal(slot, 276);
+  // ハードな bound：ドックの箱そのものがステージの外へ出ない
+  assert.ok(HOME.includes("html.nd .vdock{bottom:8px;overflow-y:auto"), "ドックは持ち場で bound される");
+  // グループは2列組みにして縦を稼ぐ
+  assert.ok(HOME.includes("html.nd .vdock .dk-grp{flex-direction:row;flex-wrap:wrap"));
+  assert.ok(HOME.includes("html.nd .vdock .dk-lb{flex:0 0 100%}"));
+  assert.ok(HOME.includes("html.nd .vdock .dk-app-row{flex:0 0 100%}"));
+  // 自己フィット：実測ではみ出したら fit1 → fit2 と詰める（端末のフォント差を吸収）
+  assert.ok(HOME.includes("dock.scrollHeight > dock.clientHeight"), "はみ出しを実測で判定する");
+  assert.ok(HOME.includes("dock.__fit = fitDock"));
+  assert.ok(HOME.includes("if (dock.__fit) dock.__fit();"), "モード切替のたびに再フィットする");
+  // 案内ポップはドックの外（body・fixed）に出すので、bound で切れない
+  assert.ok(HOME.includes("html.nd .howtonote.open{display:block;position:fixed"), "案内は fixed で出す");
+  assert.ok(HOME.includes("document.body.appendChild(n)"), "案内は body に作る");
+  // 算術の担保：行高さは line-height 1.5 の最悪値で見積もる
+  const B1 = +HOME.match(/vdock\.fit1 \.dk-btn[^}]*min-height:(\d+)px/)[1];
+  const B2 = +HOME.match(/vdock\.fit2 \.dk-btn[^}]*min-height:(\d+)px/)[1];
+  const IC2 = +HOME.match(/vdock\.fit2 \.dk-app-ic\{width:(\d+)px/)[1];
+  const LB = 15; // ラベル 9.5px × 1.5
+  const total = (B, howto, appRow) =>
+    howto + 4 + B + B + (LB + 2 + B + 2 + B) + (LB + 2 + B + 2 + appRow + 2 + B) + 8;
+  const fit1 = total(B1, 29, 42);            // ボタン24px・使い方29px・アプリ行42px
+  const fit2 = total(B2, 26, IC2 + 2 + 12 + 4); // ボタン20px・使い方26px・アプリ行はアイコン縮小後
+  assert.ok(fit1 <= slot, `fit1 の総高 ${fit1}px が持ち場 ${slot}px に収まる`);
+  assert.ok(fit2 <= slot, `fit2 の総高 ${fit2}px が持ち場 ${slot}px に収まる`);
+});
