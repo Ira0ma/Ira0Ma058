@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="77874eb2c9">
+<meta name="build" content="cac24d2ff8">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1571,7 +1571,18 @@ html.nd .card-title{color:var(--gold);letter-spacing:.14em}
 html.nd .howto-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-left:auto;background:linear-gradient(90deg,var(--gold),color-mix(in srgb,var(--gold) 55%,#fff));color:#141005;font-weight:800;font-size:12.5px;border:none;border-radius:999px;padding:8px 14px;cursor:pointer;font-family:inherit;white-space:nowrap}
 .howtonote{display:none}
 html.nd .vdock .howto-btn{width:100%;margin:0 0 4px}
-html.nd .howtonote.open{display:block;position:absolute;left:0;right:0;bottom:calc(100% + 6px);z-index:60;width:auto;background:rgba(var(--panel-rgb),.97);border:1px solid var(--gold);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--ink);box-shadow:0 10px 30px rgba(0,0,0,.45)}
+html.nd .vdock{bottom:8px;overflow-y:auto;scrollbar-width:none}
+html.nd .vdock::-webkit-scrollbar{display:none}
+html.nd .vdock .dk-grp{flex-direction:row;flex-wrap:wrap}
+html.nd .vdock .dk-lb{flex:0 0 100%}
+html.nd .vdock .dk-grp .dk-btn{flex:1 1 42%}
+html.nd .vdock .dk-app-row{flex:0 0 100%}
+html.nd .vdock.fit1 .dk-btn,html.nd .vdock.fit1 #layout-toggle,html.nd .vdock.fit1 #tools-toggle{min-height:24px;padding-top:2px;padding-bottom:2px}
+html.nd .vdock.fit1 .howto-btn{padding-top:5px;padding-bottom:5px}
+html.nd .vdock.fit2 .dk-btn,html.nd .vdock.fit2 #layout-toggle,html.nd .vdock.fit2 #tools-toggle{min-height:20px;font-size:11.5px}
+html.nd .vdock.fit2 .dk-app-ic{width:18px;height:18px}
+html.nd .vdock.fit2 .howto-btn{padding-top:4px;padding-bottom:4px;font-size:11.5px}
+html.nd .howtonote.open{display:block;position:fixed;z-index:80;width:min(400px,86vw);background:rgba(16,14,8,.96);border:1px solid var(--gold);border-radius:12px;padding:10px 12px;font-size:12.5px;line-height:1.6;color:var(--txt)}
 </style>
 </head>
 <body>
@@ -2135,10 +2146,19 @@ window.TDFontApply();
   howtoBtn.textContent = "▶ 使い方をアニメで見る";
   howtoBtn.title = "Desk One全体の使い方をアニメ動画で見る（項目ごとの説明動画とは別です）";
   dock.insertBefore(howtoBtn, dock.firstChild);
-  var howtoNote = document.createElement("div"); howtoNote.id = "howtoNote"; howtoNote.className = "howtonote"; howtoNote.hidden = true;
-  howtoNote.textContent = "使い方動画は制作中です。完成したら、このボタンから見られるようになります。";
-  dock.appendChild(howtoNote);
   document.body.appendChild(dock);
+  /* ドックの自己フィット：ステージ内の持ち場（上557px・下8px＝276px）に必ず収める。
+     内容がはみ出す場合は fit1 → fit2 と段階的に詰める。端末のフォント差でも見切れを再発させないための構造対策 */
+  var fitDock = function () {
+    if (!dock.classList.contains("vdock")) return;
+    dock.classList.remove("fit1"); dock.classList.remove("fit2");
+    if (dock.scrollHeight > dock.clientHeight + 1) { dock.classList.add("fit1");
+      if (dock.scrollHeight > dock.clientHeight + 1) dock.classList.add("fit2"); }
+  };
+  dock.__fit = fitDock;
+  window.addEventListener("resize", fitDock);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitDock);
+  setTimeout(fitDock, 0);
   /* 縦並び（flow）では、ドックの実測の高さに合わせて本文（#flow）の下端と初心者注記の位置を決める。
      ROOM登録やアプリ表示でドックが伸びても、最後のカードがドック裏に隠れないようにする（2026-11-09 F6） */
   var syncFlowDock = function () {
@@ -2314,6 +2334,7 @@ window.TDFontApply();
     root.classList.toggle("flow", m === "flow");
     if (m === "stage") { dock.classList.add("vdock"); stage.appendChild(dock); }
     else { dock.classList.remove("vdock"); document.body.appendChild(dock); }
+    if (dock.__fit) dock.__fit();
     if (m === "pager") {
       if (!pager || pager.getAttribute("data-spec") !== JSON.stringify(pagerSpec())) buildPager();
       pcols.forEach(function (c) { c[1].forEach(function (id) { c[0].appendChild(cardOf(id)); }); });
@@ -7853,11 +7874,16 @@ window.HOWTO_VIDEO = window.HOWTO_VIDEO || {};
 document.addEventListener("DOMContentLoaded", function () {
   var b = document.getElementById("howtoBtn");
   if (!b) return;
+  var n = document.getElementById("howtoNote");
+  if (!n) { n = document.createElement("div"); n.id = "howtoNote"; n.className = "howtonote"; n.hidden = true;
+    n.textContent = "使い方動画は制作中です。完成したら、このボタンから見られるようになります。"; document.body.appendChild(n); }
   b.addEventListener("click", function () {
     var url = window.HOWTO_VIDEO["howto-app"];
     if (url) { window.open(url, "_blank", "noopener"); return; }
-    var n = document.getElementById("howtoNote");
-    if (n) { var open = n.classList.toggle("open"); n.hidden = !open; }
+    var open = n.classList.toggle("open"); n.hidden = !open;
+    if (open) { var r = b.getBoundingClientRect();
+      n.style.left = Math.max(8, Math.min(r.left, window.innerWidth - n.offsetWidth - 8)) + "px";
+      n.style.top = Math.max(8, r.top - n.offsetHeight - 8) + "px"; }
   });
 });
 </script>
