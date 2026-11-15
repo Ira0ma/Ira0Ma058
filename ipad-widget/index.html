@@ -793,7 +793,11 @@ html:not(.lowpower) .mreg .rg-dot { transition: left .6s ease; }
 /* みんなのFX は注目ポイントのカードの下に（X の埋め込みが読めないときは1行の案内） */
 #points { display: flex; flex-direction: column; padding-bottom: 12px; }
 #points .pt-foot { position: static; margin-top: 6px; flex: none; }
-#points .pt-list { flex: 0 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+#points .pt-list { flex: 0 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; margin-top: 4px; }
+#points > .pm-tabs { flex: none; margin-top: 6px; }
+#points .pt-xp { min-height: 34px; }
+#points { padding-top: 14px; }
+#points .pt-foot { line-height: 1.45; }
 .pt-next { margin-top: auto; flex: none; border: 0; border-top: 1px solid var(--glass-line); background: none; color: inherit; font: inherit; text-align: left; padding: 9px 0 2px; display: flex; flex-direction: column; gap: 2px; cursor: pointer; }
 #points .pt-near { flex: none; margin-top: auto; padding-top: 8px; font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #points .pt-near b { color: var(--gold); font-weight: 700; }
@@ -1415,7 +1419,7 @@ html.flow #td-search .tds-pop { bottom: auto; top: calc(100% + 8px); max-height:
 #tabpanel #ind { padding: 4px 2px; }
 #tabpanel #xfeed { padding: 4px 2px; overflow-y: auto; }
 .tp-pane[hidden] { display: none !important; }
-.pt-tabs { display: flex; gap: 6px; margin: 8px 0 2px; flex: none; }
+.pt-tabs { display: flex; gap: 6px; margin: 6px 0 0; flex: none; }
 .pt-tab { font: inherit; font-size: 12px; font-weight: 600; padding: 5px 13px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--glass-line); color: var(--ink-2); cursor: pointer; }
 .pt-tab.on { background: var(--gold); color: var(--on-accent); border-color: var(--gold); }
 .pt-tab:disabled { opacity: .45; cursor: default; }
@@ -1750,8 +1754,9 @@ html.nd .howtonote.open{display:block;position:fixed;z-index:80;width:min(400px,
       <button type="button" class="pt-tab" data-ptv="strat" role="tab">本日の戦略</button>
     </div>
     <div class="xp-hint" id="pt-hint" role="note" hidden><span class="xp-hint-t">押すと、このカードが大きくなって全文が読めます。もう一度押すと戻ります</span><span class="xp-hint-x" aria-hidden="true">✕</span></div>
+    <div class="pm-tabs" role="tablist" aria-label="銘柄"></div>
     <ul class="pt-list">
-      <li id="pt-map"><div class="pm-tabs" role="tablist" aria-label="銘柄"></div><div class="pm-body" aria-live="polite"><p class="pm-wait">分析データを読み込んでいます…</p></div></li>
+      <li id="pt-map"><div class="pm-body" aria-live="polite"><p class="pm-wait">分析データを読み込んでいます…</p></div></li>
       <li id="pt-strat-none" hidden><p class="pt-none">本日のトレード戦略は、データが届き次第ここに表示されます。</p></li>
       <li id="pt-strat" hidden><div><h3 data-pt="5h">本日のトレード戦略</h3><p data-pt="5p"></p><button class="pt-more" type="button">前日の振り返りと今日の予想<svg width="6" height="9" viewBox="0 0 7 10"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></div></li>
     </ul>
@@ -2416,6 +2421,7 @@ window.TDFontApply();
     try { localStorage.setItem("td_ptview", ptView); } catch (e) {}
     if (ptsCard) { ptsCard.classList.toggle("ptv-strat", ptView === "strat"); ptsCard.classList.toggle("ptv-map", ptView !== "strat"); }
     document.querySelectorAll(".pt-tab").forEach(function (b) { var on = b.getAttribute("data-ptv") === ptView; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
+    var pl = ptsCard ? ptsCard.querySelector(".pt-list") : null; if (pl) pl.scrollTop = 0;
     if (window.TDSyncPtTabs) window.TDSyncPtTabs();
   }
   document.querySelectorAll(".pt-tab").forEach(function (b) { b.addEventListener("click", function () { ptShow(b.getAttribute("data-ptv"), true); }); });
@@ -5476,7 +5482,7 @@ window.TDFontApply();
   var ptSig = "", ptShownAt = 0;
   function ptRows() {
     if (document.hidden) return;
-    var tabs = document.querySelector("#pt-map .pm-tabs"), bodyEl = document.querySelector("#pt-map .pm-body"); if (!tabs) return;
+    var tabs = document.querySelector("#points > .pm-tabs"), bodyEl = document.querySelector("#pt-map .pm-body"); if (!tabs) return;
     var nears = {};
     PT_TABS.forEach(function (key) { var k = keyLv[key]; if (k && k.px) { var n = ptNear(key, ptEffK(key, k)); if (n) nears[key] = n; } });
     var nearEl = document.getElementById("pt-near");
@@ -5499,7 +5505,7 @@ window.TDFontApply();
     foot.style.color = stale ? "var(--up-red)" : "";
     if (market) renderStrategy();  // 戦略文も同じ材料（目線・値幅・答え合わせ）に追随
   }
-  document.querySelector("#pt-map .pm-tabs").addEventListener("click", function (e) { var b = e.target.closest("[data-pmt]"); if (!b) return; ptTab = b.getAttribute("data-pmt"); ptTabByUser = true; ptRows(); });
+  document.querySelector("#points > .pm-tabs").addEventListener("click", function (e) { var b = e.target.closest("[data-pmt]"); if (!b) return; ptTab = b.getAttribute("data-pmt"); ptTabByUser = true; ptRows(); });
   function refreshPoints() { ptRows(); }
   setInterval(ptRows, 2000);  // 距離はダッシュボードの価格に合わせて
   /* Daily report (strategy.json): written each weekday morning by the scheduled report task.

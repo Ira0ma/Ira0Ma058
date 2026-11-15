@@ -89,3 +89,18 @@ test("注目ポイント：「近い水準」の行は銘柄ボタン行の枠�
   assert.ok(m, "pt-near の padding-top が読める");
   assert.ok(+m[1] >= 6, `padding-top は 6px 以上（現在 ${m[1]}px）：margin-top:auto が0になる満杯時でも枠線と文字が離れる`);
 });
+
+test("注目ポイント：銘柄ボタン行はスクロール領域の外にあり、カード内に収まる", () => {
+  // ボタン行（.pm-tabs）はカード直下の子。スクロールする .pt-list の中には無い
+  assert.ok(HOME.indexOf('class="pm-tabs"') < HOME.indexOf('class="pt-list"'), "ボタン行はリストより前（カード直下）にある");
+  const liSeg = HOME.slice(HOME.indexOf('id="pt-map"'), HOME.indexOf('id="pt-strat-none"'));
+  assert.ok(!liSeg.includes("pm-tabs"), "リストの中にボタン行は無い");
+  assert.ok(!HOME.includes('#pt-map .pm-tabs'), "JSの参照先もカード直下に追随している");
+  assert.ok(HOME.includes('#points > .pm-tabs'));
+  // 固定行の合計がカード内寸（216−14−12＝190px）に収まること（行高は line-height 1.5 の最悪値で見積もる）
+  assert.ok(HOME.includes("#points .pt-xp { min-height: 34px; }"), "タイトル行のボタンは34pxに収める");
+  assert.ok(HOME.includes("#points > .pm-tabs { flex: none; margin-top: 6px; }"));
+  const inner = 216 - 14 - 12;
+  const fixed = 34 /*タイトル行*/ + (6 + 28) /*切替タブ*/ + (6 + 32) /*銘柄ボタン行*/ + 4 /*リスト上余白*/ + (18 + 8) /*近い水準*/ + (6 + 46) /*脚注3行*/;
+  assert.ok(fixed <= inner, `固定行の合計 ${fixed}px がカード内寸 ${inner}px に収まる`);
+});
