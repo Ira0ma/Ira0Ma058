@@ -11,11 +11,15 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="c303b5a6ca">
+<meta name="build" content="f5efd275cb">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@500;600&display=swap">
+<script>
+/* 新デザイン（nd）：ホームにも適用する（ダッシュボードと共通の見た目。色はテーマ変数に従う） */
+document.documentElement.classList.add("nd");
+</script>
 <style>
 /* Layout: one fixed 1210×841 iPad-landscape stage, scaled to fit the viewport; widgets placed on the image's grid. */
 :root {
@@ -1559,6 +1563,14 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
 .flow #flow { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 52px); }
 @media (display-mode: standalone) { :root { --safe-top: max(env(safe-area-inset-top, 0px), 24px); } }
 @media (display-mode: standalone) and (max-width: 600px) and (orientation: portrait) { :root { --safe-top: max(env(safe-area-inset-top, 0px), 44px); } }  /* 縦のスマホはステータスバーが高い */
+
+/* ===== 新デザイン（nd）ホーム：カードの質感と差し色をダッシュボードと統一 ===== */
+html.nd .card{background:linear-gradient(165deg,rgba(var(--panel-rgb),.94),rgba(var(--panel-rgb),.68))}
+html.nd .card-title{color:var(--gold);letter-spacing:.14em}
+.howto-btn{display:none}
+html.nd .howto-btn{display:inline-flex;position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:3;align-items:center;gap:8px;background:linear-gradient(90deg,var(--gold),color-mix(in srgb,var(--gold) 55%,#fff));color:#141005;font-weight:800;font-size:12.5px;border:none;border-radius:999px;padding:8px 14px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.howtonote{display:none}
+html.nd .howtonote.open{display:block;position:absolute;top:52px;left:50%;transform:translateX(-50%);z-index:4;width:min(400px,86%);background:rgba(var(--panel-rgb),.97);border:1px solid var(--gold);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--ink);box-shadow:0 10px 30px rgba(0,0,0,.45)}
 </style>
 </head>
 <body>
@@ -1580,6 +1592,8 @@ html.lowpower *, html.lowpower *::before, html.lowpower *::after { animation: no
     <canvas class="scene" data-scene="sunrise"></canvas>
     <button class="notify-btn" id="notify-btn" type="button" aria-pressed="false" title="この端末の通知（アラート・エントリー）"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 11V7a4 4 0 0 1 8 0v4l1.3 1.5H2.7z"/><path d="M6.5 14a1.6 1.6 0 0 0 3 0" stroke-linecap="round"/></svg><span>通知</span></button>
     <button class="sound-btn" id="sound-btn" type="button" title="エントリー通知音（タップで 大→中→小→オフ）"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M2.5 6h2.5l3.5-3v10L5 10H2.5z" fill="currentColor"/><path class="w1" d="M11 5.5a3.5 3.5 0 0 1 0 5" stroke-linecap="round"/><path class="w2" d="M12.8 3.5a6.3 6.3 0 0 1 0 9" stroke-linecap="round"/><path class="mute" d="M11 6l4 4M15 6l-4 4" stroke-linecap="round"/></svg><span></span></button>
+    <button id="howtoBtn" class="howto-btn" type="button" title="Desk One全体の使い方をアニメ動画で見る（項目ごとの説明動画とは別です）">▶ 使い方をアニメで見る</button>
+    <div id="howtoNote" class="howtonote" hidden>使い方動画は制作中です。完成したら、このボタンから見られるようになります。</div>
     <div class="content">
       <div class="time num" data-clock="hm">--:--</div>
       <div class="date" data-clock="md">読み込み中…</div>
@@ -7824,6 +7838,21 @@ window.TDFontApply();
   });
   document.addEventListener("pointerdown", function (e) { if (!bar.contains(e.target)) pop.hidden = true; }, true);
 })();
+</script>
+
+<script>
+/* 使い方動画ボタン（ホーム）：動画の受け口。完成した動画のURLを HOWTO_VIDEO["howto-app"] に入れるとボタンがそのまま開く */
+window.HOWTO_VIDEO = window.HOWTO_VIDEO || {};
+document.addEventListener("DOMContentLoaded", function () {
+  var b = document.getElementById("howtoBtn");
+  if (!b) return;
+  b.addEventListener("click", function () {
+    var url = window.HOWTO_VIDEO["howto-app"];
+    if (url) { window.open(url, "_blank", "noopener"); return; }
+    var n = document.getElementById("howtoNote");
+    if (n) { var open = n.classList.toggle("open"); n.hidden = !open; }
+  });
+});
 </script>
 
 </body>
