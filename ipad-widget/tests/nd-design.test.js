@@ -44,9 +44,9 @@ test("ホーム：nd が有効化され、カードの質感と使い方ボタ�
   assert.ok(HOME.includes('window.HOWTO_VIDEO["howto-app"]') || HOME.includes("HOWTO_VIDEO"));
   assert.ok(HOME.includes('"howto-app"'), "ホームの受け口キーは howto-app");
   assert.ok(HOME.includes(".howto-btn{display:none}"), "ボタンは nd のときだけ出る");
-  // ボタンは時計カードにもタブバーにもなく、左ドックの最下部に金色の行として置く（オーナー決定）
+  // ボタンは時計カードにもタブバーにもなく、左ドックの最上部に金色の行として置く（オーナー決定：最下部は画面外にはみ出すため最上部へ）
   const clockSeg = HOME.slice(HOME.indexOf('id="clock"'), HOME.indexOf('id="markets"'));
   assert.ok(!clockSeg.includes("howtoBtn"), "時計カード内にボタンはない");
-  assert.ok(HOME.includes("dock.appendChild(howtoBtn)"), "ボタンはドックへ追加される");
-  assert.ok(HOME.indexOf("dock.appendChild(howtoBtn)") > HOME.indexOf('grpOf("opn", "開く"'), "ボタンはドックの最後のグループより後＝最下部");
+  assert.ok(HOME.includes("dock.insertBefore(howtoBtn, dock.firstChild)"), "ボタンはドックの先頭へ差し込まれる");
+  assert.ok(HOME.indexOf("dock.insertBefore(howtoBtn, dock.firstChild)") > HOME.indexOf("dock.appendChild(layoutBtn)"), "生成コードはレイアウトボタンの追加より後で実行され、先頭へ差し込まれる");
 });
