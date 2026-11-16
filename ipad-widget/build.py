@@ -58,13 +58,14 @@ here.joinpath("silver.html").write_text(sv, encoding="utf-8")
 # 404). Same fix the Ayu fork dashboards carry. core.js is copied byte for byte because the
 # page loads it as plain "core.js", which from learn/ resolves to learn/core.js.
 svl = sv
+# video links inside the learn/ copy must be absolute: the copy lives under learn/,
+# so a relative "learn/videos/..." would resolve to learn/learn/videos/... (404).
+svl = svl.replace('learn/videos/', 'https://ira0ma.github.io/Ira0Ma058/learn/videos/')
 for old, new in [
     ("location.hostname.endsWith('github.io') ? '' : 'https://ira0ma.github.io/Ira0Ma058/'",
      "location.hostname.endsWith('github.io') ? '/Ira0Ma058/' : 'https://ira0ma.github.io/Ira0Ma058/'"),
     ("fetch('reactions.json", "fetch(SITE+'reactions.json"),
     ("fetch('holidays.json", "fetch(SITE+'holidays.json"),
-    ('window.HOWTO_VIDEO["howto-silver"] = "learn/videos/silver-guide.mp4";',
-     'window.HOWTO_VIDEO["howto-silver"] = (location.hostname.endsWith(\'github.io\') ? \'/Ira0Ma058/\' : \'https://ira0ma.github.io/Ira0Ma058/\') + "learn/videos/silver-guide.mp4";'),
 ]:
     if svl.count(old) != 1:
         raise SystemExit("build.py: silver detour pattern not found exactly once: %r" % old)
