@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="5a19c63736">
+<meta name="build" content="52d387b991">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -926,6 +926,13 @@ html:not(.lowpower) .mreg .rg-dot { transition: left .6s ease; }
 .gb-chhead h2 { margin: 4px 0 4px; font-size: 24px; color: #2b241a; line-height: 1.25; }
 .gb-chhead p { margin: 0; font-size: 12.5px; color: #7b6b52; }
 .gb-video{display:inline-block;margin-top:8px;padding:4px 12px;border:1px solid #d4af37;border-radius:999px;background:transparent;color:#8a6d1f;font-size:12.5px;cursor:pointer}
+.vdov{position:fixed;inset:0;z-index:99990;background:rgba(4,4,8,.88);display:flex;align-items:center;justify-content:center;padding:14px}
+.vdov[hidden]{display:none}
+.vdbox{width:min(94vw,430px);max-height:96vh;display:flex;flex-direction:column;gap:10px}
+.vdbar{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.vdtitle{color:#f1d98a;font-size:13px;font-weight:700}
+.vdclose{padding:8px 16px;border:1px solid #d4af37;border-radius:999px;background:#14141c;color:#f1d98a;font-size:14px;font-weight:700;cursor:pointer}
+.vdplayer{width:100%;height:auto;max-height:82vh;border-radius:14px;background:#000;outline:none}
 .gb-term { padding: 9px 0 10px; border-bottom: 1px dashed #e0d2b2; }
 .gb-term:last-child { border-bottom: 0; }
 .gb-term h3 { margin: 0; font-size: 16px; color: #2b241a; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
@@ -2374,11 +2381,11 @@ window.TDFontApply();
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=6cc37d52f3", title: "GOLD分析" },
-    silver: { src: "learn/silver.html?v=5c1892b63d", title: "シルバー分析" },
-    usdjpy: { src: "usdjpy.html?v=bcdcd65de3", title: "ドル円分析" },
-    btc: { src: "btc.html?v=999c88aab9", title: "BTC分析" },
-    oil: { src: "oil.html?v=1c2615c0bd", title: "オイル分析" },
+    gold: { src: "gold.html?v=2b7ff7fb44", title: "GOLD分析" },
+    silver: { src: "learn/silver.html?v=7edc65232d", title: "シルバー分析" },
+    usdjpy: { src: "usdjpy.html?v=05ba1603fb", title: "ドル円分析" },
+    btc: { src: "btc.html?v=b8a1ac0a35", title: "BTC分析" },
+    oil: { src: "oil.html?v=42709d3797", title: "オイル分析" },
     lots: { src: "learn/lotsim.html", title: "ロット図説" },
     weekend: { src: "learn/weekend.html", title: "週末ボード" }
   };
@@ -2473,7 +2480,7 @@ window.TDFontApply();
     // 第5部：オイルのダッシュボードは銘柄名 usoil で知らせる（シートの名前は oil）。注目ポイントに要る水準（dash-levels）だけ受ける。
     // ほかの知らせ（判定・アラートなど）はこれまでどおり受けていない（オーナー確認待ち）
     var sk = d && (d.type === "dash-levels" || d.type === "dash-hbars") && d.key === "usoil" ? "oil" : d && d.key;
-    if (!d || (d.type !== "dash-signal" && d.type !== "dash-hbars" && d.type !== "dash-results" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert" && d.type !== "dash-open" && d.type !== "dash-gloss") || !SHEETS[sk] || !SHEETS[sk].el) return;
+    if (!d || (d.type !== "dash-signal" && d.type !== "dash-hbars" && d.type !== "dash-results" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert" && d.type !== "dash-open" && d.type !== "dash-gloss" && d.type !== "dash-video") || !SHEETS[sk] || !SHEETS[sk].el) return;
     if (e.source !== SHEETS[sk].el.querySelector("iframe").contentWindow) return;  // only our own dashboards
     // While a dashboard shows its chart full screen, its own "back" button sits where ours does: hide ours
     if (d.type === "dash-chartfull") { SHEETS[d.key].el.querySelector(".dash-close").hidden = !!d.on; return; }
@@ -2496,6 +2503,7 @@ window.TDFontApply();
     if (d.type === "dash-score") { scoreOf[d.key] = d; paintScore(); return; }
     if (d.type === "dash-alert") { deskAlert(d); return; }
     if (d.type === "dash-gloss") { if (window.openGlossary) window.openGlossary(String(d.term || "")); return; }
+    if (d.type === "dash-video") { if (window.openVideo) window.openVideo(String(d.url || "")); return; }
     if (d.type === "dash-open") {  // a dashboard's 「プレミアムで開く」: run its TradingView shortcut from the desk itself
       if (/^shortcuts:\/\/run-shortcut\?name=[^&]+$/.test(String(d.url))) location.href = d.url;
       return;
@@ -7313,7 +7321,7 @@ window.TDFontApply();
       if (r && BOOKS[r.book].data) { ensureAll(); goTo(r, from); book.querySelector('[data-gl="close"]').focus(); return; }
       ensureAll().then(function () { goTo(resolve(term) || { book: "fx", key: "" }, from); book.querySelector('[data-gl="close"]').focus(); });
     };
-    spread.addEventListener("click", function (e) { var v = e.target.closest(".gb-video"); if (v) window.open(v.getAttribute("data-video"), "_blank", "noopener"); });
+    spread.addEventListener("click", function (e) { var v = e.target.closest(".gb-video"); if (v && window.openVideo) window.openVideo(v.getAttribute("data-video")); });
     // 図の拡大：タップで画面いっぱいに。もう一度タップで2倍（指で動かせる）
     var zoom = document.getElementById("gb-zoom"), zoomImg = zoom.querySelector("img"), zoomFrom = null;
     function openZoom(btn) {
@@ -7881,6 +7889,39 @@ window.TDFontApply();
 </script>
 
 <script>
+/* 動画プレーヤー：別タブではなく画面の中で開き、閉じれば元の画面にそのまま戻る。
+   埋め込みダッシュボードからの dash-video もここで受ける */
+window.openVideo = function (url) {
+  if (!url) return;
+  var abs = url; try { abs = new URL(url, location.href).href; } catch (e) {}
+  var ov = document.getElementById("vdOverlay");
+  if (!ov) {
+    ov = document.createElement("div"); ov.id = "vdOverlay"; ov.className = "vdov"; ov.hidden = true;
+    ov.innerHTML = '<div class="vdbox"><div class="vdbar"><span class="vdtitle">▶ アニメ動画</span><button type="button" class="vdclose" id="vdClose">✕ 閉じて戻る</button></div><video class="vdplayer" id="vdPlayer" controls playsinline preload="metadata"></video></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener("click", function (e) { if (e.target === ov || e.target.id === "vdClose") window.closeVideo(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !ov.hidden) window.closeVideo(); });
+  }
+  var v = document.getElementById("vdPlayer");
+  v.src = abs; ov.hidden = false;
+  document.documentElement.style.overflow = "hidden";
+  var p = v.play(); if (p && p.catch) p.catch(function () {});
+};
+window.closeVideo = function () {
+  var ov = document.getElementById("vdOverlay"); if (!ov) return;
+  var v = document.getElementById("vdPlayer");
+  if (v) { try { v.pause(); } catch (e) {} v.removeAttribute("src"); try { v.load(); } catch (e) {} }
+  ov.hidden = true; document.documentElement.style.overflow = "";
+};
+document.addEventListener("click", function (e) {
+  var a = e.target && e.target.closest ? e.target.closest('a[href$=".mp4"]') : null;
+  if (!a) return;
+  var href = a.getAttribute("href"); if (!href) return;
+  e.preventDefault(); window.openVideo(href);
+}, true);
+</script>
+
+<script>
 /* 使い方動画ボタン（ホーム）：動画の受け口。完成した動画のURLを HOWTO_VIDEO["howto-app"] に入れるとボタンがそのまま開く */
 window.HOWTO_VIDEO = window.HOWTO_VIDEO || {};
 window.HOWTO_VIDEO["howto-app"] = "learn/videos/deskone-guide.mp4";
@@ -7892,7 +7933,7 @@ document.addEventListener("DOMContentLoaded", function () {
     n.textContent = "使い方動画は制作中です。完成したら、このボタンから見られるようになります。"; document.body.appendChild(n); }
   b.addEventListener("click", function () {
     var url = window.HOWTO_VIDEO["howto-app"];
-    if (url) { window.open(url, "_blank", "noopener"); return; }
+    if (url) { window.openVideo(url); return; }
     var open = n.classList.toggle("open"); n.hidden = !open;
     if (open) { var r = b.getBoundingClientRect();
       n.style.left = Math.max(8, Math.min(r.left, window.innerWidth - n.offsetWidth - 8)) + "px";
