@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="194b55952c">
+<meta name="build" content="0c0d674d1b">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2292,10 +2292,11 @@ function chartLevels(){
 // 1時間足の線が足りない側（高値・安値の更新中など）は、4時間足・日足の水平線で埋める（時間足名を添える）
 function keyLevels(){
   const px=state.spot?.price;if(!px)return null;
+  const band=((atr(state.h1,14)||0)*20)||Infinity;  // 今日の注目ポイント：20時間ATRより遠い水準は出さない（古い密集帯がR1/R2になるのを防ぐ）
   const pick=(side)=>{
     const out=[];
     [['h1',h1Levels().filter(l=>!lvHidden(l))],['h4',srLevels(state.h4)],['d1',srLevels(state.d1)]].forEach(([tf,lv])=>{
-      lv.filter(l=>side>0?l.price>px:l.price<=px).sort((a,b)=>side*(a.price-b.price)).forEach(l=>{
+      lv.filter(l=>(side>0?l.price>px:l.price<=px)&&Math.abs(l.price-px)<=band).sort((a,b)=>side*(a.price-b.price)).forEach(l=>{
         if(out.length<2&&!out.some(o=>Math.abs(o.price-l.price)<=LV_TOL)&&(!out.length||side*(l.price-out[out.length-1].price)>0))out.push({...l,tf});
       });
     });
@@ -2361,7 +2362,10 @@ function srLevels0(bars){
     const level=g.ps.reduce((s,v)=>s+v,0)/g.ps.length;
     return {price:level,touches:g.ps.length,score:g.ps.length+(g.last>=n-48?.5:0),kind:level>=price?'r':'s'};
   });
-  const pick=kind=>lv.filter(l=>l.kind===kind).sort((x,y)=>y.score-x.score||Math.abs(x.price-price)-Math.abs(y.price-price)).slice(0,3);
+  const pick=kind=>{const arr=lv.filter(l=>l.kind===kind);
+    const byScore=arr.slice().sort((x,y)=>y.score-x.score||Math.abs(x.price-price)-Math.abs(y.price-price)).slice(0,3);
+    const byNear=arr.slice().sort((x,y)=>Math.abs(x.price-price)-Math.abs(y.price-price)).slice(0,2);
+    const out=[];byScore.concat(byNear).forEach(l=>{if(!out.includes(l))out.push(l)});return out};
   const r=pick('r').sort((x,y)=>x.price-y.price),s=pick('s').sort((x,y)=>y.price-x.price);
   r.forEach((l,i)=>l.name='R'+(i+1));s.forEach((l,i)=>l.name='S'+(i+1));
   return r.concat(s);
