@@ -154,3 +154,9 @@ test("まとめ文の損失は上限額ではなく実効ロットの実際の�
     assert.ok(tx.includes("損切り 3,871.17 で −¥2,040"), "上限¥1,000ではなく実際の−¥2,040が出る: " + tx);
   } finally { delete globalThis.state; }
 });
+
+test("まとめ文も計算のたびに描き直される（切替直後の遅れ解消）", () => {
+  const fs5 = require("node:fs");
+  const G = fs5.readFileSync(require("node:path").join(__dirname, "..", "gold.html"), "utf8");
+  assert.ok(G.includes("paintRiskBoard();renderRiskSummary();"), "calcRiskの末尾でまとめ文も即時更新する");
+});
