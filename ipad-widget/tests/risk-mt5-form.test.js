@@ -55,6 +55,37 @@ test("TP設定無し：空欄なら利確なしで計算し、プラン線もSL�
   assert.ok(GOLD.includes("state.planGeo.yT!=null"), "TP線が無いときドラッグ判定が誤動作しない");
 });
 
+test("初心者向けデザイン：3ステップ見出しとやさしい言葉（2026-11-16 オーナー指示）", () => {
+  assert.equal((GOLD.match(/class="stepcap"/g) || []).length, 3, "ステップ見出しが3つある");
+  for (const t of ["口座と方向をえらぶ", "資金と、1回で失ってよい金額を決める", "価格を入れて、ロットと金額を確認する"]) {
+    assert.ok(GOLD.includes(t), "ステップ見出し: " + t);
+  }
+  for (const t of ["エントリー（取引する価格）", "損切り SL（やめる価格）", "利確 TP（利益を確定する価格）"]) {
+    assert.ok(GOLD.includes(t), "やさしい補足: " + t);
+  }
+  assert.ok(GOLD.includes("1回で失ってよい割合（%）"), "許容リスクをやさしい言葉にした");
+  assert.ok(GOLD.includes("価格・SL・TPは自動で入れる（切ると自分で入力できます）"), "自動入力の説明がやさしい");
+  assert.ok(GOLD.includes("損失1に対して利益 "), "RRをやさしい言葉で出す");
+});
+
+test("まとめ文は初心者向けの文章で金額まで読める", () => {
+  const fn = extractFn("riskSummaryText");
+  const els = {
+    lotSize: { textContent: "0.15" }, dirLabel: { textContent: "想定方向：買い｜根拠あり" },
+    entry: { value: "3855.24" }, stop: { value: "3868.52" }, target: { value: "3828.67" },
+    riskYen: { textContent: "¥2,434" }, profitYen: { textContent: "¥4,802" }, marginYen: { textContent: "¥12,345" },
+  };
+  const withTp = new Function("$", "n", "INSTR", "return (" + fn.toString() + ")()")(
+    (id) => els[id] || { textContent: "", value: "" },
+    (v) => { const x = parseFloat(v); return isFinite(x) ? x : 0; }, { dp: 2 });
+  assert.equal(withTp, "買い 0.15ロットで入るプランです。エントリー 3,855.24。損切り 3,868.52 で −¥2,434、利確 3,828.67 で ＋¥4,802 になります。必要な証拠金は ¥12,345 です。");
+  els.target.value = "";
+  const noTp = new Function("$", "n", "INSTR", "return (" + fn.toString() + ")()")(
+    (id) => els[id] || { textContent: "", value: "" },
+    (v) => { const x = parseFloat(v); return isFinite(x) ? x : 0; }, { dp: 2 });
+  assert.ok(noTp.includes("利確は設定なしです。"), "TP無しでも文章が成立する: " + noTp);
+});
+
 test("価格ボードは計算のたびに描き直される（口座切替への即時追随）", () => {
   const calc = GOLD.slice(GOLD.indexOf("function calcRisk()"), GOLD.indexOf("function riskSummaryText()"));
   assert.ok(calc.includes("paintRiskBoard();"), "calcRisk の末尾で paintRiskBoard を呼ぶ");

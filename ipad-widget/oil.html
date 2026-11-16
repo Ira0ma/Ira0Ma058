@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="ffe29a30a5">
+<meta name="build" content="b2e8d75192">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -431,6 +431,8 @@ canvas.dragging{cursor:grabbing}
 .stp{flex:none;width:36px;border-radius:9px;border:1px solid #34404c;background:#18222c;color:#e8eef4;font-size:17px;line-height:1;cursor:pointer;padding:0}
 /* 価格フォーム（エントリー/SL/TP）は縦積み・大きな入力欄・金額ピルで打ち込みやすく（2026-11-16 オーナー指示） */
 .form.priceform{display:flex;flex-direction:column;gap:8px}
+.stepcap{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#e8eef4;margin:12px 0 6px}
+.stepcap b{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#d4af37;color:#14141c;font-size:12px;flex:none}
 .priceform label{display:block}
 .priceform .fldcap{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;color:#d5dde5;margin-bottom:4px}
 .priceform .stepper{gap:8px}
@@ -457,7 +459,7 @@ canvas.dragging{cursor:grabbing}
 .riskquick .segmented{flex:0 0 auto}
 .risksteps{font-size:12px;color:#9fb0bf;margin:0 0 8px;line-height:1.6}
 .risksteps b{color:#e8cf8a;font-weight:700}
-.risksummary{margin:10px 0 2px;padding:9px 11px;border:1px dashed rgba(227,179,65,.45);border-radius:10px;font-size:13.5px;line-height:1.65;color:#ece3c8}
+.risksummary{margin:10px 0 2px;padding:10px 12px;border:1px solid rgba(227,179,65,.5);background:rgba(227,179,65,.07);border-radius:10px;font-size:14.5px;line-height:1.7;color:#f2ead2}
 .risksummary[hidden]{display:none}
 .helpbtn{flex:none;margin-left:auto;background:var(--gold);border:1px solid var(--gold);color:#14100a;font-weight:800;border-radius:999px;padding:7px 13px;font-size:12px;cursor:pointer}
 .helpsheet{position:fixed;inset:0;z-index:80;background:rgba(5,8,11,.72);display:flex;align-items:flex-end;justify-content:center}
@@ -884,8 +886,9 @@ html.nd .shell>footer{grid-area:foot}
 
   <!-- ===== リスク・ロット ===== -->
   <section id="secRisk" class="panel s4">
-    <div class="cardhead"><div><div class="title">リスク・ロット計算<button type="button" class="gq" data-gloss="許容リスク" aria-label="用語集：許容リスク">?</button></div><div class="sub" id="riskHeadSub">価格とM15 ATRからSL/TPを算出</div><a class="headvideo" href="learn/videos/shokokin-cinematic.mp4" target="_blank" rel="noopener" title="証拠金の説明アニメ">▶ 証拠金アニメ</a> <a class="headvideo" href="learn/videos/cashback-cinematic.mp4" target="_blank" rel="noopener" title="キャッシュバックの説明アニメ">▶ キャッシュバックアニメ</a></div><button type="button" id="riskHelpBtn" class="seg helpbtn">？ 使い方</button><span class="tag">RISK</span></div>
+    <div class="cardhead"><div><div class="title">リスク・ロット計算<button type="button" class="gq" data-gloss="許容リスク" aria-label="用語集：許容リスク">?</button></div><div class="sub" id="riskHeadSub">価格から損切り・利確の目安を計算</div><a class="headvideo" href="learn/videos/shokokin-cinematic.mp4" target="_blank" rel="noopener" title="証拠金の説明アニメ">▶ 証拠金アニメ</a> <a class="headvideo" href="learn/videos/cashback-cinematic.mp4" target="_blank" rel="noopener" title="キャッシュバックの説明アニメ">▶ キャッシュバックアニメ</a></div><button type="button" id="riskHelpBtn" class="seg helpbtn">？ 使い方</button><span class="tag">RISK</span></div>
     <div class="risksteps"><b>使い方</b>： <b>1</b> 口座と方向 → <b>2</b> 資金とリスクを入れる → <b>3</b> ロットと要約を確認。詳しくは右上の「？ 使い方」から読めます。</div>
+    <div class="stepcap"><b>1</b>口座と方向をえらぶ</div>
     <div class="brokerrow"><span class="sub">口座</span>
       <div class="segmented" id="brokerSeg">
         <button class="seg" data-broker="xmstd"><b>XM<br>スタンダード</b><small>1000倍・5.5</small></button>
@@ -906,19 +909,21 @@ html.nd .shell>footer{grid-area:foot}
       </div>
       <div class="sub" style="margin-top:4px">発注はしません。押すと方向が切り替わり、手入力のときはエントリーにその価格が入ります。Bid／Askは、選んだ口座のスプレッドで計算しています。</div>
     </div>
+    <div class="stepcap"><b>2</b>資金と、1回で失ってよい金額を決める</div>
     <div class="riskquick">
       <label>口座資金（円）<input id="capitalQ" type="number" inputmode="numeric"></label>
-      <label id="riskPctQW">許容リスク（%）<input id="riskPctQ" type="number" step="0.1" inputmode="decimal"></label>
-      <label id="riskYenQW" hidden>許容損失（円）<input id="riskYenQ" type="number" step="100" min="0" inputmode="numeric" placeholder="例 5000"></label>
+      <label id="riskPctQW">1回で失ってよい割合（%）<input id="riskPctQ" type="number" step="0.1" inputmode="decimal"></label>
+      <label id="riskYenQW" hidden>1回で失ってよい金額（円）<input id="riskYenQ" type="number" step="100" min="0" inputmode="numeric" placeholder="例 5000"></label>
       <div class="segmented" id="riskChipsQ" aria-label="許容リスクのクイック選択"><button type="button" class="seg" data-rp="0.5">0.5%</button><button type="button" class="seg" data-rp="1">1%</button><button type="button" class="seg" data-rp="2">2%</button></div>
     </div>
     <div class="sub" style="margin:0 0 8px">よく使う設定はここに出してあります。%と円の切り替えや細かい設定は、下の「口座設定」の中にあります。</div>
+    <div class="stepcap"><b>3</b>価格を入れて、ロットと金額を確認する</div>
     <div class="form priceform">
-      <label><span class="fldcap">エントリー</span><span class="stepper"><button type="button" class="stp" data-t="entry" data-d="-1" aria-label="減らす">−</button><input id="entry" type="number" step="any" inputmode="decimal"><button type="button" class="stp" data-t="entry" data-d="1" aria-label="増やす">＋</button></span></label>
-      <label><span class="fldcap">損切り SL</span><span class="stepper"><button type="button" class="stp" data-t="stop" data-d="-1" aria-label="減らす">−</button><input id="stop" type="number" step="any" inputmode="decimal"><button type="button" class="stp" data-t="stop" data-d="1" aria-label="増やす">＋</button></span><em class="moneyhint" id="slMoney"></em></label>
-      <label><span class="fldcap">利確 TP<button type="button" id="tpNone" class="seg tpnone">設定無し</button></span><span class="stepper"><button type="button" class="stp" data-t="target" data-d="-1" aria-label="減らす">−</button><input id="target" type="number" step="any" inputmode="decimal"><button type="button" class="stp" data-t="target" data-d="1" aria-label="増やす">＋</button></span><em class="moneyhint" id="tpMoney"></em></label>
+      <label><span class="fldcap">エントリー（取引する価格）</span><span class="stepper"><button type="button" class="stp" data-t="entry" data-d="-1" aria-label="減らす">−</button><input id="entry" type="number" step="any" inputmode="decimal"><button type="button" class="stp" data-t="entry" data-d="1" aria-label="増やす">＋</button></span></label>
+      <label><span class="fldcap">損切り SL（やめる価格）</span><span class="stepper"><button type="button" class="stp" data-t="stop" data-d="-1" aria-label="減らす">−</button><input id="stop" type="number" step="any" inputmode="decimal"><button type="button" class="stp" data-t="stop" data-d="1" aria-label="増やす">＋</button></span><em class="moneyhint" id="slMoney"></em></label>
+      <label><span class="fldcap">利確 TP（利益を確定する価格）<button type="button" id="tpNone" class="seg tpnone">設定無し</button></span><span class="stepper"><button type="button" class="stp" data-t="target" data-d="-1" aria-label="減らす">−</button><input id="target" type="number" step="any" inputmode="decimal"><button type="button" class="stp" data-t="target" data-d="1" aria-label="増やす">＋</button></span><em class="moneyhint" id="tpMoney"></em></label>
     </div>
-    <label class="inlinecheck"><input id="autoRisk" type="checkbox" checked> 価格・SL・TPを自動入力（OFFで手入力）</label>
+    <label class="inlinecheck"><input id="autoRisk" type="checkbox" checked> 価格・SL・TPは自動で入れる（切ると自分で入力できます）</label>
     <div class="form lotrow">
       <label>ロット（自分で入力）<span class="stepper"><button type="button" class="stp" data-t="lotManual" data-d="-1" aria-label="減らす">−</button><input id="lotManual" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="空欄で自動計算（0.01刻み）"><button type="button" class="stp" data-t="lotManual" data-d="1" aria-label="増やす">＋</button></span></label>
       <button type="button" id="lotClear" class="seg">自動に戻す</button>
@@ -942,8 +947,8 @@ html.nd .shell>footer{grid-area:foot}
       <div class="results"><div class="result"><span>口座での最大（上限・推奨ではありません）</span><strong id="maxLot">--</strong><em id="maxLotSub">--</em></div></div>
       <div class="form two">
         <label>口座資金（円）<input id="capital" type="number" inputmode="numeric" value="100000"></label>
-        <label id="riskPctLbl">許容リスク（%）<input id="riskPct" type="number" step="0.1" inputmode="decimal" value="1.0"></label>
-        <label id="riskYenLbl" hidden>許容損失（円）<input id="riskYenIn" type="number" step="100" min="0" inputmode="numeric" placeholder="例 5000"></label>
+        <label id="riskPctLbl">1回で失ってよい割合（%）<input id="riskPct" type="number" step="0.1" inputmode="decimal" value="1.0"></label>
+        <label id="riskYenLbl" hidden>1回で失ってよい金額（円）<input id="riskYenIn" type="number" step="100" min="0" inputmode="numeric" placeholder="例 5000"></label>
         <label><span id="contractLabel">1lot契約量(oz)</span><input id="contract" type="number" inputmode="numeric" value="100"></label>
         <label>レバレッジ（倍）<input id="leverage" type="number" inputmode="numeric" value="1000"></label>
         <label>SL = ATR ×<input id="slMult" type="number" step="0.1" inputmode="decimal" value="1.2"></label>
@@ -962,9 +967,9 @@ html.nd .shell>footer{grid-area:foot}
 <div class="hsec">流れ（3ステップ）</div>
 <div class="hrow"><i style="background:#e3b341"></i><div><b>1. 口座と方向</b><br><span>使っている口座（XMスタンダード／KIWAMI極／XSプロ）を選びます。スプレッドやレバレッジは口座ごとに保存されます。方向は「シグナル連動」のままでも、買い・売りを自分で選んでも大丈夫です。</span></div></div>
 <div class="hrow"><i style="background:#e3b341"></i><div><b>2. 資金とリスク</b><br><span>口座資金と、「1回のトレードで失ってよい上限」を入れます。%（資金に対する割合）か円（金額）で指定でき、切り替えは「口座設定」の中にあります。迷ったら1%から始めるのが無難です。チップで0.5%・1%・2%をすぐ選べます。</span></div></div>
-<div class="hrow"><i style="background:#e3b341"></i><div><b>3. ロットと要約を確認</b><br><span>エントリー・SL・TPは価格と値幅（ATR）から自動で入ります。出てきた目安ロットと最大損失を見て、プラン要約の1行で全体を確認したら準備完了です。</span></div></div>
+<div class="hrow"><i style="background:#e3b341"></i><div><b>3. ロットと金額を確認</b><br><span>エントリー・SL・TPは価格と値幅（ATR）から自動で入ります。出てきた目安ロットと、SL・TPの下に出る金額、最後のまとめ文で全体を確認したら準備完了です。</span></div></div>
 <div class="hsec">入力の調整</div>
-<div class="hrow"><i style="background:#8fa1b1"></i><div><b>自動入力と手入力</b><br><span>「価格・SL・TPを自動入力」のチェックを外すと手入力モードになります。各欄の横の −／＋ ボタンで少しずつ動かせます。チャート上のSL・TPの線をドラッグして動かしても同じで、その場合は自動入力が自動で外れます。</span></div></div>
+<div class="hrow"><i style="background:#8fa1b1"></i><div><b>自動入力と手入力</b><br><span>「価格・SL・TPは自動で入れる」のチェックを外すと手入力モードになります。各欄の横の −／＋ ボタンで少しずつ動かせます。チャート上のSL・TPの線をドラッグして動かしても同じで、その場合は自動入力が自動で外れます。</span></div></div>
 <div class="hrow"><i style="background:#8fa1b1"></i><div><b>ロットを自分で決める</b><br><span>「ロット（自分で入力）」に数字を入れると、そのロットで損失・利益・証拠金を計算し直します。空欄に戻す（「自動に戻す」）と逆算に戻ります。</span></div></div>
 <div class="hrow"><i style="background:#8fa1b1"></i><div><b>価格ボードと買い／売りプラン</b><br><span>方向の下の大きな数字が、いまの Bid（売値）と Ask（買値）です。開きは選んだ口座のスプレッドで計算しています。「買いプラン」「売りプラン」を押すと方向が切り替わり、手入力のときはエントリーにその価格が入ります（発注はしません）。</span></div></div>
 <div class="hrow"><i style="background:#8fa1b1"></i><div><b>ロットのクイック調整</b><br><span>−0.5／−0.1／＋0.1／＋0.5 のボタンで、いまの実効ロット（自動計算の値でも）から一気に動かせます。押すと手入力ロットに切り替わり、損失・利益・証拠金がそのロットで計算し直されます。</span></div></div>
@@ -3207,7 +3212,7 @@ function calcRisk(){
   // RR：利確幅÷損切り幅（参考プランと同じ計算）。カッコはスプレッドを引いた実質の値。利確を別の時間足の線にしているときはそれも書く
   const rrv=$('autoRisk').checked&&state.riskRR!=null?state.riskRR:sl&&tp?tp/sl:null;  // 自動のときは参考プランと同じ値。手入力のときは入力した値から
   $('rr').className=rrv!=null&&rrv<1?'warn':'';  // D1：RRが1未満（損切りの幅の方が大きい）は注意の見た目
-  $('rr').textContent=(rrv!=null&&rrv<1?'⚠ ':'')+'RR '+(rrv!=null?rrv.toFixed(2):'--')+(sl&&spr&&tp?'（スプレッド込みの実質 '+(tpEff/slEff).toFixed(2)+'）':'')+($('autoRisk').checked&&state.riskTpBy?'・利確は'+state.riskTpBy+'の線':'')+(rrv!=null&&rrv<1?'｜RRが1未満：損切りの幅の方が利確の幅より大きい':'');
+  $('rr').textContent=(rrv!=null&&rrv<1?'⚠ ':'')+(rrv!=null?'損失1に対して利益 '+rrv.toFixed(2)+' 倍':'利益と損失の比 --')+(sl&&spr&&tp?'（スプレッド込みの実質 '+(tpEff/slEff).toFixed(2)+'）':'')+($('autoRisk').checked&&state.riskTpBy?'・利確は'+state.riskTpBy+'の線':'')+(rrv!=null&&rrv<1?'｜損切りの幅の方が利確の幅より大きいので注意':'');
   const sprCost=fx?spr*contract*useLot*fx:0;
   $('sprVal').textContent=spr?(sprCost?yen(sprCost):'--'):'0';
   $('sprSub').textContent=sprPips.toFixed(1)+'pips・'+BROKERS[state.broker].name+' '+BROKERS[state.broker].acct+'｜'+useLot.toFixed(2)+' lot';
@@ -3217,7 +3222,7 @@ function calcRisk(){
   {  // 見出しの「何の価格から算出したか」を、いまの価格の状態どおりに出す
     const sp=state.spot,at=sp?new Intl.DateTimeFormat('ja-JP',{hour:'2-digit',minute:'2-digit'}).format(new Date(sp.asof)):'',src=String(state.src.spot||'');
     const lvp=priceLevel().level;  // 札と同じ言葉（ライブ／最新／遅延／停止／休場中）
-    $('riskHeadSub').textContent=(!sp?'価格の取得待ち':mktClosed?'休場前の最終値（'+at+'）':lvp==='live'?'ライブ価格':lvp==='stale'||lvp==='unknown'?'停止中の価格（'+at+'時点）':lvp==='delayed'?'遅延の価格（'+at+'時点）':'最新の価格（'+at+'時点）')+'とM15 ATRからSL/TPを算出';
+    $('riskHeadSub').textContent=(!sp?'価格の取得待ち':mktClosed?'休場前の最終値（'+at+'）':lvp==='live'?'ライブ価格':lvp==='stale'||lvp==='unknown'?'停止中の価格（'+at+'時点）':lvp==='delayed'?'遅延の価格（'+at+'時点）':'最新の価格（'+at+'時点）')+'から損切り・利確の目安を計算';
   }
   $('dirLabel').innerHTML='想定方向：'+dirTxt+' <span class="sub">｜'+why+'</span>';
   $('settingsSum').textContent='口座設定（'+BROKERS[state.broker].name+' '+lev+'倍・'+yen(capital)+'・リスク'+(yenMode?Math.round(ryIn).toLocaleString('ja-JP')+'円':rp+'%')+'・'+contract.toLocaleString('ja-JP')+INSTR.unit+'/lot・スプレッド'+sprPips.toFixed(1)+'pips）';
@@ -5387,9 +5392,14 @@ function riskSummaryText(){
   const dir=(($('dirLabel')||{}).textContent||'').split('｜')[0].replace('想定方向：','').trim();
   const e=n($('entry').value),s=n($('stop').value),t=n($('target').value);
   const px=x=>isFinite(x)&&x>0?x.toLocaleString('ja-JP',{minimumFractionDigits:INSTR.dp,maximumFractionDigits:INSTR.dp}):'--';
-  return (dir?dir+' ':'')+'E '+px(e)+'／SL '+px(s)+'／TP '+px(t)+'｜ロット '+lot+'｜最大損失 '+(($('riskYen')||{}).textContent||'--')+'（'+(($('riskSub')||{}).textContent||'')+'）｜想定利益 '+(($('profitYen')||{}).textContent||'--')+'（'+(($('rr')||{}).textContent||'')+'）｜'+INSTR.name;
+  const loss=(($('riskYen')||{}).textContent||'--'),prof=(($('profitYen')||{}).textContent||'--'),mg=(($('marginYen')||{}).textContent||'--');
+  let tx=(dir?dir+' ':'')+lot+'ロットで入るプランです。エントリー '+px(e)+'。';
+  tx+='損切り '+px(s)+' で '+(loss==='--'?'--':'−'+loss)+'、';
+  tx+=t>0?('利確 '+px(t)+' で '+(prof==='--'?'--':'＋'+prof)+' になります。'):('利確は設定なしです。');
+  tx+='必要な証拠金は '+mg+' です。';
+  return tx;
 }
-function renderRiskSummary(){const el=$('riskSummary');if(!el)return;const tx=riskSummaryText();el.textContent=tx?('プラン要約：'+tx):'';el.hidden=!tx;paintRiskBoard()}
+function renderRiskSummary(){const el=$('riskSummary');if(!el)return;const tx=riskSummaryText();el.textContent=tx;el.hidden=!tx;paintRiskBoard()}
 setInterval(renderRiskSummary,1500);renderRiskSummary();
 if($('planCopy'))$('planCopy').onclick=async()=>{const tx=riskSummaryText();if(!tx)return;try{await navigator.clipboard.writeText(tx)}catch(_){const ta=document.createElement('textarea');ta.value=tx;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(__){}ta.remove()}$('planSaveMsg').textContent='プランをコピーしました'};
 if($('riskHelpBtn'))$('riskHelpBtn').onclick=()=>{$('riskHelpSheet').hidden=false};
