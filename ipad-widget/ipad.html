@@ -11,7 +11,11 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
+<<<<<<< HEAD
 <meta name="build" content="12f4a6eea2">
+=======
+<meta name="build" content="d704db7d51">
+>>>>>>> 084ed12 (学ぶ新デザイン第1段の本番組み込み準備：第1冊の目次をHero＋Bento化（未push・オーナー承認待ち）)
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1257,7 +1261,27 @@ html.flow .shf-spine, html.phone .shf-spine { flex: 1 1 140px; height: 198px; }
 @media (max-width: 760px) { .gb-toc.many { column-count: 1; } }
 .gb-toc em { margin-left: auto; font-style: normal; font-size: 12px; color: #8d7d61; white-space: nowrap; }
 .gb-resume { font: inherit; display: block; width: 100%; margin-top: 12px; padding: 9px; border-radius: 10px; border: 1px solid #d9c89f; background: #f0e3c2; color: #6b4f19; font-weight: 700; cursor: pointer; }
+<<<<<<< HEAD
 .gb-kindle-btn { display: block; text-align: center; margin-top: 12px; padding: 11px; border-radius: 10px; border: 1px solid #d9c89f; background: #f0e3c2; color: #6b4f19; font-weight: 700; text-decoration: none; }
+=======
+.gb-hero { display: flex; gap: 14px; align-items: center; background: linear-gradient(165deg, #1b1b26, #14141c); border: 1px solid #2c2c3a; border-radius: 18px; padding: 15px 17px; margin-bottom: 11px; color: #f2f0e9; }
+.gb-hero-tx { flex: 1; min-width: 0; }
+.gb-hero-tx small { color: #d4af37; letter-spacing: .18em; font-size: 11px; }
+.gb-hero-tx h1 { font-size: 22px; margin: 5px 0; }
+.gb-hero-tx p { color: #a9a7b8; font-size: 12.5px; margin: 3px 0; }
+.gb-ring { position: relative; width: 64px; height: 64px; flex: none; text-align: center; }
+.gb-ring svg { width: 64px; height: 64px; transform: rotate(-90deg); }
+.gb-ring-bg { fill: none; stroke: #2c2c3a; stroke-width: 6; }
+.gb-ring-fg { fill: none; stroke: #d4af37; stroke-width: 6; stroke-linecap: round; }
+.gb-ring b { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #f1d98a; }
+.gb-ring span { position: absolute; left: 0; right: 0; bottom: -16px; font-size: 10px; color: #a9a7b8; }
+.gb-bento { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.gb-tile2 { font: inherit; text-align: left; background: linear-gradient(165deg, #1b1b26, #14141c); border: 1px solid #2c2c3a; border-radius: 14px; padding: 9px 12px; color: #f2f0e9; cursor: pointer; display: flex; flex-direction: column; gap: 3px; }
+.gb-tile2.big { grid-column: span 2; }
+.gb-tile2 .ch { font-size: 10.5px; color: #d4af37; letter-spacing: .22em; }
+.gb-tile2 b { font-size: 14.5px; line-height: 1.4; }
+.gb-tile2 .meta { font-size: 11.5px; color: #a9a7b8; line-height: 1.5; }
+>>>>>>> 084ed12 (学ぶ新デザイン第1段の本番組み込み準備：第1冊の目次をHero＋Bento化（未push・オーナー承認待ち）)
 .gb-idx { columns: 2; column-gap: 18px; }
 .gb-idx button { font: inherit; display: flex; width: 100%; break-inside: avoid; justify-content: space-between; gap: 6px; padding: 4px 2px; background: none; border: 0; border-bottom: 1px dotted #e0d2b2; cursor: pointer; color: #2b241a; font-size: 12.5px; text-align: left; }
 .gb-idx h4 { margin: 8px 0 2px; padding: 2px 6px; font-size: 11.5px; color: #fff; background: var(--gold-deep); border-radius: 4px; break-after: avoid; }
@@ -7229,7 +7253,17 @@ window.TDFontApply();
       if (!p) return "";
       if (p.kind === "blank") return '<div class="gb-page blank"></div>';
       var inner = "";
-      if (p.kind === "toc") {
+      if (p.kind === "toc" && BK.id === "first") {
+        var bm = 0; try { bm = +localStorage.getItem(BK.bm) || 0; } catch (e) {}
+        var ratio = pages.length > 1 ? Math.min(1, bm / (pages.length - 1)) : 0, circ = 2 * Math.PI * 26;
+        inner = '<div class="gb-hero"><div class="gb-hero-tx"><small>' + BK.en + '｜第1冊</small><h1>' + BK.title + '</h1>' +
+          '<p>' + BK.data.length + '章・' + total + 'レッスン｜章をタップするとそのページへ</p>' +
+          '<p class="gb-hint">スワイプ／下のボタンでページをめくれます</p></div>' +
+          '<div class="gb-ring" role="img" aria-label="読み進めた割合 ' + Math.round(ratio * 100) + '%"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" class="gb-ring-bg"/><circle cx="32" cy="32" r="26" class="gb-ring-fg" stroke-dasharray="' + (circ * ratio).toFixed(1) + ' ' + circ.toFixed(1) + '"/></svg><b>' + Math.round(ratio * 100) + '%</b><span>しおり位置</span></div></div>' +
+          '<div class="gb-bento">' + BK.data.map(function (c, ci) { return '<button type="button" class="gb-tile2' + (c.terms.length >= 8 ? ' big' : '') + '" data-go="' + chStart[ci] + '"><span class="ch">第' + (ci + 1) + '章</span><b>' + esc(c.t) + '</b><span class="meta">' + c.terms.length + 'レッスン・p.' + (chStart[ci] + 1) + '</span></button>'; }).join("") +
+          '<button type="button" class="gb-tile2" data-go="' + idxStart + '"><span class="ch">索引</span><b>索引</b><span class="meta">用語をあいうえお順に・p.' + (idxStart + 1) + '</span></button></div>' +
+          (bm > 0 && bm < pages.length ? '<button type="button" class="gb-resume" data-go="' + bm + '">しおり：前回の続き（p.' + (bm + 1) + '）から読む</button>' : '');
+      } else if (p.kind === "toc") {
         var bm = 0; try { bm = +localStorage.getItem(BK.bm) || 0; } catch (e) {}
         inner = '<div class="gb-cover"><small>' + BK.en + '</small><h1>' + BK.title + '</h1><p>' + BK.data.length + '章・' + total + (BK.learn ? '項目' : '語') + '｜章をタップするとそのページへ</p>' +
           (BK.lead ? '<p class="gb-lead">' + esc(BK.lead) + '</p>' : '') +
