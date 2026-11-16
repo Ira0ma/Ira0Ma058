@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="c4f1c58c65">
+<meta name="build" content="d533ba715f">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1257,6 +1257,7 @@ html.flow .shf-spine, html.phone .shf-spine { flex: 1 1 140px; height: 198px; }
 @media (max-width: 760px) { .gb-toc.many { column-count: 1; } }
 .gb-toc em { margin-left: auto; font-style: normal; font-size: 12px; color: #8d7d61; white-space: nowrap; }
 .gb-resume { font: inherit; display: block; width: 100%; margin-top: 12px; padding: 9px; border-radius: 10px; border: 1px solid #d9c89f; background: #f0e3c2; color: #6b4f19; font-weight: 700; cursor: pointer; }
+.gb-kindle-btn { display: block; text-align: center; margin-top: 12px; padding: 11px; border-radius: 10px; border: 1px solid #d9c89f; background: #f0e3c2; color: #6b4f19; font-weight: 700; text-decoration: none; }
 .gb-idx { columns: 2; column-gap: 18px; }
 .gb-idx button { font: inherit; display: flex; width: 100%; break-inside: avoid; justify-content: space-between; gap: 6px; padding: 4px 2px; background: none; border: 0; border-bottom: 1px dotted #e0d2b2; cursor: pointer; color: #2b241a; font-size: 12.5px; text-align: left; }
 .gb-idx h4 { margin: 8px 0 2px; padding: 2px 6px; font-size: 11.5px; color: #fff; background: var(--gold-deep); border-radius: 4px; break-after: avoid; }
@@ -6169,6 +6170,7 @@ window.TDFontApply();
     }
     // 関連リンクの名前や検索のため、本を開くときに学習の本もまとめて読む（失敗しても用語集は開ける）
     function ensureAll() { return Promise.all(LEARN.map(function (id) { return ensureBook(id).catch(function () { return null; }); })); }
+    var KINDLE_EDITIONS = { first: { title: "はじめての投資とトレード", url: "https://www.amazon.co.jp/dp/B0HRTHCBSJ" } };  // Kindle版がある冊とその商品ページ（案A・2026-11-13決定）
     var BK = BOOKS.fx, tileBook = "first", total = 0;  // 第6部：はじめての人は「最初の1冊」から（選んだ本は端末に保存）
     var count = function (b) { return b.data ? b.data.reduce(function (n, c) { return n + c.terms.length; }, 0) : 0; };
     try { if (BOOKS[localStorage.getItem("gloss-book")]) tileBook = localStorage.getItem("gloss-book"); } catch (e) {}
@@ -7218,6 +7220,7 @@ window.TDFontApply();
         ip.items.push(x);
       });
       pages.push(ip);
+      if (KINDLE_EDITIONS[BK.id]) pages.push({ kind: "kindle", run: "Kindle版のご案内" });
       m.remove();
       if (two && pages.length % 2) pages.push({ kind: "blank" });
     }
@@ -7235,6 +7238,11 @@ window.TDFontApply();
           '<li><button type="button" data-go="' + idxStart + '"><i>索引</i><span><b>索引</b><small>用語をあいうえお順に</small></span><em>p.' + (idxStart + 1) + '</em></button></li></ol>' +
           (bm > 0 && bm < pages.length ? '<button type="button" class="gb-resume" data-go="' + bm + '">しおり：前回の続き（p.' + (bm + 1) + '）から読む</button>' : '');
       } else if (p.kind === "ch") inner = p.html;
+      else if (p.kind === "kindle") { var ke = KINDLE_EDITIONS[BK.id]; inner = '<div class="gb-chhead"><small>KINDLE</small><h2>📚 Kindle 版のご案内</h2></div>' +
+        '<p>この『' + esc(ke.title) + '』は、Desk One の「学ぶ」を再編集し、書き下ろしの章を加えた Kindle 版でもお読みいただけます。電子書籍として手元に置いておきたい方、Kindle アプリで読み進めたい方は、こちらからどうぞ。</p>' +
+        '<p><a class="gb-kindle-btn" href="' + ke.url + '" target="_blank" rel="noopener">Amazon で『' + esc(ke.title) + '』を見る</a></p>' +
+        '<p>シリーズの他の巻は、Amazon の著者ページでご案内しています。</p>' +
+        '<p class="gb-note">なお、Desk One（無料）では、この本の全文をいつでも無料で読めます。Kindle 版は、再編集と書き下ろしを加えた「手元に置く版」です。</p>'; }
       else inner = (p.run === "索引" ? '<div class="gb-chhead"><small>INDEX</small><h2>索引</h2><p>用語をタップするとそのページへ</p></div>' : '') +
         '<div class="gb-idx">' + p.items.map(function (n) { return n.h ? '<h4>' + esc(n.h) + '</h4>' : '<button type="button" data-go="' + termPage[n] + '" data-term="' + esc(aliasOf[n] || n) + '">' + esc(n) + (aliasOf[n] ? '<small>→' + esc(aliasOf[n]) + '</small>' : '') + '<em>p.' + (termPage[n] + 1) + '</em></button>'; }).join("") + '</div>';
       return '<div class="gb-page' + (p.kind === "toc" ? " toc" : "") + '"><div class="gb-in"><div class="gb-run">' + esc(p.run) + '</div>' + inner + '</div><div class="gb-foot"><span>' + BK.title + '</span><span>' + (i + 1) + ' / ' + pages.length + '</span></div></div>';
@@ -7251,7 +7259,7 @@ window.TDFontApply();
       Array.prototype.forEach.call(spread.querySelectorAll(".lt-calc"), runCalc);  // 初期値での計算結果を最初から見せる
       if (dir) { void spread.offsetWidth; spread.classList.add(dir > 0 ? "turn-next" : "turn-prev"); }
       var p = pages[i], last = Math.min(pages.length, i + step);
-      document.getElementById("gb-chap").textContent = p.kind === "ch" ? "第" + (p.ch + 1) + "章　" + BK.data[p.ch].t : p.kind === "idx" ? "索引" : "目次";
+      document.getElementById("gb-chap").textContent = p.kind === "ch" ? "第" + (p.ch + 1) + "章　" + BK.data[p.ch].t : p.kind === "idx" ? "索引" : p.kind === "kindle" ? "Kindle版のご案内" : "目次";
       document.getElementById("gb-pno").textContent = (two && last > i + 1 ? (i + 1) + "–" + last : (i + 1)) + " / " + pages.length;
       document.getElementById("gb-prog").style.width = (last / pages.length * 100) + "%";
       book.querySelector('[data-gl="prev"]').disabled = i === 0;
