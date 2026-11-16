@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="52dd70b60b">
+<meta name="build" content="cfdae86b39">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1354,7 +1354,7 @@ async function getSite(){
   if(siteCache.d&&Date.now()-siteCache.t<60000)return siteCache.d;
   const c=new AbortController(),timer=setTimeout(()=>c.abort(),12000);
   try{
-    const r=await fetch(URLS.siteMarket+'?t='+Math.floor(Date.now()/60000),{cache:'default',signal:c.signal,headers:{'Accept':'application/json'}});
+    const r=await fetch(URLS.siteMarket+'?t='+Math.floor(Date.now()/300000),{cache:'default',signal:c.signal,headers:{'Accept':'application/json'}});  // バスターは5分単位（生成は約15分周期。毎分単位だとHTTPキャッシュが効かず約330KBを取り直し続けるため、2026-11-16監査で変更）
     const tag=(r.headers.get('etag')||'')+'|'+(r.headers.get('last-modified')||'');
     if(r.ok&&siteCache.d&&tag!=='|'&&tag===siteCache.tag){try{r.body&&r.body.cancel()}catch{}siteCache.t=Date.now();return siteCache.d}
     const text=await r.text();

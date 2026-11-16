@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="e2285a0ba3">
+<meta name="build" content="65afae509c">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2381,11 +2381,11 @@ window.TDFontApply();
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=62b70d7e59", title: "GOLD分析" },
-    silver: { src: "learn/silver.html?v=8aba9e074a", title: "シルバー分析" },
-    usdjpy: { src: "usdjpy.html?v=1da0e8aafd", title: "ドル円分析" },
-    btc: { src: "btc.html?v=9eb7c88cad", title: "BTC分析" },
-    oil: { src: "oil.html?v=52dd70b60b", title: "オイル分析" },
+    gold: { src: "gold.html?v=2b9b29c923", title: "GOLD分析" },
+    silver: { src: "learn/silver.html?v=553b1a38f8", title: "シルバー分析" },
+    usdjpy: { src: "usdjpy.html?v=85838b16a4", title: "ドル円分析" },
+    btc: { src: "btc.html?v=120bc0096d", title: "BTC分析" },
+    oil: { src: "oil.html?v=cfdae86b39", title: "オイル分析" },
     lots: { src: "learn/lotsim.html", title: "ロット図説" },
     weekend: { src: "learn/weekend.html", title: "週末ボード" }
   };
@@ -2477,9 +2477,9 @@ window.TDFontApply();
   var entryState = {};
   window.addEventListener("message", function (e) {
     var d = e.data;
-    // 第5部：オイルのダッシュボードは銘柄名 usoil で知らせる（シートの名前は oil）。注目ポイントに要る水準（dash-levels）だけ受ける。
-    // ほかの知らせ（判定・アラートなど）はこれまでどおり受けていない（オーナー確認待ち）
-    var sk = d && (d.type === "dash-levels" || d.type === "dash-hbars") && d.key === "usoil" ? "oil" : d && d.key;
+    // 第5部：オイルのダッシュボードは銘柄名 usoil で知らせる（シートの名前は oil）。注目ポイントに要る水準（dash-levels）と
+    // 用語集（dash-gloss、2026-11-16 オーナー決定で追加）を受ける。ほかの知らせ（判定・アラートなど）はこれまでどおり受けていない
+    var sk = d && (d.type === "dash-levels" || d.type === "dash-hbars" || d.type === "dash-gloss") && d.key === "usoil" ? "oil" : d && d.key;
     if (!d || (d.type !== "dash-signal" && d.type !== "dash-hbars" && d.type !== "dash-results" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert" && d.type !== "dash-open" && d.type !== "dash-gloss" && d.type !== "dash-video") || !SHEETS[sk] || !SHEETS[sk].el) return;
     if (e.source !== SHEETS[sk].el.querySelector("iframe").contentWindow) return;  // only our own dashboards
     // While a dashboard shows its chart full screen, its own "back" button sits where ours does: hide ours

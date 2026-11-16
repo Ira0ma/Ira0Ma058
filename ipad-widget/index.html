@@ -2462,9 +2462,9 @@ window.TDFontApply();
   var entryState = {};
   window.addEventListener("message", function (e) {
     var d = e.data;
-    // 第5部：オイルのダッシュボードは銘柄名 usoil で知らせる（シートの名前は oil）。注目ポイントに要る水準（dash-levels）だけ受ける。
-    // ほかの知らせ（判定・アラートなど）はこれまでどおり受けていない（オーナー確認待ち）
-    var sk = d && (d.type === "dash-levels" || d.type === "dash-hbars") && d.key === "usoil" ? "oil" : d && d.key;
+    // 第5部：オイルのダッシュボードは銘柄名 usoil で知らせる（シートの名前は oil）。注目ポイントに要る水準（dash-levels）と
+    // 用語集（dash-gloss、2026-11-16 オーナー決定で追加）を受ける。ほかの知らせ（判定・アラートなど）はこれまでどおり受けていない
+    var sk = d && (d.type === "dash-levels" || d.type === "dash-hbars" || d.type === "dash-gloss") && d.key === "usoil" ? "oil" : d && d.key;
     if (!d || (d.type !== "dash-signal" && d.type !== "dash-hbars" && d.type !== "dash-results" && d.type !== "dash-chartfull" && d.type !== "dash-gmma" && d.type !== "dash-levels" && d.type !== "dash-score" && d.type !== "dash-alert" && d.type !== "dash-open" && d.type !== "dash-gloss" && d.type !== "dash-video") || !SHEETS[sk] || !SHEETS[sk].el) return;
     if (e.source !== SHEETS[sk].el.querySelector("iframe").contentWindow) return;  // only our own dashboards
     // While a dashboard shows its chart full screen, its own "back" button sits where ours does: hide ours
