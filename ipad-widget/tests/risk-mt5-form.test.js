@@ -55,6 +55,11 @@ test("TP設定無し：空欄なら利確なしで計算し、プラン線もSL�
   assert.ok(GOLD.includes("state.planGeo.yT!=null"), "TP線が無いときドラッグ判定が誤動作しない");
 });
 
+test("価格ボードは計算のたびに描き直される（口座切替への即時追随）", () => {
+  const calc = GOLD.slice(GOLD.indexOf("function calcRisk()"), GOLD.indexOf("function riskSummaryText()"));
+  assert.ok(calc.includes("paintRiskBoard();"), "calcRisk の末尾で paintRiskBoard を呼ぶ");
+});
+
 test("SL/TP到達時の金額が各欄の下に出る", () => {
   assert.ok(GOLD.includes('id="slMoney"') && GOLD.includes('id="tpMoney"'), "金額表示の置き場がある");
   assert.ok(GOLD.includes("'SL到達時 −'+yen(slEff*contract*useLot*fx)"), "SL到達時の損失は実効ロット×スプレッド込み幅で計算");

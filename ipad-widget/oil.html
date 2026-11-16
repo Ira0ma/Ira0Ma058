@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="f84647f34e">
+<meta name="build" content="97c2b128a8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3192,6 +3192,7 @@ function calcRisk(){
   if($('slMoney'))$('slMoney').textContent=slEff&&fx?'SL到達時 −'+yen(slEff*contract*useLot*fx):'';
   if($('tpMoney'))$('tpMoney').textContent=tp?(profit?'TP到達時 ＋'+yen(profit):''):'TP設定なし';
   if($('tpNone'))$('tpNone').classList.toggle('on',!(target>0));
+  paintRiskBoard();  // 口座切替の直後でも価格ボードが即座に追随するように、計算のたびにも描く
   // RR：利確幅÷損切り幅（参考プランと同じ計算）。カッコはスプレッドを引いた実質の値。利確を別の時間足の線にしているときはそれも書く
   const rrv=$('autoRisk').checked&&state.riskRR!=null?state.riskRR:sl&&tp?tp/sl:null;  // 自動のときは参考プランと同じ値。手入力のときは入力した値から
   $('rr').className=rrv!=null&&rrv<1?'warn':'';  // D1：RRが1未満（損切りの幅の方が大きい）は注意の見た目
