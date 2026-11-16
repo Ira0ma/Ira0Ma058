@@ -60,6 +60,25 @@ test("価格ボードは計算のたびに描き直される（口座切替へ�
   assert.ok(calc.includes("paintRiskBoard();"), "calcRisk の末尾で paintRiskBoard を呼ぶ");
 });
 
+test("価格フォームは縦積み・大きな入力欄で打ち込みやすい（2026-11-16 オーナー指示）", () => {
+  assert.ok(GOLD.includes('class="form priceform"'), "価格フォーム専用クラスがある");
+  assert.equal((GOLD.match(/class="fldcap"/g) || []).length, 3, "見出し行が3つ（エントリー/SL/TP）");
+  assert.ok(GOLD.includes(".form.priceform{display:flex;flex-direction:column"), "3列グリッドではなく縦積み（.form より詳細度を上げて確実に勝つ）");
+  assert.ok(GOLD.includes(".priceform .stepper input{font-size:19px"), "入力欄の文字が大きい（19px・iOSの自動ズームも起きない）");
+  // 幾何学の予算：ステッパー行 = ボタン54px + 間隔8px + 入力(flex・最小0) + 間隔8px + ボタン54px。
+  // 入力は flex なので、カード幅が 54+8+54+8=124px 以上あれば必ず収まる（はみ出し構造にしない）。
+  assert.ok(GOLD.includes(".priceform .stp{width:54px"), "＋/−ボタンが54px幅（タップ目標44px超）");
+  assert.ok(GOLD.includes(".stepper input{flex:1;min-width:0}"), "入力欄は伸縮して収まる");
+});
+
+test("SL/TPの金額は色つきピルで大きく出る", () => {
+  assert.ok(GOLD.includes(".moneyhint.neg{") && GOLD.includes(".moneyhint.pos{"), "損失＝赤・利益＝緑のピル様式がある");
+  assert.ok(GOLD.includes("$('slMoney').classList.toggle('neg'"), "SL金額に赤ピルが付く");
+  assert.ok(GOLD.includes("$('tpMoney').classList.toggle('pos'"), "TP金額に緑ピルが付く");
+  assert.ok(GOLD.includes(".priceform .moneyhint{font-size:15px"), "金額の文字が15px・太字");
+  assert.ok(GOLD.includes(".moneyhint:empty{display:none}"), "金額が無いときは空の帯を出さない");
+});
+
 test("SL/TP到達時の金額が各欄の下に出る", () => {
   assert.ok(GOLD.includes('id="slMoney"') && GOLD.includes('id="tpMoney"'), "金額表示の置き場がある");
   assert.ok(GOLD.includes("'SL到達時 −'+yen(slEff*contract*useLot*fx)"), "SL到達時の損失は実効ロット×スプレッド込み幅で計算");
