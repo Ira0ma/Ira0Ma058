@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="43682bf3fb">
+<meta name="build" content="20affaa526">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -432,12 +432,12 @@ canvas.dragging{cursor:grabbing}
 /* 価格フォーム（エントリー/SL/TP）は縦積み・大きな入力欄・金額ピルで打ち込みやすく（2026-11-16 オーナー指示） */
 .form.priceform{display:flex;flex-direction:column;gap:8px}
 .stepcap{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#e8eef4;margin:12px 0 6px}
-.stepcap b{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#d4af37;color:#14141c;font-size:12px;flex:none}
+.stepcap b{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#f1d98a,#d4af37);color:#14141c;font-size:12px;flex:none;box-shadow:0 1px 4px rgba(212,175,55,.35)}
 .priceform label{display:block}
-.priceform .fldcap{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;color:#d5dde5;margin-bottom:4px}
-.priceform .stepper{gap:8px}
-.priceform .stepper input{font-size:17px;font-weight:700;text-align:center;padding:8px}
-.priceform .stp{width:46px;font-size:20px;border-radius:10px}
+.priceform .fldcap,.lotrow .fldcap{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;color:#d5dde5;margin-bottom:4px}
+.priceform .stepper,.lotrow .stepper{gap:8px}
+.priceform .stepper input,.lotrow .stepper input{font-size:17px;font-weight:700;text-align:center;padding:8px}
+.priceform .stp,.lotrow .stp{width:46px;font-size:20px;border-radius:10px}
 .priceform .moneyhint{font-size:14px;font-weight:700;margin-top:5px;min-height:0}
 .moneyhint:empty{display:none}
 .moneyhint.neg{background:rgba(224,82,82,.16);color:#ff9d9d;border-radius:8px;padding:5px 9px}
@@ -567,6 +567,9 @@ body.mkt-closed #chartBlink,body.mkt-closed .fibnow::after,body.mkt-closed .gmma
 #brokerSeg .seg b{font-size:12px;line-height:1.3}#brokerSeg .seg small{font-size:9.5px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .form.lotrow{grid-template-columns:1fr auto;align-items:end}
 .form.lotrow .seg{padding:9px 12px;white-space:nowrap}
+.form.lotrow{display:flex;flex-direction:column;align-items:stretch;gap:8px}
+.form.lotrow .seg{align-self:flex-end}
+.lotrow label{display:block}
 #lotManual:not(:placeholder-shown){border-color:#8a6f32;background:#16130b}
 .dirlabel b{font-size:14px}
 .form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
@@ -926,7 +929,7 @@ html.nd .shell>footer{grid-area:foot}
     <label class="inlinecheck"><input id="autoRisk" type="checkbox" checked> 価格・SL・TPは自動で入れる（切ると自分で入力できます）</label>
     <div class="sub" style="margin:2px 0 8px">自動で入れる場合は、このダッシュボードの<b>売買プランと連動</b>します（セットアップ判定やチャートのプラン線と同じ価格）。プランが動くと、欄の価格も合わせて更新されます。</div>
     <div class="form lotrow">
-      <label>ロット（自分で入力）<span class="stepper"><button type="button" class="stp" data-t="lotManual" data-d="-1" aria-label="減らす">−</button><input id="lotManual" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="空欄で自動計算（0.01刻み）"><button type="button" class="stp" data-t="lotManual" data-d="1" aria-label="増やす">＋</button></span></label>
+      <label><span class="fldcap">ロット（自分で入力）</span><span class="stepper"><button type="button" class="stp" data-t="lotManual" data-d="-1" aria-label="減らす">−</button><input id="lotManual" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="空欄で自動計算（0.01刻み）"><button type="button" class="stp" data-t="lotManual" data-d="1" aria-label="増やす">＋</button></span></label>
       <button type="button" id="lotClear" class="seg">自動に戻す</button>
     </div>
     <div class="lotquick"><span class="sub">ロットのクイック調整</span><div class="segmented"><button type="button" class="seg lotstep" data-ls="-0.5">−0.5</button><button type="button" class="seg lotstep" data-ls="-0.1">−0.1</button><button type="button" class="seg lotstep" data-ls="0.1">＋0.1</button><button type="button" class="seg lotstep" data-ls="0.5">＋0.5</button></div></div>

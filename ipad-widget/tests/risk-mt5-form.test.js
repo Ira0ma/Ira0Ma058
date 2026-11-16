@@ -93,12 +93,12 @@ test("価格ボードは計算のたびに描き直される（口座切替へ�
 
 test("価格フォームは縦積み・大きな入力欄で打ち込みやすい（2026-11-16 オーナー指示）", () => {
   assert.ok(GOLD.includes('class="form priceform"'), "価格フォーム専用クラスがある");
-  assert.equal((GOLD.match(/class="fldcap"/g) || []).length, 3, "見出し行が3つ（エントリー/SL/TP）");
+  assert.equal((GOLD.match(/class="fldcap"/g) || []).length, 4, "見出し行が4つ（エントリー/SL/TP＋ロット）");
   assert.ok(GOLD.includes(".form.priceform{display:flex;flex-direction:column"), "3列グリッドではなく縦積み（.form より詳細度を上げて確実に勝つ）");
-  assert.ok(GOLD.includes(".priceform .stepper input{font-size:17px"), "入力欄の文字が大きい（17px・iOSの自動ズームも起きない）");
+  assert.ok(GOLD.includes(".priceform .stepper input,.lotrow .stepper input{font-size:17px"), "入力欄の文字が大きい（17px・iOSの自動ズームも起きない）");
   // 幾何学の予算：ステッパー行 = ボタン46px + 間隔8px + 入力(flex・最小0) + 間隔8px + ボタン46px。
   // 入力は flex なので、カード幅が 46+8+46+8=108px 以上あれば必ず収まる（はみ出し構造にしない）。
-  assert.ok(GOLD.includes(".priceform .stp{width:46px"), "＋/−ボタンが46px幅（タップ目標44px超）");
+  assert.ok(GOLD.includes(".priceform .stp,.lotrow .stp{width:46px"), "＋/−ボタンが46px幅（タップ目標44px超）");
   assert.ok(GOLD.includes(".stepper input{flex:1;min-width:0}"), "入力欄は伸縮して収まる");
 });
 
@@ -124,4 +124,13 @@ test("自動入力はプラン連動である説明が、チェックの下と�
   assert.ok(G.includes("チャートのプラン線と同じ価格"), "プラン線と同じ価格であることが書いてある");
   assert.ok(G.includes("プランが動くと、欄の価格も合わせて更新されます"), "追随することも書いてある");
   assert.ok(G.includes("自動入力は、このダッシュボードの売買プランと連動しています"), "使い方シートにも説明がある");
+});
+
+test("ロット行も価格フォームと同じ作法で潰れない（スタイリッシュ統一）", () => {
+  const fs3 = require("node:fs");
+  const G = fs3.readFileSync(require("node:path").join(__dirname, "..", "gold.html"), "utf8");
+  assert.ok(G.includes(".form.lotrow{display:flex;flex-direction:column"), "ロット行は縦積みフレックスで狭幅でも潰れない");
+  assert.ok(G.includes('<span class="fldcap">ロット（自分で入力）</span>'), "ロットにも見出し行がある");
+  assert.ok(G.includes(".priceform .stp,.lotrow .stp{width:46px"), "ロットの＋/−も46pxで統一");
+  assert.ok(G.includes("linear-gradient(135deg,#f1d98a,#d4af37)"), "ステップ番号は金グラデーション");
 });
