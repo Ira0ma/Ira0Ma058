@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="3db9301480">
+<meta name="build" content="86931535de">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -429,6 +429,17 @@ canvas.dragging{cursor:grabbing}
 .stepper{display:flex;gap:4px;align-items:stretch}
 .stepper input{flex:1;min-width:0}
 .stp{flex:none;width:36px;border-radius:9px;border:1px solid #34404c;background:#18222c;color:#e8eef4;font-size:17px;line-height:1;cursor:pointer;padding:0}
+.riskboard{margin:0 0 10px}
+.rbcols{display:flex;gap:8px}
+.rbcol{flex:1;display:flex;flex-direction:column;gap:4px}
+.rblab{font-size:12px;color:#9fb0bf}
+.rbpx{font-size:26px;font-weight:800;letter-spacing:.02em;color:#eef3f8;line-height:1.1}
+.rbbtn{border:0;border-radius:10px;padding:12px 0;font-size:16px;font-weight:700;color:#fff;cursor:pointer;width:100%}
+.rbbtn.sell{background:#d84a4a}
+.rbbtn.buy{background:#2f7fe0}
+.lotquick{display:flex;align-items:center;gap:8px;margin:6px 0 2px;flex-wrap:wrap}
+.moneyhint{display:block;font-style:normal;font-size:12px;color:#9fb0bf;margin-top:3px;min-height:15px}
+.tpnone{margin-top:4px;align-self:flex-start}
 .riskquick{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:2px 0 4px}
 .riskquick label{flex:1 1 128px;display:flex;flex-direction:column;gap:3px;font-size:12px;color:#9fb0bf}
 .riskquick input{padding:8px 10px;border-radius:9px;border:1px solid #34404c;background:#0d1319;color:#eef3f8;font:inherit;font-size:15px;width:100%}
@@ -877,6 +888,13 @@ html.nd .shell>footer{grid-area:foot}
       <button class="seg" data-dir="sell">売り</button>
     </div>
     <div id="dirLabel" class="dirlabel">--</div>
+    <div class="riskboard" id="riskBoard">
+      <div class="rbcols">
+        <div class="rbcol"><span class="rblab">Bid（売値）</span><strong class="rbpx" id="rbBid">--</strong><button type="button" id="rbSell" class="rbbtn sell">売りプラン</button></div>
+        <div class="rbcol"><span class="rblab">Ask（買値）</span><strong class="rbpx" id="rbAsk">--</strong><button type="button" id="rbBuy" class="rbbtn buy">買いプラン</button></div>
+      </div>
+      <div class="sub" style="margin-top:4px">発注はしません。押すと方向が切り替わり、手入力のときはエントリーにその価格が入ります。Bid／Askは、選んだ口座のスプレッドで計算しています。</div>
+    </div>
     <div class="riskquick">
       <label>口座資金（円）<input id="capitalQ" type="number" inputmode="numeric"></label>
       <label id="riskPctQW">許容リスク（%）<input id="riskPctQ" type="number" step="0.1" inputmode="decimal"></label>
@@ -886,14 +904,15 @@ html.nd .shell>footer{grid-area:foot}
     <div class="sub" style="margin:0 0 8px">よく使う設定はここに出してあります。%と円の切り替えや細かい設定は、下の「口座設定」の中にあります。</div>
     <div class="form">
       <label>エントリー<span class="stepper"><button type="button" class="stp" data-t="entry" data-d="-1" aria-label="減らす">−</button><input id="entry" type="number" step="any" inputmode="decimal"><button type="button" class="stp" data-t="entry" data-d="1" aria-label="増やす">＋</button></span></label>
-      <label>損切り SL<span class="stepper"><button type="button" class="stp" data-t="stop" data-d="-1" aria-label="減らす">−</button><input id="stop" type="number" step="any" inputmode="decimal"><button type="button" class="stp" data-t="stop" data-d="1" aria-label="増やす">＋</button></span></label>
-      <label>利確 TP<span class="stepper"><button type="button" class="stp" data-t="target" data-d="-1" aria-label="減らす">−</button><input id="target" type="number" step="any" inputmode="decimal"><button type="button" class="stp" data-t="target" data-d="1" aria-label="増やす">＋</button></span></label>
+      <label>損切り SL<span class="stepper"><button type="button" class="stp" data-t="stop" data-d="-1" aria-label="減らす">−</button><input id="stop" type="number" step="any" inputmode="decimal"><button type="button" class="stp" data-t="stop" data-d="1" aria-label="増やす">＋</button></span><em class="moneyhint" id="slMoney"></em></label>
+      <label>利確 TP<span class="stepper"><button type="button" class="stp" data-t="target" data-d="-1" aria-label="減らす">−</button><input id="target" type="number" step="any" inputmode="decimal"><button type="button" class="stp" data-t="target" data-d="1" aria-label="増やす">＋</button></span><button type="button" id="tpNone" class="seg tpnone">設定無し</button><em class="moneyhint" id="tpMoney"></em></label>
     </div>
     <label class="inlinecheck"><input id="autoRisk" type="checkbox" checked> 価格・SL・TPを自動入力（OFFで手入力）</label>
     <div class="form lotrow">
       <label>ロット（自分で入力）<span class="stepper"><button type="button" class="stp" data-t="lotManual" data-d="-1" aria-label="減らす">−</button><input id="lotManual" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="空欄で自動計算（0.01刻み）"><button type="button" class="stp" data-t="lotManual" data-d="1" aria-label="増やす">＋</button></span></label>
       <button type="button" id="lotClear" class="seg">自動に戻す</button>
     </div>
+    <div class="lotquick"><span class="sub">ロットのクイック調整</span><div class="segmented"><button type="button" class="seg lotstep" data-ls="-0.5">−0.5</button><button type="button" class="seg lotstep" data-ls="-0.1">−0.1</button><button type="button" class="seg lotstep" data-ls="0.1">＋0.1</button><button type="button" class="seg lotstep" data-ls="0.5">＋0.5</button></div></div>
     <div class="results">
       <div class="result key"><span id="lotLabel">目安ロット</span><strong id="lotSize">--</strong><em id="lotRound">--</em></div>
       <div class="result key"><span id="lossLabel">最大損失</span><strong id="riskYen">--</strong><em id="riskSub">--</em></div>
@@ -936,6 +955,9 @@ html.nd .shell>footer{grid-area:foot}
 <div class="hsec">入力の調整</div>
 <div class="hrow"><i style="background:#8fa1b1"></i><div><b>自動入力と手入力</b><br><span>「価格・SL・TPを自動入力」のチェックを外すと手入力モードになります。各欄の横の −／＋ ボタンで少しずつ動かせます。チャート上のSL・TPの線をドラッグして動かしても同じで、その場合は自動入力が自動で外れます。</span></div></div>
 <div class="hrow"><i style="background:#8fa1b1"></i><div><b>ロットを自分で決める</b><br><span>「ロット（自分で入力）」に数字を入れると、そのロットで損失・利益・証拠金を計算し直します。空欄に戻す（「自動に戻す」）と逆算に戻ります。</span></div></div>
+<div class="hrow"><i style="background:#8fa1b1"></i><div><b>価格ボードと買い／売りプラン</b><br><span>方向の下の大きな数字が、いまの Bid（売値）と Ask（買値）です。開きは選んだ口座のスプレッドで計算しています。「買いプラン」「売りプラン」を押すと方向が切り替わり、手入力のときはエントリーにその価格が入ります（発注はしません）。</span></div></div>
+<div class="hrow"><i style="background:#8fa1b1"></i><div><b>ロットのクイック調整</b><br><span>−0.5／−0.1／＋0.1／＋0.5 のボタンで、いまの実効ロット（自動計算の値でも）から一気に動かせます。押すと手入力ロットに切り替わり、損失・利益・証拠金がそのロットで計算し直されます。</span></div></div>
+<div class="hrow"><i style="background:#8fa1b1"></i><div><b>TPの「設定無し」と到達時の金額</b><br><span>「設定無し」を押すと利確なしのプランになります（チャートのプラン線もエントリーとSLだけになります）。SLとTPの欄の下には、その価格に到達した時の損益金額が常に出ます。</span></div></div>
 <div class="hsec">結果の読み方</div>
 <div class="hrow"><i style="background:#42d59c"></i><div><b>目安ロット</b><br><span>資金とリスクから逆算した注文量です（0.01刻み）。このロットで入ると、SLに当たった時の損失がほぼ許容額に収まります。</span></div></div>
 <div class="hrow"><i style="background:#42d59c"></i><div><b>最大損失</b><br><span>SLに当たった時に失う金額です（スプレッド込み）。</span></div></div>
@@ -3110,7 +3132,7 @@ function calcRisk(){
   // 最大損失を決めるのはここだけ：%で指定なら「資金×%÷100」、円で指定なら入力した円。以後は maxLoss と実効の%（rpE）で従来どおり
   const yenMode=state.riskMode==='yen',ryIn=Math.max(n($('riskYenIn').value),0);
   const maxLoss=yenMode?ryIn:capital*rp/100,rpE=yenMode?(capital?ryIn/capital*100:0):rp,rpTxt=yenMode?rpE.toFixed(2):String(rp);
-  const sl=Math.abs(entry-stop),tp=Math.abs(target-entry);
+  const sl=Math.abs(entry-stop),tp=target>0?Math.abs(target-entry):0;  // TPが空欄（設定無し）なら利確なしとして計算する
   // スプレッド：チャートの価格から約定するので、損切りまでの損失は SL幅＋スプレッド、利確の利益は TP幅−スプレッド
   const sprPips=Math.max(n($('spread').value),0),spr=sprPips*INSTR.pip;
   const slEff=sl?sl+spr:0,tpEff=Math.max(tp-spr,0);
@@ -3165,10 +3187,14 @@ function calcRisk(){
   $('slDist').textContent=sl?INSTR.dist(sl):'--';
   $('tpDist').textContent=tp?INSTR.dist(tp):'--';
   $('profitYen').textContent=profit?yen(profit):'--';
+  // SL／TPの欄の下に「到達したらいくらか」を出す（実効ロットで計算。スプレッドは選んだ口座の設定が効く）
+  if($('slMoney'))$('slMoney').textContent=slEff&&fx?'SL到達時 −'+yen(slEff*contract*useLot*fx):'';
+  if($('tpMoney'))$('tpMoney').textContent=tp?(profit?'TP到達時 ＋'+yen(profit):''):'TP設定なし';
+  if($('tpNone'))$('tpNone').classList.toggle('on',!(target>0));
   // RR：利確幅÷損切り幅（参考プランと同じ計算）。カッコはスプレッドを引いた実質の値。利確を別の時間足の線にしているときはそれも書く
-  const rrv=$('autoRisk').checked&&state.riskRR!=null?state.riskRR:sl?tp/sl:null;  // 自動のときは参考プランと同じ値。手入力のときは入力した値から
+  const rrv=$('autoRisk').checked&&state.riskRR!=null?state.riskRR:sl&&tp?tp/sl:null;  // 自動のときは参考プランと同じ値。手入力のときは入力した値から
   $('rr').className=rrv!=null&&rrv<1?'warn':'';  // D1：RRが1未満（損切りの幅の方が大きい）は注意の見た目
-  $('rr').textContent=(rrv!=null&&rrv<1?'⚠ ':'')+'RR '+(rrv!=null?rrv.toFixed(2):'--')+(sl&&spr?'（スプレッド込みの実質 '+(tpEff/slEff).toFixed(2)+'）':'')+($('autoRisk').checked&&state.riskTpBy?'・利確は'+state.riskTpBy+'の線':'')+(rrv!=null&&rrv<1?'｜RRが1未満：損切りの幅の方が利確の幅より大きい':'');
+  $('rr').textContent=(rrv!=null&&rrv<1?'⚠ ':'')+'RR '+(rrv!=null?rrv.toFixed(2):'--')+(sl&&spr&&tp?'（スプレッド込みの実質 '+(tpEff/slEff).toFixed(2)+'）':'')+($('autoRisk').checked&&state.riskTpBy?'・利確は'+state.riskTpBy+'の線':'')+(rrv!=null&&rrv<1?'｜RRが1未満：損切りの幅の方が利確の幅より大きい':'');
   const sprCost=fx?spr*contract*useLot*fx:0;
   $('sprVal').textContent=spr?(sprCost?yen(sprCost):'--'):'0';
   $('sprSub').textContent=sprPips.toFixed(1)+'pips・'+BROKERS[state.broker].name+' '+BROKERS[state.broker].acct+'｜'+useLot.toFixed(2)+' lot';
@@ -4393,16 +4419,17 @@ function drawChart(){
   state.planGeo=null;
   if(state.showPlan!==false){
     const pe=parseFloat($('entry').value),ps=parseFloat($('stop').value),pt=parseFloat($('target').value);
-    if(isFinite(pe)&&isFinite(ps)&&isFinite(pt)&&ps!==pe&&pt!==pe){
+    if(isFinite(pe)&&isFinite(ps)&&ps!==pe){
+      const hasT=isFinite(pt)&&pt!==pe;  // TPが「設定無し」（空欄）のときはエントリーとSLだけ描く
       ctx.save();ctx.beginPath();ctx.rect(P.l,P.t,W-P.l-P.r,H-P.t-P.b);ctx.clip();
-      const yE=y(pe),yS=y(ps),yT=y(pt);
-      ctx.fillStyle='rgba(66,213,156,.08)';ctx.fillRect(P.l,Math.min(yE,yT),W-P.l-P.r,Math.abs(yT-yE));
+      const yE=y(pe),yS=y(ps),yT=hasT?y(pt):null;
+      if(hasT){ctx.fillStyle='rgba(66,213,156,.08)';ctx.fillRect(P.l,Math.min(yE,yT),W-P.l-P.r,Math.abs(yT-yE))}
       ctx.fillStyle='rgba(255,105,105,.08)';ctx.fillRect(P.l,Math.min(yE,yS),W-P.l-P.r,Math.abs(yS-yE));
       const pl=(yy,col,dash)=>{ctx.strokeStyle=col;ctx.lineWidth=1.2;ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(P.l,yy);ctx.lineTo(W-P.r,yy);ctx.stroke();ctx.setLineDash([])};
-      pl(yT,'rgba(66,213,156,.85)',[7,4]);pl(yS,'rgba(255,105,105,.85)',[7,4]);pl(yE,'rgba(232,232,232,.9)',[]);
+      if(hasT)pl(yT,'rgba(66,213,156,.85)',[7,4]);pl(yS,'rgba(255,105,105,.85)',[7,4]);pl(yE,'rgba(232,232,232,.9)',[]);
       ctx.font='bold 10.5px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';
       const tag=(yy,txt,col)=>{const w=ctx.measureText(txt).width+10;ctx.fillStyle='rgba(10,13,16,.85)';ctx.fillRect(P.l+4,yy-8,w,16);ctx.fillStyle=col;ctx.fillText(txt,P.l+9,yy)};
-      tag(yT,'TP '+fmt(pt),'#42d59c');tag(yS,'SL '+fmt(ps),'#ff6969');tag(yE,'エントリー '+fmt(pe),'#e8e8e8');
+      if(hasT)tag(yT,'TP '+fmt(pt),'#42d59c');tag(yS,'SL '+fmt(ps),'#ff6969');tag(yE,'エントリー '+fmt(pe),'#e8e8e8');
       ctx.restore();
       state.planGeo={yE,yS,yT};
     }
@@ -5145,7 +5172,7 @@ chart.addEventListener('pointerdown',e=>{
   }
   if(state.showPlan!==false&&state.planGeo&&g.minP!=null&&ptrs.size===1){
     const rr=chart.getBoundingClientRect(),yy=e.clientY-rr.top;
-    const line=(e.clientX-rr.left<g.W-g.P.r)?(Math.abs(yy-state.planGeo.yS)<=8?'sl':Math.abs(yy-state.planGeo.yT)<=8?'tp':null):null;
+    const line=(e.clientX-rr.left<g.W-g.P.r)?(Math.abs(yy-state.planGeo.yS)<=8?'sl':(state.planGeo.yT!=null&&Math.abs(yy-state.planGeo.yT)<=8)?'tp':null):null;
     if(line){drag={planLine:line,moved:true,hist:[]};chart.classList.add('dragging');return}
   }
   const r=chart.getBoundingClientRect();
@@ -5307,6 +5334,41 @@ document.querySelectorAll('.stp').forEach(b=>b.addEventListener('click',()=>{
   if((b.dataset.t==='stop'||b.dataset.t==='target')&&$('autoRisk').checked)$('autoRisk').checked=false;
   inp.dispatchEvent(new Event('input',{bubbles:true}));savePrefs();const r=calcRisk();renderChecks(r);
 }));
+// ===== MT5式フォーム（2026-11-16）：価格ボード／ロットのクイック調整／TP設定無し =====
+function bidAsk(px,spr){return{bid:px-spr/2,ask:px+spr/2}}
+function lotStepValue(base,d){const v=Math.round((base+d)*100)/100;return v<0.01?0.01:v}
+function paintRiskBoard(){
+  const b=$('rbBid'),a=$('rbAsk');if(!b||!a)return;
+  const px=state.spot&&state.spot.price;
+  if(!px){if(b.textContent!=='--'){b.textContent='--';a.textContent='--'}return}
+  // スプレッドは「選んだ口座」の設定（口座ごとに保存される spread 欄）から取るので、口座を切り替えると Bid/Ask の開きも連動する
+  const spr=Math.max(n($('spread').value),0)*INSTR.pip,v=bidAsk(px,spr);
+  const bs=v.bid.toFixed(INSTR.dp),as=v.ask.toFixed(INSTR.dp);
+  if(b.textContent!==bs)b.textContent=bs;
+  if(a.textContent!==as)a.textContent=as;
+}
+function riskBoardGo(dir){
+  const seg=document.querySelector('#dirSeg .seg[data-dir="'+dir+'"]');if(seg)seg.click();
+  if(!$('autoRisk').checked&&state.spot&&state.spot.price){
+    const spr=Math.max(n($('spread').value),0)*INSTR.pip,v=bidAsk(state.spot.price,spr);
+    $('entry').value=(dir==='buy'?v.ask:v.bid).toFixed(INSTR.dp);
+    $('entry').dispatchEvent(new Event('input',{bubbles:true}));
+  }
+  savePrefs();const r=calcRisk();renderChecks(r);
+}
+if($('rbBuy'))$('rbBuy').onclick=()=>riskBoardGo('buy');
+if($('rbSell'))$('rbSell').onclick=()=>riskBoardGo('sell');
+document.querySelectorAll('.lotstep').forEach(b=>b.addEventListener('click',()=>{
+  const man=Math.round(n($('lotManual').value)*100)/100;
+  const base=man>0?man:parseFloat(($('lotSize').textContent||'').replace(/[^0-9.]/g,''));
+  if(!isFinite(base)||base<=0)return;
+  $('lotManual').value=lotStepValue(base,Number(b.dataset.ls)).toFixed(2);
+  $('lotManual').dispatchEvent(new Event('input',{bubbles:true}));savePrefs();const r=calcRisk();renderChecks(r);
+}));
+if($('tpNone'))$('tpNone').onclick=()=>{
+  if($('autoRisk').checked){$('autoRisk').checked=false;autoRisk()}
+  $('target').value='';$('target').dispatchEvent(new Event('input',{bubbles:true}));savePrefs();const r=calcRisk();renderChecks(r);
+};
 function riskSummaryText(){
   const lot=($('lotSize')||{}).textContent||'--';if(lot==='--')return '';
   const dir=(($('dirLabel')||{}).textContent||'').split('｜')[0].replace('想定方向：','').trim();
@@ -5314,7 +5376,7 @@ function riskSummaryText(){
   const px=x=>isFinite(x)&&x>0?x.toLocaleString('ja-JP',{minimumFractionDigits:INSTR.dp,maximumFractionDigits:INSTR.dp}):'--';
   return (dir?dir+' ':'')+'E '+px(e)+'／SL '+px(s)+'／TP '+px(t)+'｜ロット '+lot+'｜最大損失 '+(($('riskYen')||{}).textContent||'--')+'（'+(($('riskSub')||{}).textContent||'')+'）｜想定利益 '+(($('profitYen')||{}).textContent||'--')+'（'+(($('rr')||{}).textContent||'')+'）｜'+INSTR.name;
 }
-function renderRiskSummary(){const el=$('riskSummary');if(!el)return;const tx=riskSummaryText();el.textContent=tx?('プラン要約：'+tx):'';el.hidden=!tx}
+function renderRiskSummary(){const el=$('riskSummary');if(!el)return;const tx=riskSummaryText();el.textContent=tx?('プラン要約：'+tx):'';el.hidden=!tx;paintRiskBoard()}
 setInterval(renderRiskSummary,1500);renderRiskSummary();
 if($('planCopy'))$('planCopy').onclick=async()=>{const tx=riskSummaryText();if(!tx)return;try{await navigator.clipboard.writeText(tx)}catch(_){const ta=document.createElement('textarea');ta.value=tx;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(__){}ta.remove()}$('planSaveMsg').textContent='プランをコピーしました'};
 if($('riskHelpBtn'))$('riskHelpBtn').onclick=()=>{$('riskHelpSheet').hidden=false};
