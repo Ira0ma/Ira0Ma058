@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="db54a766c7">
+<meta name="build" content="5e6250525a">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -917,7 +917,7 @@ html.nd .shell>footer{grid-area:foot}
       <label>口座資金（円）<input id="capitalQ" type="number" inputmode="numeric"></label>
       <label id="riskPctQW">1回で失ってよい割合（%）<input id="riskPctQ" type="number" step="0.1" inputmode="decimal"></label>
       <label id="riskYenQW" hidden>1回で失ってよい金額（円）<input id="riskYenQ" type="number" step="100" min="0" inputmode="numeric" placeholder="例 5000"></label>
-      <div class="segmented" id="riskChipsQ" aria-label="許容リスクのクイック選択"><button type="button" class="seg" data-rp="0.5">0.5%</button><button type="button" class="seg" data-rp="1">1%</button><button type="button" class="seg" data-rp="2">2%</button></div>
+      <div class="segmented" id="riskChipsQ" aria-label="1回で失ってよい割合のクイック選択"><button type="button" class="seg" data-rp="0.5">0.5%</button><button type="button" class="seg" data-rp="1">1%</button><button type="button" class="seg" data-rp="2">2%</button></div>
     </div>
     <div class="sub" style="margin:0 0 8px">よく使う設定はここに出してあります。%と円の切り替えや細かい設定は、下の「口座設定」の中にあります。</div>
     <div class="stepcap"><b>3</b>価格を入れて、ロットと金額を確認する</div>
@@ -961,7 +961,7 @@ html.nd .shell>footer{grid-area:foot}
       </div>
       <div class="riskpick"><span class="sub">リスクの指定</span>
         <div class="segmented" id="riskModeSeg"><button type="button" class="seg" data-rmode="pct">%で指定</button><button type="button" class="seg" data-rmode="yen">円で指定</button></div>
-        <div class="segmented" id="riskChips" aria-label="許容リスクのクイック選択"><button type="button" class="seg" data-rp="0.5">0.5%</button><button type="button" class="seg" data-rp="1">1%</button><button type="button" class="seg" data-rp="2">2%</button></div>
+        <div class="segmented" id="riskChips" aria-label="1回で失ってよい割合のクイック選択"><button type="button" class="seg" data-rp="0.5">0.5%</button><button type="button" class="seg" data-rp="1">1%</button><button type="button" class="seg" data-rp="2">2%</button></div>
       </div>
       <div class="autonote">契約量・レバレッジ・スプレッドは、選んだ口座（XMスタンダード／XM KIWAMI極／XS プロ）ごとに保存されます。<span id="sprNote"></span><span id="brokerNote">XMのGOLDは1lot＝100ozです。XSの契約量はご自身の口座の取引条件で確認してください。</span>口座残高が増えると上限レバレッジが下がる業者もあるため、その場合はレバレッジ欄を変更してください。<span class="rnote">リスクの指定は2通りあります。%は資金に対する割合で、資金が増減すると1回の損失額も変わります。円は1回で失ってよい上限を金額で決める方法で、資金が変わっても額は固定です。</span></div>
     </details>
@@ -971,7 +971,7 @@ html.nd .shell>footer{grid-area:foot}
 <div class="hsec">流れ（3ステップ）</div>
 <div class="hrow"><i style="background:#e3b341"></i><div><b>1. 口座と方向</b><br><span>使っている口座（XMスタンダード／KIWAMI極／XSプロ）を選びます。スプレッドやレバレッジは口座ごとに保存されます。方向は「シグナル連動」のままでも、買い・売りを自分で選んでも大丈夫です。</span></div></div>
 <div class="hrow"><i style="background:#e3b341"></i><div><b>2. 資金とリスク</b><br><span>口座資金と、「1回のトレードで失ってよい上限」を入れます。%（資金に対する割合）か円（金額）で指定でき、切り替えは「口座設定」の中にあります。迷ったら1%から始めるのが無難です。チップで0.5%・1%・2%をすぐ選べます。</span></div></div>
-<div class="hrow"><i style="background:#e3b341"></i><div><b>3. ロットと金額を確認</b><br><span>エントリー・SL・TPは価格と値幅（ATR）から自動で入ります。出てきた目安ロットと、SL・TPの下に出る金額、最後のまとめ文で全体を確認したら準備完了です。</span></div></div>
+<div class="hrow"><i style="background:#e3b341"></i><div><b>3. ロットと金額を確認</b><br><span>エントリー・SL・TPは売買プランから自動で入ります。出てきた目安ロットと、SL・TPの下に出る金額、最後のまとめ文で全体を確認したら準備完了です。</span></div></div>
 <div class="hsec">入力の調整</div>
 <div class="hrow"><i style="background:#8fa1b1"></i><div><b>自動入力と手入力</b><br><span>自動入力は、このダッシュボードの売買プランと連動しています（セットアップ判定やチャートのプラン線と同じ価格がそのまま入ります）。プランが動くと欄も追随します。「価格・SL・TPは自動で入れる」のチェックを外すと手入力モードになります。各欄の横の −／＋ ボタンで少しずつ動かせます。チャート上のSL・TPの線をドラッグして動かしても同じで、その場合は自動入力が自動で外れます。</span></div></div>
 <div class="hrow"><i style="background:#8fa1b1"></i><div><b>ロットを自分で決める</b><br><span>「ロット（自分で入力）」に数字を入れると、そのロットで損失・利益・証拠金を計算し直します。空欄に戻す（「自動に戻す」）と逆算に戻ります。</span></div></div>
@@ -983,10 +983,10 @@ html.nd .shell>footer{grid-area:foot}
 <div class="hrow"><i style="background:#42d59c"></i><div><b>最大損失</b><br><span>SLに当たった時に失う金額です（スプレッド込み）。</span></div></div>
 <div class="hrow"><i style="background:#42d59c"></i><div><b>想定利益とRR</b><br><span>TPまで届いた時の利益と、損失に対する利益の倍率です。RR 2.0 は「損失1に対して利益2」という意味です。</span></div></div>
 <div class="hrow"><i style="background:#42d59c"></i><div><b>証拠金維持率</b><br><span>口座資金 ÷ 必要証拠金です。低いほど強制決済（ロスカット）に近づくので、余裕を見るための数字です。</span></div></div>
-<div class="hrow"><i style="background:#42d59c"></i><div><b>プラン要約と記録</b><br><span>結果の下の1行がプラン全体の要約です。「プランをコピー」でメモなどに貼れて、「このプランで記録」でチェック欄の下に残せます。</span></div></div>
+<div class="hrow"><i style="background:#42d59c"></i><div><b>プラン要約と記録</b><br><span>結果の下に、プラン全体を文章でまとめた要約が出ます。「プランをコピー」でメモなどに貼れて、「このプランで記録」でチェック欄の下に残せます。</span></div></div>
 <div class="hsec">こんな表示が出たら</div>
-<div class="hrow"><i style="background:#ff6969"></i><div><b>「最小ロットでも上限超え」</b><br><span>一番小さい0.01ロットでも許容損失を超える状態です。SLを狭めるか、許容リスクを見直すか、そのトレード自体を見送る判断材料にしてください。</span></div></div>
-<div class="hrow"><i style="background:#ff6969"></i><div><b>連敗の目安</b><br><span>「口座設定」の下に「このロットで連敗したら」の目安が出ます。ロットを大きくする前に、連敗した時の減り方を確認してください。</span></div></div>
+<div class="hrow"><i style="background:#ff6969"></i><div><b>「最小ロットでも上限超え」</b><br><span>一番小さい0.01ロットでも許容損失を超える状態です。SLを狭めるか、1回で失ってよい割合（金額）を見直すか、そのトレード自体を見送る判断材料にしてください。</span></div></div>
+<div class="hrow"><i style="background:#ff6969"></i><div><b>連敗の目安</b><br><span>まとめ文の下、「口座設定」の前に「このロットで連敗したら」の目安が出ます。ロットを大きくする前に、連敗した時の減り方を確認してください。</span></div></div>
 </div></div>
   </section>
 
@@ -3265,7 +3265,7 @@ function renderRiskShare(capital,rpE,ownLoss){
   const pct=capital?tl/capital*100:0,over=capital&&pct>rpE;
   el.hidden=false;el.className='riskshare'+(over?' over':'');
   el.innerHTML='<b>全銘柄の合計　想定損失 '+yen(tl)+'（資金の'+(capital?pct.toFixed(2):'--')+'%）｜合計 必要証拠金 '+yen(tm)+'</b>'+
-    (over?'<div class="rs-warn">⚠ 合計で上限を超えています（このダッシュボードの許容リスク '+rpE.toFixed(2)+'%）</div>':'')+
+    (over?'<div class="rs-warn">⚠ 合計で上限を超えています（1回で失ってよい割合は '+rpE.toFixed(2)+'% です）</div>':'')+
     '<ul>'+rows.join('')+'</ul>'+
     '<div class="rs-note">合計は、いま持っている（持つつもりの）ポジションが全部そろって損切りに達した場合の目安です。同じ端末・同じブラウザで開いているダッシュボードの、15分以内の計算だけが合算されます。資金の%は、このダッシュボードの口座資金で割っています。</div>';
 }

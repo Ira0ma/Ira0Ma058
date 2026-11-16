@@ -160,3 +160,15 @@ test("まとめ文も計算のたびに描き直される（切替直後の遅�
   const G = fs5.readFileSync(require("node:path").join(__dirname, "..", "gold.html"), "utf8");
   assert.ok(G.includes("paintRiskBoard();renderRiskSummary();"), "calcRiskの末尾でまとめ文も即時更新する");
 });
+
+test("連動する説明文も新しいUIに合わせてある（使い方シート・警告・読み上げラベル）", () => {
+  const fs6 = require("node:fs");
+  const G = fs6.readFileSync(require("node:path").join(__dirname, "..", "gold.html"), "utf8");
+  assert.ok(G.includes("エントリー・SL・TPは売買プランから自動で入ります"), "ステップ3の説明がプラン連動と一致");
+  assert.ok(!G.includes("価格と値幅（ATR）から自動で入ります"), "古いATR由来の説明が残っていない");
+  assert.ok(G.includes("結果の下に、プラン全体を文章でまとめた要約が出ます"), "要約の説明が文章形式と一致");
+  assert.ok(G.includes("まとめ文の下、「口座設定」の前に「このロットで連敗したら」の目安が出ます"), "連敗の目安の場所が実際の並びと一致");
+  assert.ok(G.includes("1回で失ってよい割合（金額）を見直すか"), "警告文も新しい言い回し");
+  assert.ok(!G.includes("許容リスクのクイック選択"), "読み上げラベルも新しい言い回し");
+  assert.ok(G.includes("1回で失ってよい割合は '+rpE.toFixed(2)+'% です"), "合計警告も新しい言い回し");
+});
