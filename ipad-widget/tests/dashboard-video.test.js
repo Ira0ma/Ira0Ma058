@@ -19,7 +19,7 @@ function dashVideoMap() {
 test("ダッシュボードの？ボタン：静的な data-gloss 用語は全部 DASH_VIDEO でカバーされる", () => {
   const map = dashVideoMap();
   const terms = [...new Set([...GOLD.matchAll(/data-gloss="([^"]+)"/g)].map((x) => x[1]))].filter((x) => !x.includes("'"));
-  assert.ok(terms.length >= 14, "data-gloss 用語が14以上ある（実測: " + terms.length + "）");
+  assert.ok(terms.length >= 13, "data-gloss 用語が13以上ある（実測: " + terms.length + "）");
   for (const t of terms) assert.ok(map[t], "用語「" + t + "」に動画が結びついている");
   for (const pid of ["p01", "p02", "p03", "p04", "p22", "p23", "p24", "p25", "p72", "p73"]) {
     assert.ok(map["pattern:" + pid], "パターン pattern:" + pid + " に動画が結びついている");
@@ -59,8 +59,19 @@ test("チップの文言は「何の動画か」が分かる形になってい�
     assert.ok(lb && lb.length >= 1, "用語「" + term + "」の表示名が空でない");
     assert.ok(!lb.includes(":"), "用語「" + term + "」の表示名にキー接頭辞が残らない: " + lb);
   }
-  assert.equal(labelMap["fvg:fvg-01"], "FVG", "FVG のチップは FVG と表示される");
+  assert.equal(labelMap["pattern:p01"], "三尊", "パターンのチップは用語名で表示される");
   assert.equal(labelMap["マルチタイムフレーム分析"], "MTF", "長い用語は短い表示名になる");
+});
+
+test("FVGの整理：？ボタンと動画チップを外し、説明は「？説明」アニメに集約（2026-11-16 オーナー決定）", () => {
+  assert.ok(!GOLD.includes('data-gloss="fvg:fvg-01"'), "表示の並びに FVG の？ボタンは無い");
+  assert.ok(GOLD.includes('id="fvgBtn"'), "FVG のオン/オフボタンは残っている");
+  assert.ok(GOLD.includes('href="learn/videos/chart-buttons-cinematic.mp4"'), "説明シートにチャートのボタンのアニメへのリンクがある");
+  assert.ok(GOLD.includes("▶ チャートのボタンのアニメで見る"), "リンクの文言が分かる形になっている");
+  assert.ok(!GOLD.includes("詳しくは横の「？」ボタンで読めます"), "ヘルプ文が実態とずれていない");
+  assert.ok(GOLD.includes("詳しくは、この説明の上にあるアニメでも見られます"), "ヘルプ文がアニメへ案内している");
+  const p = path.join(__dirname, "..", "learn", "videos", "chart-buttons-cinematic.mp4");
+  assert.ok(fs.existsSync(p), "chart-buttons-cinematic.mp4 が learn/videos にある");
 });
 
 test("ツールチップと相関ガイドの動画リンクも対象が分かる文言になっている", () => {
