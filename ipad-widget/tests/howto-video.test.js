@@ -19,8 +19,8 @@ test("使い方動画：全6スロットに実ファイルつきで割り当て�
 });
 
 test("使い方動画：learn/silver.html ではサイト絶対パスに書き換わる", () => {
-  assert.ok(BUILD.includes('window.HOWTO_VIDEO["howto-silver"] = (location.hostname.endsWith('), "build.py に learn 用の書き換えがある");
+  assert.ok(BUILD.includes("replace('learn/videos/', 'https://ira0ma.github.io/Ira0Ma058/learn/videos/')"), "build.py に learn 用の動画パス絶対化がある");
   const learn = fs.readFileSync(path.join(__dirname, "..", "learn", "silver.html"), "utf8");
-  assert.ok(learn.includes("/Ira0Ma058/') + \"learn/videos/silver-guide.mp4\""), "生成済み learn/silver.html で絶対パスになっている");
+  assert.ok(learn.includes('HOWTO_VIDEO["howto-silver"] = "https://ira0ma.github.io/Ira0Ma058/learn/videos/silver-guide.mp4"'), "生成済み learn/silver.html で絶対パスになっている");
   assert.ok(!learn.includes('HOWTO_VIDEO["howto-silver"] = "learn/videos/'), "learn 側に相対パスのままの銀割り当ては残っていない");
 });
