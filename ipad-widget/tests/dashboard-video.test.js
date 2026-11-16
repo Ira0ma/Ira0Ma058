@@ -42,9 +42,31 @@ test("？ボタンの横にチップを付ける配線と、後から描かれ�
 });
 
 test("カード見出しの動画リンクは「アニメ」と分かる文言になっている", () => {
-  for (const label of ["▶ 証拠金アニメ", "▶ キャッシュバックアニメ", "▶ 緊急アラートアニメ"]) {
+  for (const label of ["▶ 証拠金アニメ", "▶ キャッシュバックアニメ", "▶ 緊急アラートアニメ", "▶ トレードスタイルアニメ"]) {
     assert.ok(GOLD.includes(label), "見出しリンク「" + label + "」がある");
   }
+});
+
+test("チップの文言は「何の動画か」が分かる形になっている（2026-11-16 オーナー指摘）", () => {
+  assert.ok(GOLD.includes("a.textContent='▶ '+lb+'動画'"), "チップは用語名入りの文言で作られる");
+  assert.ok(GOLD.includes("a.title=lb+'の説明アニメ'"), "チップのタイトルにも用語名が入る");
+  assert.ok(GOLD.includes("function dashVideoLabel(term)"), "用語→短い表示名の変換がある");
+  // 全ての DASH_VIDEO キーが空でない表示名に解決できること（ラベル表＋フォールバックの複製で検証）
+  const labelMap = JSON.parse(GOLD.match(/const DASH_VIDEO_LABEL=(\{[^}]*\});/)[1]);
+  const map = dashVideoMap();
+  for (const term of Object.keys(map)) {
+    const lb = labelMap[term] || String(term).replace(/^[^:]*:/, "").replace(/（.*$/, "");
+    assert.ok(lb && lb.length >= 1, "用語「" + term + "」の表示名が空でない");
+    assert.ok(!lb.includes(":"), "用語「" + term + "」の表示名にキー接頭辞が残らない: " + lb);
+  }
+  assert.equal(labelMap["fvg:fvg-01"], "FVG", "FVG のチップは FVG と表示される");
+  assert.equal(labelMap["マルチタイムフレーム分析"], "MTF", "長い用語は短い表示名になる");
+});
+
+test("ツールチップと相関ガイドの動画リンクも対象が分かる文言になっている", () => {
+  assert.ok(GOLD.includes("a.textContent='▶ '+k+'のアニメで見る'"), "ツールチップのリンクに対象名が入る");
+  assert.ok(GOLD.includes("▶ DXYのアニメで見る"), "DXY ガイドのリンクに対象名が入る");
+  assert.ok(GOLD.includes("▶ 米金利のアニメで見る"), "米金利ガイドのリンクに対象名が入る");
 });
 
 test("learn配下の銀コピーでは動画パスが相対のまま残っていない（learn/learn の404防止）", () => {

@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="52d387b991">
+<meta name="build" content="e2285a0ba3">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2381,11 +2381,11 @@ window.TDFontApply();
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=2b7ff7fb44", title: "GOLD分析" },
-    silver: { src: "learn/silver.html?v=7edc65232d", title: "シルバー分析" },
-    usdjpy: { src: "usdjpy.html?v=05ba1603fb", title: "ドル円分析" },
-    btc: { src: "btc.html?v=b8a1ac0a35", title: "BTC分析" },
-    oil: { src: "oil.html?v=42709d3797", title: "オイル分析" },
+    gold: { src: "gold.html?v=62b70d7e59", title: "GOLD分析" },
+    silver: { src: "learn/silver.html?v=8aba9e074a", title: "シルバー分析" },
+    usdjpy: { src: "usdjpy.html?v=1da0e8aafd", title: "ドル円分析" },
+    btc: { src: "btc.html?v=9eb7c88cad", title: "BTC分析" },
+    oil: { src: "oil.html?v=52dd70b60b", title: "オイル分析" },
     lots: { src: "learn/lotsim.html", title: "ロット図説" },
     weekend: { src: "learn/weekend.html", title: "週末ボード" }
   };
@@ -2503,7 +2503,7 @@ window.TDFontApply();
     if (d.type === "dash-score") { scoreOf[d.key] = d; paintScore(); return; }
     if (d.type === "dash-alert") { deskAlert(d); return; }
     if (d.type === "dash-gloss") { if (window.openGlossary) window.openGlossary(String(d.term || "")); return; }
-    if (d.type === "dash-video") { if (window.openVideo) window.openVideo(String(d.url || "")); return; }
+    if (d.type === "dash-video") { if (window.openVideo) window.openVideo(String(d.url || ""), String(d.title || "")); return; }
     if (d.type === "dash-open") {  // a dashboard's 「プレミアムで開く」: run its TradingView shortcut from the desk itself
       if (/^shortcuts:\/\/run-shortcut\?name=[^&]+$/.test(String(d.url))) location.href = d.url;
       return;
@@ -7128,7 +7128,7 @@ window.TDFontApply();
     // 説明動画：用語集・レッスンの項目に「▶ アニメで見る」を出す対応表（名前／レッスンID → 動画ファイル名）
     var GLOSS_VIDEO = {"水平線":"suiheisen","SMA":"sma","レンジ":"range","ネックライン":"neckline","許容リスク":"kyoyo-risk","マルチタイムフレーム分析":"mtf","GMMA":"gmma","ATR":"atr","CHOCH":"choch","BOS":"choch-bos","チャネル":"channel","フィボナッチ・リトレースメント":"fibonacci","三尊（ヘッドアンドショルダー）":"sanzon","逆三尊":"gyaku-sanzon","ダブルトップ":"double-top","ダブルボトム":"double-bottom","カップウィズハンドル":"cup-handle","証拠金":"shokokin","証拠金維持率":"shokokin","経済指標":"keizai"};
     var GLOSS_VIDEO_ID = {"p01":"sanzon","p02":"gyaku-sanzon","p03":"double-top","p04":"double-bottom","p22":"cup-handle","p23":"gyaku-cup","p24":"channel","p25":"channel","p72":"neckline","p73":"fibonacci","fvg-01":"fvg","gold-intro-19":"shokokin","usdjpy-10":"shokokin","usdjpy-14":"double-top","usdjpy-15":"double-bottom","ind-06":"sma","ind-11":"gmma","ind-34":"atr","gold-intro-43":"range"};
-    var gbVideoBtn = function (name, id) { var f = (id && GLOSS_VIDEO_ID[id]) || (name && GLOSS_VIDEO[name]); return f ? '<button type="button" class="gb-video" data-video="learn/videos/' + f + '-cinematic.mp4">▶ アニメで見る</button>' : ''; };
+    var gbVideoBtn = function (name, id, label) { var f = (id && GLOSS_VIDEO_ID[id]) || (name && GLOSS_VIDEO[name]); if (!f) return ''; var lb = label ? esc(label) : ''; return '<button type="button" class="gb-video" data-video="learn/videos/' + f + '-cinematic.mp4"' + (lb ? ' data-vtitle="' + lb + 'の説明アニメ"' : '') + '>' + (lb ? '▶ ' + lb + 'のアニメで見る' : '▶ アニメで見る') + '</button>'; };
     var learnHtml = function (t, L) {
       var lv = L.level ? '<em class="lt-lv lv' + (LV[L.level] || 2) + '">' + esc(L.level) + '</em>' : "";
       var head = '<h3>' + (L.no ? '<i class="lt-no">' + (L.id.charAt(0) === "p" ? "No." : "") + ("0" + L.no).slice(-2) + '</i>' : '') + esc(t[0]) + lv + '</h3>' + (L.aka && L.aka.length ? '<p class="lt-aka">' + esc(L.aka.join("・")) + '</p>' : '');
@@ -7147,7 +7147,7 @@ window.TDFontApply();
       if (L.hide) s += '<p class="lt-note">' + esc(L.hide) + '</p>';
       if (L.calc) s += '<details class="lt-calcbox"><summary>計算してみる（数字を入れて試せます）</summary>' + calcHtml(L.calc) + '</details>';
       if (L.more) s += '<details class="lt-more"><summary>くわしい判定メモ</summary><dl class="lt-dl">' + L.more.map(function (d) { return '<dt>' + esc(d[0]) + '</dt><dd>' + esc(d[1]) + '</dd>'; }).join("") + '</dl></details>';
-      return '<div class="gb-term lt" data-term="' + esc(t[0]) + '">' + head + s + relHtml(L.rel) + gbVideoBtn(null, L.id) + '</div>';
+      return '<div class="gb-term lt" data-term="' + esc(t[0]) + '">' + head + s + relHtml(L.rel) + gbVideoBtn(null, L.id, t[0]) + '</div>';
     };
     var termHtml = function (t) {
       var o = t[3] || {}, extra = "";
@@ -7156,7 +7156,7 @@ window.TDFontApply();
       if (o.pts) extra += '<ul class="gb-pts">' + o.pts.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join("") + '</ul>';
       if (o.table) extra += '<table class="gb-table"><thead><tr>' + o.table.head.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join("") + '</tr></thead><tbody>' +
         o.table.rows.map(function (r) { return '<tr' + (o.table.low.indexOf(r[0]) >= 0 ? ' class="low"' : '') + '>' + r.map(function (c, k) { return '<td>' + esc(c) + (k === 0 ? '年' : '') + '</td>'; }).join("") + '</tr>'; }).join("") + '</tbody></table><p class="gb-note">※2026年は10月28日まで。赤字は変動率の低い年</p>';
-      return '<div class="gb-term" data-term="' + esc(t[0]) + '"><h3>' + esc(t[0]) + (t[1] ? '<span>' + esc(t[1]) + '</span>' : '') + '</h3><p>' + esc(t[2]) + '</p>' + extra + relHtml(o.rel) + gbVideoBtn(t[0], null) + '</div>';
+      return '<div class="gb-term" data-term="' + esc(t[0]) + '"><h3>' + esc(t[0]) + (t[1] ? '<span>' + esc(t[1]) + '</span>' : '') + '</h3><p>' + esc(t[2]) + '</p>' + extra + relHtml(o.rel) + gbVideoBtn(t[0], null, t[0]) + '</div>';
     };
     // ページの大きさ：見開き（横長の広い画面）なら2ページ、ほかは1ページ。中身は実際の大きさで測ってページに分ける
     function pageSize() {
@@ -7321,7 +7321,7 @@ window.TDFontApply();
       if (r && BOOKS[r.book].data) { ensureAll(); goTo(r, from); book.querySelector('[data-gl="close"]').focus(); return; }
       ensureAll().then(function () { goTo(resolve(term) || { book: "fx", key: "" }, from); book.querySelector('[data-gl="close"]').focus(); });
     };
-    spread.addEventListener("click", function (e) { var v = e.target.closest(".gb-video"); if (v && window.openVideo) window.openVideo(v.getAttribute("data-video")); });
+    spread.addEventListener("click", function (e) { var v = e.target.closest(".gb-video"); if (v && window.openVideo) window.openVideo(v.getAttribute("data-video"), v.getAttribute("data-vtitle") || ""); });
     // 図の拡大：タップで画面いっぱいに。もう一度タップで2倍（指で動かせる）
     var zoom = document.getElementById("gb-zoom"), zoomImg = zoom.querySelector("img"), zoomFrom = null;
     function openZoom(btn) {
@@ -7891,17 +7891,18 @@ window.TDFontApply();
 <script>
 /* 動画プレーヤー：別タブではなく画面の中で開き、閉じれば元の画面にそのまま戻る。
    埋め込みダッシュボードからの dash-video もここで受ける */
-window.openVideo = function (url) {
+window.openVideo = function (url, title) {
   if (!url) return;
   var abs = url; try { abs = new URL(url, location.href).href; } catch (e) {}
   var ov = document.getElementById("vdOverlay");
   if (!ov) {
     ov = document.createElement("div"); ov.id = "vdOverlay"; ov.className = "vdov"; ov.hidden = true;
-    ov.innerHTML = '<div class="vdbox"><div class="vdbar"><span class="vdtitle">▶ アニメ動画</span><button type="button" class="vdclose" id="vdClose">✕ 閉じて戻る</button></div><video class="vdplayer" id="vdPlayer" controls playsinline preload="metadata"></video></div>';
+    ov.innerHTML = '<div class="vdbox"><div class="vdbar"><span class="vdtitle" id="vdTitle">▶ アニメ動画</span><button type="button" class="vdclose" id="vdClose">✕ 閉じて戻る</button></div><video class="vdplayer" id="vdPlayer" controls playsinline preload="metadata"></video></div>';
     document.body.appendChild(ov);
     ov.addEventListener("click", function (e) { if (e.target === ov || e.target.id === "vdClose") window.closeVideo(); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !ov.hidden) window.closeVideo(); });
   }
+  var tt = document.getElementById("vdTitle"); if (tt) tt.textContent = title ? "▶ " + title : "▶ アニメ動画";
   var v = document.getElementById("vdPlayer");
   v.src = abs; ov.hidden = false;
   document.documentElement.style.overflow = "hidden";
@@ -7917,7 +7918,7 @@ document.addEventListener("click", function (e) {
   var a = e.target && e.target.closest ? e.target.closest('a[href$=".mp4"]') : null;
   if (!a) return;
   var href = a.getAttribute("href"); if (!href) return;
-  e.preventDefault(); window.openVideo(href);
+  e.preventDefault(); window.openVideo(href, a.title || "");
 }, true);
 </script>
 
@@ -7933,7 +7934,7 @@ document.addEventListener("DOMContentLoaded", function () {
     n.textContent = "使い方動画は制作中です。完成したら、このボタンから見られるようになります。"; document.body.appendChild(n); }
   b.addEventListener("click", function () {
     var url = window.HOWTO_VIDEO["howto-app"];
-    if (url) { window.openVideo(url); return; }
+    if (url) { window.openVideo(url, "使い方アニメ"); return; }
     var open = n.classList.toggle("open"); n.hidden = !open;
     if (open) { var r = b.getBoundingClientRect();
       n.style.left = Math.max(8, Math.min(r.left, window.innerWidth - n.offsetWidth - 8)) + "px";

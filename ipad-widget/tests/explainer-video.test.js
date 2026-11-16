@@ -27,7 +27,8 @@ test("説明動画：ダッシュボード側の結びつけ（tip4・見出し3
 test("説明動画：用語集・レッスンへの差し込み（名前表・ID表・ボタン生成）", () => {
   assert.ok(HOME.includes("var GLOSS_VIDEO = {"), "名前対応表がある");
   assert.ok(HOME.includes("var GLOSS_VIDEO_ID = {"), "レッスンID対応表がある");
-  assert.ok(HOME.includes("gbVideoBtn(t[0], null)"), "用語集の項目にボタンが付く");
-  assert.ok(HOME.includes("gbVideoBtn(null, L.id)"), "レッスンの項目にボタンが付く");
+  assert.ok(HOME.includes("gbVideoBtn(t[0], null, t[0])"), "用語集の項目にボタンが付く");
+  assert.ok(HOME.includes("gbVideoBtn(null, L.id, t[0])"), "レッスンの項目にボタンが付く");
+  assert.ok(HOME.includes("'▶ ' + lb + 'のアニメで見る'"), "ボタンの文言に用語名が入る（何の動画か分かる）");
   assert.ok(HOME.includes('closest(".gb-video")'), "ボタンのクリックで動画が開く");
 });

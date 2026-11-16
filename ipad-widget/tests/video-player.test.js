@@ -23,19 +23,28 @@ test("画面内プレーヤー：両ページに openVideo / closeVideo と受�
 test("動画リンクは別タブで開かず、クリックを横取りして画面内プレーヤーで開く", () => {
   for (const [name, src] of [["gold.html", GOLD], ["index.html", HOME]]) {
     assert.ok(src.includes("a[href$=\".mp4\"]"), name + " に mp4 リンクの横取りがある");
-    assert.ok(src.includes("e.preventDefault(); window.openVideo(href);"), name + " で横取り後に openVideo を呼ぶ");
+    assert.ok(src.includes("e.preventDefault(); window.openVideo(href, a.title || \"\");"), name + " で横取り後に openVideo を呼ぶ");
   }
   assert.ok(!GOLD.includes('window.open(url, "_blank", "noopener")'), "gold.html の使い方ボタンは別タブで開かない");
   assert.ok(!HOME.includes('window.open(v.getAttribute("data-video"), "_blank"'), "用語集の動画ボタンは別タブで開かない");
 });
 
 test("使い方ボタンは画面内プレーヤーで開く", () => {
-  assert.ok(GOLD.includes('if (url) { window.openVideo(url); return; }'), "ダッシュボードの使い方ボタンが openVideo を使う");
-  assert.ok(HOME.includes('if (url) { window.openVideo(url); return; }'), "ホームの使い方ボタンが openVideo を使う");
+  assert.ok(GOLD.includes('if (url) { window.openVideo(url, "使い方アニメ"); return; }'), "ダッシュボードの使い方ボタンが openVideo を使う");
+  assert.ok(HOME.includes('if (url) { window.openVideo(url, "使い方アニメ"); return; }'), "ホームの使い方ボタンが openVideo を使う");
 });
 
 test("埋め込み時は dash-video でホームへ委ね、ホームはそれを受ける", () => {
   assert.ok(GOLD.includes('type: "dash-video", key: (window.INSTR_KEY || "gold")'), "ダッシュボードがシート名キーで dash-video を送る");
   assert.ok(HOME.includes('d.type !== "dash-video"'), "ホームの受信ゲートに dash-video がある");
-  assert.ok(HOME.includes('if (d.type === "dash-video") { if (window.openVideo) window.openVideo(String(d.url || "")); return; }'), "ホームが dash-video を受けて openVideo で開く");
+  assert.ok(HOME.includes('if (d.type === "dash-video") { if (window.openVideo) window.openVideo(String(d.url || ""), String(d.title || "")); return; }'), "ホームが dash-video を受けて openVideo で開く");
+});
+
+test("プレーヤーの見出しに「何の動画か」が出る", () => {
+  for (const [name, src] of [["gold.html", GOLD], ["index.html", HOME]]) {
+    assert.ok(src.includes("window.openVideo = function (url, title)"), name + " の openVideo はタイトルを受け取る");
+    assert.ok(src.includes('id="vdTitle"'), name + " にタイトル表示がある");
+    assert.ok(src.includes('tt.textContent = title ? "▶ " + title : "▶ アニメ動画"'), name + " でタイトルが表示に反映される");
+  }
+  assert.ok(GOLD.includes('title: title || ""'), "dash-video にタイトルも載せて送る");
 });
