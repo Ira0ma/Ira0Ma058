@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="3df5ed5682">
+<meta name="build" content="d52cd291f9">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -924,6 +924,7 @@ html.nd .shell>footer{grid-area:foot}
       <label><span class="fldcap">利確 TP（利益を確定する価格）<button type="button" id="tpNone" class="seg tpnone">設定無し</button></span><span class="stepper"><button type="button" class="stp" data-t="target" data-d="-1" aria-label="減らす">−</button><input id="target" type="number" step="any" inputmode="decimal"><button type="button" class="stp" data-t="target" data-d="1" aria-label="増やす">＋</button></span><em class="moneyhint" id="tpMoney"></em></label>
     </div>
     <label class="inlinecheck"><input id="autoRisk" type="checkbox" checked> 価格・SL・TPは自動で入れる（切ると自分で入力できます）</label>
+    <div class="sub" style="margin:2px 0 8px">自動で入れる場合は、このダッシュボードの<b>売買プランと連動</b>します（セットアップ判定やチャートのプラン線と同じ価格）。プランが動くと、欄の価格も合わせて更新されます。</div>
     <div class="form lotrow">
       <label>ロット（自分で入力）<span class="stepper"><button type="button" class="stp" data-t="lotManual" data-d="-1" aria-label="減らす">−</button><input id="lotManual" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="空欄で自動計算（0.01刻み）"><button type="button" class="stp" data-t="lotManual" data-d="1" aria-label="増やす">＋</button></span></label>
       <button type="button" id="lotClear" class="seg">自動に戻す</button>
@@ -969,7 +970,7 @@ html.nd .shell>footer{grid-area:foot}
 <div class="hrow"><i style="background:#e3b341"></i><div><b>2. 資金とリスク</b><br><span>口座資金と、「1回のトレードで失ってよい上限」を入れます。%（資金に対する割合）か円（金額）で指定でき、切り替えは「口座設定」の中にあります。迷ったら1%から始めるのが無難です。チップで0.5%・1%・2%をすぐ選べます。</span></div></div>
 <div class="hrow"><i style="background:#e3b341"></i><div><b>3. ロットと金額を確認</b><br><span>エントリー・SL・TPは価格と値幅（ATR）から自動で入ります。出てきた目安ロットと、SL・TPの下に出る金額、最後のまとめ文で全体を確認したら準備完了です。</span></div></div>
 <div class="hsec">入力の調整</div>
-<div class="hrow"><i style="background:#8fa1b1"></i><div><b>自動入力と手入力</b><br><span>「価格・SL・TPは自動で入れる」のチェックを外すと手入力モードになります。各欄の横の −／＋ ボタンで少しずつ動かせます。チャート上のSL・TPの線をドラッグして動かしても同じで、その場合は自動入力が自動で外れます。</span></div></div>
+<div class="hrow"><i style="background:#8fa1b1"></i><div><b>自動入力と手入力</b><br><span>自動入力は、このダッシュボードの売買プランと連動しています（セットアップ判定やチャートのプラン線と同じ価格がそのまま入ります）。プランが動くと欄も追随します。「価格・SL・TPは自動で入れる」のチェックを外すと手入力モードになります。各欄の横の −／＋ ボタンで少しずつ動かせます。チャート上のSL・TPの線をドラッグして動かしても同じで、その場合は自動入力が自動で外れます。</span></div></div>
 <div class="hrow"><i style="background:#8fa1b1"></i><div><b>ロットを自分で決める</b><br><span>「ロット（自分で入力）」に数字を入れると、そのロットで損失・利益・証拠金を計算し直します。空欄に戻す（「自動に戻す」）と逆算に戻ります。</span></div></div>
 <div class="hrow"><i style="background:#8fa1b1"></i><div><b>価格ボードと買い／売りプラン</b><br><span>方向の下の大きな数字が、いまの Bid（売値）と Ask（買値）です。開きは選んだ口座のスプレッドで計算しています。「買いプラン」「売りプラン」を押すと方向が切り替わり、手入力のときはエントリーにその価格が入ります（発注はしません）。</span></div></div>
 <div class="hrow"><i style="background:#8fa1b1"></i><div><b>ロットのクイック調整</b><br><span>−0.5／−0.1／＋0.1／＋0.5 のボタンで、いまの実効ロット（自動計算の値でも）から一気に動かせます。押すと手入力ロットに切り替わり、損失・利益・証拠金がそのロットで計算し直されます。</span></div></div>

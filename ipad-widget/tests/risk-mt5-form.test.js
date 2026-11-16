@@ -116,3 +116,12 @@ test("SL/TP到達時の金額が各欄の下に出る", () => {
   assert.ok(GOLD.includes("'TP到達時 ＋'+yen(profit)"), "TP到達時の利益が出る");
   assert.ok(GOLD.includes("'TP設定なし'"), "TP無しのときはその旨が出る");
 });
+
+test("自動入力はプラン連動である説明が、チェックの下と使い方シートに出る", () => {
+  const fs2 = require("node:fs");
+  const G = fs2.readFileSync(require("node:path").join(__dirname, "..", "gold.html"), "utf8");
+  assert.ok(G.includes("売買プランと連動"), "チェック下の説明にプラン連動と書いてある");
+  assert.ok(G.includes("チャートのプラン線と同じ価格"), "プラン線と同じ価格であることが書いてある");
+  assert.ok(G.includes("プランが動くと、欄の価格も合わせて更新されます"), "追随することも書いてある");
+  assert.ok(G.includes("自動入力は、このダッシュボードの売買プランと連動しています"), "使い方シートにも説明がある");
+});
