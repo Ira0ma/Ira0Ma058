@@ -112,7 +112,7 @@ test("SL/TPの金額は色つきピルで大きく出る", () => {
 
 test("SL/TP到達時の金額が各欄の下に出る", () => {
   assert.ok(GOLD.includes('id="slMoney"') && GOLD.includes('id="tpMoney"'), "金額表示の置き場がある");
-  assert.ok(GOLD.includes("'SL到達時 −'+yen(slEff*contract*useLot*fx)"), "SL到達時の損失は実効ロット×スプレッド込み幅で計算");
+  assert.ok(GOLD.includes("slEff*contract*useLot*fx"), "SL到達時の損失は実効ロット×スプレッド込み幅で計算");
   assert.ok(GOLD.includes("'TP到達時 ＋'+yen(profit)"), "TP到達時の利益が出る");
   assert.ok(GOLD.includes("'TP設定なし'"), "TP無しのときはその旨が出る");
 });
@@ -133,4 +133,24 @@ test("ロット行も価格フォームと同じ作法で潰れない（スタ�
   assert.ok(G.includes('<span class="fldcap">ロット（自分で入力）</span>'), "ロットにも見出し行がある");
   assert.ok(G.includes(".priceform .stp,.lotrow .stp{width:46px"), "ロットの＋/−も46pxで統一");
   assert.ok(G.includes("linear-gradient(135deg,#f1d98a,#d4af37)"), "ステップ番号は金グラデーション");
+});
+
+test("まとめ文の損失は上限額ではなく実効ロットの実際の損失（帯と同じ額）", () => {
+  const fs4 = require("node:fs");
+  const G = fs4.readFileSync(require("node:path").join(__dirname, "..", "gold.html"), "utf8");
+  assert.ok(G.includes("state.riskLossYen=_lv?Math.round(_lv):null"), "calcRiskが実際の損失額を控える");
+  assert.ok(G.includes("state.riskLossYen)?('¥'+state.riskLossYen.toLocaleString('ja-JP'))"), "まとめ文は実際の損失を優先する");
+  const fn = extractFn("riskSummaryText");
+  const els = {
+    lotSize: { textContent: "0.01" }, dirLabel: { textContent: "想定方向：売り｜根拠あり" },
+    entry: { value: "3858.63" }, stop: { value: "3871.17" }, target: { value: "3833.55" },
+    riskYen: { textContent: "¥1,000" }, profitYen: { textContent: "¥3,961" }, marginYen: { textContent: "¥616" },
+  };
+  globalThis.state = { riskLossYen: 2040 };
+  try {
+    const tx = new Function("$", "n", "INSTR", "return (" + fn.toString() + ")()")(
+      (id) => els[id] || { textContent: "", value: "" },
+      (v) => { const x = parseFloat(v); return isFinite(x) ? x : 0; }, { dp: 2 });
+    assert.ok(tx.includes("損切り 3,871.17 で −¥2,040"), "上限¥1,000ではなく実際の−¥2,040が出る: " + tx);
+  } finally { delete globalThis.state; }
 });

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="fd1d84ac17">
+<meta name="build" content="76c97553aa">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3209,7 +3209,7 @@ function calcRisk(){
   $('tpDist').textContent=tp?INSTR.dist(tp):'--';
   $('profitYen').textContent=profit?yen(profit):'--';
   // SL／TPの欄の下に「到達したらいくらか」を出す（実効ロットで計算。スプレッドは選んだ口座の設定が効く）
-  if($('slMoney')){$('slMoney').textContent=slEff&&fx?'SL到達時 −'+yen(slEff*contract*useLot*fx):'';$('slMoney').classList.toggle('neg',!!$('slMoney').textContent)}
+  if($('slMoney')){const _lv=slEff&&fx?slEff*contract*useLot*fx:0;$('slMoney').textContent=_lv?'SL到達時 −'+yen(_lv):'';$('slMoney').classList.toggle('neg',!!_lv);state.riskLossYen=_lv?Math.round(_lv):null}
   if($('tpMoney')){$('tpMoney').textContent=tp?(profit?'TP到達時 ＋'+yen(profit):''):'TP設定なし';$('tpMoney').classList.toggle('pos',!!(tp&&profit))}
   if($('tpNone'))$('tpNone').classList.toggle('on',!(target>0));
   paintRiskBoard();  // 口座切替の直後でも価格ボードが即座に追随するように、計算のたびにも描く
@@ -5396,7 +5396,7 @@ function riskSummaryText(){
   const dir=(($('dirLabel')||{}).textContent||'').split('｜')[0].replace('想定方向：','').trim();
   const e=n($('entry').value),s=n($('stop').value),t=n($('target').value);
   const px=x=>isFinite(x)&&x>0?x.toLocaleString('ja-JP',{minimumFractionDigits:INSTR.dp,maximumFractionDigits:INSTR.dp}):'--';
-  const loss=(($('riskYen')||{}).textContent||'--'),prof=(($('profitYen')||{}).textContent||'--'),mg=(($('marginYen')||{}).textContent||'--');
+  const loss=(typeof state!=='undefined'&&state.riskLossYen)?('¥'+state.riskLossYen.toLocaleString('ja-JP')):(($('riskYen')||{}).textContent||'--'),prof=(($('profitYen')||{}).textContent||'--'),mg=(($('marginYen')||{}).textContent||'--');
   let tx=(dir?dir+' ':'')+lot+'ロットで入るプランです。エントリー '+px(e)+'。';
   tx+='損切り '+px(s)+' で '+(loss==='--'?'--':'−'+loss)+'、';
   tx+=t>0?('利確 '+px(t)+' で '+(prof==='--'?'--':'＋'+prof)+' になります。'):('利確は設定なしです。');
