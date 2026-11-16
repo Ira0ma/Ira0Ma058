@@ -7226,7 +7226,8 @@ window.TDFontApply();
       else if (p.kind === "kindle") { var ke = KINDLE_EDITIONS[BK.id]; inner = '<div class="gb-chhead"><small>KINDLE</small><h2>📚 Kindle 版のご案内</h2></div>' +
         '<p>この『' + esc(ke.title) + '』は、Desk One の「学ぶ」を再編集し、書き下ろしの章を加えた Kindle 版でもお読みいただけます。電子書籍として手元に置いておきたい方、Kindle アプリで読み進めたい方は、こちらからどうぞ。</p>' +
         '<p><a class="gb-kindle-btn" href="' + ke.url + '" target="_blank" rel="noopener">Amazon で『' + esc(ke.title) + '』を見る</a></p>' +
-        '<p class="gb-note">なお、Desk One（無料）では、元の『学ぶ』版の全文をいつでも無料で読めます。Kindle 版は有料で、再編集と書き下ろし章を加えた「手元に置く版」です。</p>'; }
+        '<p>シリーズの他の巻は、Amazon の著者ページでご案内しています。</p>' +
+        '<p class="gb-note">なお、Desk One（無料）では、この本の全文をいつでも無料で読めます。Kindle 版は、再編集と書き下ろしを加えた「手元に置く版」です。</p>'; }
       else inner = (p.run === "索引" ? '<div class="gb-chhead"><small>INDEX</small><h2>索引</h2><p>用語をタップするとそのページへ</p></div>' : '') +
         '<div class="gb-idx">' + p.items.map(function (n) { return n.h ? '<h4>' + esc(n.h) + '</h4>' : '<button type="button" data-go="' + termPage[n] + '" data-term="' + esc(aliasOf[n] || n) + '">' + esc(n) + (aliasOf[n] ? '<small>→' + esc(aliasOf[n]) + '</small>' : '') + '<em>p.' + (termPage[n] + 1) + '</em></button>'; }).join("") + '</div>';
       return '<div class="gb-page' + (p.kind === "toc" ? " toc" : "") + '"><div class="gb-in"><div class="gb-run">' + esc(p.run) + '</div>' + inner + '</div><div class="gb-foot"><span>' + BK.title + '</span><span>' + (i + 1) + ' / ' + pages.length + '</span></div></div>';
