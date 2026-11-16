@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>キャッシュバック図説｜バリバリ（XMスタンダード）</title>
+<style>
+  :root{
+    --bg:#0c0c0e; --panel:#16161a; --panel2:#1d1d22;
+    --gold:#e8a90c; --gold2:#f5c542; --ink:#f2ead8; --sub:#b9b2a2; --line:#2c2c33;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif; line-height:1.7; padding:20px 14px 40px;}
+  .wrap{max-width:640px; margin:0 auto;}
+  .frame{border:1px solid var(--gold); border-radius:16px; padding:3px; background:linear-gradient(160deg,#3a2c05,#141416 40%);}
+  .inner{background:var(--panel); border-radius:13px; padding:22px 16px 26px;}
+  h1{font-size:22px; letter-spacing:.04em; text-align:center; background:linear-gradient(90deg,var(--gold),var(--gold2),var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:800;}
+  .subtitle{text-align:center; color:var(--sub); font-size:12.5px; margin-top:4px;}
+  .chips{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:16px 0 6px;}
+  .chip{border:1px solid var(--gold); color:var(--gold2); border-radius:999px; padding:3px 12px; font-size:12.5px; background:#221b06;}
+  .chip b{color:#fff;}
+  .lead{font-size:14px; color:var(--ink); margin:12px 2px 4px;}
+  .lead b{color:var(--gold2);}
+  table{width:100%; border-collapse:collapse; margin-top:14px; font-size:14px;}
+  thead th{background:#221b06; color:var(--gold2); border:1px solid var(--line); padding:9px 6px; font-size:13px; position:sticky; top:0;}
+  thead th .mini{display:block; font-size:10.5px; color:var(--sub); font-weight:normal;}
+  tbody td{border:1px solid var(--line); padding:7px 6px; text-align:right; background:var(--panel2);}
+  tbody td.lot{text-align:center; font-weight:700; color:#fff; background:#232329;}
+  tbody tr.hl td{background:#2a2108;}
+  tbody tr.hl td.lot{background:#3a2c05; color:var(--gold2);}
+  .usd{display:block; font-size:11px; color:var(--sub);}
+  .sec{margin-top:22px;}
+  .sec h2{font-size:15.5px; color:var(--gold2); border-left:4px solid var(--gold); padding-left:9px; margin-bottom:8px;}
+  .sec p, .sec li{font-size:13.5px; color:var(--ink);}
+  .sec ul{padding-left:20px;}
+  .sec li{margin:4px 0;}
+  .ex{background:#221b06; border:1px solid var(--line); border-radius:10px; padding:12px 14px; font-size:13.5px;}
+  .ex b{color:var(--gold2); font-size:16px;}
+  .note{font-size:12px; color:var(--sub); margin-top:16px; border-top:1px dashed var(--line); padding-top:12px;}
+  .note li{margin:3px 0 3px 16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="frame">
+    <div class="inner">
+      <h1>キャッシュバック図説</h1>
+      <p class="subtitle">バリバリ経由・XMTrading スタンダード口座／1取引あたりの戻り額</p>
+
+      <div class="chips">
+        <span class="chip">ゴールド <b>$18.0</b></span>
+        <span class="chip">ドル円 <b>$9.0</b></span>
+        <span class="chip">BTCUSD <b>最小スプレッドの27%</b></span>
+      </div>
+
+      <p class="lead">取引するたびに、コストの一部が現金で戻ってくる仕組みです。単価は銘柄ごとに決まっていて、<b>ロット数に比例</b>します。円換算は <b>1ドル＝155円</b>（ロット図説と同じ前提）です。</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ロット</th>
+            <th>ゴールド<span class="mini">$18.0／ロット</span></th>
+            <th>ドル円<span class="mini">$9.0／ロット</span></th>
+            <th>BTCUSD<span class="mini">目安（下記）</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="lot">0.01</td><td>¥28<span class="usd">$0.18</span></td><td>¥14<span class="usd">$0.09</span></td><td>¥17<span class="usd">$0.11</span></td></tr>
+          <tr><td class="lot">0.05</td><td>¥140<span class="usd">$0.90</span></td><td>¥70<span class="usd">$0.45</span></td><td>¥84<span class="usd">$0.54</span></td></tr>
+          <tr class="hl"><td class="lot">0.10</td><td>¥279<span class="usd">$1.80</span></td><td>¥140<span class="usd">$0.90</span></td><td>¥167<span class="usd">$1.08</span></td></tr>
+          <tr><td class="lot">0.15</td><td>¥418<span class="usd">$2.70</span></td><td>¥209<span class="usd">$1.35</span></td><td>¥251<span class="usd">$1.62</span></td></tr>
+          <tr><td class="lot">0.20</td><td>¥558<span class="usd">$3.60</span></td><td>¥279<span class="usd">$1.80</span></td><td>¥335<span class="usd">$2.16</span></td></tr>
+          <tr><td class="lot">0.25</td><td>¥698<span class="usd">$4.50</span></td><td>¥349<span class="usd">$2.25</span></td><td>¥418<span class="usd">$2.70</span></td></tr>
+          <tr><td class="lot">0.30</td><td>¥837<span class="usd">$5.40</span></td><td>¥418<span class="usd">$2.70</span></td><td>¥502<span class="usd">$3.24</span></td></tr>
+          <tr><td class="lot">0.35</td><td>¥976<span class="usd">$6.30</span></td><td>¥488<span class="usd">$3.15</span></td><td>¥586<span class="usd">$3.78</span></td></tr>
+          <tr><td class="lot">0.40</td><td>¥1,116<span class="usd">$7.20</span></td><td>¥558<span class="usd">$3.60</span></td><td>¥670<span class="usd">$4.32</span></td></tr>
+          <tr><td class="lot">0.45</td><td>¥1,256<span class="usd">$8.10</span></td><td>¥628<span class="usd">$4.05</span></td><td>¥753<span class="usd">$4.86</span></td></tr>
+          <tr class="hl"><td class="lot">0.50</td><td>¥1,395<span class="usd">$9.00</span></td><td>¥698<span class="usd">$4.50</span></td><td>¥837<span class="usd">$5.40</span></td></tr>
+          <tr><td class="lot">0.60</td><td>¥1,674<span class="usd">$10.80</span></td><td>¥837<span class="usd">$5.40</span></td><td>¥1,004<span class="usd">$6.48</span></td></tr>
+          <tr><td class="lot">0.70</td><td>¥1,953<span class="usd">$12.60</span></td><td>¥976<span class="usd">$6.30</span></td><td>¥1,172<span class="usd">$7.56</span></td></tr>
+          <tr><td class="lot">0.80</td><td>¥2,232<span class="usd">$14.40</span></td><td>¥1,116<span class="usd">$7.20</span></td><td>¥1,339<span class="usd">$8.64</span></td></tr>
+          <tr><td class="lot">0.90</td><td>¥2,511<span class="usd">$16.20</span></td><td>¥1,256<span class="usd">$8.10</span></td><td>¥1,507<span class="usd">$9.72</span></td></tr>
+          <tr class="hl"><td class="lot">1.00</td><td>¥2,790<span class="usd">$18.00</span></td><td>¥1,395<span class="usd">$9.00</span></td><td>¥1,674<span class="usd">$10.80</span></td></tr>
+        </tbody>
+      </table>
+
+      <div class="sec">
+        <h2>月の目安（1日1回・20取引日）</h2>
+        <div class="ex">
+          ゴールド 0.10ロットなら <b>月 約¥5,580</b>、1.00ロットなら <b>月 約¥55,800</b> が、損益とは別に戻ってくる計算です。ドル円は単価が半分なので、同じロットなら月額も半分になります。
+        </div>
+      </div>
+
+      <div class="sec">
+        <h2>見るポイント</h2>
+        <ul>
+          <li>ゴールドとドル円の単価は確定値です（公式レート表と、2026-11-17のMyWallet実入金で確認済み）。</li>
+          <li>BTCUSDだけは固定額ではありません。「最小スプレッドの27%」で決まるため、この表はスプレッド $40.00（4,000ポイント）のときの目安です。スプレッドが広い日は増え、狭い日は減ります。</li>
+          <li>入金先はXMのMyWalletです。バリバリFXに会員マイページはありません（登録不要の仕組み）。</li>
+        </ul>
+      </div>
+
+      <ul class="note">
+        <li>実際の入金は「取引ごとの紹介報酬の90%」で計算されるため、表の額から日により前後します（ゴールドの実効は $17前後〜$18 でした）。</li>
+        <li>クレジットボーナスを使って建てた取引分は、キャッシュバックの対象外です。</li>
+        <li>この図説は2026年11月時点の条件をもとにした試算で、実際の入金額を約束するものではありません。</li>
+      </ul>
+
+      <p style="text-align:center;margin-top:18px;"><a href="lotsim.html" style="color:#f5c542;border:1px solid #e8a90c;border-radius:999px;padding:6px 16px;text-decoration:none;font-size:13px;">← ロット図説に戻る</a></p>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>
