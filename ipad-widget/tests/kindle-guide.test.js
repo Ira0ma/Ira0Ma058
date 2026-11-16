@@ -19,6 +19,8 @@ test("Kindle案内：描画分岐と文面（決定済みの案A）がある", (
   assert.ok(IDX.includes("📚 Kindle 版のご案内"), "見出しがある");
   assert.ok(IDX.includes("再編集し、書き下ろしの章を加えた Kindle 版でもお読みいただけます"), "本文がある");
   assert.ok(IDX.includes('target="_blank" rel="noopener"'), "リンクは別タブ・noopener");
-  assert.ok(IDX.includes("Desk One（無料）では、この本の全文をいつでも無料で読めます"), "脚注がある");
+  assert.ok(IDX.includes("Desk One（無料）では、元の『学ぶ』版の全文をいつでも無料で読めます"), "脚注がある（法務条件1：無料なのは元の版と明確化）");
+  assert.ok(IDX.includes("Kindle 版は有料で"), "法務条件3：有料の一言がある（価格は書かない）");
+  assert.ok(!IDX.includes("シリーズの他の巻は、Amazon の著者ページでご案内しています"), "法務条件2：第2巻発売まではシリーズ行を出さない");
   assert.ok(IDX.includes('p.kind === "kindle" ? "Kindle版のご案内"'), "現在地ラベルに対応がある");
 });
