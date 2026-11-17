@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="c9a7b49fca">
+<meta name="build" content="4a15ff0cc1">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4976,9 +4976,10 @@ let lastCautionState=null;
 function scheduler(){
   const now=Date.now();
   if(state.auto){
-    if(now>=state.nextSpot){state.nextSpot=now+INTERVALS.spot;refreshSpot()}
-    if(now>=state.nextChart){state.nextChart=now+INTERVALS.chart;refreshCharts()}
-    if(now>=state.nextCalendar){state.nextCalendar=now+INTERVALS.calendar;refreshCalendar()}
+    // 閉じているシートでは取得系を止める（2026-11-17監査②）。next*は進めないので、再び開いた直後の1秒点検で即更新される
+    if(now>=state.nextSpot&&!sheetHidden()){state.nextSpot=now+INTERVALS.spot;refreshSpot()}
+    if(now>=state.nextChart&&!sheetHidden()){state.nextChart=now+INTERVALS.chart;refreshCharts()}
+    if(now>=state.nextCalendar&&!sheetHidden()){state.nextCalendar=now+INTERVALS.calendar;refreshCalendar()}
     $('nextInfo').innerHTML='次の価格更新 <b>'+Math.max(0,Math.ceil((state.nextSpot-now)/1000))+'秒</b>';
   }else{
     $('nextInfo').innerHTML='<b class="warn">自動更新 停止中</b>';
@@ -5486,7 +5487,7 @@ function offerUpdate(v){  // 単独で開いているときは、入力中の内
   updBar.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.u==='now')location.replace(location.pathname+'?v='+v);else{updBar.remove();updBar=null}});
   document.body.appendChild(updBar);
 }
-checkUpdate();setInterval(checkUpdate,10*60000);
+checkUpdate();setInterval(()=>{if(!sheetHidden())checkUpdate()},10*60000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
 
 let rz=0;
@@ -5527,7 +5528,7 @@ applyRecVis();renderPlanList();renderGuard();
 loadCache();setStatus('','接続中');renderAll();fullRefresh();setInterval(scheduler,1000);
 checkClosed();setInterval(checkClosed,60000);paintGoto();setInterval(paintGoto,60000);
 document.addEventListener('touchstart',()=>{},{passive:true});  // iPhone・iPad で押している間の見た目（:active）を出すため
-refreshLiveTalk();setInterval(refreshLiveTalk,45000);setInterval(()=>{if(releaseHot())refreshLiveTalk()},5000);startLive();setTimeout(fillRecentGold,20000);setInterval(fillRecentGold,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
+refreshLiveTalk();setInterval(()=>{if(!sheetHidden())refreshLiveTalk()},45000);setInterval(()=>{if(!sheetHidden()&&releaseHot())refreshLiveTalk()},5000);startLive();setTimeout(fillRecentGold,20000);setInterval(()=>{if(!sheetHidden())fillRecentGold()},60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLiveTalk()});
 // ===== B：ゴトー日のタグ（ドル円だけ）。決め方は core.js（TDCore.gotobi）、日本の祝日はサイトの holidays.json（デスクと同じ） =====
 function paintGoto(){  // 祝日の一覧は関数に持たせる（読み込みの早い段階＝定期の呼び出しの登録時から呼ばれるため）
   if(!IS_FX||!window.TDCore||!TDCore.gotobi)return;
