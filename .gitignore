@@ -1,0 +1,14 @@
+# 鍵・秘密情報の誤コミット防護（AIセキュリティチェックリスト20選 項目02）
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+.wrangler/
+
+# 依存パッケージ
+node_modules/
+
+# OSの生成ファイル
+.DS_Store
+Thumbs.db
