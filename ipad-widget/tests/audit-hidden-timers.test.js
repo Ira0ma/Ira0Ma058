@@ -5,7 +5,7 @@ const path = require("node:path");
 const GOLD = fs.readFileSync(path.join(__dirname, "..", "gold.html"), "utf8");
 
 test("監査②：閉じたシートではスケジューラの取得系（価格・チャート・予定）を止める", () => {
-  assert.ok(GOLD.includes("if(now>=state.nextSpot&&!sheetHidden()){state.nextSpot=now+INTERVALS.spot;refreshSpot()}"), "スポット取得がシート表示でゲートされている");
+  assert.ok(GOLD.includes("if(now>=state.nextSpot&&(!sheetHidden()||IS_BTC)){state.nextSpot=now+INTERVALS.spot;refreshSpot()}"), "スポット取得がシート表示でゲートされている（BTCはホームへの供給源のため例外、fc96b9b）");
   assert.ok(GOLD.includes("if(now>=state.nextChart&&!sheetHidden()){state.nextChart=now+INTERVALS.chart;refreshCharts()}"), "チャート取得がゲートされている");
   assert.ok(GOLD.includes("if(now>=state.nextCalendar&&!sheetHidden()){state.nextCalendar=now+INTERVALS.calendar;refreshCalendar()}"), "予定取得がゲートされている");
 });

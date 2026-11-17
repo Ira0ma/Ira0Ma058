@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="d48d0b1d09">
+<meta name="build" content="18b34d21c8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4977,7 +4977,8 @@ function scheduler(){
   const now=Date.now();
   if(state.auto){
     // 閉じているシートでは取得系を止める（2026-11-17監査②）。next*は進めないので、再び開いた直後の1秒点検で即更新される
-    if(now>=state.nextSpot&&!sheetHidden()){state.nextSpot=now+INTERVALS.spot;refreshSpot()}
+    // 例外：BTCはデスク本体が配信を持たず、裏で動くこのダッシュボードの30秒価格がホームの唯一の供給源なので、隠れていても価格取得だけは止めない（止めるとホームのBTCがサイトの定期価格のまま凍り、データ状態が「配信停止中」になる。2026-11-17夜の点検で検出）
+    if(now>=state.nextSpot&&(!sheetHidden()||IS_BTC)){state.nextSpot=now+INTERVALS.spot;refreshSpot()}
     if(now>=state.nextChart&&!sheetHidden()){state.nextChart=now+INTERVALS.chart;refreshCharts()}
     if(now>=state.nextCalendar&&!sheetHidden()){state.nextCalendar=now+INTERVALS.calendar;refreshCalendar()}
     $('nextInfo').innerHTML='次の価格更新 <b>'+Math.max(0,Math.ceil((state.nextSpot-now)/1000))+'秒</b>';
