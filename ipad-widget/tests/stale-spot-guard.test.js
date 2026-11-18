@@ -43,10 +43,16 @@ test("あゆ版にも同じ仕組みが入っている（停止表示・見張�
   assert.ok(AYU.includes("SITE_FALLBACK_STATUS"), "あゆ版：予備マーカーも見る");
 });
 
-test("ホームの警戒バナー：デスクを下げるのは paddingTop（top では中央寄せで半分しか下がらない）", () => {
+test("ホームの警戒バナー：全モードのコンテナを paddingTop で下げる（top 方式と #fit 単独は不可）", () => {
   const HOME = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
-  assert.ok(HOME.includes("if (fit.style.paddingTop !== t) { fit.style.paddingTop = t; layout(); }"), "paddingTop で下げる");
+  // 3モードのコンテナすべてに同じ paddingTop を入れる（#fit だけだと flow・pager で重なる）
+  assert.ok(HOME.includes('var targets = [fit, document.getElementById("flow"), document.getElementById("pager")];'), "3コンテナに適用する");
+  assert.ok(HOME.includes("el.style.paddingTop = t; changed = true;"), "paddingTop で下げる");
+  // モード切替で作られたコンテナにも即反映する
+  assert.ok(HOME.includes("mode = m;\n    applyAlertSpace();"), "enterMode で再適用する");
+  // 旧方式（top で下げる／#fit 単独）は使わない
   assert.ok(!HOME.includes("if (fit.style.top !== t) { fit.style.top = t; layout(); }"), "top 方式は使わない");
+  assert.ok(!HOME.includes("if (fit.style.paddingTop !== t) { fit.style.paddingTop = t; layout(); }"), "#fit 単独方式は使わない");
 });
 
 test("シートを開いたら次回取得を待たずに価格を取り直す", () => {

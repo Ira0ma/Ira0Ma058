@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="9a8e9e402e">
+<meta name="build" content="ee67d4f141">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2376,6 +2376,7 @@ window.TDFontApply();
       cards.forEach(function (el) { stage.appendChild(el); });
     }
     mode = m;
+    applyAlertSpace();  // モード切替で作られたコンテナ（#flow／#pager）にも、表示中のバナー分の下げを即反映する
   }
   function layout() {
     var m = pickMode();
@@ -4008,14 +4009,20 @@ window.TDFontApply();
     });
   }
   /* 警戒バナーが出ている間はデスク全体をバナーの下端まで下げ、カードに重ならないようにする（2026-11-18 banner-overlap修正）
-     下げ方は #fit の paddingTop で行う：#fit は position:fixed;inset:0 で、top を変えると flex の中央寄せが効いて
+     下げ方は paddingTop で行う：対象コンテナは position:fixed;inset:0 で、top を変えると flex の中央寄せが効いて
      実際の移動は指定の半分ほどになり、時計カード上端のボタン行がバナーの下に残った（2026-11-18夜の再点検で検出）。
-     paddingTop なら layout() がその分を差し引いて中央寄せするので、デスクの上端は必ずバナーの下端+4px以下にならない */
+     さらに表示モードが3つあり、コンテナがモードごとに別（stage=#fit／flow=#flow／pager=#pager）ため、
+     #fit だけ下げても flow・pager では重なりが残った（同夜の実機相当確認で検出）。3コンテナすべてに同じ
+     paddingTop を入れれば、どのモードでも内容の上端は必ずバナー下端+4pxより下になる（layout()・layoutPhone() は
+     padding を差し引いて大きさを決める。layoutFlow() は幅のみ使用し、paddingTop はそのまま内容を押し下げる） */
   function applyAlertSpace() {
     if (!alertsBox || !fit) return;
     var vis = alertsBox.querySelectorAll(":scope > :not([hidden])").length > 0;
     var t = vis ? Math.ceil(alertsBox.getBoundingClientRect().bottom) + 4 + "px" : "";
-    if (fit.style.paddingTop !== t) { fit.style.paddingTop = t; layout(); }
+    var targets = [fit, document.getElementById("flow"), document.getElementById("pager")];
+    var changed = false;
+    targets.forEach(function (el) { if (el && el.style.paddingTop !== t) { el.style.paddingTop = t; changed = true; } });
+    if (changed) layout();
   }
   function alertEls() {
     if (alertsBox) return alertsBox;
