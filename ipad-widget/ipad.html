@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="c8e5987111">
+<meta name="build" content="db789a0caf">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2399,11 +2399,11 @@ window.TDFontApply();
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=24a44d5b00", title: "GOLD分析" },
-    silver: { src: "learn/silver.html?v=b161d60635", title: "シルバー分析" },
-    usdjpy: { src: "usdjpy.html?v=e4946e9bd0", title: "ドル円分析" },
-    btc: { src: "btc.html?v=80c5c9901b", title: "BTC分析" },
-    oil: { src: "oil.html?v=7f3a8d8ce6", title: "オイル分析" },
+    gold: { src: "gold.html?v=325afd66e6", title: "GOLD分析" },
+    silver: { src: "learn/silver.html?v=ea7214e347", title: "シルバー分析" },
+    usdjpy: { src: "usdjpy.html?v=684fc59f83", title: "ドル円分析" },
+    btc: { src: "btc.html?v=c43ec233e5", title: "BTC分析" },
+    oil: { src: "oil.html?v=428e19387b", title: "オイル分析" },
     lots: { src: "learn/lotsim.html", title: "ロット図説" },
     weekend: { src: "learn/weekend.html", title: "週末ボード" }
   };
@@ -3540,6 +3540,7 @@ window.TDFontApply();
   };
   var FLAG_SVG = "<svg viewBox=\"0 0 40 40\"><rect width=\"40\" height=\"40\" fill=\"#fff\"/><g fill=\"#c8102e\"><rect y=\"0\" width=\"40\" height=\"3.1\"/><rect y=\"6.2\" width=\"40\" height=\"3.1\"/><rect y=\"12.3\" width=\"40\" height=\"3.1\"/><rect y=\"18.5\" width=\"40\" height=\"3.1\"/><rect y=\"24.6\" width=\"40\" height=\"3.1\"/><rect y=\"30.8\" width=\"40\" height=\"3.1\"/><rect y=\"36.9\" width=\"40\" height=\"3.1\"/></g><rect width=\"19\" height=\"21.6\" fill=\"#1c2f6b\"/><g fill=\"#fff\"><circle cx=\"4\" cy=\"4\" r=\"1\"/><circle cx=\"9.5\" cy=\"4\" r=\"1\"/><circle cx=\"15\" cy=\"4\" r=\"1\"/><circle cx=\"6.7\" cy=\"8\" r=\"1\"/><circle cx=\"12.2\" cy=\"8\" r=\"1\"/><circle cx=\"4\" cy=\"12\" r=\"1\"/><circle cx=\"9.5\" cy=\"12\" r=\"1\"/><circle cx=\"15\" cy=\"12\" r=\"1\"/><circle cx=\"6.7\" cy=\"16\" r=\"1\"/><circle cx=\"12.2\" cy=\"16\" r=\"1\"/></g></svg>", GOLD_SVG = "<svg viewBox=\"0 0 40 40\"><defs><radialGradient id=\"gbg\" cx=\"50%\" cy=\"40%\" r=\"65%\"><stop offset=\"0\" stop-color=\"#5a4320\"/><stop offset=\"1\" stop-color=\"#1c150b\"/></radialGradient><linearGradient id=\"gbar\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ffe6a3\"/><stop offset=\".55\" stop-color=\"#e0a93e\"/><stop offset=\"1\" stop-color=\"#9c6a18\"/></linearGradient></defs><rect width=\"40\" height=\"40\" fill=\"url(#gbg)\"/><path d=\"M8 27 l3-6h9l3 6z\" fill=\"url(#gbar)\"/><path d=\"M17 27 l3-6h9l3 6z\" fill=\"url(#gbar)\"/><path d=\"M12.5 21 l3-6h9l3 6z\" fill=\"url(#gbar)\"/><path d=\"M15.5 15 l1-2h6.5l1 2z\" fill=\"#fff3cc\" opacity=\".6\"/></svg>", SILVER_SVG = "<svg viewBox=\"0 0 40 40\"><defs><radialGradient id=\"sbg\" cx=\"50%\" cy=\"40%\" r=\"65%\"><stop offset=\"0\" stop-color=\"#4a4d55\"/><stop offset=\"1\" stop-color=\"#16171b\"/></radialGradient><linearGradient id=\"sbar\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\".55\" stop-color=\"#c3c7cf\"/><stop offset=\"1\" stop-color=\"#7d828c\"/></linearGradient></defs><rect width=\"40\" height=\"40\" fill=\"url(#sbg)\"/><path d=\"M8 27 l3-6h9l3 6z\" fill=\"url(#sbar)\"/><path d=\"M17 27 l3-6h9l3 6z\" fill=\"url(#sbar)\"/><path d=\"M12.5 21 l3-6h9l3 6z\" fill=\"url(#sbar)\"/><path d=\"M15.5 15 l1-2h6.5l1 2z\" fill=\"#ffffff\" opacity=\".6\"/></svg>";
   var market = null;
+  var marketFromBackup = false;
   var chartRO = window.ResizeObserver ? new ResizeObserver(function (es) { es.forEach(function (e) { var m = e.target.__mkt; if (m && m.draw) m.draw(); }); }) : null;
   var markets = [0, 1, 2].map(function (i) {
     var mk = new Market(document.getElementById("m-" + i), picks[i]);
@@ -5712,9 +5713,10 @@ window.TDFontApply();
         if (d && d.updated && Date.now() - Date.parse(d.updated) > 20 * 60000) {  // 土台データが古ければ予備置き場（data-live）を確認し、新しければ差し替える（2026-11-18 恒久対策）
           return fetch("https://raw.githubusercontent.com/Ira0ma/Ira0Ma058/data-live/market.json?t=" + Math.floor(Date.now() / 300000), { cache: "no-store" })
             .then(function (r) { return r.ok ? r.json() : null; })
-            .then(function (fd) { return (fd && fd.updated && Date.parse(fd.updated) > Date.parse(d.updated)) ? fd : d; })
-            .catch(function () { return d; });
+            .then(function (fd) { var use = (fd && fd.updated && Date.parse(fd.updated) > Date.parse(d.updated)) ? fd : d; marketFromBackup = use === fd; return use; })
+            .catch(function () { marketFromBackup = false; return d; });
         }
+        marketFromBackup = false;
         return d;
       })
       .then(function (d) {
@@ -5751,7 +5753,7 @@ window.TDFontApply();
             mk.prov = { src: "BTCダッシュボード（Coinbase）", type: "裏で動いているBTCダッシュボードが取得した現在値（この端末の中で共有）" };
           } else if (!keepSpot) {
             mk.asOf = m.asOf;
-            mk.prov = { src: "サイトの定期取得（Yahoo Finance）", type: INST[mk.key].spot ? (m.spotAdjusted ? "先物の足を現物に換算した値（補正値）" : "先物の足の終値（換算前）")
+            mk.prov = { src: marketFromBackup ? "予備データで表示中（サイトの定期取得・Yahoo Finance）" : "サイトの定期取得（Yahoo Finance）", type: INST[mk.key].spot ? (m.spotAdjusted ? "先物の足を現物に換算した値（補正値）" : "先物の足の終値（換算前）")
               : mk.key === "jxy" ? "6通貨の足から独自に計算した値" : "最新の足の終値（Bid/Askの区別は非公開）" };
           }
           mk.applyLive(dash ? dash.price : keepSpot ? mk.price : m.price);
