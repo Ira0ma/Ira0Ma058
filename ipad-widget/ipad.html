@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="a6070eaced">
+<meta name="build" content="412728708d">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -466,6 +466,8 @@ html:not(.lowpower) .mreg .rg-dot { transition: left .6s ease; }
 .dk-al.emg { background: rgba(70,10,10,.97); border-color: var(--up-red); }
 .dk-al b { font-size: 13px; color: #f5c04a; }
 .dk-al.emg b { color: #ff8a7e; }
+.dk-al.vx { background: rgba(58,14,14,.97); border-color: rgba(224,82,82,.8); }
+.dk-al.vx b { color: #ff9d94; }
 .dk-al span { font-size: 12.5px; color: var(--ink); line-height: 1.45; }
 .dk-al small { font-size: 11px; color: var(--ink-2); line-height: 1.45; }
 .dk-al small a { color: var(--gold); }
@@ -2422,11 +2424,11 @@ window.TDFontApply();
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=073ddbf1a5", title: "GOLD分析" },
-    silver: { src: "learn/silver.html?v=da2cba5068", title: "シルバー分析" },
-    usdjpy: { src: "usdjpy.html?v=723508c6f3", title: "ドル円分析" },
-    btc: { src: "btc.html?v=fb6c27008f", title: "BTC分析" },
-    oil: { src: "oil.html?v=6ba6b60913", title: "オイル分析" },
+    gold: { src: "gold.html?v=26f9f4bc05", title: "GOLD分析" },
+    silver: { src: "learn/silver.html?v=313fdeb9c3", title: "シルバー分析" },
+    usdjpy: { src: "usdjpy.html?v=678ed6a146", title: "ドル円分析" },
+    btc: { src: "btc.html?v=4186857183", title: "BTC分析" },
+    oil: { src: "oil.html?v=1db649e05e", title: "オイル分析" },
     lots: { src: "learn/lotsim.html", title: "ロット図説" },
     weekend: { src: "learn/weekend.html", title: "週末ボード" }
   };
@@ -4023,8 +4025,8 @@ window.renderAirHome = renderAirHome;
      15分ぶん持ち、core.js の surgeCheck で判定する。休場中・プレビュー・90秒を超える途切れでは判定しない。発報は
      バナー（黄＝注意／赤＝緊急）と、設定に従った音・端末通知。同じ向き・同じ段階は30分出さない（surgeGate）。
      当日の急変は td_surge_v1 にためて、ダッシュボードのチャートの⚡印と、確認（点滅を止める）に使う。 */
-  var SURGE_KEY = "td_surge_v1", IV_CLOSED = "desk_iv_closed", MV_CLOSED = "desk_mv_closed";
-  var surgeBuf = {}, surgeGateSt = {}, surgeLast = {}, newsData = null, newsAt = 0, ivShown = null, mvShown = null, alertsBox = null;
+  var SURGE_KEY = "td_surge_v1", IV_CLOSED = "desk_iv_closed", MV_CLOSED = "desk_mv_closed", VX_CLOSED = "desk_vx_closed";
+  var surgeBuf = {}, surgeGateSt = {}, surgeLast = {}, newsData = null, newsAt = 0, ivShown = null, mvShown = null, vxShown = null, alertsBox = null;
   function lsRead(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
   function lsWrite(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   function surgeStore() {
@@ -4103,6 +4105,7 @@ window.renderAirHome = renderAirHome;
     alertsBox = document.createElement("div"); alertsBox.className = "dk-alerts"; alertsBox.id = "dk-alerts";
     alertsBox.innerHTML = '<div class="dk-al" id="al-iv" role="status" hidden><button type="button" class="x" aria-label="介入警戒の表示を閉じる">✕</button><b>⚠ 為替介入への警戒</b><span></span><small></small></div>' +
       '<div class="dk-al" id="al-mv" role="alert" hidden><button type="button" class="x" aria-label="急変の表示を閉じる">✕</button><b></b><span></span><small></small></div>' +
+      '<div class="dk-al vx" id="al-vx" role="status" hidden><button type="button" class="x" aria-label="市場の怖さの表示を閉じる">✕</button><b>🌡 市場の怖さが急上昇</b><span></span><small></small></div>' +
       '<div class="dk-check" id="al-check" hidden><b>急変したときの確認</b><ol>' +
       "<li>最初の1〜2本は見送る。急変直後は往って来いになりやすい</li>" +
       "<li>新規エントリーは止め、保有ポジションの損切り位置を確認する</li>" +
@@ -4120,6 +4123,7 @@ window.renderAirHome = renderAirHome;
       if (e.target.closest(".x")) {
         if (al.id === "al-iv" && ivShown) lsWrite(IV_CLOSED, ivShown.title);
         if (al.id === "al-mv" && mvShown) { lsWrite(MV_CLOSED, mvShown.id); surgeAck(mvShown.id); }
+        if (al.id === "al-vx" && vxShown) lsWrite(VX_CLOSED, vxShown.id);
         chk.hidden = true; paintAlerts(); return;
       }
       chk.hidden = !chk.hidden;  // 本体のタップ：対応のチェックリストを開く・閉じる
@@ -4152,7 +4156,16 @@ window.renderAirHome = renderAirHome;
       var why = e.key === "usdjpy" && e.dir === "down" && pick ? "24時間以内に介入への警戒発言の報道あり（" + ivLine(pick) + "）。" : "";
       mv.querySelector("small").textContent = why + "価格の動きからの警戒情報です。タップで対応を確認";
     }
-    if (iv.hidden && mv.hidden) box.querySelector("#al-check").hidden = true;
+    var vxEl = box.querySelector("#al-vx"), vxd = market && market.instruments ? market.instruments.vix : null;
+    var vChg = vxd && vxd.price && vxd.prevClose ? (vxd.price - vxd.prevClose) / vxd.prevClose * 100 : null;
+    vxShown = vChg !== null && (vChg >= 20 || (vxd.price >= 30 && vChg > 0)) ? { id: String(vxd.asOf || "") + ":" + Math.round(vxd.price * 10) } : null;
+    var showVx = vxShown && vxShown.id !== lsRead(VX_CLOSED) ? vxShown : null;
+    vxEl.hidden = !showVx;
+    if (showVx) {
+      vxEl.querySelector("span").textContent = "VIX " + vxd.price.toFixed(2) + "（前日比 +" + vChg.toFixed(1) + "%）。相場が荒れやすい状態です";
+      vxEl.querySelector("small").textContent = "市場の怖さの数字からの警戒情報です。タップで対応を確認";
+    }
+    if (iv.hidden && mv.hidden && vxEl.hidden) box.querySelector("#al-check").hidden = true;
   }
   function loadNews() {
     if (!window.fetch || PREVIEW) return;

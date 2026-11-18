@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="fb6c27008f">
+<meta name="build" content="4186857183">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -102,6 +102,8 @@ h1 em{font-style:normal;color:var(--gold2)}
 /* ===== notices ===== */
 .notice{display:none;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:12px;line-height:1.6;background:#151b22;border:1px solid #31404d;color:#cbd6e0}
 .datastop{border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:12px;line-height:1.6;background:#2a1512;border:1px solid #7a3b2e;color:#f0c9bd}
+.vixband{border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:12.5px;line-height:1.65;background:#33100f;border:1px solid #c0453e;color:#f6cfc9}
+.vixband b{color:#ffb3a7}
 section.datastopped .cardhead::after{content:'データ停止中';color:#e05252;font-size:11px;font-weight:700;margin-left:8px}
 .notice.show{display:block}
 .notice.err{background:#35181b;border-color:#71343a;color:#ffd1d1}
@@ -807,6 +809,7 @@ html.nd .shell>footer{grid-area:foot}
 
 <div id="notice" class="notice"></div>
 <div id="dataStop" class="datastop" hidden>土台データ停止中（<b id="dataStopAge">--</b>前）― チャート・水準・指標は古いデータで表示しています</div>
+<div id="vixBand" class="vixband" hidden></div>
 
 <section id="caution" class="caution hidden">
   <div><div class="caution-title">⚠ 重要指標の前後です（新しく入らない）</div><div id="cautionText" class="caution-sub">重要指標が近づいています。</div></div>
@@ -3880,14 +3883,16 @@ function airCorr(driverEntry,targetEntry,shiftDriver){
   for(let i=1;i<days.length;i++){ra.push(Math.log(dm.get(days[i])/dm.get(days[i-1])));rb.push(Math.log(tm.get(days[i])/tm.get(days[i-1])))}
   return corrOf(ra,rb);
 }
+function airSurge(vx){if(!vx||!(vx.price>0)||!(vx.prevClose>0))return null;const c=(vx.price/vx.prevClose-1)*100;return(c>=20||(vx.price>=30&&c>0))?c:null}
 function airZone(v){return v<15?['平常','z1']:v<20?['少し怖がっている','z2']:v<30?['怖がっている','z3']:['パニック','z4']}
 function airDots(r){const a=Math.abs(r);return a>=0.6?['●●●','強い']:a>=0.3?['●●<span class="off">●</span>','ふつう']:a>=0.15?['●<span class="off">●●</span>','弱い']:['<span class="off">●●●</span>','ほぼなし']}
 const AIR_GUIDE=`<div class="airguide"><b>この表示の見方</b><span>1. 「市場の怖さ」は、世界の投資家がどれくらい怖がっているかの温度計です。大きいほど怖がっています</span><span>2. 「連動のしかた」は、過去30日に実際にどう一緒に動いたかの実測です。「上がりやすい」は約束ではなく、最近の傾向です</span><span>3. 「いまの空気」は、その2つを合わせた今日のまとめです。空気が急に変わった日は、まず一呼吸おいて全体を見るための合図として使います</span></div>`;
 function renderAir(){
   const el=$('airBox');if(!el)return;
+  const band=$('vixBand');
   const d=siteCache.d,ins=d&&d.instruments;
   const vx=ins&&ins.vix,dx=ins&&ins.dxy,me=ins&&ins[INSTR.site];
-  if(!vx||!dx||!me||!(vx.price>0)||!(dx.price>0)){el.hidden=true;return}
+  if(!vx||!dx||!me||!(vx.price>0)||!(dx.price>0)){el.hidden=true;if(band)band.hidden=true;return}
   const key=(siteCache.t||'')+'|'+INSTR.key;
   if(renderAir._k===key&&!el.hidden)return;
   renderAir._k=key;
@@ -3913,6 +3918,8 @@ function renderAir(){
   const row=(r,up,down,flat)=>r==null?'<div class="sub">相関：計算できるデータが足りません</div>':(()=>{const[dt,lv]=airDots(r);return `<div class="airrow"><span>${Math.abs(r)<0.15?flat:(r>0?up:down)}</span><span class="airdots" role="img" aria-label="連動の強さ ${lv}">${dt}</span></div><div class="sub" style="text-align:right">連動 ${lv}｜相関 ${corrNum(r)}（30日）</div>`})();
   const at=vx.asOf?new Intl.DateTimeFormat('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(toMs(vx.asOf)))+' 時点':'時刻不明';
   const sgn=v=>(v>=0?'+':'−')+Math.abs(v).toFixed(2)+'%';
+  const sg=airSurge(vx);
+  if(band){band.hidden=sg===null;if(sg!==null)band.innerHTML='<b>⚠ 市場の怖さが急に強くなっています</b> ― VIX <b>'+vx.price.toFixed(2)+'</b>（前日比 <b>'+sgn(sg)+'</b>）。相場が荒れやすい状態です。あわてて動かず、まず全体の動きを確認してください'}
   el.innerHTML=`<div class="dh"><b>市場の空気</b><span>VIX ${at}｜サイトの定期取得（約15分ごと）</span></div>`+
   `<div class="aircards"><div class="aircard"><span class="al">市場の怖さ <i>VIX</i></span><span class="av">${vx.price.toFixed(2)}</span><span class="ac">前日比 ${sgn(vChg)}</span><span class="airchip ${zc}">${zt}</span></div>`+
   `<div class="aircard"><span class="al">ドルの強さ <i>DXY</i></span><span class="av">${dx.price.toFixed(2)}</span><span class="ac">前日比 ${sgn(dChg)}</span><span class="airchip">${dChip}</span></div></div>`+

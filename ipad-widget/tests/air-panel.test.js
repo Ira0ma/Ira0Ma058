@@ -81,3 +81,28 @@ test("空気パネル：ホームの下段タブに入る", () => {
   assert.ok(HOME.includes("airCorrH(vx, ins[pair[0]], 1)"), "ホームもVIXは1日ずらす");
   assert.ok(HOME.includes("銘柄ごとの連動"), "銘柄ごとの相関一覧がある");
 });
+
+test('VIX急騰の警戒（案1）：ダッシュボードに帯の置き場と判定関数がある', () => {
+  assert.ok(GOLD.includes('id="vixBand"'));
+  assert.ok(GOLD.includes('function airSurge(vx)'));
+  assert.ok(GOLD.includes('市場の怖さが急に強くなっています'));
+});
+test('VIX急騰の警戒（案1）：airSurge の境界（+20%で発火／30超え上昇中で発火／それ以外は出ない）', () => {
+  const m = GOLD.match(/function airSurge\(vx\)\{[^}]+\}/);
+  assert.ok(m, 'airSurge が抜き出せる');
+  const airSurge = new Function(m[0] + '; return airSurge;')();
+  assert.ok(Math.abs(airSurge({ price: 24.02, prevClose: 20 }) - 20.1) < 1e-9); // +20%の少し上
+  assert.equal(airSurge({ price: 23.98, prevClose: 20 }), null); // +19.9%は出ない
+  assert.ok(airSurge({ price: 32.4, prevClose: 25.2 }) > 28);
+  assert.ok(airSurge({ price: 31, prevClose: 30 }) !== null);
+  assert.equal(airSurge({ price: 31, prevClose: 32 }), null);
+  assert.equal(airSurge({ price: 23.9, prevClose: 20 }), null);
+  assert.equal(airSurge({ price: 23.83, prevClose: 25.47 }), null);
+  assert.equal(airSurge({ price: 0, prevClose: 20 }), null);
+  assert.equal(airSurge(null), null);
+});
+test('VIX急騰の警戒（案1）：ホームの警戒に一番下の枠として入っている', () => {
+  assert.ok(HOME.includes('id="al-vx"'));
+  assert.ok(HOME.includes('desk_vx_closed'));
+  assert.ok(HOME.indexOf('id="al-vx"') > HOME.indexOf('id="al-mv"'), '急変より下（低優先）');
+});
