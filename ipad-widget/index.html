@@ -3548,6 +3548,58 @@ window.TDFontApply();
   };
   var FLAG_SVG = "<svg viewBox=\"0 0 40 40\"><rect width=\"40\" height=\"40\" fill=\"#fff\"/><g fill=\"#c8102e\"><rect y=\"0\" width=\"40\" height=\"3.1\"/><rect y=\"6.2\" width=\"40\" height=\"3.1\"/><rect y=\"12.3\" width=\"40\" height=\"3.1\"/><rect y=\"18.5\" width=\"40\" height=\"3.1\"/><rect y=\"24.6\" width=\"40\" height=\"3.1\"/><rect y=\"30.8\" width=\"40\" height=\"3.1\"/><rect y=\"36.9\" width=\"40\" height=\"3.1\"/></g><rect width=\"19\" height=\"21.6\" fill=\"#1c2f6b\"/><g fill=\"#fff\"><circle cx=\"4\" cy=\"4\" r=\"1\"/><circle cx=\"9.5\" cy=\"4\" r=\"1\"/><circle cx=\"15\" cy=\"4\" r=\"1\"/><circle cx=\"6.7\" cy=\"8\" r=\"1\"/><circle cx=\"12.2\" cy=\"8\" r=\"1\"/><circle cx=\"4\" cy=\"12\" r=\"1\"/><circle cx=\"9.5\" cy=\"12\" r=\"1\"/><circle cx=\"15\" cy=\"12\" r=\"1\"/><circle cx=\"6.7\" cy=\"16\" r=\"1\"/><circle cx=\"12.2\" cy=\"16\" r=\"1\"/></g></svg>", GOLD_SVG = "<svg viewBox=\"0 0 40 40\"><defs><radialGradient id=\"gbg\" cx=\"50%\" cy=\"40%\" r=\"65%\"><stop offset=\"0\" stop-color=\"#5a4320\"/><stop offset=\"1\" stop-color=\"#1c150b\"/></radialGradient><linearGradient id=\"gbar\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ffe6a3\"/><stop offset=\".55\" stop-color=\"#e0a93e\"/><stop offset=\"1\" stop-color=\"#9c6a18\"/></linearGradient></defs><rect width=\"40\" height=\"40\" fill=\"url(#gbg)\"/><path d=\"M8 27 l3-6h9l3 6z\" fill=\"url(#gbar)\"/><path d=\"M17 27 l3-6h9l3 6z\" fill=\"url(#gbar)\"/><path d=\"M12.5 21 l3-6h9l3 6z\" fill=\"url(#gbar)\"/><path d=\"M15.5 15 l1-2h6.5l1 2z\" fill=\"#fff3cc\" opacity=\".6\"/></svg>", SILVER_SVG = "<svg viewBox=\"0 0 40 40\"><defs><radialGradient id=\"sbg\" cx=\"50%\" cy=\"40%\" r=\"65%\"><stop offset=\"0\" stop-color=\"#4a4d55\"/><stop offset=\"1\" stop-color=\"#16171b\"/></radialGradient><linearGradient id=\"sbar\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\".55\" stop-color=\"#c3c7cf\"/><stop offset=\"1\" stop-color=\"#7d828c\"/></linearGradient></defs><rect width=\"40\" height=\"40\" fill=\"url(#sbg)\"/><path d=\"M8 27 l3-6h9l3 6z\" fill=\"url(#sbar)\"/><path d=\"M17 27 l3-6h9l3 6z\" fill=\"url(#sbar)\"/><path d=\"M12.5 21 l3-6h9l3 6z\" fill=\"url(#sbar)\"/><path d=\"M15.5 15 l1-2h6.5l1 2z\" fill=\"#ffffff\" opacity=\".6\"/></svg>";
   var market = null;
+/* ===== 市場の空気（ホームの下段タブ）：VIX＝市場の怖さ、DXY＝ドルの強さ、銘柄ごとのVIX相関（日足30日・実測） =====
+   日付のそろえ方はダッシュボード版（renderAir）と同じ：VIXの日足だけ刻まれ方が1日ずれるため、VIX側を1日分ずらしてそろえる。 */
+function airDailyMapH(entry) {
+  var m = {}, bars = (entry && entry.candles && entry.candles["1d"]) || [], i, b;
+  for (i = 0; i < bars.length; i++) { b = bars[i]; if (b && b[4] > 0) m[new Date(b[0] * 1000).toISOString().slice(0, 10)] = b[4]; }
+  return m;
+}
+function airCorrH(driverEntry, targetEntry, shiftDriver) {
+  var dm = airDailyMapH(driverEntry), tm = airDailyMapH(targetEntry), days, ra = [], rb = [], i, n, xa = 0, xb = 0, sab = 0, saa = 0, sbb = 0, x, y;
+  if (shiftDriver) {
+    var ks = Object.keys(dm).sort(), sh = {};
+    for (i = 0; i + 1 < ks.length; i++) sh[ks[i]] = dm[ks[i + 1]];
+    dm = sh;
+  }
+  days = Object.keys(tm).filter(function (d) { return dm[d] != null; }).sort().slice(-31);
+  if (days.length < 26) return null;
+  for (i = 1; i < days.length; i++) { ra.push(Math.log(dm[days[i]] / dm[days[i - 1]])); rb.push(Math.log(tm[days[i]] / tm[days[i - 1]])); }
+  n = ra.length;
+  for (i = 0; i < n; i++) { xa += ra[i]; xb += rb[i]; }
+  xa /= n; xb /= n;
+  for (i = 0; i < n; i++) { x = ra[i] - xa; y = rb[i] - xb; sab += x * y; saa += x * x; sbb += y * y; }
+  return saa && sbb ? sab / Math.sqrt(saa * sbb) : null;
+}
+function renderAirHome() {
+  var box = document.getElementById("airHome"); if (!box) return;
+  var ins = market && market.instruments, vx = ins && ins.vix, dx = ins && ins.dxy;
+  if (!vx || !dx || !(vx.price > 0) || !(dx.price > 0)) { box.innerHTML = "<p class=\"ind-note\">データを取得中です…</p>"; return; }
+  var vChg = vx.prevClose ? (vx.price / vx.prevClose - 1) * 100 : 0;
+  var dChg = dx.prevClose ? (dx.price / dx.prevClose - 1) * 100 : 0;
+  var zone = vx.price < 15 ? ["平常", "z1"] : vx.price < 20 ? ["少し怖がっている", "z2"] : vx.price < 30 ? ["怖がっている", "z3"] : ["パニック", "z4"];
+  var dChip = Math.abs(dChg) < 0.15 ? "ふつう" : dChg >= 0.5 ? "強い" : dChg > 0 ? "やや強い" : dChg <= -0.5 ? "弱い" : "やや弱い";
+  var sgn = function (v) { return (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(2) + "%"; };
+  var cnum = function (r) { return r == null ? "--" : (r > 0 ? "+" : r < 0 ? "−" : "") + Math.abs(r).toFixed(2); };
+  var rows = [["gold", "ゴールド"], ["usdjpy", "ドル円"], ["btc", "BTC"], ["usoil", "オイル"], ["silver", "シルバー"]].map(function (pair) {
+    var r = ins[pair[0]] ? airCorrH(vx, ins[pair[0]], 1) : null;
+    if (r == null) return "<div class=\"airh-row\"><span>" + pair[1] + "</span><span class=\"rd\">相関：データ不足</span></div>";
+    var a = Math.abs(r), band = a >= 0.6 ? "強い" : a >= 0.3 ? "ふつう" : a >= 0.15 ? "弱い" : "ほぼなし";
+    var word = a < 0.15 ? "連動ほぼなし" : (r > 0 ? "順相関" : "逆相関") + "・" + band;
+    var read = a < 0.15 ? "怖さとは、あまり連動していない" : "怖さが増すと、" + (r > 0 ? "上がりやすい" : "下がりやすい");
+    return "<div class=\"airh-row\"><span>" + pair[1] + "</span><span class=\"rv\">" + cnum(r) + " <span class=\"rd\">" + word + "</span></span></div><div class=\"rd\" style=\"font-size:11px;color:var(--ink-3)\">" + read + "</div>";
+  }).join("");
+  var upd = document.getElementById("air-upd");
+  if (upd) upd.textContent = vx.asOf ? new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(vx.asOf * 1000)) + " 時点" : "";
+  box.innerHTML =
+    "<div class=\"airh-cards\"><div class=\"airh-card\"><span class=\"al\">市場の怖さ <i>VIX</i></span><span class=\"av\">" + vx.price.toFixed(2) + "</span><span class=\"ac\">前日比 " + sgn(vChg) + "</span><span class=\"airh-chip " + zone[1] + "\">" + zone[0] + "</span></div>" +
+    "<div class=\"airh-card\"><span class=\"al\">ドルの強さ <i>DXY</i></span><span class=\"av\">" + dx.price.toFixed(2) + "</span><span class=\"ac\">前日比 " + sgn(dChg) + "</span><span class=\"airh-chip\">" + dChip + "</span></div></div>" +
+    "<div class=\"airh-gauge\"><i style=\"left:" + Math.max(0, Math.min(100, (vx.price - 10) / 40 * 100)) + "%\"></i></div><div class=\"airh-labels\"><span>平常</span><span>少し警戒</span><span>警戒</span><span>パニック</span></div>" +
+    "<div class=\"airh-sec\">銘柄ごとの連動（VIX・過去30日）</div>" + rows +
+    "<div class=\"airh-guide\"><b>この表示の見方</b><span>1. 「市場の怖さ」は、世界の投資家がどれくらい怖がっているかの温度計です。大きいほど怖がっています</span><span>2. 「連動」は、過去30日に実際にどう一緒に動いたかの実測です。「上がりやすい」は約束ではなく、最近の傾向です</span><span>3. 詳しくは各銘柄のダッシュボードの「市場の空気」で、今日の空気まで見られます</span></div>" +
+    "<div class=\"airh-note\">出典：Yahoo Finance（^VIX・DX-Y.NYB）・サイトの定期取得。相関は因果関係ではありません。局面で符号が変わります。</div>";
+}
+window.renderAirHome = renderAirHome;
   var marketFromBackup = false;
   var chartRO = window.ResizeObserver ? new ResizeObserver(function (es) { es.forEach(function (e) { var m = e.target.__mkt; if (m && m.draw) m.draw(); }); }) : null;
   var markets = [0, 1, 2].map(function (i) {
@@ -7756,57 +7808,6 @@ window.TDFontApply();
 })();
 </script>
 <script>
-/* ===== 市場の空気（ホームの下段タブ）：VIX＝市場の怖さ、DXY＝ドルの強さ、銘柄ごとのVIX相関（日足30日・実測） =====
-   日付のそろえ方はダッシュボード版（renderAir）と同じ：VIXの日足だけ刻まれ方が1日ずれるため、VIX側を1日分ずらしてそろえる。 */
-function airDailyMapH(entry) {
-  var m = {}, bars = (entry && entry.candles && entry.candles["1d"]) || [], i, b;
-  for (i = 0; i < bars.length; i++) { b = bars[i]; if (b && b[4] > 0) m[new Date(b[0] * 1000).toISOString().slice(0, 10)] = b[4]; }
-  return m;
-}
-function airCorrH(driverEntry, targetEntry, shiftDriver) {
-  var dm = airDailyMapH(driverEntry), tm = airDailyMapH(targetEntry), days, ra = [], rb = [], i, n, xa = 0, xb = 0, sab = 0, saa = 0, sbb = 0, x, y;
-  if (shiftDriver) {
-    var ks = Object.keys(dm).sort(), sh = {};
-    for (i = 0; i + 1 < ks.length; i++) sh[ks[i]] = dm[ks[i + 1]];
-    dm = sh;
-  }
-  days = Object.keys(tm).filter(function (d) { return dm[d] != null; }).sort().slice(-31);
-  if (days.length < 26) return null;
-  for (i = 1; i < days.length; i++) { ra.push(Math.log(dm[days[i]] / dm[days[i - 1]])); rb.push(Math.log(tm[days[i]] / tm[days[i - 1]])); }
-  n = ra.length;
-  for (i = 0; i < n; i++) { xa += ra[i]; xb += rb[i]; }
-  xa /= n; xb /= n;
-  for (i = 0; i < n; i++) { x = ra[i] - xa; y = rb[i] - xb; sab += x * y; saa += x * x; sbb += y * y; }
-  return saa && sbb ? sab / Math.sqrt(saa * sbb) : null;
-}
-function renderAirHome() {
-  var box = document.getElementById("airHome"); if (!box) return;
-  var ins = market && market.instruments, vx = ins && ins.vix, dx = ins && ins.dxy;
-  if (!vx || !dx || !(vx.price > 0) || !(dx.price > 0)) { box.innerHTML = "<p class=\"ind-note\">データを取得中です…</p>"; return; }
-  var vChg = vx.prevClose ? (vx.price / vx.prevClose - 1) * 100 : 0;
-  var dChg = dx.prevClose ? (dx.price / dx.prevClose - 1) * 100 : 0;
-  var zone = vx.price < 15 ? ["平常", "z1"] : vx.price < 20 ? ["少し怖がっている", "z2"] : vx.price < 30 ? ["怖がっている", "z3"] : ["パニック", "z4"];
-  var dChip = Math.abs(dChg) < 0.15 ? "ふつう" : dChg >= 0.5 ? "強い" : dChg > 0 ? "やや強い" : dChg <= -0.5 ? "弱い" : "やや弱い";
-  var sgn = function (v) { return (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(2) + "%"; };
-  var cnum = function (r) { return r == null ? "--" : (r > 0 ? "+" : r < 0 ? "−" : "") + Math.abs(r).toFixed(2); };
-  var rows = [["gold", "ゴールド"], ["usdjpy", "ドル円"], ["btc", "BTC"], ["usoil", "オイル"], ["silver", "シルバー"]].map(function (pair) {
-    var r = ins[pair[0]] ? airCorrH(vx, ins[pair[0]], 1) : null;
-    if (r == null) return "<div class=\"airh-row\"><span>" + pair[1] + "</span><span class=\"rd\">相関：データ不足</span></div>";
-    var a = Math.abs(r), band = a >= 0.6 ? "強い" : a >= 0.3 ? "ふつう" : a >= 0.15 ? "弱い" : "ほぼなし";
-    var word = a < 0.15 ? "連動ほぼなし" : (r > 0 ? "順相関" : "逆相関") + "・" + band;
-    var read = a < 0.15 ? "怖さとは、あまり連動していない" : "怖さが増すと、" + (r > 0 ? "上がりやすい" : "下がりやすい");
-    return "<div class=\"airh-row\"><span>" + pair[1] + "</span><span class=\"rv\">" + cnum(r) + " <span class=\"rd\">" + word + "</span></span></div><div class=\"rd\" style=\"font-size:11px;color:var(--ink-3)\">" + read + "</div>";
-  }).join("");
-  var upd = document.getElementById("air-upd");
-  if (upd) upd.textContent = vx.asOf ? new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(vx.asOf * 1000)) + " 時点" : "";
-  box.innerHTML =
-    "<div class=\"airh-cards\"><div class=\"airh-card\"><span class=\"al\">市場の怖さ <i>VIX</i></span><span class=\"av\">" + vx.price.toFixed(2) + "</span><span class=\"ac\">前日比 " + sgn(vChg) + "</span><span class=\"airh-chip " + zone[1] + "\">" + zone[0] + "</span></div>" +
-    "<div class=\"airh-card\"><span class=\"al\">ドルの強さ <i>DXY</i></span><span class=\"av\">" + dx.price.toFixed(2) + "</span><span class=\"ac\">前日比 " + sgn(dChg) + "</span><span class=\"airh-chip\">" + dChip + "</span></div></div>" +
-    "<div class=\"airh-gauge\"><i style=\"left:" + Math.max(0, Math.min(100, (vx.price - 10) / 40 * 100)) + "%\"></i></div><div class=\"airh-labels\"><span>平常</span><span>少し警戒</span><span>警戒</span><span>パニック</span></div>" +
-    "<div class=\"airh-sec\">銘柄ごとの連動（VIX・過去30日）</div>" + rows +
-    "<div class=\"airh-guide\"><b>この表示の見方</b><span>1. 「市場の怖さ」は、世界の投資家がどれくらい怖がっているかの温度計です。大きいほど怖がっています</span><span>2. 「連動」は、過去30日に実際にどう一緒に動いたかの実測です。「上がりやすい」は約束ではなく、最近の傾向です</span><span>3. 詳しくは各銘柄のダッシュボードの「市場の空気」で、今日の空気まで見られます</span></div>" +
-    "<div class=\"airh-note\">出典：Yahoo Finance（^VIX・DX-Y.NYB）・サイトの定期取得。相関は因果関係ではありません。局面で符号が変わります。</div>";
-}
 /* 下段タブパネル（指標・学ぶ）の結線（分離版）：本体スクリプトで例外が起きても、この結線だけは必ず生きるようにするための専用ブロック */
 (function () {
   var tpInd = document.getElementById("ind"), tpLearn = document.getElementById("xfeed"), tpAir = document.getElementById("airpane");
