@@ -34,6 +34,15 @@ test("土台データの生成マーカー：失敗を帯と枠で知らせる",
   assert.ok(ANALYZE.includes('"ok" if BUILD_STATUS["fresh"] else "fail"'), "全滅なら fail・通常は ok");
 });
 
+test("あゆ版にも同じ仕組みが入っている（停止表示・見張り・マーカー）", () => {
+  const AYU = fs.readFileSync(path.join(__dirname, "..", "..", "ayu", "gold.html"), "utf8");
+  assert.ok(AYU.includes("const spotStale=pf.level==='stale'"), "あゆ版：停止中の価格を落とす");
+  assert.ok(AYU.includes("function spotWatchdog()"), "あゆ版：見張りがある");
+  assert.ok(AYU.includes("setInterval(spotWatchdog,30000)"), "あゆ版：見張りが30秒ごとに走る");
+  assert.ok(AYU.includes('id="dataStop"'), "あゆ版：停止の帯がある");
+  assert.ok(AYU.includes("SITE_FALLBACK_STATUS"), "あゆ版：予備マーカーも見る");
+});
+
 test("シートを開いたら次回取得を待たずに価格を取り直す", () => {
   assert.ok(GOLD.includes("if(e.data.on){state.nextSpot=0;renderAll();if(!LIVE.ws)startLive()}"), "desk-sheet の on で nextSpot を即時化する");
 });
