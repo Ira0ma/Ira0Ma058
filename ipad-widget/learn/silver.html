@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="ea7214e347">
+<meta name="build" content="da2cba5068">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -156,6 +156,30 @@ border:1px solid #232c35;border-radius:17px;padding:15px;box-shadow:var(--shadow
 .dxybox[hidden]{display:none}
 #cupRow[hidden]{display:none}
 .dxybox{margin-top:10px;background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:10px 11px;font-size:11.5px;display:grid;gap:7px}
+.airbox[hidden]{display:none}
+.airbox{margin-top:10px;background:#0c1116;border:1px solid #232d36;border-radius:11px;padding:10px 11px;font-size:11.5px;display:grid;gap:9px}
+.airbox .dh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 8px}
+.airbox .dh b{font-size:13px;white-space:nowrap}.airbox .dh span{color:var(--muted)}
+.aircards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.aircard{border:1px solid #232d36;border-radius:10px;padding:8px 10px;display:grid;gap:3px}
+.aircard .al{color:var(--muted);font-size:11px}.aircard .al i{font-style:normal;opacity:.65;font-size:9.5px}
+.aircard .av{font-size:20px;font-weight:800;line-height:1.1}
+.aircard .ac{font-size:11px;color:var(--muted)}
+.airchip{display:inline-block;font-size:10.5px;padding:1px 8px;border-radius:999px;border:1px solid #3a4a5a;color:var(--text,#e8edf2);width:max-content}
+.airchip.z1{border-color:#2e7d5b;color:#5aebaa}.airchip.z2{border-color:#b8860b;color:#ffc94d}.airchip.z3{border-color:#c25e3a;color:#ff9d7a}.airchip.z4{border-color:#a02c2c;color:#ff7882}
+.airgauge{position:relative;height:8px;border-radius:4px;background:linear-gradient(90deg,#2e7d5b 0 30%,#b8860b 30% 50%,#c25e3a 50% 75%,#a02c2c 75% 100%)}
+.airgauge i{position:absolute;top:-3px;width:3px;height:14px;background:#fff;border-radius:2px;transform:translateX(-50%)}
+.airlabels{display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:3px}
+.airsec{color:#e6c973;font-size:11px;letter-spacing:.06em;margin-bottom:2px}
+.airnow b{font-size:14.5px}
+.airnow .sub{margin-top:2px;line-height:1.55}
+.airrow{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.airrow .dt{font-size:10.5px;color:var(--muted);white-space:nowrap}
+.airdots{color:#e6c973;letter-spacing:2px;font-size:10px}
+.airdots .off{color:#3a4a5a}
+.airguide{border:1px solid rgba(230,201,115,.45);border-radius:10px;padding:9px 10px;background:rgba(230,201,115,.05);line-height:1.65;color:var(--muted);display:grid;gap:2px}
+.airguide b{color:#e6c973}
+.airsrc{color:var(--muted);font-size:10.5px;line-height:1.5}
 .dxybox .dh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 8px}.dxybox .dh b{white-space:nowrap}
 .dxybox .dh b{font-size:13px}.dxybox .dh span{color:var(--muted)}
 .dxyrow{display:grid;grid-template-columns:6.6em minmax(0,1fr) 14em;gap:8px;align-items:center;white-space:nowrap}
@@ -819,6 +843,7 @@ html.nd .shell>footer{grid-area:foot}
       <div id="keyLv" class="keylv"></div>
       <div id="dxyBox" class="dxybox" hidden></div>
       <div id="fxMat" class="dxybox" hidden></div>
+      <div id="airBox" class="airbox" hidden></div>
     </div>
 
     <div class="hero-signal">
@@ -3832,6 +3857,74 @@ function renderDxy(){
     `<div class="dxysrc">出典：Yahoo Finance（DX-Y.NYB）・${at}。DXYと相関はサイトの定期取得（約15分ごと。遅れることがあります）で更新されるため、画面の価格より遅い時点の値です。前日比の強さ：${DXY_FLAT.toFixed(2)}%未満は「ほぼ横ばい」、${DXY_CLEAR.toFixed(2)}%未満は「やや」。</div>`+DXY_GUIDE;
   el.hidden=false;
 }
+/* ===== 市場の空気（初心者向けの要約：VIX＝市場の怖さ、DXY＝ドルの強さ。数字の詳細は既存のDXY相関ボックスと材料ボックスが担当） =====
+   相関は日足30日・対数リターンの実測（サイトの定期取得 market.json の 1d 足からこの画面で計算）。
+   日付のそろえ方（このデータの刻まれ方の実測に基づく）：VIXの日足はセッション当日の日付で刻まれるが、
+   他の銘柄とDXYの日足はセッション開始日の日付で刻まれるため、VIXだけを1日分ずらしてそろえる。
+   DXYと各銘柄は同じ刻まれ方なのでずらさない。25本未満しかそろわない相関は出さない。 */
+function airDailyMap(entry){
+  const m=new Map(),bars=(entry&&entry.candles&&entry.candles['1d'])||[];
+  for(const b of bars){if(b&&b[4]>0)m.set(new Date(b[0]*1000).toISOString().slice(0,10),b[4])}
+  return m;
+}
+function airCorr(driverEntry,targetEntry,shiftDriver){
+  let dm=airDailyMap(driverEntry);const tm=airDailyMap(targetEntry);
+  if(shiftDriver){
+    const days=[...dm.keys()].sort(),sh=new Map();
+    for(let i=0;i+1<days.length;i++)sh.set(days[i],dm.get(days[i+1]));
+    dm=sh;
+  }
+  const days=[...tm.keys()].filter(d=>dm.has(d)).sort().slice(-31);
+  if(days.length<26)return null;
+  const ra=[],rb=[];
+  for(let i=1;i<days.length;i++){ra.push(Math.log(dm.get(days[i])/dm.get(days[i-1])));rb.push(Math.log(tm.get(days[i])/tm.get(days[i-1])))}
+  return corrOf(ra,rb);
+}
+function airZone(v){return v<15?['平常','z1']:v<20?['少し怖がっている','z2']:v<30?['怖がっている','z3']:['パニック','z4']}
+function airDots(r){const a=Math.abs(r);return a>=0.6?['●●●','強い']:a>=0.3?['●●<span class="off">●</span>','ふつう']:a>=0.15?['●<span class="off">●●</span>','弱い']:['<span class="off">●●●</span>','ほぼなし']}
+const AIR_GUIDE=`<div class="airguide"><b>この表示の見方</b><span>1. 「市場の怖さ」は、世界の投資家がどれくらい怖がっているかの温度計です。大きいほど怖がっています</span><span>2. 「連動のしかた」は、過去30日に実際にどう一緒に動いたかの実測です。「上がりやすい」は約束ではなく、最近の傾向です</span><span>3. 「いまの空気」は、その2つを合わせた今日のまとめです。空気が急に変わった日は、まず一呼吸おいて全体を見るための合図として使います</span></div>`;
+function renderAir(){
+  const el=$('airBox');if(!el)return;
+  const d=siteCache.d,ins=d&&d.instruments;
+  const vx=ins&&ins.vix,dx=ins&&ins.dxy,me=ins&&ins[INSTR.site];
+  if(!vx||!dx||!me||!(vx.price>0)||!(dx.price>0)){el.hidden=true;return}
+  const key=(siteCache.t||'')+'|'+INSTR.key;
+  if(renderAir._k===key&&!el.hidden)return;
+  renderAir._k=key;
+  const vChg=vx.prevClose?(vx.price/vx.prevClose-1)*100:0;
+  const dChg=dx.prevClose?(dx.price/dx.prevClose-1)*100:0;
+  const rv=airCorr(vx,me,1),rd=airCorr(dx,me,0);
+  const AN=INSTR.key==='usdjpy'?'ドル円':ASSET;  // usdjpy の設定には asset が無く ASSET が「金」に落ちるため、このパネルでは専用の呼び名を使う
+  const [zt,zc]=airZone(vx.price);
+  const dChip=Math.abs(dChg)<0.15?'ふつう':dChg>=0.5?'強い':dChg>0?'やや強い':dChg<=-0.5?'弱い':'やや弱い';
+  const pv=vChg>=3?1:vChg<=-3?-1:0,pd=dChg>=0.15?1:dChg<=-0.15?-1:0;
+  let head,reason;
+  if(INSTR.key==='usdjpy'&&pv&&pd){
+    head={'1,1':'有事のドル買い','-1,1':'円高型リスクオフ','1,-1':'金利で買われるドル高','-1,-1':'リスクオンのドル安'}[pd+','+pv];
+    reason=(pv>0?'市場の怖さが増している中で':'市場の怖さが和らいでいる中で')+(pd>0?'、ドルが買われています':'、ドルが売られています')+'。ドル円の向きを読む背景材料です';
+  }else{
+    const sv=rv!=null&&Math.abs(rv)>=0.15?Math.sign(rv):0,sd=rd!=null&&Math.abs(rd)>=0.15?Math.sign(rd):0;
+    const s=sv*pv+sd*pd,parts=[];
+    head=s>=1?AN+'が買われやすい空気':s<=-1?AN+'が売られやすい空気':'方向の定まらない空気';
+    if(pv)parts.push(pv>0?'市場の怖さが増していて':'市場の怖さが和らいでいて');
+    if(pd)parts.push(pd>0?'ドルが強くなっていて':'ドルが弱くなっていて');
+    reason=parts.length?parts.join('、')+'。'+AN+'には'+(s>=1?'追い風':s<=-1?'向かい風':'中立')+'の材料です':'大きな材料の変化はなく、様子見の空気です';
+  }
+  const row=(r,up,down,flat)=>r==null?'<div class="sub">相関：計算できるデータが足りません</div>':(()=>{const[dt,lv]=airDots(r);return `<div class="airrow"><span>${Math.abs(r)<0.15?flat:(r>0?up:down)}</span><span class="airdots" role="img" aria-label="連動の強さ ${lv}">${dt}</span></div><div class="sub" style="text-align:right">連動 ${lv}｜相関 ${corrNum(r)}（30日）</div>`})();
+  const at=vx.asOf?new Intl.DateTimeFormat('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(toMs(vx.asOf)))+' 時点':'時刻不明';
+  const sgn=v=>(v>=0?'+':'−')+Math.abs(v).toFixed(2)+'%';
+  el.innerHTML=`<div class="dh"><b>市場の空気</b><span>VIX ${at}｜サイトの定期取得（約15分ごと）</span></div>`+
+  `<div class="aircards"><div class="aircard"><span class="al">市場の怖さ <i>VIX</i></span><span class="av">${vx.price.toFixed(2)}</span><span class="ac">前日比 ${sgn(vChg)}</span><span class="airchip ${zc}">${zt}</span></div>`+
+  `<div class="aircard"><span class="al">ドルの強さ <i>DXY</i></span><span class="av">${dx.price.toFixed(2)}</span><span class="ac">前日比 ${sgn(dChg)}</span><span class="airchip">${dChip}</span></div></div>`+
+  `<div><div class="airgauge" role="img" aria-label="市場の怖さ ${vx.price.toFixed(2)}（${zt}）"><i style="left:${Math.max(0,Math.min(100,(vx.price-10)/40*100))}%"></i></div><div class="airlabels"><span>平常</span><span>少し警戒</span><span>警戒</span><span>パニック</span></div></div>`+
+  `<div class="airnow"><div class="airsec">いまの空気</div><b>${head}</b><div class="sub">${reason}</div></div>`+
+  `<div><div class="airsec">連動のしかた（過去30日）</div>`+
+  row(rv,`怖さが増すと、${AN}は上がりやすい`,`怖さが増すと、${AN}は下がりやすい`,'市場の怖さとは、あまり連動していない')+
+  row(rd,`ドルが強くなると、${AN}は上がりやすい`,`ドルが強くなると、${AN}は下がりやすい`,'ドルの強さとは、あまり連動していない')+`</div>`+
+  AIR_GUIDE+
+  `<div class="airsrc">出典：Yahoo Finance（^VIX・DX-Y.NYB）。相関は日足30日の実測で、因果関係ではありません。局面で符号が変わります。</div>`;
+  el.hidden=false;
+}
 /* ===== ドル円の材料（ドル円のダッシュボードだけ。読み取り専用：セットアップ判定・トレード前チェックには入れない） =====
    データはどれもサイトの定期取得（Yahoo Finance）。取れない・古い（4日より前）値は使わず「取得できませんでした」と出す。
    結論の1行：3つの材料の強さを0〜1で出し、いちばん大きいもの（MAT_LEAD 以上）を主導とする。
@@ -4016,7 +4109,7 @@ function renderSnapshot(){
     renderPatList(s);
   }
   renderPlan(s);
-  renderDxy();renderFxMat();
+  renderDxy();renderFxMat();renderAir();
 
   $('miniPrice').textContent=fmt(state.spot.price);
   $('miniPrice').classList.toggle('stale',spotStale);

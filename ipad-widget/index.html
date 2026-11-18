@@ -1445,6 +1445,23 @@ html.flow #td-search .tds-pop { bottom: auto; top: calc(100% + 8px); max-height:
 #tabpanel #ind { padding: 4px 2px; }
 #tabpanel #xfeed { padding: 4px 2px; overflow-y: auto; }
 .tp-pane[hidden] { display: none !important; }
+.airh-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.airh-card{border:1px solid var(--glass-line);border-radius:10px;padding:8px 10px;display:grid;gap:3px}
+.airh-card .al{color:var(--ink-3);font-size:11px}.airh-card .al i{font-style:normal;opacity:.65;font-size:9.5px}
+.airh-card .av{font-size:20px;font-weight:800;line-height:1.1}
+.airh-card .ac{font-size:11px;color:var(--ink-3)}
+.airh-chip{display:inline-block;font-size:10.5px;padding:1px 8px;border-radius:999px;border:1px solid var(--glass-line);color:var(--ink-2);width:max-content}
+.airh-chip.z1{border-color:#2e7d5b;color:#5aebaa}.airh-chip.z2{border-color:#b8860b;color:#ffc94d}.airh-chip.z3{border-color:#c25e3a;color:#ff9d7a}.airh-chip.z4{border-color:#a02c2c;color:#ff7882}
+.airh-gauge{position:relative;height:8px;border-radius:4px;background:linear-gradient(90deg,#2e7d5b 0 30%,#b8860b 30% 50%,#c25e3a 50% 75%,#a02c2c 75% 100%);margin-top:10px}
+.airh-gauge i{position:absolute;top:-3px;width:3px;height:14px;background:#fff;border-radius:2px;transform:translateX(-50%)}
+.airh-labels{display:flex;justify-content:space-between;font-size:9.5px;color:var(--ink-3);margin-top:3px}
+.airh-sec{color:var(--gold);font-size:11.5px;letter-spacing:.06em;margin:12px 0 4px}
+.airh-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:3px 0;font-size:12.5px}
+.airh-row .rv{font-weight:700;white-space:nowrap}
+.airh-row .rd{color:var(--ink-3);font-size:11px}
+.airh-guide{border:1px solid rgba(212,175,55,.45);border-radius:10px;padding:9px 10px;background:rgba(212,175,55,.05);line-height:1.65;color:var(--ink-2);display:grid;gap:2px;font-size:11.5px;margin-top:12px}
+.airh-guide b{color:var(--gold)}
+.airh-note{color:var(--ink-3);font-size:10.5px;line-height:1.5;margin-top:8px}
 .pt-tabs { display: flex; gap: 6px; margin: 6px 0 0; flex: none; }
 .pt-tab { font: inherit; font-size: 12px; font-weight: 600; padding: 5px 13px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--glass-line); color: var(--ink-2); cursor: pointer; }
 .pt-tab.on { background: var(--gold); color: var(--on-accent); border-color: var(--gold); }
@@ -1730,6 +1747,7 @@ html.nd .howtonote.open{display:block;position:fixed;z-index:80;width:min(400px,
     <div class="tp-tabs" role="tablist" aria-label="下段パネルの切替">
       <button type="button" class="tp-tab" data-tp="ind" role="tab">📊 指標</button>
       <button type="button" class="tp-tab" data-tp="learn" role="tab">📚 学ぶ</button>
+      <button type="button" class="tp-tab" data-tp="air" role="tab">🌡 空気</button>
       <button type="button" class="tp-x" id="tp-expand" aria-label="パネルを大きく読む"><span class="tp-x-i" aria-hidden="true">⤢</span><span class="tp-x-t">大きく読む</span></button>
     </div>
     <div class="tp-wrap">
@@ -1753,6 +1771,10 @@ html.nd .howtonote.open{display:block;position:fixed;z-index:80;width:min(400px,
       <a class="more" href="https://jp.investing.com/economic-calendar/" target="_blank" rel="noopener">経済カレンダーを表示 <svg width="7" height="11" viewBox="0 0 7 11"><path d="M1 1l4.5 4.5L1 10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></a>
       <span class="ind-upd num" id="ind-upd"></span>
     </div>
+  </section>
+<section id="airpane" class="tp-pane" aria-label="市場の空気" hidden>
+    <div class="card-title">市場の空気<span class="aside num" id="air-upd"></span></div>
+    <div id="airHome"><p class="ind-note">データを取得中です…</p></div>
   </section>
 <section id="xfeed" class="tp-pane" aria-label="学習：用語集・図鑑・入門">
     <div class="gl-tile">
@@ -5725,6 +5747,7 @@ window.TDFontApply();
         });
         marketCheck = chk; srcMark("market", true);
         market = d;
+        if (window.renderAirHome) renderAirHome();
         var all = d.instruments || d;
         markets.forEach(function (mk) {
           var m = all[mk.key];
@@ -7733,16 +7756,69 @@ window.TDFontApply();
 })();
 </script>
 <script>
+/* ===== 市場の空気（ホームの下段タブ）：VIX＝市場の怖さ、DXY＝ドルの強さ、銘柄ごとのVIX相関（日足30日・実測） =====
+   日付のそろえ方はダッシュボード版（renderAir）と同じ：VIXの日足だけ刻まれ方が1日ずれるため、VIX側を1日分ずらしてそろえる。 */
+function airDailyMapH(entry) {
+  var m = {}, bars = (entry && entry.candles && entry.candles["1d"]) || [], i, b;
+  for (i = 0; i < bars.length; i++) { b = bars[i]; if (b && b[4] > 0) m[new Date(b[0] * 1000).toISOString().slice(0, 10)] = b[4]; }
+  return m;
+}
+function airCorrH(driverEntry, targetEntry, shiftDriver) {
+  var dm = airDailyMapH(driverEntry), tm = airDailyMapH(targetEntry), days, ra = [], rb = [], i, n, xa = 0, xb = 0, sab = 0, saa = 0, sbb = 0, x, y;
+  if (shiftDriver) {
+    var ks = Object.keys(dm).sort(), sh = {};
+    for (i = 0; i + 1 < ks.length; i++) sh[ks[i]] = dm[ks[i + 1]];
+    dm = sh;
+  }
+  days = Object.keys(tm).filter(function (d) { return dm[d] != null; }).sort().slice(-31);
+  if (days.length < 26) return null;
+  for (i = 1; i < days.length; i++) { ra.push(Math.log(dm[days[i]] / dm[days[i - 1]])); rb.push(Math.log(tm[days[i]] / tm[days[i - 1]])); }
+  n = ra.length;
+  for (i = 0; i < n; i++) { xa += ra[i]; xb += rb[i]; }
+  xa /= n; xb /= n;
+  for (i = 0; i < n; i++) { x = ra[i] - xa; y = rb[i] - xb; sab += x * y; saa += x * x; sbb += y * y; }
+  return saa && sbb ? sab / Math.sqrt(saa * sbb) : null;
+}
+function renderAirHome() {
+  var box = document.getElementById("airHome"); if (!box) return;
+  var ins = market && market.instruments, vx = ins && ins.vix, dx = ins && ins.dxy;
+  if (!vx || !dx || !(vx.price > 0) || !(dx.price > 0)) { box.innerHTML = "<p class=\"ind-note\">データを取得中です…</p>"; return; }
+  var vChg = vx.prevClose ? (vx.price / vx.prevClose - 1) * 100 : 0;
+  var dChg = dx.prevClose ? (dx.price / dx.prevClose - 1) * 100 : 0;
+  var zone = vx.price < 15 ? ["平常", "z1"] : vx.price < 20 ? ["少し怖がっている", "z2"] : vx.price < 30 ? ["怖がっている", "z3"] : ["パニック", "z4"];
+  var dChip = Math.abs(dChg) < 0.15 ? "ふつう" : dChg >= 0.5 ? "強い" : dChg > 0 ? "やや強い" : dChg <= -0.5 ? "弱い" : "やや弱い";
+  var sgn = function (v) { return (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(2) + "%"; };
+  var cnum = function (r) { return r == null ? "--" : (r > 0 ? "+" : r < 0 ? "−" : "") + Math.abs(r).toFixed(2); };
+  var rows = [["gold", "ゴールド"], ["usdjpy", "ドル円"], ["btc", "BTC"], ["usoil", "オイル"], ["silver", "シルバー"]].map(function (pair) {
+    var r = ins[pair[0]] ? airCorrH(vx, ins[pair[0]], 1) : null;
+    if (r == null) return "<div class=\"airh-row\"><span>" + pair[1] + "</span><span class=\"rd\">相関：データ不足</span></div>";
+    var a = Math.abs(r), band = a >= 0.6 ? "強い" : a >= 0.3 ? "ふつう" : a >= 0.15 ? "弱い" : "ほぼなし";
+    var word = a < 0.15 ? "連動ほぼなし" : (r > 0 ? "順相関" : "逆相関") + "・" + band;
+    var read = a < 0.15 ? "怖さとは、あまり連動していない" : "怖さが増すと、" + (r > 0 ? "上がりやすい" : "下がりやすい");
+    return "<div class=\"airh-row\"><span>" + pair[1] + "</span><span class=\"rv\">" + cnum(r) + " <span class=\"rd\">" + word + "</span></span></div><div class=\"rd\" style=\"font-size:11px;color:var(--ink-3)\">" + read + "</div>";
+  }).join("");
+  var upd = document.getElementById("air-upd");
+  if (upd) upd.textContent = vx.asOf ? new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(vx.asOf * 1000)) + " 時点" : "";
+  box.innerHTML =
+    "<div class=\"airh-cards\"><div class=\"airh-card\"><span class=\"al\">市場の怖さ <i>VIX</i></span><span class=\"av\">" + vx.price.toFixed(2) + "</span><span class=\"ac\">前日比 " + sgn(vChg) + "</span><span class=\"airh-chip " + zone[1] + "\">" + zone[0] + "</span></div>" +
+    "<div class=\"airh-card\"><span class=\"al\">ドルの強さ <i>DXY</i></span><span class=\"av\">" + dx.price.toFixed(2) + "</span><span class=\"ac\">前日比 " + sgn(dChg) + "</span><span class=\"airh-chip\">" + dChip + "</span></div></div>" +
+    "<div class=\"airh-gauge\"><i style=\"left:" + Math.max(0, Math.min(100, (vx.price - 10) / 40 * 100)) + "%\"></i></div><div class=\"airh-labels\"><span>平常</span><span>少し警戒</span><span>警戒</span><span>パニック</span></div>" +
+    "<div class=\"airh-sec\">銘柄ごとの連動（VIX・過去30日）</div>" + rows +
+    "<div class=\"airh-guide\"><b>この表示の見方</b><span>1. 「市場の怖さ」は、世界の投資家がどれくらい怖がっているかの温度計です。大きいほど怖がっています</span><span>2. 「連動」は、過去30日に実際にどう一緒に動いたかの実測です。「上がりやすい」は約束ではなく、最近の傾向です</span><span>3. 詳しくは各銘柄のダッシュボードの「市場の空気」で、今日の空気まで見られます</span></div>" +
+    "<div class=\"airh-note\">出典：Yahoo Finance（^VIX・DX-Y.NYB）・サイトの定期取得。相関は因果関係ではありません。局面で符号が変わります。</div>";
+}
 /* 下段タブパネル（指標・学ぶ）の結線（分離版）：本体スクリプトで例外が起きても、この結線だけは必ず生きるようにするための専用ブロック */
 (function () {
-  var tpInd = document.getElementById("ind"), tpLearn = document.getElementById("xfeed");
+  var tpInd = document.getElementById("ind"), tpLearn = document.getElementById("xfeed"), tpAir = document.getElementById("airpane");
   var tpName = "ind";
   try { tpName = localStorage.getItem("td_tabpane") || "ind"; } catch (e) {}
   function tpShow(name) {
-    tpName = name === "learn" ? "learn" : "ind";
+    tpName = name === "learn" ? "learn" : name === "air" ? "air" : "ind";
     try { localStorage.setItem("td_tabpane", tpName); } catch (e) {}
     if (tpInd) tpInd.hidden = tpName !== "ind";
     if (tpLearn) tpLearn.hidden = tpName !== "learn";
+    if (tpAir) tpAir.hidden = tpName !== "air";
+    if (tpName === "air" && window.renderAirHome) window.renderAirHome();
     document.querySelectorAll(".tp-tab").forEach(function (b) { var on = b.getAttribute("data-tp") === tpName; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
   }
   window.TDTabPane = { show: tpShow };
