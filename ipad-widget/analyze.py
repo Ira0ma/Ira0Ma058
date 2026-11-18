@@ -334,6 +334,9 @@ def r6(rows):
     return [[t] + [float(f"{v:.6g}") for v in (o, max(o, h, l, c), min(o, h, l, c), c)] for t, o, h, l, c in rows]
 
 
+BUILD_STATUS = {"fresh": 0, "stale": []}  # 直近の build の結果（market-status.json の書き出し用）
+
+
 def build(fixture=None, prev=None):
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     out = {"updated": now, "instruments": {}}
@@ -352,6 +355,7 @@ def build(fixture=None, prev=None):
         else:
             if key in old:  # keep the last good data; the page shows its own timestamp
                 out["instruments"][key] = old[key]
+                BUILD_STATUS["stale"].append(key)
                 print(key, "kept previous data from", old[key].get("updated"))
         if fixture is None:
             time.sleep(0.4)  # stay gentle with the data source
@@ -364,9 +368,11 @@ def build(fixture=None, prev=None):
             print(key, sym, "failed:", e)
             if key in old:
                 out["instruments"][key] = old[key]
+                BUILD_STATUS["stale"].append(key)
                 print(key, "kept previous data from", old[key].get("updated"))
         if fixture is None:
             time.sleep(0.4)
+    BUILD_STATUS["fresh"] = fresh
     if fresh == 0 and prev:
         return prev  # nothing new at all: republish the previous file unchanged
     return out
@@ -789,3 +795,11 @@ if __name__ == "__main__":
     json.dump(build(fixture, prev), open(args[0], "w"), ensure_ascii=False, separators=(",", ":"))
     if fixture is None:
         json.dump(SPOT_HIST, open(os.path.join(os.path.dirname(args[0]), "spothist.json"), "w"), separators=(",", ":"))
+        # 生成の成否をマーカーに出す（ページ側と鮮度見張りが「土台データの停止」を検知するため。2026-11-18仕組み化）
+        status = {"status": "ok" if BUILD_STATUS["fresh"] else "fail",
+                  "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+        if BUILD_STATUS["stale"]:
+            status["stale"] = BUILD_STATUS["stale"]
+        if status["status"] == "fail" and prev:
+            status["since"] = prev.get("updated")
+        json.dump(status, open(os.path.join(os.path.dirname(args[0]), "market-status.json"), "w"), separators=(",", ":"))

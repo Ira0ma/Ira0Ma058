@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="f0fdd98e3d">
+<meta name="build" content="e2699419ba">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -100,6 +100,8 @@ h1 em{font-style:normal;color:var(--gold2)}
 
 /* ===== notices ===== */
 .notice{display:none;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:12px;line-height:1.6;background:#151b22;border:1px solid #31404d;color:#cbd6e0}
+.datastop{border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:12px;line-height:1.6;background:#2a1512;border:1px solid #7a3b2e;color:#f0c9bd}
+section.datastopped .cardhead::after{content:'データ停止中';color:#e05252;font-size:11px;font-weight:700;margin-left:8px}
 .notice.show{display:block}
 .notice.err{background:#35181b;border-color:#71343a;color:#ffd1d1}
 .caution{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid #6c4f16;
@@ -778,6 +780,7 @@ html.nd .shell>footer{grid-area:foot}
 </nav>
 
 <div id="notice" class="notice"></div>
+<div id="dataStop" class="datastop" hidden>土台データ停止中（<b id="dataStopAge">--</b>前）― チャート・水準・指標は古いデータで表示しています</div>
 
 <section id="caution" class="caution hidden">
   <div><div class="caution-title">⚠ 重要指標の前後です（新しく入らない）</div><div id="cautionText" class="caution-sub">重要指標が近づいています。</div></div>
@@ -1409,6 +1412,24 @@ async function getSite(){
     siteCache={t:Date.now(),d,tag};return d;
   }finally{clearTimeout(timer)}
 }
+/* 土台データ（market.json）の生成マーカー：生成が止まっていたら帯と枠で知らせる（2026-11-18仕組み化）。
+   失敗マーカー（status=fail）でデータが20分超古い、または正常マーカー自体が35分超古い（生成そのものが止まった）場合に表示する */
+let dataStatus=null;
+async function refreshDataStatus(){
+  try{dataStatus=await getJSON(SITE+'market-status.json?b='+Math.floor(Date.now()/300000),8000)}catch{dataStatus=null}
+  paintDataStatus();
+}
+function paintDataStatus(){
+  const el=$('dataStop');if(!el)return;
+  let dataAt=0,fail=false;
+  if(dataStatus){fail=dataStatus.status==='fail';dataAt=toMs(fail?(dataStatus.since||dataStatus.at):dataStatus.at)}
+  const stop=dataAt>0&&(Date.now()-dataAt>(fail?20*60000:35*60000));
+  el.hidden=!stop;
+  if(stop)$('dataStopAge').textContent=dur(Date.now()-dataAt);
+  document.querySelectorAll('#secChart,#secTech,#secCheck').forEach(s=>s.classList.toggle('datastopped',stop));
+}
+setInterval(()=>{if(!sheetHidden())refreshDataStatus()},300000);
+refreshDataStatus();
 function siteBars(rows){return (rows||[]).map(r=>({t:toMs(r[0]),o:n(r[1]),h:n(r[2]),l:n(r[3]),c:n(r[4])})).filter(b=>b.t&&b.c)}
 // 最後の足が区切り（5分・15分・30分・1時間）からずれていたら（データ元の最新値が「今の分」の足として付いてくる）、
 // その区切りの足にまとめる。そのままだと1本だけの足ができ、次からの足も区切りがずれる
@@ -5001,15 +5022,16 @@ function scheduler(){
 }
 // 価格の見張り（2026-11-18）：表示中なのにスポットが古いまま固まる事故の自己回復。
 // (1) デスク埋め込みで「閉じている」とされたまま実際は表示されている（枠に大きさがある）状態が1分続けば、判定を画面の大きさに戻して取り直す（シート状態のずれ対策。閉じたシートは大きさ0なので誤作動しない）
-// (2) スポットが90秒以上古ければ、次回取得の時刻を待たずに取り直し、配信もつなぎ直す
+// (2) スポットが90秒以上古ければ、シートの表示状態に関係なく取り直す（ホームのカードは裏で動くシートの価格で生きているため。配信のつなぎ直しは表示中のみ）
 let sizedHiddenTicks=0;
 function spotWatchdog(){
   if(document.hidden)return;
   if(window.parent!==window&&deskHidden===true&&innerWidth>0&&innerHeight>0){
     if(++sizedHiddenTicks>=2){deskHidden=null;sizedHiddenTicks=0;state.nextSpot=0;renderAll();if(!LIVE.ws)startLive()}
   }else sizedHiddenTicks=0;
-  if(sheetHidden()||mktClosed)return;
-  if(!state.spot||Date.now()-state.spot.asof>90000){state.nextSpot=0;refreshSpot();if(!LIVE.ws)startLive()}
+  paintDataStatus();
+  if(mktClosed)return;
+  if(!state.spot||Date.now()-state.spot.asof>90000){state.nextSpot=0;refreshSpot();if(!sheetHidden()&&!LIVE.ws)startLive()}
 }
 setInterval(spotWatchdog,30000);
 function setSegActive(sel,attr,val){document.querySelectorAll(sel).forEach(b=>b.classList.toggle('active',b.dataset[attr]===val))}
