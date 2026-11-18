@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="d74ea242ff">
+<meta name="build" content="c8e5987111">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4006,6 +4006,13 @@ window.TDFontApply();
       mk.surgeId = e.level === "emergency" && !e.ack ? e.id : "";
     });
   }
+  /* 警戒バナーが出ている間はデスク全体をバナーの下端まで下げ、カードに重ならないようにする（2026-11-18 banner-overlap修正） */
+  function applyAlertSpace() {
+    if (!alertsBox || !fit) return;
+    var vis = alertsBox.querySelectorAll(":scope > :not([hidden])").length > 0;
+    var t = vis ? Math.ceil(alertsBox.getBoundingClientRect().bottom) + 4 + "px" : "";
+    if (fit.style.top !== t) { fit.style.top = t; layout(); }
+  }
   function alertEls() {
     if (alertsBox) return alertsBox;
     alertsBox = document.createElement("div"); alertsBox.className = "dk-alerts"; alertsBox.id = "dk-alerts";
@@ -4018,6 +4025,8 @@ window.TDFontApply();
       "<li>介入かどうかは財務省・日銀の公式発表で確認する。この表示は価格と発言からの警戒情報で、確定情報ではない</li>" +
       '</ol><button type="button" data-check-close>閉じる</button></div>';
     document.body.appendChild(alertsBox);
+    if (window.ResizeObserver) new ResizeObserver(applyAlertSpace).observe(alertsBox);
+    applyAlertSpace();
     var chk = alertsBox.querySelector("#al-check");
     alertsBox.addEventListener("click", function (e) {
       if (e.target.closest("a")) return;  // 出典のリンクはそのまま開く
