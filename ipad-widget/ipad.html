@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="fb2e153093">
+<meta name="build" content="d74ea242ff">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2399,11 +2399,11 @@ window.TDFontApply();
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=e809ced977", title: "GOLD分析" },
-    silver: { src: "learn/silver.html?v=fe9dce7269", title: "シルバー分析" },
-    usdjpy: { src: "usdjpy.html?v=7ac9e5a80e", title: "ドル円分析" },
-    btc: { src: "btc.html?v=e2699419ba", title: "BTC分析" },
-    oil: { src: "oil.html?v=2d4c4806a6", title: "オイル分析" },
+    gold: { src: "gold.html?v=24a44d5b00", title: "GOLD分析" },
+    silver: { src: "learn/silver.html?v=b161d60635", title: "シルバー分析" },
+    usdjpy: { src: "usdjpy.html?v=e4946e9bd0", title: "ドル円分析" },
+    btc: { src: "btc.html?v=80c5c9901b", title: "BTC分析" },
+    oil: { src: "oil.html?v=7f3a8d8ce6", title: "オイル分析" },
     lots: { src: "learn/lotsim.html", title: "ロット図説" },
     weekend: { src: "learn/weekend.html", title: "週末ボード" }
   };
@@ -5699,6 +5699,15 @@ window.TDFontApply();
     var id = marketSeq.next();
     fetch("market.json", { cache: "no-cache" })  // revalidates (304 when unchanged)
       .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)); })
+      .then(function (d) {
+        if (d && d.updated && Date.now() - Date.parse(d.updated) > 20 * 60000) {  // 土台データが古ければ予備置き場（data-live）を確認し、新しければ差し替える（2026-11-18 恒久対策）
+          return fetch("https://raw.githubusercontent.com/Ira0ma/Ira0Ma058/data-live/market.json?t=" + Math.floor(Date.now() / 300000), { cache: "no-store" })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (fd) { return (fd && fd.updated && Date.parse(fd.updated) > Date.parse(d.updated)) ? fd : d; })
+            .catch(function () { return d; });
+        }
+        return d;
+      })
       .then(function (d) {
         if (!marketSeq.latest(id)) return;  // a later request already answered
         var chk = TDCore.checkMarket(d, Date.now());

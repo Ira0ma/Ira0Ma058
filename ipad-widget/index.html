@@ -5685,6 +5685,15 @@ window.TDFontApply();
     fetch("market.json", { cache: "no-cache" })  // revalidates (304 when unchanged)
       .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)); })
       .then(function (d) {
+        if (d && d.updated && Date.now() - Date.parse(d.updated) > 20 * 60000) {  // 土台データが古ければ予備置き場（data-live）を確認し、新しければ差し替える（2026-11-18 恒久対策）
+          return fetch("https://raw.githubusercontent.com/Ira0ma/Ira0Ma058/data-live/market.json?t=" + Math.floor(Date.now() / 300000), { cache: "no-store" })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (fd) { return (fd && fd.updated && Date.parse(fd.updated) > Date.parse(d.updated)) ? fd : d; })
+            .catch(function () { return d; });
+        }
+        return d;
+      })
+      .then(function (d) {
         if (!marketSeq.latest(id)) return;  // a later request already answered
         var chk = TDCore.checkMarket(d, Date.now());
         if (chk.global.length) return Promise.reject(new Error(chk.global.join("・")));
