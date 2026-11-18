@@ -43,6 +43,12 @@ test("あゆ版にも同じ仕組みが入っている（停止表示・見張�
   assert.ok(AYU.includes("SITE_FALLBACK_STATUS"), "あゆ版：予備マーカーも見る");
 });
 
+test("ホームの警戒バナー：デスクを下げるのは paddingTop（top では中央寄せで半分しか下がらない）", () => {
+  const HOME = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  assert.ok(HOME.includes("if (fit.style.paddingTop !== t) { fit.style.paddingTop = t; layout(); }"), "paddingTop で下げる");
+  assert.ok(!HOME.includes("if (fit.style.top !== t) { fit.style.top = t; layout(); }"), "top 方式は使わない");
+});
+
 test("シートを開いたら次回取得を待たずに価格を取り直す", () => {
   assert.ok(GOLD.includes("if(e.data.on){state.nextSpot=0;renderAll();if(!LIVE.ws)startLive()}"), "desk-sheet の on で nextSpot を即時化する");
 });

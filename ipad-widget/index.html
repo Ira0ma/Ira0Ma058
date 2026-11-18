@@ -3992,12 +3992,15 @@ window.TDFontApply();
       mk.surgeId = e.level === "emergency" && !e.ack ? e.id : "";
     });
   }
-  /* 警戒バナーが出ている間はデスク全体をバナーの下端まで下げ、カードに重ならないようにする（2026-11-18 banner-overlap修正） */
+  /* 警戒バナーが出ている間はデスク全体をバナーの下端まで下げ、カードに重ならないようにする（2026-11-18 banner-overlap修正）
+     下げ方は #fit の paddingTop で行う：#fit は position:fixed;inset:0 で、top を変えると flex の中央寄せが効いて
+     実際の移動は指定の半分ほどになり、時計カード上端のボタン行がバナーの下に残った（2026-11-18夜の再点検で検出）。
+     paddingTop なら layout() がその分を差し引いて中央寄せするので、デスクの上端は必ずバナーの下端+4px以下にならない */
   function applyAlertSpace() {
     if (!alertsBox || !fit) return;
     var vis = alertsBox.querySelectorAll(":scope > :not([hidden])").length > 0;
     var t = vis ? Math.ceil(alertsBox.getBoundingClientRect().bottom) + 4 + "px" : "";
-    if (fit.style.top !== t) { fit.style.top = t; layout(); }
+    if (fit.style.paddingTop !== t) { fit.style.paddingTop = t; layout(); }
   }
   function alertEls() {
     if (alertsBox) return alertsBox;
