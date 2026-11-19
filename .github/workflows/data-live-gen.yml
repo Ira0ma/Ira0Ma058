@@ -1,0 +1,64 @@
+name: Data-live backup generation
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+    - cron: "5,25,45 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: data-live-gen
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the data-live branch (previous output and push target)
+        uses: actions/checkout@v4
+        with:
+          ref: data-live
+          path: dl
+      - name: Check out the production branch (current analyze.py)
+        uses: actions/checkout@v4
+        with:
+          ref: claude/amazon-affiliate-articles
+          path: src
+      - name: Generate the backup data
+        run: |
+          mkdir -p out
+          if [ ! -f dl/market.json ]; then
+            curl -fsSL --retry 2 https://ira0ma.github.io/Ira0Ma058/market.json -o dl/market.json
+          fi
+          cd src
+          python3 ipad-widget/analyze.py "$GITHUB_WORKSPACE/out/market.json" --prev="$GITHUB_WORKSPACE/dl/market.json"
+          ls -la "$GITHUB_WORKSPACE/out"
+      - name: Commit and push to data-live if anything changed
+        run: |
+          for f in market.json spothist.json market-status.json; do
+            if [ -f "out/$f" ]; then cp "out/$f" "dl/$f"; fi
+          done
+          cd dl
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for f in market.json spothist.json market-status.json; do
+            if [ -f "$f" ]; then git add "$f"; fi
+          done
+          if git diff --cached --quiet; then
+            echo "no changes"
+          else
+            git commit -m "data-live: backup data update (GitHub-side generation)"
+            git pull --rebase origin data-live || true
+            git push origin data-live
+          fi
+      - name: Keep the schedule alive
+        if: github.event_name != 'push'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/data-live-gen.yml/enable"
