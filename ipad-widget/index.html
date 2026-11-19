@@ -3860,7 +3860,7 @@ window.renderAirHome = renderAirHome;
         .catch(function () { finish(); });
     }, fail, { timeout: 15000, maximumAge: 30 * 60000 });
   }
-  var wxLoaded = false, wxAt = 0, wxAutoRetried = false;
+  var wxLoaded = false, wxAt = 0, wxAutoRetried = false, wxLast = null;
   function wxFetch(url) {  // 応答が固まったままの接続で天気だけ止まらないよう、8秒で見切る
     if (!window.AbortController) return fetch(url);
     var ctl = new AbortController(), to = setTimeout(function () { ctl.abort(); }, 8000);
@@ -3881,7 +3881,7 @@ window.renderAirHome = renderAirHome;
   function loadWeather() {
     if (!window.fetch) return;
     showCity();
-    var wxLast = null;
+    wxLast = null;
     try { wxLast = JSON.parse(localStorage.getItem("wx-last-v1") || "null"); } catch (e) {}
     if (!wxLoaded && wxLast && wxLast.name === loc.name) wxPaint(wxLast);  // 前回取れた天気を先に出しておく（取得中も「--」にしない）
     wxFetch("https://api.open-meteo.com/v1/forecast?latitude=" + loc.lat + "&longitude=" + loc.lon + "&current=temperature_2m,weather_code&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1")
