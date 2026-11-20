@@ -807,6 +807,8 @@ def one(key, sym, spot_sym, fixture, prev=None):
 # old (measured 2026-11-20: a pages run skipped its booking because the backup run
 # was 92s old, and the chain died with both datasets stopped). After the build the
 # previous run is minutes old, so the guard no longer starves the chain.
+# The booking also sits in a finally block, so a failed build still books the next
+# runs: one bad generation must not be able to break the chain.
 # Token: the generation steps do not pass the workflow token through the
 # environment (measured 2026-11-20: every run recorded chain "skipped: no-token"),
 # but actions/checkout persists that same token in the checkout's git config
@@ -930,8 +932,10 @@ if __name__ == "__main__":
         except Exception as e:
             print("no previous spothist.json:", e)
     fixture = json.load(open(args[1])) if len(args) > 1 else None
-    json.dump(build(fixture, prev), open(args[0], "w"), ensure_ascii=False, separators=(",", ":"))
-    chain_dispatch()
+    try:
+        json.dump(build(fixture, prev), open(args[0], "w"), ensure_ascii=False, separators=(",", ":"))
+    finally:
+        chain_dispatch()
     if fixture is None:
         json.dump(SPOT_HIST, open(os.path.join(os.path.dirname(args[0]), "spothist.json"), "w"), separators=(",", ":"))
         # 生成の成否をマーカーに出す（ページ側と鮮度見張りが「土台データの停止」を検知するため。2026-11-18仕組み化）
