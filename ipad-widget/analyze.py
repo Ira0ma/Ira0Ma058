@@ -165,12 +165,28 @@ def spot_price(spot_sym):
     raise RuntimeError("; ".join(errs))
 
 
+def yahoo_json(symbol, interval, rng):
+    """Yahoo chart JSON, alternating hosts. Every candle in market.json comes from Yahoo, so a
+    rate limit (429) or IP block against one host on a GitHub runner used to freeze all five
+    instruments at once (2026-11-18, and the data-live runs of 2026-11-19 that 'succeeded'
+    without advancing the data). query1 often still answers when query2 refuses, so try
+    query2, then query1, then query2 once more before giving up on this series."""
+    errs = []
+    for host in ("query2", "query1", "query2"):
+        try:
+            return get_json(f"https://{host}.finance.yahoo.com/v8/finance/chart/{symbol}?interval={interval}&range={rng}")
+        except Exception as e:
+            errs.append(f"{host}: {e}")
+            time.sleep(1.5)
+    raise RuntimeError("; ".join(errs))
+
+
 def yahoo(symbol, interval, rng, fixture=None):
     key = f"{symbol}|{interval}|{rng}"
     if fixture is not None:
         data = fixture[key]
     else:
-        data = get_json(f"https://query2.finance.yahoo.com/v8/finance/chart/{symbol}?interval={interval}&range={rng}")
+        data = yahoo_json(symbol, interval, rng)
     res = data["chart"]["result"][0]
     q = res["indicators"]["quote"][0]
     rows, vol = [], {}
