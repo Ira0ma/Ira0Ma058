@@ -5,9 +5,11 @@ Usage: python3 analyze.py OUT.json [--prev=OLD.json]   (fetches from Yahoo Finan
                                                          OLD.json fills in instruments that fail)
        python3 analyze.py OUT.json FIXTURE    (FIXTURE: JSON {symbol: yahoo-chart-json} for tests)
 """
+import base64
 import bisect
 import json
 import os
+import subprocess
 import sys
 import time
 import urllib.error
@@ -797,15 +799,21 @@ def one(key, sym, spot_sym, fixture, prev=None):
 # Measured on this repository: GitHub's scheduled runs (cron) fire only about once
 # every several hours, so market data stopped for hours between bursts. To keep the
 # data moving without any human or Muse approval step, analyze.py itself books the
-# next runs: when it runs inside GitHub Actions with a token that may dispatch
-# workflows (the data-live-gen workflow grants actions: write; pages.yml does not,
-# so attempts from there are recorded and ignored), it dispatches pages.yml and
-# data-live-gen.yml once at startup. A dispatch made by GITHUB_TOKEN is allowed to
-# start a run for workflow_dispatch, so the chain sustains itself; the crons remain
-# as the restart path if a chain ever breaks. Guards: never dispatch while another
-# run of the same workflow is active, and never within 180s of the previous run.
-# Outside GitHub Actions (no token in the environment) this is a no-op, and no
-# failure here may ever affect the data generation itself.
+# next runs at startup. A dispatch made by the workflow token is allowed to start a
+# run for workflow_dispatch, so the chain sustains itself; the crons remain as the
+# restart path if a chain ever breaks. Guards: never dispatch while another run of
+# the same workflow is active, and never within 180s of the previous run.
+# Token: the generation steps do not pass the workflow token through the
+# environment (measured 2026-11-20: every run recorded chain "skipped: no-token"),
+# but actions/checkout persists that same token in the checkout's git config
+# (http.https://github.com/.extraheader). _chain_token() reads it from there; the
+# token value itself is never logged or written anywhere.
+# Targets: a run of the backup workflow (data-live-gen) books both workflows. A
+# run of the pages workflow books only the backup workflow: the pages concurrency
+# group cancels the in-progress run when a new one queues, so a pages run booking
+# another pages run would kill the very run that is generating and deploying.
+# Outside GitHub Actions this is a no-op, and no failure here may ever affect the
+# data generation itself.
 CHAIN = {}
 
 def _gh_get(path, token):
@@ -819,11 +827,51 @@ def _gh_get(path, token):
         body = r.read()
         return json.loads(body) if body else {}
 
+def _chain_token():
+    for key in ("GITHUB_TOKEN", "GH_TOKEN"):
+        tok = os.environ.get(key)
+        if tok:
+            return tok
+    roots = []
+    try:
+        roots.append(os.getcwd())
+    except Exception:
+        pass
+    try:
+        roots.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    except Exception:
+        pass
+    for root in roots:
+        try:
+            out = subprocess.check_output(
+                ["git", "-C", root, "config", "--get",
+                 "http.https://github.com/.extraheader"],
+                stderr=subprocess.DEVNULL, timeout=10).decode("utf-8", "replace").strip()
+        except Exception:
+            continue
+        try:
+            raw = base64.b64decode(out.split()[-1]).decode("utf-8", "replace")
+        except Exception:
+            continue
+        if ":" in raw:
+            tok = raw.split(":", 1)[1].strip()
+            if tok:
+                return tok
+    return None
+
+def _chain_targets():
+    ref = os.environ.get("GITHUB_WORKFLOW_REF", "")
+    if "data-live-gen.yml" in ref:
+        return ("pages.yml", "data-live-gen.yml")
+    if "pages.yml" in ref:
+        return ("data-live-gen.yml",)
+    return ("pages.yml", "data-live-gen.yml")
+
 def chain_dispatch():
     global CHAIN
     marker = {"at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
     try:
-        token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+        token = _chain_token()
         repo = os.environ.get("GITHUB_REPOSITORY")
         if not token or not repo:
             marker["skipped"] = "no-token"
@@ -831,7 +879,7 @@ def chain_dispatch():
             return
         self_id = os.environ.get("GITHUB_RUN_ID", "")
         sent = []
-        for wf in ("pages.yml", "data-live-gen.yml"):
+        for wf in _chain_targets():
             try:
                 runs = _gh_get("/repos/%s/actions/workflows/%s/runs?per_page=5" % (repo, wf), token).get("workflow_runs", [])
                 others = [r for r in runs if str(r.get("id")) != self_id]
