@@ -799,10 +799,14 @@ def one(key, sym, spot_sym, fixture, prev=None):
 # Measured on this repository: GitHub's scheduled runs (cron) fire only about once
 # every several hours, so market data stopped for hours between bursts. To keep the
 # data moving without any human or Muse approval step, analyze.py itself books the
-# next runs at startup. A dispatch made by the workflow token is allowed to start a
-# run for workflow_dispatch, so the chain sustains itself; the crons remain as the
-# restart path if a chain ever breaks. Guards: never dispatch while another run of
-# the same workflow is active, and never within 180s of the previous run.
+# next runs after the data is built. A dispatch made by the workflow token is allowed
+# to start a run for workflow_dispatch, so the chain sustains itself; the crons remain
+# as the restart path if a chain ever breaks. Guards: never dispatch while another run
+# of the same workflow is active, and never within 60s of the previous run.
+# Booking after the build matters: at startup the previous run can be under a minute
+# old (measured 2026-11-20: a pages run skipped its booking because the backup run
+# was 92s old, and the chain died with both datasets stopped). After the build the
+# previous run is minutes old, so the guard no longer starves the chain.
 # Token: the generation steps do not pass the workflow token through the
 # environment (measured 2026-11-20: every run recorded chain "skipped: no-token"),
 # but actions/checkout persists that same token in the checkout's git config
@@ -891,7 +895,7 @@ def chain_dispatch():
                         age = (datetime.now(timezone.utc) - datetime.fromisoformat(newest.replace("Z", "+00:00"))).total_seconds()
                     except Exception:
                         age = 9999
-                    if age < 180:
+                    if age < 60:
                         continue
                 req = urllib.request.Request(
                     "https://api.github.com/repos/%s/actions/workflows/%s/dispatches" % (repo, wf),
@@ -912,7 +916,6 @@ def chain_dispatch():
     CHAIN = marker
 
 if __name__ == "__main__":
-    chain_dispatch()
     args = [a for a in sys.argv[1:] if not a.startswith("--prev=")]
     prev_path = next((a[7:] for a in sys.argv[1:] if a.startswith("--prev=")), None)
     prev = None
@@ -928,6 +931,7 @@ if __name__ == "__main__":
             print("no previous spothist.json:", e)
     fixture = json.load(open(args[1])) if len(args) > 1 else None
     json.dump(build(fixture, prev), open(args[0], "w"), ensure_ascii=False, separators=(",", ":"))
+    chain_dispatch()
     if fixture is None:
         json.dump(SPOT_HIST, open(os.path.join(os.path.dirname(args[0]), "spothist.json"), "w"), separators=(",", ":"))
         # 生成の成否をマーカーに出す（ページ側と鮮度見張りが「土台データの停止」を検知するため。2026-11-18仕組み化）
