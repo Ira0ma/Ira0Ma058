@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="91daac710c">
+<meta name="build" content="be4f0a5f2d">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -94,6 +94,7 @@ h1 em{font-style:normal;color:var(--gold2)}
 .toggle.on .knob{background:#1f5c45}.toggle.on .knob::after{left:14px;background:var(--green)}
 .metaline{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--muted);font-size:11px;margin:10px 2px}
 .metaline b{color:var(--text);font-weight:700}
+.plainline{margin:2px 2px 8px;padding:8px 12px;border-left:3px solid var(--gold,#c8963f);border-radius:8px;background:rgba(200,150,63,.08);font-size:13.5px;line-height:1.6;color:var(--text)}
 .metaline .srcbk{color:#f0a13c;font-weight:700}
 .quicknav{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
 .quicknav::-webkit-scrollbar{display:none}
@@ -802,6 +803,7 @@ html.nd .shell>footer{grid-area:foot}
   <span id="nextInfo">--</span>
   <span>価格30秒（配信があれば随時）／チャート5分／指標5分（発表前後は1分）</span>
 </div>
+<div id="plainLine" class="plainline" role="note" hidden></div>
 
 <nav class="quicknav">
   <a href="#secOverview">概要</a><a href="#secChart">チャート</a><a href="#secRisk">ロット計算</a><a href="#secMtf">総合判定</a><a href="#secTech">テクニカル詳細</a><a href="#secAlert">アラート</a><a href="#secNews">経済指標</a><a href="#secCheck">チェック</a>
@@ -1353,13 +1355,28 @@ function priceLevel(){
 }
 const LV_MARK={live:'●',fresh:'●',delayed:'◔',stale:'⚠',closed:'☾',unknown:'⚠',missing:'…'};
 function setStatus(type,text){
-  if(text==='LIVE'){const f=priceLevel();type=f.level==='live'||f.level==='fresh'?'live':'';text=f.label+(IS_OIL&&!oilLive?'（CL=F・定期取得）':'')}
+  if(text==='LIVE'){const f=priceLevel();type=f.level==='live'||f.level==='fresh'?'live':'';text=f.label+(IS_OIL&&!oilLive?'（定期取得）':'');
+    if((f.level==='delayed'||f.level==='stale')&&state.spot&&state.spot.asof){const m=Math.max(1,Math.round((Date.now()-state.spot.asof)/60000));text+='（約'+m+'分前のデータ）'}}
   else if(text==='接続中')text='読み込み中';
   else if(text==='キャッシュ表示中')text='取得失敗（前回の値を表示）';
   else if(text==='接続再試行中')text='取得失敗（再試行中）';
   if(mktClosed&&type!=='error'){text=closedLabel()+(reopenText?'（再開 '+reopenText+'・取引所の時刻）':'');type=''}  // 休場中は「LIVE」ではなく休場中と出す
   $('mainStatus').textContent=text;
   $('mainDot').className='dot '+(type==='live'?'live':type==='error'?'error':'');
+  updatePlainLine();
+}
+/* 超初心者向けの一文要約：状態を専門用語なしで1文に。売買の指示は書かず、事実と注意だけを書く */
+function updatePlainLine(){
+  const el=$('plainLine');if(!el)return;
+  let t='';
+  if(mktClosed){t=closedLabel()==='休場中'?'市場は休みです。金曜の終値を表示しています。':'いまは毎日の休止時間です。休止前の価格を表示しています。'}
+  else if(!state.spot){t='価格を読み込んでいます。'}
+  else{const f=priceLevel(),age=state.spot.asof?Math.max(1,Math.round((Date.now()-state.spot.asof)/60000)):0;
+    if(f.level==='delayed')t='データが少し古いです（約'+age+'分前の価格）。最新の値ではないので、注文の前にブローカーの価格も見てください。';
+    else if(f.level==='stale')t='データが止まっています（約'+age+'分前の価格）。接続は自動でやり直しています。';
+    else if(IS_OIL&&!oilLive)t='サイトの定期取得の価格を表示しています。今日の注目ポイントは、下の「重要価格帯」にあります。';
+    else t='いまの価格を表示しています。今日の注目ポイントは、下の「重要価格帯」にあります。'}
+  el.textContent=t;el.hidden=!t;
 }
 function showError(msg){state.errMsg=msg||'';updateNotice()}
 function updateNotice(){
@@ -1834,7 +1851,7 @@ async function refreshSpotOil(){
   if(!px)throw new Error('USOIL price missing');
   oilSpot=g.spotAdjusted===true;
   const at=g.basisAt?new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'}).format(new Date(g.basisAt*1000)):'';
-  const src=oilSpot?(g.spotNow===false?'サイト（定期取得・現物に換算。'+at+'の差を使用）':'サイト（定期取得・現物 XTI/USD に換算）'):'サイト（定期取得・CL=F 先物。現物は未取得）';
+  const src=oilSpot?(g.spotNow===false?'サイト（定期取得・現物に換算。'+at+'の差を使用）':'サイト（定期取得・現物 XTI/USD に換算）'):'サイト（定期取得・公表価格）';
   return {px,asof,src};
 }
 // USオイルの足：5分・15分・30分・1時間はOKXのパーペチュアルの足、4時間は1時間足をXM・XSのサーバー時間（NY+7時間）で4本ずつまとめる。
@@ -3331,7 +3348,7 @@ function renderRiskShare(capital,rpE,ownLoss){
   const pct=capital?tl/capital*100:0,over=capital&&pct>rpE;
   el.hidden=false;el.className='riskshare'+(over?' over':'');
   el.innerHTML='<b>全銘柄の合計　想定損失 '+yen(tl)+'（資金の'+(capital?pct.toFixed(2):'--')+'%）｜合計 必要証拠金 '+yen(tm)+'</b>'+
-    (over?'<div class="rs-warn">⚠ 合計で上限を超えています（1回で失ってよい割合は '+rpE.toFixed(2)+'% です）</div>':'')+
+    (over?'<div class="rs-warn">⚠ 合計で上限を超えています（1回で失ってよい割合は '+rpE.toFixed(2)+'% です）</div><div class="rs-note">＝このロットのままだと、全ポジションが損切りに達したとき、資金の '+pct.toFixed(2)+'%（'+yen(tl)+'）を失う計算です。ロットを下げると上限に収まります。</div>':'')+
     '<ul>'+rows.join('')+'</ul>'+
     '<div class="rs-note">合計は、いま持っている（持つつもりの）ポジションが全部そろって損切りに達した場合の目安です。同じ端末・同じブラウザで開いているダッシュボードの、15分以内の計算だけが合算されます。資金の%は、このダッシュボードの口座資金で割っています。</div>';
 }

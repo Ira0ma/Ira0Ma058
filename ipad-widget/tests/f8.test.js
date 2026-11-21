@@ -17,7 +17,8 @@ const forks = [ayuRoot, ayuLearn];
 
 test("F8: 4ファイルともボタン文言が「大きく読む／もどす」で、旧文言が残っていない", () => {
   for (const src of all) {
-    assert.match(src, /id="pt-expand" class="pt-xp"[^>]*>⤢ 大きく読む</);
+    // 本体は2026-11-21の幾何学修正で文言を span に分けた（stage では文字側を隠してアイコンのみにする）。文言そのものは不変
+    assert.match(src, /id="pt-expand" class="pt-xp"[^>]*>(<span class="pt-xp-i"[^>]*>⤢<\/span><span class="pt-xp-t">大きく読む<\/span>|⤢ 大きく読む)</);
     assert.match(src, /id="pt-shrink" class="pt-x"[^>]*>✕ もどす</);
     assert.match(src, /<span class="tp-x-t">大きく読む<\/span>/);
     // 下段パネルのトグル結線も新文言

@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="20f73f7cd0">
+<meta name="build" content="edbea86a31">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -585,6 +585,7 @@ html:not(.lowpower) .mreg .rg-dot { transition: left .6s ease; }
 #stage #tabpanel:not(.tp-expanded) #ind .ind-review { line-height: 1.35; }
 .ind-list .gloss { white-space: normal; color: var(--ink-2); font-size: 11.5px; line-height: 1.55; }
 .gloss-hint { font-size: 9.5px; color: var(--gold); border: 1px solid rgba(var(--gold-rgb),.5); border-radius: 5px; padding: 0 4px; margin-left: 6px; vertical-align: 2px; white-space: nowrap; }
+.gl-term { font: inherit; color: inherit; background: none; border: 0; border-bottom: 1px dotted var(--gold); padding: 0; cursor: pointer; touch-action: manipulation; }
 .ind-foot .more { margin-top: 0; }
 .ind-upd { font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
 .ind-upd i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--up-green); box-shadow: 0 0 8px rgba(67,210,127,.8); margin-right: 5px; vertical-align: 1px; }
@@ -1368,6 +1369,8 @@ html:not(.flow) .mkt.entry-buy::before, html:not(.flow) .mkt.entry-sell::before,
 @keyframes btnPulse { 50% { box-shadow: 0 0 0 4px rgba(var(--gold-rgb),.45), 0 0 18px rgba(var(--gold-rgb),.8); transform: scale(1.04); } }
 @media (prefers-reduced-motion: reduce) { .mkt.entry-buy::after, .mkt.entry-sell::after { animation: none; opacity: .6; } .gold-open.entry-on { animation: none; box-shadow: 0 0 0 3px rgba(var(--gold-rgb),.6); } }
 .dash-sheet { position: fixed; inset: 0; z-index: 30; background: var(--night); }
+/* 警戒バナー（.dk-alerts、z-index 190）はダイアログより上に重なるため、バナー表示中は全画面ダイアログの上端をバナーの下端まで下げる（2026-11-21 banner-overlap-dialogs 修正。--alertb は applyAlertSpace が設定） */
+.hz, .gbook, .shelf, .dash-sheet { top: var(--alertb, 0px); }
 /* 反応を速く：ダッシュボードや本が画面全体を覆っている間は、裏のデスク（ぼかしのカード・背景）を描かない。
    中身と配置はそのまま（visibility だけ）なので、閉じればすぐ元どおり。値の更新や通知は今までどおり動く */
 html:has(.dash-sheet:not([hidden])) #fit, html:has(.dash-sheet:not([hidden])) #bg,
@@ -1490,6 +1493,10 @@ html.flow #td-search .tds-pop { bottom: auto; top: calc(100% + 8px); max-height:
 /* 「大きく読む」ボタン（下段パネルの .tp-x と同じ見た目・大きさ）。展開中は「もどす」（.pt-x）に交代する */
 #points .pt-xp { display: none; margin-left: auto; align-items: center; justify-content: center; gap: 6px; min-width: 44px; min-height: 40px; border: 1px solid var(--glass-line); background: rgba(255,255,255,.05); color: var(--ink-2); border-radius: 8px; font-size: 13px; line-height: 1; padding: 6px 12px; cursor: pointer; touch-action: manipulation; }
 #points:not(.pt-expanded) .pt-xp { display: inline-flex; }
+/* stage（幅308px・内寸268px）では見出し行の予算が合わないため「大きく読む」はアイコンのみにする：アイコン26＋gap10＋見出し約170＋gap10＋ボタン44＝260 ≦ 268（2026-11-21 幾何学修正） */
+#points .pt-xp { flex: none; }
+#points .card-title .ico { flex: none; }
+#stage #points .pt-xp .pt-xp-t { display: none; }
 #points.pt-expanded { z-index: 45; box-shadow: 0 24px 60px rgba(0,0,0,.55); }
 #stage #points.pt-expanded { left: 27px; top: 35px; width: 1156px; height: 771px; }
 /* flow では fixed にしない（下段パネルと同じ理由：.flow .card の position 指定と #fstage の transform に閉じ込められる）。その場で縦に広げ、.pt-list（overflow-y:auto）の中で読む */
@@ -1811,7 +1818,7 @@ html.nd .howtonote.open{display:block;position:fixed;z-index:80;width:min(400px,
     <div class="card-title">
       <svg class="ico" viewBox="0 0 26 26"><rect x="4" y="3" width="18" height="21" rx="3" fill="#e3b867"/><rect x="4" y="3" width="18" height="5" rx="2" fill="#c8963f"/><path d="M8 12h10M8 16h10M8 20h6" stroke="#1a1408" stroke-width="1.6" stroke-linecap="round"/></svg>
       今日の注目ポイント
-      <button type="button" id="pt-expand" class="pt-xp">⤢ 大きく読む</button>
+      <button type="button" id="pt-expand" class="pt-xp"><span class="pt-xp-i" aria-hidden="true">⤢</span><span class="pt-xp-t">大きく読む</span></button>
       <button type="button" id="pt-shrink" class="pt-x">✕ もどす</button>
     </div>
     <div class="pt-tabs" role="tablist" aria-label="注目ポイントの切替">
@@ -2424,11 +2431,11 @@ window.TDFontApply();
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=1dc5be0dea", title: "GOLD分析" },
-    silver: { src: "learn/silver.html?v=08ac19ba00", title: "シルバー分析" },
-    usdjpy: { src: "usdjpy.html?v=c542735a41", title: "ドル円分析" },
-    btc: { src: "btc.html?v=36674683bc", title: "BTC分析" },
-    oil: { src: "oil.html?v=91daac710c", title: "オイル分析" },
+    gold: { src: "gold.html?v=7f57b50481", title: "GOLD分析" },
+    silver: { src: "learn/silver.html?v=25e3825b2d", title: "シルバー分析" },
+    usdjpy: { src: "usdjpy.html?v=bce9cfb39f", title: "ドル円分析" },
+    btc: { src: "btc.html?v=2551e8fc17", title: "BTC分析" },
+    oil: { src: "oil.html?v=be4f0a5f2d", title: "オイル分析" },
     lots: { src: "learn/lotsim.html", title: "ロット図説" },
     weekend: { src: "learn/weekend.html", title: "週末ボード" }
   };
@@ -4095,6 +4102,7 @@ window.renderAirHome = renderAirHome;
     if (!alertsBox || !fit) return;
     var vis = alertsBox.querySelectorAll(":scope > :not([hidden])").length > 0;
     var t = vis ? Math.ceil(alertsBox.getBoundingClientRect().bottom) + 4 + "px" : "";
+    document.documentElement.style.setProperty("--alertb", vis ? t : "0px");  // 全画面ダイアログの上端をバナー下端に合わせる（.hz/.gbook/.shelf/.dash-sheet の top が参照）
     var targets = [fit, document.getElementById("flow"), document.getElementById("pager")];
     var changed = false;
     targets.forEach(function (el) { if (el && el.style.paddingTop !== t) { el.style.paddingTop = t; changed = true; } });
@@ -5629,6 +5637,29 @@ window.renderAirHome = renderAirHome;
     var c = {}; for (var p in k) c[p] = k[p]; c.px = px; return c;
   }
   var ptSig = "", ptShownAt = 0;
+  /* 注目ポイント本文の用語タップ説明：R1・S1・ピボット等をタップすると用語集が開く（既存の openGlossary を使う。R/S とピボットは「水平線」の説明に集約） */
+  function annotateTerms(root) {
+    if (!root || !document.createTreeWalker) return;
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) {
+      if (!n.nodeValue || !/(R1|R2|S1|S2|SMA|ATR|ピボット)/.test(n.nodeValue)) return NodeFilter.FILTER_REJECT;
+      var p = n.parentElement; if (!p || p.closest("a,button,.gl-term")) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    } });
+    var nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function (n) {
+      var frag = document.createDocumentFragment(), text = n.nodeValue, re = /(R1|R2|S1|S2|SMA|ATR|ピボット)/g, m, last = 0;
+      while ((m = re.exec(text))) {
+        if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+        var b = document.createElement("button"); b.type = "button"; b.className = "gl-term"; b.textContent = m[0];
+        b.setAttribute("data-gt", m[0] === "SMA" ? "SMA" : m[0] === "ATR" ? "ATR" : "水平線");
+        b.setAttribute("aria-label", "用語集：" + m[0]);
+        frag.appendChild(b); last = m.index + m[0].length;
+      }
+      if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+      if (n.parentNode) n.parentNode.replaceChild(frag, n);
+    });
+  }
+  document.addEventListener("click", function (e) { var b = e.target && e.target.closest ? e.target.closest(".gl-term") : null; if (!b) return; e.preventDefault(); if (window.openGlossary) window.openGlossary(b.getAttribute("data-gt") || ""); });
   function ptRows() {
     if (document.hidden) return;
     var tabs = document.querySelector("#points > .pm-tabs"), bodyEl = document.querySelector("#pt-map .pm-body"); if (!tabs) return;
@@ -5653,6 +5684,8 @@ window.renderAirHome = renderAirHome;
     setText(foot, (u ? "分析 " + (stale ? MDHM(u) : stampAt(u)) + "時点" + (stale ? "（更新が止まっています）" : "") + "・" : "") + "水準＝ダッシュボードの水平線・目線＝H1の120SMAの上下・接近＝ゴールド" + PT_NEAR_TXT.gold + "・ドル円" + PT_NEAR_TXT.usdjpy + "・BTC" + PT_NEAR_TXT.btc + "・オイル" + PT_NEAR_TXT.usoil + "以内・" + updAt(new Date(ptShownAt)));
     foot.style.color = stale ? "var(--up-red)" : "";
     if (market) renderStrategy();  // 戦略文も同じ材料（目線・値幅・答え合わせ）に追随
+    annotateTerms(bodyEl);
+    annotateTerms(document.querySelector('#pt-strat [data-pt="5p"]'));
   }
   document.querySelector("#points > .pm-tabs").addEventListener("click", function (e) { var b = e.target.closest("[data-pmt]"); if (!b) return; ptTab = b.getAttribute("data-pmt"); ptTabByUser = true; ptRows(); });
   function refreshPoints() { ptRows(); }
