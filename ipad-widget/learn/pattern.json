@@ -3948,6 +3948,26 @@
       "pattern:p-takeprofit-cards",
       "pattern:p-stoploss-cards"
      ]
+    },
+    {
+     "id": "p-fakebreak-cards",
+     "name": "安値割れの後の戻り ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "何度も反応した安値を一時的に割った直後、すぐ戻る動きが出ることがあります。下抜け後の戻り方を見る、1枚の図解カードです。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/fakebreak-1.jpg",
+       "安値を割った直後、すぐ戻る動きに注目"
+      ]
+     ],
+     "rel": [
+      "pattern:p-stoploss-cards",
+      "pattern:p-order-cards"
+     ]
     }
    ]
   },
