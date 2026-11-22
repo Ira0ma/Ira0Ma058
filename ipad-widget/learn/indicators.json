@@ -238,6 +238,25 @@
      ]
     },
     {
+     "id": "ind-granville-overview",
+     "name": "グランビルの法則 ― 形と値動き（総覧）",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "グランビルの8つの基本形を、形だけでなく値動きの強弱とセットで見るための総覧カードです。詳しい場面別の整理は、次の図解カードに続きます。"
+      ],
+      [
+       "fig",
+       "learn/fig/indicators/granville-overview.jpg",
+       "グランビルの法則 「形」と「値動き」をセットで見る"
+      ]
+     ],
+     "rel": [
+      "indicators:ind-granville-cards"
+     ]
+    },
+    {
      "id": "ind-granville-cards",
      "name": "グランビルの法則 ― 図解カード",
      "guide": true,
