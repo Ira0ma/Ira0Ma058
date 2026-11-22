@@ -3584,6 +3584,26 @@
       "pattern:p-reversal-cards",
       "pattern:p-rebound2-cards"
      ]
+    },
+    {
+     "id": "p-htf-cards",
+     "name": "上位足の流れと押し目 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "下落中の反発と、上昇トレンドの押し目を分けて見る考え方を、1枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/htf-1.jpg",
+       "上位足の流れが変わってから、押し目を狙う"
+      ]
+     ],
+     "rel": [
+      "pattern:p-falserev-cards",
+      "pattern:p-env-cards"
+     ]
     }
    ]
   },
