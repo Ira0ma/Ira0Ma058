@@ -3187,6 +3187,41 @@
      "yomi": "おおきなながれにそう"
     },
     {
+     "id": "p-env-cards",
+     "name": "環境認識 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "一つの時間足だけで全体を決めない、上位足と下位足を組み合わせた環境認識の見方を、4枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/env-1.jpg",
+       "環境認識には、“見送る”もある"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/env-2.jpg",
+       "小さな足のブレイク、その先は？"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/env-3.jpg",
+       "方向に加えて、値動きの強弱を見る"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/env-4.jpg",
+       "15分足の下降は、日足の押し目かも"
+      ]
+     ],
+     "rel": [
+      "pattern:p85",
+      "pattern:p-node-cards"
+     ]
+    },
+    {
      "id": "p-node-cards",
      "name": "節目と売りの入り方 ― 図解カード",
      "guide": true,
