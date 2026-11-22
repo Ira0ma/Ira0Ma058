@@ -1555,6 +1555,25 @@
      "rel": [
       "gold:gold-divergence-cards"
      ]
+    },
+    {
+     "id": "gold-turn-cards",
+     "name": "転換の初動の見方 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "4時間足の移動平均線と1時間足の値動きを重ねて、下げが続かなくなる場所から転換の初動を見る図解カードです。"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-turn-1.jpg",
+       "下げが続かない場所から、転換の初動を見る"
+      ]
+     ],
+     "rel": [
+      "gold:gold-basics-cards"
+     ]
     }
    ]
   },
