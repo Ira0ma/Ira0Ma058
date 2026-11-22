@@ -196,6 +196,41 @@
      ]
     },
     {
+     "id": "g-hline-cards",
+     "name": "水平線 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "意識される水平線の見つけ方と、反発を価格帯で待つ考え方を、4枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/hline-1.jpg",
+       "意識される水平線を見つける"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/hline-2.jpg",
+       "反発は「価格帯」で待つ"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/hline-3.jpg",
+       "ブレイクは「揃い方」を見る"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/hline-4.jpg",
+       "反発後のライン抜けを使う"
+      ]
+     ],
+     "rel": [
+      "pattern:g-levels",
+      "pattern:p72"
+     ]
+    },
+    {
      "id": "g-confirm",
      "name": "「似ている」と「完成」は別",
      "guide": true,
@@ -2891,6 +2926,41 @@
      "simple": "上昇トレンドの中でも、入る場所によって性格が違います。素材は局面を6つに分け、MA20とMA25の帯との位置で見ます。",
      "wait": "素材のメモでは、利を伸ばしやすいのは1つ目・2つ目・5つ目・6つ目とされます。3つ目は、エリオット波動の3波の終わりを見極める場面です。レンジの中（4つ目）では無理に取引しない、という使い分けが素材の考え方です。境界ははっきりしないので、今どの局面かは断定せず、当たりを付ける程度に使います。",
      "yomi": "とれんどのろっつのきょくめん"
+    },
+    {
+     "id": "p-trend-cards",
+     "name": "トレンドの見方 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "トレンドは強い動きではなく、途中の弱い調整（逆向きの波）の残り方で読みます。調整の見方と損切りの置き方を、4枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/trend-1.jpg",
+       "強い動きより、弱い調整を見る"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/trend-2.jpg",
+       "調整は値幅と時間で見る"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/trend-3.jpg",
+       "調整のライン抜けを待つ"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/trend-4.jpg",
+       "損切りは、根拠が崩れる価格へ"
+      ]
+     ],
+     "rel": [
+      "pattern:p71",
+      "pattern:p-node-cards"
+     ]
     },
     {
      "aka": [
