@@ -1453,6 +1453,40 @@
       "src": "learn/fig/gold/desk.svg",
       "alt": "スコアや通知は、利益の保証ではない"
      }
+    },
+    {
+     "id": "gold-mtf-cards",
+     "name": "長期の流れから読む ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "ゴールドのチャートを、長期足から短期足へ読む順番を、4枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-mtf-1.jpg",
+       "強い上昇だけで、買いを決めない（1時間足）"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-mtf-2.jpg",
+       "日足の抵抗帯まで、視野を広げる"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-mtf-3.jpg",
+       "上で売り戻された形を読む（日足）"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-mtf-4.jpg",
+       "短期の勢いより、まず長期の流れ（月足）"
+      ]
+     ],
+     "rel": [
+      "gold:gold-intro-60"
+     ]
     }
    ]
   },
