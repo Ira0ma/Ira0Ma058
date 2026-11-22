@@ -1009,6 +1009,40 @@
      ]
     },
     {
+     "id": "p-asetora-cards",
+     "name": "アセンディングトライアングル ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "上辺が水平で、下辺が切り上がる形。アセンディングトライアングル（アセトラ）の見分け方を、4枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/asetora-1.jpg",
+       "三角保ち合いは、抜け方まで確認する"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/asetora-2.jpg",
+       "高値はそろう。安値は切り上がる"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/asetora-3.jpg",
+       "押しが浅くなると、何が見えてくる？"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/asetora-4.jpg",
+       "似ていても違う。アセトラと上昇ウェッジ"
+      ]
+     ],
+     "rel": [
+      "pattern:p-triangle-cards"
+     ]
+    },
+    {
      "id": "p-channel-cards",
      "name": "チャネルとライン ― 図解カード",
      "guide": true,
