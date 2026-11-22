@@ -3442,6 +3442,35 @@
      "rel": [
       "pattern:p-recovery-cards"
      ]
+    },
+    {
+     "id": "p-rebound2-cards",
+     "name": "リバウンドの見方 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "下げの勢いと戻す力を見比べる、リバウンドの観察の仕方を、3枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/rebound2-1.jpg",
+       "下げの勢いと、戻す力を見比べる"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/rebound2-2.jpg",
+       "短期MAを超えたら、次の押しを待つ"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/rebound2-3.jpg",
+       "反発を取るなら、利確の位置も先に決める"
+      ]
+     ],
+     "rel": [
+      "pattern:p-rebound-cards"
+     ]
     }
    ]
   },

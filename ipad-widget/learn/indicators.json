@@ -190,6 +190,41 @@
      ]
     },
     {
+     "id": "ind-divergence-cards",
+     "name": "乖離と逆張りの見方 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "移動平均線から離れたからといって、すぐ戻るとは限りません。乖離の大きさと値動きの強弱をセットで見る考え方を、4枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/indicators/ma-div-1.jpg",
+       "離れたから戻る、とは限らない"
+      ],
+      [
+       "fig",
+       "learn/fig/indicators/ma-div-2.jpg",
+       "下げ方と戻し方を、セットで比べる"
+      ],
+      [
+       "fig",
+       "learn/fig/indicators/ma-div-3.jpg",
+       "節目で、反発のきっかけを探す"
+      ],
+      [
+       "fig",
+       "learn/fig/indicators/ma-div-4.jpg",
+       "逆張りは、根拠が重なるまで待つ"
+      ]
+     ],
+     "rel": [
+      "indicators:ind-08",
+      "indicators:ind-06"
+     ]
+    },
+    {
      "id": "ind-09",
      "no": 9,
      "name": "ゴールデンクロスとデッドクロスの正直な読み方",
