@@ -3501,6 +3501,36 @@
      "rel": [
       "pattern:p-rebound-cards"
      ]
+    },
+    {
+     "id": "p-falserev-cards",
+     "name": "反転に見える場面 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "下位足の上昇が反転に見えても、上位足では下落途中の戻りのことがあります。目の前の上昇と大きな流れを分けて見る、3枚の図解カードです。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/falserev-1.jpg",
+       "安値が上がっても、反転とは限らない"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/falserev-2.jpg",
+       "チャネルの下抜けで、見方を切り替える"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/falserev-3.jpg",
+       "1時間足の上昇を、4時間足で確かめる"
+      ]
+     ],
+     "rel": [
+      "pattern:p-reversal-cards",
+      "pattern:p-rebound2-cards"
+     ]
     }
    ]
   },
