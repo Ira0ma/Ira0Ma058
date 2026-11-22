@@ -231,6 +231,41 @@
      ]
     },
     {
+     "id": "g-wick-cards",
+     "name": "ヒゲと実体の基準 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "ラインを引くときに、ヒゲ先と実体のどちらを基準にするか。反応した範囲を帯で捉える見方を、4枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/wick-1.jpg",
+       "ヒゲ先と実体、どこを基準に見る？"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/wick-2.jpg",
+       "ヒゲ先のラインに、届かず反落する例"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/wick-3.jpg",
+       "実体の線を越えても、突破とは限らない"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/wick-4.jpg",
+       "ヒゲ先から実体まで、帯で捉える"
+      ]
+     ],
+     "rel": [
+      "pattern:g-hline-cards",
+      "pattern:g-candles"
+     ]
+    },
+    {
      "id": "g-confirm",
      "name": "「似ている」と「完成」は別",
      "guide": true,
