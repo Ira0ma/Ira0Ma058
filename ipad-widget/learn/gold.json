@@ -1487,6 +1487,40 @@
      "rel": [
       "gold:gold-intro-60"
      ]
+    },
+    {
+     "id": "gold-divergence-cards",
+     "name": "乖離と逆張りの見方 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "移動平均線との乖離だけで逆張りしない見方を、ゴールド15分足の図解カード4枚でまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-div-1.jpg",
+       "離れたから、売る。その判断は早い"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-div-2.jpg",
+       "収束＝価格が戻る、ではない"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-div-3.jpg",
+       "逆張りは、勢いの変化を待つ"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-div-4.jpg",
+       "下落は、崩れを確認してから"
+      ]
+     ],
+     "rel": [
+      "gold:gold-mtf-cards"
+     ]
     }
    ]
   },
