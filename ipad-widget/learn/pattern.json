@@ -3822,6 +3822,25 @@
      ]
     },
     {
+     "id": "g-growth-cards",
+     "name": "学びと成果の伸び方 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "学びが増えても、成果は一直線には伸びません。迷いと停滞の中で理解がつながることもある、という学び方の見取り図です。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/growth-1.jpg",
+       "学びは増えても、成果は一直線に伸びない"
+      ]
+     ],
+     "rel": [
+      "pattern:g-practice"
+     ]
+    },
+    {
      "id": "g-terms",
      "name": "困ったら、この言葉だけ",
      "guide": true,
