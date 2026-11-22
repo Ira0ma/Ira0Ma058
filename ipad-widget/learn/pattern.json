@@ -3968,6 +3968,26 @@
       "pattern:p-stoploss-cards",
       "pattern:p-order-cards"
      ]
+    },
+    {
+     "id": "p-speed-cards",
+     "name": "上げ下げの速さと勢い ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "上げ下げの幅だけでなく、速さとローソク足の形を比べる見方を、1枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/speed-1.jpg",
+       "上げは速く、下げはゆっくり。勢いの差を見る"
+      ]
+     ],
+     "rel": [
+      "pattern:p-recovery-cards",
+      "pattern:p-fakebreak-cards"
+     ]
     }
    ]
   },
