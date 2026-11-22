@@ -3776,6 +3776,26 @@
      "rel": [
       "pattern:p-stoploss-cards"
      ]
+    },
+    {
+     "id": "p-order-cards",
+     "name": "到達する順番と出口 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "方向だけでなく、利確と損切りのどちらに先に届くか。入る前に出口まで決めておく考え方を、1枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/order-1.jpg",
+       "方向だけでなく、到達する順番を見る"
+      ]
+     ],
+     "rel": [
+      "pattern:p-takeprofit-cards",
+      "pattern:p-stoploss-cards"
+     ]
     }
    ]
   },
