@@ -3344,6 +3344,41 @@
      "rel": [
       "pattern:p-reversal-cards"
      ]
+    },
+    {
+     "id": "p-recovery-cards",
+     "name": "急落後の戻り方 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "急落のあとは、下げた事実だけでなく、どこまで・どんな勢いで戻したかを見ます。戻りの弱さの読み方を、4枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/recovery-1.jpg",
+       "急落の後は、戻り方を比べる"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/recovery-2.jpg",
+       "急落の値幅内に、戻りが収まっている"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/recovery-3.jpg",
+       "戻りの弱さに、移動平均線を重ねる"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/recovery-4.jpg",
+       "支えを割った後に、下落の再開を確かめる"
+      ]
+     ],
+     "rel": [
+      "pattern:p-surge-cards",
+      "pattern:p-reversal-cards"
+     ]
     }
    ]
   },
