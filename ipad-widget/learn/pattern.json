@@ -4007,6 +4007,30 @@
       "pattern:p-recovery-cards",
       "pattern:p-fakebreak-cards"
      ]
+    },
+    {
+     "id": "p-speed2-cards",
+     "name": "速さと下げ方の見方 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "上昇と下落の速さを比べ、強い上昇のあとの下げ方（本数・実体の大きさ・途中の反発）を見る、2枚の図解カードです。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/speed2-1.jpg",
+       "上昇と下落の「速さ」を比べる"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/speed2-2.jpg",
+       "強い上昇のあと、下げ方を見る"
+      ]
+     ],
+     "rel": [
+      "pattern:p-speed-cards"
+     ]
     }
    ]
   },
