@@ -1044,6 +1044,36 @@
      ]
     },
     {
+     "id": "p-range-cards",
+     "name": "レンジの見方 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "方向が出ない相場では、中央で追わず、上限と下限を帯で捉えて待つ見方を、3枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/range-1.jpg",
+       "方向が出ないときは、中央で追わない"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/range-2.jpg",
+       "上限と下限を、線ではなく帯で捉える"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/range-3.jpg",
+       "下限まで待ち、出口を決めてから入る"
+      ]
+     ],
+     "rel": [
+      "pattern:p-channel-cards",
+      "pattern:p12"
+     ]
+    },
+    {
      "id": "p17",
      "no": 17,
      "name": "レクタングル",
