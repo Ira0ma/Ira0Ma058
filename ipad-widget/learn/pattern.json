@@ -3085,6 +3085,31 @@
       "pattern:p72",
       "pattern:p75"
      ]
+    },
+    {
+     "id": "p-reversal-cards",
+     "name": "弱い戻りと転換の見方 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "急落を追わず弱い戻りを待つ入り方と、ピンバーだけで転換を決めない見方を、2枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/reversal-1.jpg",
+       "急落を追わず、弱い戻りを待つ"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/reversal-2.jpg",
+       "ピンバーだけで、転換を決めない"
+      ]
+     ],
+     "rel": [
+      "pattern:p-node-cards",
+      "pattern:p72"
+     ]
     }
    ]
   },
