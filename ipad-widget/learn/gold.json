@@ -1521,6 +1521,40 @@
      "rel": [
       "gold:gold-mtf-cards"
      ]
+    },
+    {
+     "id": "gold-basics-cards",
+     "name": "トレードの基本 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "急騰・急落への逆張りの戒めから、順張りで収束後の動きを待つ考え方まで、ゴールドのトレードの基本を4枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-basic-1.jpg",
+       "急騰・急落に、逆張りで飛びつかない"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-basic-2.jpg",
+       "抜けた瞬間より、戻りの反応を見る"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-basic-3.jpg",
+       "水平線は、過去の反応から選ぶ"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-basic-4.jpg",
+       "順張りは、収束後の動きを待つ"
+      ]
+     ],
+     "rel": [
+      "gold:gold-divergence-cards"
+     ]
     }
    ]
   },
