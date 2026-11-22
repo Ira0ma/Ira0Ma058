@@ -236,6 +236,36 @@
       "indicators:ind-10",
       "indicators:ind-09"
      ]
+    },
+    {
+     "id": "ind-granville-cards",
+     "name": "グランビルの法則 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "8つの基本形を1枚にまとめた図解カード、⑤・⑦を例に「値動きの強弱」を読むカード、着眼点で整理したまとめカードの3枚です。文章での説明は、前の項目「グランビルの法則 ― 移動平均線の8サイン」にあります。"
+      ],
+      [
+       "fig",
+       "learn/fig/indicators/granville-1.jpg",
+       "グランビルの法則 ― 8つの基本形"
+      ],
+      [
+       "fig",
+       "learn/fig/indicators/granville-2.jpg",
+       "形に加えて、値動きの強弱を読む（下抜けと戻り売りの例）"
+      ],
+      [
+       "fig",
+       "learn/fig/indicators/granville-3.jpg",
+       "グランビルの法則を、8つの場面で整理"
+      ]
+     ],
+     "rel": [
+      "indicators:ind-granville-8",
+      "indicators:ind-10"
+     ]
     }
    ]
   },

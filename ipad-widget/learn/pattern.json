@@ -148,6 +148,25 @@
      ]
     },
     {
+     "id": "g-candles-cards",
+     "name": "ローソク足 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "2本の組み合わせで読む6つの型（スラストアップ・スラストダウン・リバーサル・インサイド・アウトサイド）を、1枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/candles-1.jpg",
+       "ローソク足は、組み合わせで読む"
+      ]
+     ],
+     "rel": [
+      "pattern:g-candles"
+     ]
+    },
+    {
      "id": "g-levels",
      "name": "よく止まる場所は「床」と「天井」",
      "guide": true,
@@ -316,6 +335,26 @@
       "fx:ネックライン"
      ],
      "yomi": "さんぞんてんじょう"
+    },
+    {
+     "id": "p-sanzon-cards",
+     "name": "三尊 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "三尊の基本形から持ち合い型・ウェッジ型・トリプルトップまで、周囲の形の違いを比べる図解カードです。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/sanzon-12.jpg",
+       "三尊は、周囲の形まで見る（12パターンの比較）"
+      ]
+     ],
+     "rel": [
+      "pattern:p01",
+      "pattern:p02"
+     ]
     },
     {
      "id": "p02",
@@ -828,6 +867,42 @@
       "pattern:p21"
      ],
      "yomi": "たいしょうさんかくけい"
+    },
+    {
+     "id": "p-triangle-cards",
+     "name": "三角保ち合い ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "対称三角形とアセンディングトライアングル（アセトラ）の違い、アセトラの読み方、上昇ウェッジとの見分け方を、4枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/triangle-1.jpg",
+       "三角保ち合いは、形の違いから見る"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/triangle-2.jpg",
+       "アセトラの基本は、水平な高値と切り上がる安値"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/triangle-3.jpg",
+       "安値の切り上がりから、買いの強さを読む"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/triangle-4.jpg",
+       "アセトラとウェッジを、見間違えない"
+      ]
+     ],
+     "rel": [
+      "pattern:p14",
+      "pattern:p16",
+      "pattern:p11"
+     ]
     },
     {
      "id": "p17",
@@ -2464,6 +2539,26 @@
      ]
     },
     {
+     "id": "p-elliott-cards",
+     "name": "エリオット波動 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "推進波（インパルス）を数えるときの3つの基本ルールを、1枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/elliott-1.jpg",
+       "推進波を数える、3つの基本"
+      ]
+     ],
+     "rel": [
+      "pattern:p64",
+      "pattern:p63"
+     ]
+    },
+    {
      "id": "p65",
      "no": 65,
      "name": "N波動",
@@ -3249,6 +3344,41 @@
      "simple": "大量の買いが入って垂直に近く急上昇し、買いが止まったところから反落する、天井の型です。一番買っているのは、たいてい一番遅い組です。",
      "wait": "急上昇の最中には飛び乗らず、まず『止まったか』を見ます。止まったあとの戻りが、直前の上昇を超えられるかどうかが次の確認です。この章の読解ステップ（場所→捕まった人→否定→継続確認）の順で読むと、天井の読みが形だけに頼らずに済みます。",
      "yomi": "ばいいんぐくらいまっくす"
+    },
+    {
+     "id": "p-stoploss-cards",
+     "name": "損切りが集まる場所 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "損切り注文が集まりやすい場所と、安値を割ったあとの動きの読み方を、4枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/stoploss-1.jpg",
+       "損切りが集まりやすい場所を見る"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/stoploss-2.jpg",
+       "安値を割ったあと、戻るのはなぜ？"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/stoploss-3.jpg",
+       "巻き込まれないために、見る2つの場面"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/stoploss-4.jpg",
+       "下抜けだけで、結論を急がない"
+      ]
+     ],
+     "rel": [
+      "pattern:p76",
+      "pattern:p82"
+     ]
     }
    ]
   },
