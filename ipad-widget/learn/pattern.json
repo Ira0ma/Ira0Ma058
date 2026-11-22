@@ -300,6 +300,25 @@
      ]
     },
     {
+     "id": "g-zone-wait-cards",
+     "name": "待つ価格帯と下位足の反応 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "もみ合いから引いたゾーンへの再到達を確認し、下位足で反応を見る手順を、1枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/zonewait-1.jpg",
+       "待つ価格帯を決めて、下位足で反応を見る"
+      ]
+     ],
+     "rel": [
+      "pattern:g-zone-cards"
+     ]
+    },
+    {
      "id": "g-confirm",
      "name": "「似ている」と「完成」は別",
      "guide": true,
