@@ -3245,6 +3245,35 @@
       "pattern:p-node-cards",
       "pattern:p72"
      ]
+    },
+    {
+     "id": "p-surge-cards",
+     "name": "急騰・急落と反転の見方 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "急騰・急落の途中で反転を決めつけない見方を、Desk One仕様の図解カード3枚でまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/surge-1.jpg",
+       "急騰・急落の途中で、反転を決めつけない"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/surge-2.jpg",
+       "急落のあと、すぐV字とは限らない"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/surge-3.jpg",
+       "高値・安値の“更新幅”に注目"
+      ]
+     ],
+     "rel": [
+      "pattern:p-reversal-cards"
+     ]
     }
    ]
   },
