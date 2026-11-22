@@ -2594,6 +2594,36 @@
      ]
     },
     {
+     "id": "p-elliott-rules-cards",
+     "name": "エリオット波動の数え方 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "推進5波と修正3波の流れの見方と、波を数えるときの2つのルールを、3枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/elliott-rule-1.jpg",
+       "波を数える前に、「5＋3」の流れを見る"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/elliott-rule-2.jpg",
+       "第3波は、「最短にならない」"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/elliott-rule-3.jpg",
+       "第4波は、第1波の価格帯に入らない"
+      ]
+     ],
+     "rel": [
+      "pattern:p-elliott-cards",
+      "pattern:p64"
+     ]
+    },
+    {
      "id": "p65",
      "no": 65,
      "name": "N波動",
