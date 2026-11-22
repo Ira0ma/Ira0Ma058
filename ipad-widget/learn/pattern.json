@@ -940,6 +940,41 @@
      ]
     },
     {
+     "id": "p-channel-cards",
+     "name": "チャネルとライン ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "ラインに触れただけで逆張りしない見方と、チャネルを抜けた後の反応の見方を、4枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/channel-1.jpg",
+       "ラインに触れた。それだけで売る？"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/channel-2.jpg",
+       "逆張りを考える前に、勢いの変化を見る"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/channel-3.jpg",
+       "チャネルは、抜けた後の反応まで見る"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/channel-4.jpg",
+       "反転しても、大きく落ちるとは限らない"
+      ]
+     ],
+     "rel": [
+      "pattern:p-triangle-cards",
+      "pattern:p13"
+     ]
+    },
+    {
      "id": "p17",
      "no": 17,
      "name": "レクタングル",
