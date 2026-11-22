@@ -3413,6 +3413,35 @@
       "pattern:p-surge-cards",
       "pattern:p-reversal-cards"
      ]
+    },
+    {
+     "id": "p-rebound-cards",
+     "name": "急落後の戻し方（リバウンド） ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "急落のあとは、下げ止まりの形と、その後に続く値動きを見ます。短期MAとの位置や、反発の出口まで含めた見方を、3枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/rebound-1.jpg",
+       "急落後は「戻し方」に注目する"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/rebound-2.jpg",
+       "上抜けのあと、支えに変わるかを見る"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/rebound-3.jpg",
+       "下落中の反発は、出口までセットで考える"
+      ]
+     ],
+     "rel": [
+      "pattern:p-recovery-cards"
+     ]
     }
    ]
   },
