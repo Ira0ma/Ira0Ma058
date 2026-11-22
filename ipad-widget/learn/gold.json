@@ -1579,6 +1579,40 @@
      "rel": [
       "gold:gold-basics-cards"
      ]
+    },
+    {
+     "id": "gold-bounce-cards",
+     "name": "反発した価格帯と2番底 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "4時間足の急反発が起きた価格帯を目安に、2番底と下位足の切り返しを確認する買いの組み立てを、4枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-bounce-1.jpg",
+       "急反発した価格帯で、2番底を待つ"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-bounce-2.jpg",
+       "4時間足の長い下ヒゲを、待つ場所の目安に"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-bounce-3.jpg",
+       "待っていた価格帯に到達。ここで下位足を見る"
+      ],
+      [
+       "fig",
+       "learn/fig/gold/gold-bounce-4.jpg",
+       "1分足で切り返しを確認してから入る"
+      ]
+     ],
+     "rel": [
+      "gold:gold-turn-cards"
+     ]
     }
    ]
   },
