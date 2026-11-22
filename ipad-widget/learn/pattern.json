@@ -3379,6 +3379,40 @@
       "pattern:p76",
       "pattern:p82"
      ]
+    },
+    {
+     "id": "p-takeprofit-cards",
+     "name": "利確の考え方 ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "完璧な利確を目指さない考え方と、分割利確の使い方を、4枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/takeprofit-1.jpg",
+       "完璧な利確を目指さない"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/takeprofit-2.jpg",
+       "利益は取り切ろうとしない"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/takeprofit-3.jpg",
+       "半分は安心に、半分は根拠に（分割利確の使い方）"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/takeprofit-4.jpg",
+       "短期と長期で出口を分ける（分割利確の応用）"
+      ]
+     ],
+     "rel": [
+      "pattern:p-stoploss-cards"
+     ]
     }
    ]
   },
