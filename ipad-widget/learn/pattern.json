@@ -266,6 +266,40 @@
      ]
     },
     {
+     "id": "g-zone-cards",
+     "name": "線より帯で捉える ― 図解カード",
+     "guide": true,
+     "blocks": [
+      [
+       "p",
+       "一本の線への到達だけで判断せず、反応した価格の幅を帯（ゾーン）で捉える見方を、4枚の図解カードでまとめます。"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/zone-1.jpg",
+       "一本の線だけだと、反応を見落とす"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/zone-2.jpg",
+       "ヒゲ先と実体を、ひとつの帯で捉える"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/zone-3.jpg",
+       "ゾーンに入ったら、次の値動きを見る"
+      ],
+      [
+       "fig",
+       "learn/fig/pattern/zone-4.jpg",
+       "利確も、一本線への到達にこだわらない"
+      ]
+     ],
+     "rel": [
+      "pattern:g-wick-cards"
+     ]
+    },
+    {
      "id": "g-confirm",
      "name": "「似ている」と「完成」は別",
      "guide": true,
