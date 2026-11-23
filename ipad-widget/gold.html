@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="7f57b50481">
+<meta name="build" content="6bb88d08b9">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -257,6 +257,8 @@ i.time{font-style:normal;font-size:10.5px;color:#9fe7c4;background:rgba(66,213,1
 .al-sw i{position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#8796a5;transition:left .15s}
 .al-sw[aria-pressed="true"]{background:#2f6fe4;border-color:#3d7bf0}.al-sw[aria-pressed="true"] i{left:21px;background:#fff}
 .alerthist{margin-top:10px;font-size:12px}.alerthist b{display:block;margin-bottom:4px}.alerthist .sub div{padding:3px 0;border-bottom:1px solid #1a222b}
+#smcBtn[hidden]{display:none}
+#smcChartGuide[hidden]{display:none}
 .smcguide summary{font-size:12px}
 .smcg{font-size:12px;line-height:1.7;color:#cbd6e0;padding-bottom:10px}.smcg p{margin:6px 0}
 .smcg dl{margin:6px 0;display:grid;gap:4px}.smcg dt{font-weight:900;font-size:13px;margin-top:4px}.smcg dt small{font-weight:600;font-size:10.5px;color:var(--muted);margin-left:6px}
@@ -891,7 +893,7 @@ html.nd .shell>footer{grid-area:foot}
     <div class="ctlPanel"><div class="combo" id="comboRow" role="group" aria-label="組み合わせ（インジケーターのチップを一括で切り替える）"><span class="cl">組み合わせ<small id="comboNow" class="cn" aria-live="polite"></small></span><span id="comboBtns" class="cb"></span><button type="button" id="btnHelp" class="helpbtn">？ 説明</button></div>
     <div class="tfcap">時間足｜下段＝ダウ理論のトレンドとST（スーパートレンド）の向き（別の見方なので、逆を向くことがあります）</div>
     <div id="tfGrid" class="tfgrid" role="group" aria-label="時間足"></div>
-    <div class="matoggles" role="group" aria-label="チャートの表示"><span class="ctlLab">表示</span><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button><button type="button" id="fvgBtn" class="seg on" aria-pressed="true" title="FVG（3本の足で、1本目と3本目の値幅が重ならない帯）を表示"><i style="height:8px;background:linear-gradient(90deg,rgba(66,213,156,.55) 50%,rgba(255,105,105,.55) 50%)"></i>FVG</button></div><div class="matoggles featrow" role="group" aria-label="機能"><span class="ctlLab">機能</span><button type="button" id="spBtn" class="seg on" aria-pressed="true" title="要人発言の予定（チャート内の縦線と札）を表示"><i style="background:#b9a6ff"></i>発言</button><button type="button" id="planBtn" class="seg on" aria-pressed="true" title="リスク計算のプラン（エントリー・SL・TP）をチャートに描く"><i style="background:#e3b341"></i>プラン</button><button type="button" id="guardBtn" class="seg on" aria-pressed="true" title="エントリー前の注意（重要指標・発言・急変）をチャートの上に表示"><i style="background:#ffb547"></i>ガード</button><button type="button" id="recBtn" class="seg on" aria-pressed="true" title="「このプランで記録」ボタンの表示"><i style="background:#42d59c"></i>記録</button></div></div><div id="btnHelpSheet" class="helpsheet" hidden><div class="helpbox"><button type="button" id="btnHelpClose" class="seg helpclose">閉じる</button><h3>チャートのボタンの説明</h3><div class="sub">このダッシュボードに実際にあるボタンだけを説明します。表示のボタンは押すたびにオン／オフが切り替わり、状態は保存されます。</div><div style="margin:8px 0 2px"><a class="headvideo" href="learn/videos/chart-buttons-cinematic.mp4" target="_blank" rel="noopener" title="チャートのボタンの説明アニメ">▶ チャートのボタンのアニメで見る</a></div><div id="btnHelpList"></div></div></div>
+    <div class="matoggles" role="group" aria-label="チャートの表示"><span class="ctlLab">表示</span><span id="maToggles" style="display:contents"></span><button type="button" id="lvBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff6969 50%,#42d59c 50%)"></i>水平線</button><button type="button" id="tlBtn" class="seg on" aria-pressed="true"><i style="background:linear-gradient(90deg,#38e0d0 50%,#c56bff 50%)"></i>トレンドライン</button><button type="button" id="fvgBtn" class="seg on" aria-pressed="true" title="FVG（3本の足で、1本目と3本目の値幅が重ならない帯）を表示"><i style="height:8px;background:linear-gradient(90deg,rgba(66,213,156,.55) 50%,rgba(255,105,105,.55) 50%)"></i>FVG</button><button type="button" id="smcBtn" class="seg on" aria-pressed="true" title="SMC（スマートマネーコンセプト：構造・オーダーブロック・FVG・流動性）をチャートに描く（ゴールドのみ）" hidden><i style="background:linear-gradient(90deg,#5cc8ff 50%,#ffd166 50%)"></i>SMC</button></div><div class="matoggles featrow" role="group" aria-label="機能"><span class="ctlLab">機能</span><button type="button" id="spBtn" class="seg on" aria-pressed="true" title="要人発言の予定（チャート内の縦線と札）を表示"><i style="background:#b9a6ff"></i>発言</button><button type="button" id="planBtn" class="seg on" aria-pressed="true" title="リスク計算のプラン（エントリー・SL・TP）をチャートに描く"><i style="background:#e3b341"></i>プラン</button><button type="button" id="guardBtn" class="seg on" aria-pressed="true" title="エントリー前の注意（重要指標・発言・急変）をチャートの上に表示"><i style="background:#ffb547"></i>ガード</button><button type="button" id="recBtn" class="seg on" aria-pressed="true" title="「このプランで記録」ボタンの表示"><i style="background:#42d59c"></i>記録</button></div></div><div id="btnHelpSheet" class="helpsheet" hidden><div class="helpbox"><button type="button" id="btnHelpClose" class="seg helpclose">閉じる</button><h3>チャートのボタンの説明</h3><div class="sub">このダッシュボードに実際にあるボタンだけを説明します。表示のボタンは押すたびにオン／オフが切り替わり、状態は保存されます。</div><div style="margin:8px 0 2px"><a class="headvideo" href="learn/videos/chart-buttons-cinematic.mp4" target="_blank" rel="noopener" title="チャートのボタンの説明アニメ">▶ チャートのボタンのアニメで見る</a></div><div id="btnHelpList"></div></div></div>
     <div id="lvList" class="lvlist" role="group" aria-label="水平線を1本ずつ消す・戻す" hidden></div>
     <div id="chNow" class="chnow" role="group" aria-label="時間足ごとのチャネル" hidden></div>
     <div id="fibNow" class="fibnow" role="status" hidden></div>
@@ -901,6 +903,27 @@ html.nd .shell>footer{grid-area:foot}
     <canvas id="rsi" aria-label="RSI(14)"></canvas>
     <canvas id="atrPane" aria-label="ATR(14)"></canvas>
     <div id="chartInfo" class="chartinfo">--</div>
+    <details class="smcguide" id="smcChartGuide" hidden>
+      <summary>SMC（スマートマネーコンセプト）の見方（説明）</summary>
+      <div class="smcg">
+        <p>チャートの形から「大きな参加者が意識していそうな価格帯」を読むための目安を、表示中の時間足のローソク足から自動で計算して描いたものです（ゴールドだけに表示します）。上の「SMC」ボタンで消せます。</p>
+        <dl>
+          <dt>OB<small>オーダーブロック</small></dt>
+          <dd>大きく動く直前にあった、最後の逆向きの足の範囲（箱）です。価格が戻ってきたときに止まったり反発したりすることがある場所として見ます。終値で完全に抜けた箱は消えます。</dd>
+          <dt>FVG<small>フェアバリューギャップ</small></dt>
+          <dd>3本の足のあいだにできた「窓」（値幅が重ならない隙間）です。価格が戻って埋めに来やすい場所として見ます。埋まったら消えます。</dd>
+          <dt class="bos">BOS<small>ボス／構造のブレイク</small></dt>
+          <dd>今の流れと<b>同じ向き</b>に、直近の高値・安値を終値で抜けたこと。流れがまだ続いている合図です。</dd>
+          <dt class="choch">CHOCH<small>チョック／性格の変化</small></dt>
+          <dd>今の流れと<b>逆の向き</b>に、直近の高値・安値を終値で抜けたこと。流れが変わり始めたかもしれない合図です。</dd>
+          <dt>流動性</dt>
+          <dd>同じくらいの高値（安値）が2つ並んだ場所（点線）です。損切りの注文が集まりやすいと考えられ、価格が一時的に吸い寄せられることがあります。</dd>
+          <dt>サプライ／デマンド</dt>
+          <dd>現在値の上にある直近のOBに「サプライ」、下にある直近のOBに「デマンド」の札を付けています。それぞれ、売り・買いの注文が残っていそうな帯という意味です。</dd>
+        </dl>
+        <p class="sub">すべて自動計算の目安であり、価格がその場所で必ず反応する保証はありません。売買の指示や推奨ではありません。</p>
+      </div>
+    </details>
     <details id="tvLayoutBox" class="tvlayout">
       <summary>TradingView の保存チャート<span id="tvLayoutState"></span></summary>
       <div class="tvl">
@@ -1584,6 +1607,7 @@ function loadPrefs(){
   state.showLevels=lsGet(LSP+'levels','1')==='1';
   state.showTrend=lsGet(LSP+'trend','1')==='1';
   state.showFvg=lsGet(LSP+'fvg','1')==='1';
+  state.showSmc=IS_GOLD&&lsGet(LSP+'smc','1')==='1';  // SMCのチャート描画はゴールドのみ（既定オン）
   state.showSpeech=lsGet(LSP+'speech','1')==='1';
   state.showPlan=lsGet(LSP+'plan','1')==='1';
   state.showGuard=lsGet(LSP+'guard','1')==='1';
@@ -1600,7 +1624,7 @@ function loadPrefs(){
 function savePrefs(){
   Object.entries(PREFS).forEach(([id,[k]])=>lsSet(k,$(id).value));
   lsSet(LSP+'auto_risk',$('autoRisk').checked?'1':'0');lsSet(LSP+'risk_mode',state.riskMode||'pct');
-  lsSet(LSP+'dir',state.dir);lsSet(LSP+'ev_filter',state.evFilter);lsSet(LSP+'tf',state.tf);lsSet(LSP+'levels',state.showLevels?'1':'0');lsSet(LSP+'trend',state.showTrend?'1':'0');lsSet(LSP+'fvg',state.showFvg?'1':'0');lsSet(LSP+'speech',state.showSpeech?'1':'0');lsSet(LSP+'plan',state.showPlan?'1':'0');lsSet(LSP+'guard',state.showGuard?'1':'0');lsSet(LSP+'rec',state.showRec?'1':'0');
+  lsSet(LSP+'dir',state.dir);lsSet(LSP+'ev_filter',state.evFilter);lsSet(LSP+'tf',state.tf);lsSet(LSP+'levels',state.showLevels?'1':'0');lsSet(LSP+'trend',state.showTrend?'1':'0');lsSet(LSP+'fvg',state.showFvg?'1':'0');lsSet(LSP+'smc',state.showSmc?'1':'0');lsSet(LSP+'speech',state.showSpeech?'1':'0');lsSet(LSP+'plan',state.showPlan?'1':'0');lsSet(LSP+'guard',state.showGuard?'1':'0');lsSet(LSP+'rec',state.showRec?'1':'0');
   lsSet(LSP+'broker',state.broker);lsSet(brokerKey('contract'),$('contract').value);lsSet(brokerKey('lev'),$('leverage').value);lsSet(brokerKey('spread'),$('spread').value);
   updateBrokerLabels();
 }
@@ -2704,6 +2728,75 @@ function fvgZones(bars,maxEach=5){
     z.reach=reach;out.push(z);
   }
   return [...out.filter(z=>z.dir>0).slice(-maxEach),...out.filter(z=>z.dir<0).slice(-maxEach)];
+}
+// SMC（スマートマネーコンセプト）のチャート描画用計算（ゴールドのみ・表示中の時間足の足から機械計算）
+// スイングはフラクタル（左右2本）。構造ブレイクは終値判定で、流れと同じ向きはBOS、逆向きの初回はCHOCH。
+// OBは「構造ブレイクを伴う大きな動き（displacement）の直前にある最後の逆向き足」の範囲。
+// 消化された要素（終値で完全に抜けたOB・埋まったFVG）は残さない。上限はOB4件・FVG4件・構造ラベル6件
+let smcChartCache={k:'',v:null};
+function smcChart(bars){
+  const n=bars.length,k=n+':'+state.tf+':'+(bars.at(-1)?.t)+':'+(bars.at(-1)?.c);
+  if(smcChartCache.k===k)return smcChartCache.v;
+  const out={obs:[],fvgs:[],evs:[],liqH:null,liqL:null};
+  if(n<10){smcChartCache={k,v:out};return out}
+  const A=atr(bars.slice(-160)),tol=Math.max(INSTR.tolMin,A*.2),K=2,swH=[],swL=[];
+  for(let j=K;j+K<n;j++){
+    let isH=true,isL=true;
+    for(let q=j-K;q<=j+K;q++){if(q===j)continue;if(bars[q].h>bars[j].h)isH=false;if(bars[q].l<bars[j].l)isL=false}
+    if(isH)swH.push({i:j,p:bars[j].h});if(isL)swL.push({i:j,p:bars[j].l});
+  }
+  // 構造ブレイク：スイングは確定した（右側2本が出た）順に使い、終値で抜けたら消費する
+  let trend=0,hi=null,lo=null,hp=0,lp=0;const rawObs=[];
+  for(let i=0;i<n;i++){
+    while(hp<swH.length&&swH[hp].i+K<=i){hi=swH[hp];hp++}
+    while(lp<swL.length&&swL[lp].i+K<=i){lo=swL[lp];lp++}
+    const c=bars[i].c;let ev=null;
+    if(hi&&c>hi.p)ev={dir:1,i,p:hi.p,si:hi.i};else if(lo&&c<lo.p)ev={dir:-1,i,p:lo.p,si:lo.i};
+    if(!ev)continue;
+    ev.kind=trend&&Math.sign(trend)!==ev.dir?'CHOCH':'BOS';
+    if(ev.dir>0)hi=null;else lo=null;
+    trend=ev.dir;out.evs.push(ev);
+    // displacement（ブレイク足の実体がATRの半分以上）のときだけ、直前の最後の逆向き足をOBにする
+    if(!A||Math.abs(bars[i].c-bars[i].o)>=A*.5){
+      for(let j=i-1;j>=Math.max(ev.si,i-25);j--){
+        const b=bars[j];if(ev.dir>0?b.c<b.o:b.c>b.o){
+          if(!rawObs.some(o=>o.i===j))rawObs.push({i:j,hi:b.h,lo:b.l,dir:ev.dir});
+          break;
+        }
+      }
+    }
+  }
+  // OBの消化判定：あとの足の終値で完全に抜けた箱は消す
+  out.obs=rawObs.filter(o=>{
+    for(let j=o.i+1;j<n;j++){const c=bars[j].c;if(o.dir>0?c<o.lo:c>o.hi)return false}
+    return true;
+  }).slice(-4);
+  // サプライ／デマンド：現在値の上下で一番近い未消化OBに札を付ける（追加の箱は描かない）
+  const lastC=bars.at(-1).c;
+  const above=out.obs.filter(o=>o.dir<0&&o.lo>lastC).sort((a,b)=>a.lo-b.lo)[0];
+  const below=out.obs.filter(o=>o.dir>0&&o.hi<lastC).sort((a,b)=>b.hi-a.hi)[0];
+  if(above)above.tag='サプライ';if(below)below.tag='デマンド';
+  // FVG：3本の足の隙間。埋まったら消す
+  const minGap=A*.15,rawF=[];
+  for(let i=0;i+2<n;i++){
+    const a=bars[i],c=bars[i+2];let z=null;
+    if(c.l>a.h&&c.l-a.h>=minGap)z={i0:i,lo:a.h,hi:c.l,dir:1};
+    else if(c.h<a.l&&a.l-c.h>=minGap)z={i0:i,lo:c.h,hi:a.l,dir:-1};
+    if(!z)continue;
+    let filled=false;
+    for(let j=i+3;j<n;j++){const b=bars[j];if(z.dir>0?b.l<=z.lo:b.h>=z.hi){filled=true;break}}
+    if(!filled)rawF.push(z);
+  }
+  out.fvgs=rawF.slice(-4);
+  // 流動性：近い水準のスイング高値・安値ペア（直近のペアだけ）
+  const eq=sw=>{
+    for(let a=sw.length-1;a>0;a--)for(let b=a-1;b>=0;b--){
+      if(sw[a].i-sw[b].i>200)break;
+      if(Math.abs(sw[a].p-sw[b].p)<=tol)return {p:(sw[a].p+sw[b].p)/2,i0:sw[b].i};
+    }return null};
+  out.liqH=eq(swH);out.liqL=eq(swL);
+  out.evs=out.evs.slice(-6);
+  smcChartCache={k,v:out};return out;
 }
 function atr(bars,len=14){
   if(bars.length<len+1)return 0;
@@ -4362,6 +4455,25 @@ function drawChart(){
       if(yb-yt>=9){ctx.font='bold 9px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle=`rgba(${col},.85)`;ctx.fillText('FVG',x0+3,(yt+yb)/2)}
     });
   }
+  // SMC（ゴールドのみ）：OB・FVGの箱はローソク足の下に敷く。透明度は控えめにして既存表示と競合させない
+  const smcD=IS_GOLD&&state.showSmc?smcChart(source):null;
+  if(smcD){
+    const xeS=x(bars.length-1+blank)+step/2;
+    smcD.obs.forEach(o=>{
+      if(o.hi<min||o.lo>max)return;
+      const x0=Math.max(P.l,x(o.i-startIdx)-step/2);if(x0>=xeS)return;
+      const col=o.dir>0?'66,213,156':'255,105,105',yt=y(o.hi),yb=y(o.lo);
+      ctx.fillStyle=`rgba(${col},.09)`;ctx.fillRect(x0,yt,xeS-x0,yb-yt);
+      ctx.strokeStyle=`rgba(${col},.45)`;ctx.lineWidth=.8;ctx.strokeRect(x0,yt,xeS-x0,yb-yt);
+    });
+    smcD.fvgs.forEach(z=>{
+      if(z.hi<min||z.lo>max)return;
+      const x0=Math.max(P.l,x(z.i0-startIdx)-step/2);if(x0>=xeS)return;
+      const col=z.dir>0?'66,213,156':'255,105,105',yt=y(z.hi),yb=y(z.lo);
+      ctx.fillStyle=`rgba(${col},.13)`;ctx.fillRect(x0,yt,xeS-x0,yb-yt);
+      ctx.strokeStyle=`rgba(${col},.4)`;ctx.lineWidth=.7;ctx.strokeRect(x0,yt,xeS-x0,yb-yt);
+    });
+  }
   const cw=Math.max(1,step*.62);
   bars.forEach((b,i)=>{
     const up=b.c>=b.o,col=up?'#42d59c':'#ff6969',xx=x(i);
@@ -4544,6 +4656,49 @@ function drawChart(){
     }
   }
   drawLowLabels();
+
+  // SMCのラベル（ゴールドのみ）：OB・FVGの小ラベル、BOS/CHOCHの短い線と名前、流動性の点線、サプライ／デマンドの札。
+  // 大きさは控えめにし、置いた場所は swingBoxes に登録してフィボ等の名前がよけるようにする
+  if(smcD){
+    const xeS=x(bars.length-1+blank)+step/2;
+    ctx.textBaseline='middle';
+    smcD.obs.forEach(o=>{
+      if(o.hi<min||o.lo>max)return;
+      const x0=Math.max(P.l,x(o.i-startIdx)-step/2),yt=y(o.hi),yb=y(o.lo);
+      ctx.font='bold 9px -apple-system,sans-serif';ctx.textAlign='left';
+      if(yb-yt>=10){ctx.fillStyle=o.dir>0?'rgba(66,213,156,.85)':'rgba(255,105,105,.85)';ctx.fillText('OB',x0+3,(yt+yb)/2)}
+      if(o.tag){
+        const tw=ctx.measureText(o.tag).width+8,tx=Math.max(P.l+2,Math.min(xeS-tw-2,W-P.r-tw-2)),ty=o.dir<0?yt-8:yb+8;
+        if(ty>P.t+6&&ty<H-P.b-6){
+          ctx.fillStyle='rgba(12,17,22,.88)';ctx.fillRect(tx,ty-7,tw,14);
+          ctx.fillStyle=o.dir<0?'#ff6969':'#42d59c';ctx.fillText(o.tag,tx+4,ty);
+          swingBoxes.push({x:tx,y:ty-7,w:tw,h:14});
+        }
+      }
+    });
+    smcD.fvgs.forEach(z=>{
+      if(z.hi<min||z.lo>max)return;
+      const x0=Math.max(P.l,x(z.i0-startIdx)-step/2),yt=y(z.hi),yb=y(z.lo);
+      if(yb-yt>=9){ctx.font='bold 8.5px -apple-system,sans-serif';ctx.textAlign='left';ctx.fillStyle=z.dir>0?'rgba(66,213,156,.8)':'rgba(255,105,105,.8)';ctx.fillText('FVG',x0+3,(yt+yb)/2)}
+    });
+    smcD.evs.forEach(e=>{
+      const xi=e.i-startIdx;if(xi<0||xi>=bars.length||e.p<min||e.p>max)return;
+      const yy=Math.round(y(e.p))+.5,x0=Math.max(P.l,x(e.si-startIdx)-step/2),x1=x(xi)+step/2;
+      const col=e.kind==='BOS'?'92,200,255':'255,209,102';
+      ctx.strokeStyle=`rgba(${col},.55)`;ctx.lineWidth=.8;ctx.setLineDash([4,3]);
+      ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(x1,yy);ctx.stroke();ctx.setLineDash([]);
+      const ly=e.dir>0?yy-8:yy+8;
+      if(ly>P.t+5&&ly<H-P.b-5){ctx.font='bold 9px -apple-system,sans-serif';ctx.textAlign='center';ctx.fillStyle=`rgba(${col},.95)`;ctx.fillText(e.kind,x(xi),ly)}
+    });
+    [smcD.liqH,smcD.liqL].forEach(L=>{
+      if(!L||L.p<min||L.p>max)return;
+      const yy=Math.round(y(L.p))+.5,x0=Math.max(P.l,x(L.i0-startIdx)-step/2);
+      ctx.strokeStyle='rgba(217,180,88,.5)';ctx.lineWidth=.8;ctx.setLineDash([2,4]);
+      ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(xeS,yy);ctx.stroke();ctx.setLineDash([]);
+      const ly=L===smcD.liqH?yy-8:yy+8;
+      if(ly>P.t+5&&ly<H-P.b-5){ctx.font='bold 9px -apple-system,sans-serif';ctx.textAlign='right';ctx.fillStyle='rgba(217,180,88,.9)';ctx.fillText('流動性',xeS-3,ly)}
+    });
+  }
 
   // 4時間足・日足の線の名前を左端に（近い線どうしは右へずらして重ねない）
   ctx.save();ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='bottom';
@@ -5238,6 +5393,7 @@ $('alertList').onchange=e=>{const f=e.target.dataset.al;if(!f||!e.target.isConne
 renderAlerts();
 $('lvList').onclick=e=>{const b=e.target.closest('.lvchip');if(!b)return;if(b.dataset.lv==='all'){hiddenLv=[];lsSet(LSP+'hidden_lv','[]');drawChart()}else toggleLv(+b.dataset.lv)};
 $('fvgBtn').onclick=()=>{state.showFvg=!state.showFvg;$('fvgBtn').classList.toggle('on',state.showFvg);$('fvgBtn').setAttribute('aria-pressed',state.showFvg);savePrefs();drawChart();renderCombo()};
+$('smcBtn').onclick=()=>{state.showSmc=!state.showSmc;$('smcBtn').classList.toggle('on',state.showSmc);$('smcBtn').setAttribute('aria-pressed',state.showSmc);savePrefs();drawChart()};
 $('spBtn').onclick=()=>{state.showSpeech=!state.showSpeech;$('spBtn').classList.toggle('on',state.showSpeech);$('spBtn').setAttribute('aria-pressed',state.showSpeech);savePrefs();drawChart()};
 $('planBtn').onclick=()=>{state.showPlan=!state.showPlan;$('planBtn').classList.toggle('on',state.showPlan);$('planBtn').setAttribute('aria-pressed',state.showPlan);savePrefs();drawChart()};
 $('guardBtn').onclick=()=>{state.showGuard=!state.showGuard;$('guardBtn').classList.toggle('on',state.showGuard);$('guardBtn').setAttribute('aria-pressed',state.showGuard);savePrefs();renderGuard()};
@@ -5685,6 +5841,7 @@ renderMaToggles();
 $('tlBtn').classList.toggle('on',state.showTrend);$('tlBtn').setAttribute('aria-pressed',state.showTrend);
 $('lvBtn').classList.toggle('on',state.showLevels);$('lvBtn').setAttribute('aria-pressed',state.showLevels);
 $('fvgBtn').classList.toggle('on',state.showFvg);$('fvgBtn').setAttribute('aria-pressed',state.showFvg);
+if(IS_GOLD){const sb=$('smcBtn');sb.hidden=false;sb.classList.toggle('on',state.showSmc);sb.setAttribute('aria-pressed',state.showSmc);$('smcChartGuide').hidden=false}
 $('spBtn').classList.toggle('on',state.showSpeech);$('spBtn').setAttribute('aria-pressed',state.showSpeech);
 $('planBtn').classList.toggle('on',state.showPlan);$('planBtn').setAttribute('aria-pressed',state.showPlan);
 $('guardBtn').classList.toggle('on',state.showGuard);$('guardBtn').setAttribute('aria-pressed',state.showGuard);
