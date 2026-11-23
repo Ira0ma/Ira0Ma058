@@ -650,6 +650,21 @@ def widen_hours(h1, *finer, sec=3600):
             r[2], r[3] = max(r[2], e[0]), min(r[3], e[1])
 
 
+def ref_prev_close(done, price_day, day_of):
+    """The close before the session the current price belongs to, from the completed daily candles
+    `done` (today's unfinished candle, when there is one, is already dropped by the caller).
+    While a session is live, done[-1] is the previous session and its close is the reference.
+    When the market has been shut since the last candle (a weekend, a holiday, or before the
+    open), that candle IS the session the price belongs to, so the reference is the close before
+    it — otherwise the day change reads +0.00% for as long as the market stays shut, and the
+    VIX fear banner, which keys off that change, never fires (2026-11-23: VIX showed +0.00%
+    while Friday's actual move was +26.20%, and the same freeze hit SPX, US10Y and Nikkei).
+    day_of maps a timestamp to the caller's session day (a UTC date, or ny_day)."""
+    if len(done) >= 2 and day_of(done[-1][0]) == price_day:
+        return done[-2][4]
+    return done[-1][4]
+
+
 # Read-only inputs for the USD/JPY page's 「ドル円の材料」 panel (not part of any judgment): only what the panel uses,
 # hourly (for the correlation with USD/JPY), 4-hourly and daily (for the day's change), from the same Yahoo route.
 SLIM = {"us10y": ("^TNX", "米10年債利回り"), "nikkei": ("^N225", "日経平均"), "spx": ("^GSPC", "S&P500")}
@@ -663,9 +678,11 @@ def slim(key, sym, fixture):
     last = h1[-1] if h1[-1][0] >= d1[-1][0] else d1[-1]
     today = datetime.now(timezone.utc).date()
     done = d1[:-1] if datetime.fromtimestamp(d1[-1][0], timezone.utc).date() >= today else d1
+    utc_day = lambda t: datetime.fromtimestamp(t, timezone.utc).date()
+    prev_close = ref_prev_close(done, utc_day(last[0]), utc_day) if done else None
     print(key, sym, "price", round(last[4], 4), "at", datetime.fromtimestamp(last[0], timezone.utc).strftime("%m-%d %H:%M"),
           f"UTC, {len(h1)} hours, {len(d1)} days")
-    return {"price": float(f"{last[4]:.6g}"), "asOf": last[0], "prevClose": float(f"{done[-1][4]:.6g}") if done else None,
+    return {"price": float(f"{last[4]:.6g}"), "asOf": last[0], "prevClose": float(f"{prev_close:.6g}") if prev_close is not None else None,
             "candles": {"1h": r6(h1[-N_H1:]), "4h": r6(aggregate(h1, 4 * 3600, server=True)[-N_CANDLES:]), "1d": r6(d1[-30:])}}
 
 
@@ -752,12 +769,15 @@ def one(key, sym, spot_sym, fixture, prev=None):
         mo = splice_long(key, "monthly", mo, d1, MONTH)
         current = ny_day(time.time())
         done = d1[:-1] if ny_day(d1[-1][0]) >= current else d1
+        day_of, price_day = ny_day, ny_day(as_of)
     else:
         today = datetime.now(timezone.utc).date()
         last_day = datetime.fromtimestamp(d1[-1][0], timezone.utc).date()
         done = d1[:-1] if last_day >= today else d1  # drop today's unfinished candle
+        day_of = lambda t: datetime.fromtimestamp(t, timezone.utc).date()
+        price_day = day_of(as_of)
     a = analyze(key, done, price)
-    prev_close = done[-1][4]
+    prev_close = ref_prev_close(done, price_day, day_of)
     print(key, round(price, 5), a["trend"], a["title"])
     candles = {
         "1m": r6(m1[-N_CANDLES:]),
