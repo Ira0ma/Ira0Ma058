@@ -14,11 +14,25 @@ gold_build = hashlib.sha1(gold.encode()).hexdigest()[:10]
 gold = gold.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name="build" content="%s">\n' % gold_build, 1)
 gold_path.write_text(gold, encoding="utf-8")
 
+# TradingView price widget (2026-11-24): gold.html (the master) carries the GOLD widget.
+# usdjpy / btc swap in their own symbol; oil / silver are outside the trial scope, so the
+# whole TV block is stripped there and they keep the internal price display.
+TV_SYMBOL_GOLD = '"symbol":"OANDA:XAUUSD"'
+def _strip_tv(html):
+    for pat in (r'<style id="tvPriceStyle">.*?</style>\n?',
+                r'<div class="tradingview-widget-container tvprice" id="tvPriceBox">.*?<div class="tvnote">[^<]*</div>\n?',
+                r'<script id="tvPriceBoot">.*?</script>\n?'):
+        html, n = re.subn(pat, '', html, count=1, flags=re.S)
+        if n != 1:
+            raise SystemExit("build.py: TV strip pattern not found exactly once: %r" % pat)
+    return html
+
 # usdjpy.html: the same page; it switches to USD/JPY by its file name (INSTR_KEY makes that explicit)
 fx = re.sub(r'<meta name="build" content="[^"]*">\n', "", gold)
 fx = fx.replace("<title>GOLD Trade Dashboard</title>", "<title>USDJPY Trade Dashboard</title>", 1)
 fx = fx.replace('<meta name="apple-mobile-web-app-title" content="GOLD">', '<meta name="apple-mobile-web-app-title" content="USDJPY">', 1)
 fx = fx.replace("<script>\nconst $ = id =>", "<script>window.INSTR_KEY='usdjpy';</script>\n<script>\nconst $ = id =>", 1)
+fx = fx.replace(TV_SYMBOL_GOLD, '"symbol":"OANDA:USDJPY"', 1)
 fx_build = hashlib.sha1(fx.encode()).hexdigest()[:10]
 fx = fx.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name="build" content="%s">\n' % fx_build, 1)
 here.joinpath("usdjpy.html").write_text(fx, encoding="utf-8")
@@ -28,6 +42,7 @@ bt = re.sub(r'<meta name="build" content="[^"]*">\n', "", gold)
 bt = bt.replace("<title>GOLD Trade Dashboard</title>", "<title>BTCUSD Trade Dashboard</title>", 1)
 bt = bt.replace('<meta name="apple-mobile-web-app-title" content="GOLD">', '<meta name="apple-mobile-web-app-title" content="BTCUSD">', 1)
 bt = bt.replace("<script>\nconst $ = id =>", "<script>window.INSTR_KEY='btc';</script>\n<script>\nconst $ = id =>", 1)
+bt = bt.replace(TV_SYMBOL_GOLD, '"symbol":"BITSTAMP:BTCUSD"', 1)
 bt_build = hashlib.sha1(bt.encode()).hexdigest()[:10]
 bt = bt.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name="build" content="%s">\n' % bt_build, 1)
 here.joinpath("btc.html").write_text(bt, encoding="utf-8")
@@ -37,6 +52,7 @@ oil = re.sub(r'<meta name="build" content="[^"]*">\n', "", gold)
 oil = oil.replace("<title>GOLD Trade Dashboard</title>", "<title>USOIL Trade Dashboard</title>", 1)
 oil = oil.replace('<meta name="apple-mobile-web-app-title" content="GOLD">', '<meta name="apple-mobile-web-app-title" content="USOIL">', 1)
 oil = oil.replace("<script>\nconst $ = id =>", "<script>window.INSTR_KEY='usoil';</script>\n<script>\nconst $ = id =>", 1)
+oil = _strip_tv(oil)
 oil_build = hashlib.sha1(oil.encode()).hexdigest()[:10]
 oil = oil.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name="build" content="%s">\n' % oil_build, 1)
 here.joinpath("oil.html").write_text(oil, encoding="utf-8")
@@ -46,6 +62,7 @@ sv = re.sub(r'<meta name="build" content="[^"]*">\n', "", gold)
 sv = sv.replace("<title>GOLD Trade Dashboard</title>", "<title>SILVER Trade Dashboard</title>", 1)
 sv = sv.replace('<meta name="apple-mobile-web-app-title" content="GOLD">', '<meta name="apple-mobile-web-app-title" content="SILVER">', 1)
 sv = sv.replace("<script>\nconst $ = id =>", "<script>window.INSTR_KEY='silver';</script>\n<script>\nconst $ = id =>", 1)
+sv = _strip_tv(sv)
 sv_build = hashlib.sha1(sv.encode()).hexdigest()[:10]
 sv = sv.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<meta name="build" content="%s">\n' % sv_build, 1)
 here.joinpath("silver.html").write_text(sv, encoding="utf-8")
