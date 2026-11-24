@@ -840,6 +840,13 @@ def one(key, sym, spot_sym, fixture, prev=None):
 # another pages run would kill the very run that is generating and deploying.
 # Outside GitHub Actions this is a no-op, and no failure here may ever affect the
 # data generation itself.
+# 2026-11-24 (D-0930-1): a single HTTPError from the dispatch API killed the
+# backup chain for over two hours, and a later guard skip left no trace, so
+# neither failure could be diagnosed from the record. The booking now records
+# why a guard held it back ("guarded: active-run" / "guarded: too-soon"),
+# records the HTTP status code with every error, and retries a transient
+# dispatch failure (5xx / 429) up to two extra times, re-checking the guards
+# before every attempt so a retry can never multiply runs.
 CHAIN = {}
 
 def _gh_get(path, token):
@@ -893,6 +900,49 @@ def _chain_targets():
         return ("data-live-gen.yml",)
     return ("pages.yml", "data-live-gen.yml")
 
+def _chain_guard(runs, self_id):
+    """Why a booking for this workflow must wait, or None when it may go ahead.
+
+    The reason is part of the record now: before 2026-11-24 a guard skip left
+    no trace in market-status.json, so a dead chain could not be told apart
+    from a chain that was never booked."""
+    others = [r for r in runs if str(r.get("id")) != self_id]
+    if any(r.get("status") in ("queued", "in_progress", "waiting", "pending") for r in others):
+        return "active-run"
+    if others:
+        newest = max(r.get("created_at", "") for r in others)
+        try:
+            age = (datetime.now(timezone.utc) - datetime.fromisoformat(newest.replace("Z", "+00:00"))).total_seconds()
+        except Exception:
+            age = 9999
+        if age < 60:
+            return "too-soon"
+    return None
+
+def _chain_book(repo, wf, token):
+    req = urllib.request.Request(
+        "https://api.github.com/repos/%s/actions/workflows/%s/dispatches" % (repo, wf),
+        method="POST",
+        data=json.dumps({"ref": "claude/amazon-affiliate-articles"}).encode(),
+        headers={"Authorization": "Bearer " + token,
+                 "Accept": "application/vnd.github+json",
+                 "X-GitHub-Api-Version": "2022-11-28",
+                 "User-Agent": "TradeDeskWidget-chain"})
+    with urllib.request.urlopen(req, timeout=15):
+        pass
+
+def _chain_error_label(wf, e, attempts):
+    """Error text with the HTTP status code when the API gave one (before
+    2026-11-24 only the exception type was kept, so a 503 looked the same as
+    a 403 and the failure could not be classified after the fact)."""
+    label = "%s: %s" % (wf, type(e).__name__)
+    code = getattr(e, "code", None)
+    if code:
+        label += " %s" % code
+    if attempts > 1:
+        label += " (after %d attempts)" % attempts
+    return label
+
 def chain_dispatch():
     global CHAIN
     marker = {"at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
@@ -906,32 +956,33 @@ def chain_dispatch():
         self_id = os.environ.get("GITHUB_RUN_ID", "")
         sent = []
         for wf in _chain_targets():
-            try:
-                runs = _gh_get("/repos/%s/actions/workflows/%s/runs?per_page=5" % (repo, wf), token).get("workflow_runs", [])
-                others = [r for r in runs if str(r.get("id")) != self_id]
-                if any(r.get("status") in ("queued", "in_progress", "waiting", "pending") for r in others):
-                    continue
-                if others:
-                    newest = max(r.get("created_at", "") for r in others)
-                    try:
-                        age = (datetime.now(timezone.utc) - datetime.fromisoformat(newest.replace("Z", "+00:00"))).total_seconds()
-                    except Exception:
-                        age = 9999
-                    if age < 60:
+            attempts = 0
+            while True:
+                attempts += 1
+                try:
+                    runs = _gh_get("/repos/%s/actions/workflows/%s/runs?per_page=5" % (repo, wf), token).get("workflow_runs", [])
+                    why = _chain_guard(runs, self_id)
+                    if why:
+                        marker.setdefault("guarded", []).append("%s: %s" % (wf, why))
+                        break
+                    _chain_book(repo, wf, token)
+                    sent.append(wf)
+                    if attempts > 1:
+                        marker.setdefault("retried", []).append("%s: %d attempts" % (wf, attempts))
+                    break
+                except Exception as e:
+                    code = getattr(e, "code", None)
+                    retryable = isinstance(code, int) and (code == 429 or 500 <= code < 600)
+                    if retryable and attempts <= 2:
+                        # One transient API error must not kill the chain
+                        # (2026-11-24: a single HTTPError stopped the backup
+                        # for over two hours). The loop re-reads the runs and
+                        # re-checks the guard before every attempt, so a
+                        # retry can never book a duplicate run.
+                        time.sleep(5 if attempts == 1 else 15)
                         continue
-                req = urllib.request.Request(
-                    "https://api.github.com/repos/%s/actions/workflows/%s/dispatches" % (repo, wf),
-                    method="POST",
-                    data=json.dumps({"ref": "claude/amazon-affiliate-articles"}).encode(),
-                    headers={"Authorization": "Bearer " + token,
-                             "Accept": "application/vnd.github+json",
-                             "X-GitHub-Api-Version": "2022-11-28",
-                             "User-Agent": "TradeDeskWidget-chain"})
-                with urllib.request.urlopen(req, timeout=15):
-                    pass
-                sent.append(wf)
-            except Exception as e:
-                marker.setdefault("errors", []).append("%s: %s" % (wf, type(e).__name__))
+                    marker.setdefault("errors", []).append(_chain_error_label(wf, e, attempts))
+                    break
         marker["dispatched"] = sent
     except Exception as e:
         marker["fatal"] = type(e).__name__
