@@ -847,6 +847,13 @@ def one(key, sym, spot_sym, fixture, prev=None):
 # records the HTTP status code with every error, and retries a transient
 # dispatch failure (5xx / 429) up to two extra times, re-checking the guards
 # before every attempt so a retry can never multiply runs.
+# 2026-11-24 (D-0930-1, guard): the "active-run" guard trusted any run the
+# API listed as queued/in_progress, but a run can wedge in that state on
+# GitHub's side and never finish; one wedged backup run held every new
+# booking at "guarded: active-run" for hours while no generation happened.
+# An active run that started over 60 minutes ago is therefore treated as
+# stuck and no longer blocks a booking, and the booking records the
+# exclusion under "stuck-ignored" so the wedge stays visible in the record.
 CHAIN = {}
 
 def _gh_get(path, token):
@@ -905,19 +912,38 @@ def _chain_guard(runs, self_id):
 
     The reason is part of the record now: before 2026-11-24 a guard skip left
     no trace in market-status.json, so a dead chain could not be told apart
-    from a chain that was never booked."""
+    from a chain that was never booked.
+
+    Returns (reason, stuck). stuck counts the other runs that are still in
+    an active state over 60 minutes after they started: such a run is
+    wedged on GitHub's side (2026-11-24: a single wedged backup run held
+    this guard at "active-run" for hours) and must not block new bookings,
+    so it is excluded here and the caller records the exclusion. An active
+    run whose start time cannot be read still blocks: stuck has to be
+    proven, not assumed."""
     others = [r for r in runs if str(r.get("id")) != self_id]
-    if any(r.get("status") in ("queued", "in_progress", "waiting", "pending") for r in others):
-        return "active-run"
+    now = datetime.now(timezone.utc)
+    stuck = 0
+    for r in others:
+        if r.get("status") not in ("queued", "in_progress", "waiting", "pending"):
+            continue
+        try:
+            age = (now - datetime.fromisoformat(r.get("created_at", "").replace("Z", "+00:00"))).total_seconds()
+        except Exception:
+            age = 0
+        if age > 3600:
+            stuck += 1
+        else:
+            return "active-run", stuck
     if others:
         newest = max(r.get("created_at", "") for r in others)
         try:
-            age = (datetime.now(timezone.utc) - datetime.fromisoformat(newest.replace("Z", "+00:00"))).total_seconds()
+            age = (now - datetime.fromisoformat(newest.replace("Z", "+00:00"))).total_seconds()
         except Exception:
             age = 9999
         if age < 60:
-            return "too-soon"
-    return None
+            return "too-soon", stuck
+    return None, stuck
 
 def _chain_book(repo, wf, token):
     req = urllib.request.Request(
@@ -955,13 +981,21 @@ def chain_dispatch():
             return
         self_id = os.environ.get("GITHUB_RUN_ID", "")
         sent = []
+        stuck_noted = set()
         for wf in _chain_targets():
             attempts = 0
             while True:
                 attempts += 1
                 try:
                     runs = _gh_get("/repos/%s/actions/workflows/%s/runs?per_page=5" % (repo, wf), token).get("workflow_runs", [])
-                    why = _chain_guard(runs, self_id)
+                    why, stuck = _chain_guard(runs, self_id)
+                    if stuck and wf not in stuck_noted:
+                        # A wedged run was excluded from the guard so this
+                        # booking could be judged on the remaining runs;
+                        # record the exclusion once per workflow so the
+                        # wedge stays visible in market-status.json.
+                        stuck_noted.add(wf)
+                        marker.setdefault("stuck-ignored", []).append("%s: %d stuck run(s) over 60 min" % (wf, stuck))
                     if why:
                         marker.setdefault("guarded", []).append("%s: %s" % (wf, why))
                         break
