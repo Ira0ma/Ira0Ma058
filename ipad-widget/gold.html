@@ -773,6 +773,14 @@ html.nd .shell>main{grid-area:main;min-width:0}
 html.nd .shell>footer{grid-area:foot}
 }
 </style>
+<style id="tvPriceStyle">
+/* TradingView price display (2026-11-24): TV widget is the displayed price; internal price stays as fallback and for all calculations */
+.tvprice{display:none;height:86px;margin:2px 0 0}
+.tvnote{display:none;font-size:11px;opacity:.65;margin-top:2px}
+.hero-price.tv-on #goldPrice,.hero-price.tv-on #goldChange{display:none}
+.hero-price.tv-on .tvprice{display:block}
+.hero-price.tv-on .tvnote{display:block}
+</style>
 </head>
 <body>
 
@@ -838,6 +846,7 @@ html.nd .shell>footer{grid-area:foot}
       <div class="cardhead"><div><div class="title" id="instrLabel">XAU / USD</div><div id="goldFresh" class="sub">取得中...</div></div><span class="tag">SPOT</span></div>
       <div id="goldPrice" class="price">--</div>
       <div id="goldChange" class="change">--</div>
+      <div class="tradingview-widget-container tvprice" id="tvPriceBox"><div class="tradingview-widget-container__widget"></div><div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank"><span class="blue-text">Track all markets on TradingView</span></a></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js" async>{"symbol":"OANDA:XAUUSD","width":"100%","isTransparent":true,"colorTheme":"dark","locale":"ja"}</script></div><div class="tvnote">表示価格：TradingView（判定・記録は内部データ）</div>
       <div class="stats">
         <div class="stat"><span>当日高値</span><b id="dayHigh">--</b></div>
         <div class="stat"><span>当日安値</span><b id="dayLow">--</b></div>
@@ -5990,6 +5999,19 @@ function fastJump(el) {
   };
   requestAnimationFrame(step);
 }
+</script>
+<script id="tvPriceBoot">
+(function(){
+  var box=document.getElementById('tvPriceBox'); if(!box) return;
+  var hero=box.closest('.hero-price'); if(!hero) return;
+  var tries=0;
+  var t=setInterval(function(){
+    tries++;
+    var f=box.querySelector('iframe');
+    if(f && f.offsetHeight>0){ hero.classList.add('tv-on'); clearInterval(t); }
+    else if(tries>=25){ clearInterval(t); if(box.parentNode) box.parentNode.removeChild(box); }
+  },200);
+})();
 </script>
 </body>
 </html>
