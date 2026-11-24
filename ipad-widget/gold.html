@@ -775,10 +775,10 @@ html.nd .shell>footer{grid-area:foot}
 </style>
 <style id="tvPriceStyle">
 /* TradingView price display (2026-11-24): TV widget is the displayed price; internal price stays as fallback and for all calculations */
-.tvprice{display:none;height:86px;margin:2px 0 0}
+.tvprice{display:block;height:0;overflow:hidden;visibility:hidden;margin:0}
 .tvnote{display:none;font-size:11px;opacity:.65;margin-top:2px}
 .hero-price.tv-on #goldPrice,.hero-price.tv-on #goldChange{display:none}
-.hero-price.tv-on .tvprice{display:block}
+.hero-price.tv-on .tvprice{height:86px;visibility:visible;margin:2px 0 0}
 .hero-price.tv-on .tvnote{display:block}
 </style>
 </head>
@@ -6008,8 +6008,8 @@ function fastJump(el) {
   var t=setInterval(function(){
     tries++;
     var f=box.querySelector('iframe');
-    if(f && f.offsetHeight>0){ hero.classList.add('tv-on'); clearInterval(t); }
-    else if(tries>=25){ clearInterval(t); if(box.parentNode) box.parentNode.removeChild(box); }
+    if(f){ hero.classList.add('tv-on'); clearInterval(t); }
+    else if(tries>=40){ clearInterval(t); if(box.parentNode) box.parentNode.removeChild(box); }
   },200);
 })();
 </script>
