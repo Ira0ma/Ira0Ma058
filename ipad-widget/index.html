@@ -458,6 +458,8 @@ html:not(.lowpower) .mreg .rg-dot { transition: left .6s ease; }
 .dk-al small { font-size: 11px; color: var(--ink-2); line-height: 1.45; }
 .dk-al small a { color: var(--gold); }
 .dk-al .x { position: absolute; top: 4px; right: 4px; font: inherit; font-size: 13px; line-height: 1; color: var(--ink-2); background: none; border: 0; padding: 6px 8px; cursor: pointer; }
+#al-merged .mg-wrap { display: flex; gap: 12px; }
+#al-merged .mg-sec { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .dk-check { pointer-events: auto; width: min(560px, 100%); box-sizing: border-box; border-radius: 12px; padding: 10px 14px; background: rgba(16,19,24,.98); border: 1px solid var(--glass-line); box-shadow: 0 4px 18px rgba(0,0,0,.55); font-size: 12.5px; color: var(--ink); line-height: 1.6; }
 .dk-check ol { margin: 6px 0 4px; padding-left: 20px; }
 .dk-check p { margin: 0; font-size: 11px; color: var(--ink-3); }
@@ -2392,7 +2394,7 @@ window.TDFontApply();
       cards.forEach(function (el) { stage.appendChild(el); });
     }
     mode = m;
-    applyAlertSpace();  // モード切替で作られたコンテナ（#flow／#pager）にも、表示中のバナー分の下げを即反映する
+    applyAlertSpace();  // ダイアログ用の --alertb を現在のバナー表示に合わせて更新する（デスク本体のレイアウトは変えない）
   }
   function layout() {
     var m = pickMode();
@@ -2412,6 +2414,7 @@ window.TDFontApply();
     }
     placeSteps();
     drawScenes(); markets.forEach(function (m) { m.draw(); }); bg.resize();
+    applyAlertSpace();  // 画面サイズ・表示モードが変わったら、バナーの重ね位置（ボタン回避）も合わせ直す
   }
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
@@ -4076,29 +4079,129 @@ window.renderAirHome = renderAirHome;
       mk.surgeId = e.level === "emergency" && !e.ack ? e.id : "";
     });
   }
-  /* 警戒バナーが出ている間はデスク全体をバナーの下端まで下げ、カードに重ならないようにする（2026-11-18 banner-overlap修正）
-     下げ方は paddingTop で行う：対象コンテナは position:fixed;inset:0 で、top を変えると flex の中央寄せが効いて
-     実際の移動は指定の半分ほどになり、時計カード上端のボタン行がバナーの下に残った（2026-11-18夜の再点検で検出）。
-     さらに表示モードが3つあり、コンテナがモードごとに別（stage=#fit／flow=#flow／pager=#pager）ため、
-     #fit だけ下げても flow・pager では重なりが残った（同夜の実機相当確認で検出）。3コンテナすべてに同じ
-     paddingTop を入れれば、どのモードでも内容の上端は必ずバナー下端+4pxより下になる（layout()・layoutPhone() は
-     padding を差し引いて大きさを決める。layoutFlow() は幅のみ使用し、paddingTop はそのまま内容を押し下げる） */
+  /* 警戒バナーは画面の上に重なるだけの表示（オーバーレイ）で、デスク本体のレイアウトには一切触らない
+     （2026-11-26 banner-overlay 変更、Bossの実機写真を受けた指示）。以前はバナーの下端まで paddingTop で
+     デスク全体を下げていたため、バナーが出るたびに各パネルが圧縮されていた（2026-11-18〜25の方式）。
+     バナー側は .dk-alerts が position:fixed で、操作を受ける範囲はバナー実物（pointer-events:auto）だけ。
+     ここで設定する --alertb は全画面ダイアログ（.hz/.gbook/.shelf/.dash-sheet）の上端合わせ専用で、
+     パネルの寸法・配置には影響しない */
   function applyAlertSpace() {
     if (!alertsBox || !fit) return;
     var vis = alertsBox.querySelectorAll(":scope > :not([hidden])").length > 0;
-    var t = vis ? Math.ceil(alertsBox.getBoundingClientRect().bottom) + 4 + "px" : "";
-    document.documentElement.style.setProperty("--alertb", vis ? t : "0px");  // 全画面ダイアログの上端をバナー下端に合わせる（.hz/.gbook/.shelf/.dash-sheet の top が参照）
-    var targets = [fit, document.getElementById("flow"), document.getElementById("pager")];
-    var changed = false;
-    targets.forEach(function (el) { if (el && el.style.paddingTop !== t) { el.style.paddingTop = t; changed = true; } });
-    if (changed) layout();
+    placeAlerts(vis);
+    var t = vis ? Math.ceil(alertsBox.getBoundingClientRect().bottom) + 4 + "px" : "0px";
+    document.documentElement.style.setProperty("--alertb", t);  // 全画面ダイアログの上端をバナー下端に合わせる（.hz/.gbook/.shelf/.dash-sheet の top が参照）。デスク本体（#fit/#flow/#pager）には触らない
   }
+  /* バナーの重ね位置は、画面内の全操作ボタンと重ならない場所を実測で探して決める（2026-11-26 Boss追加条件）。
+     タブレット表示（stage）以外では従来の上端表示のままにする */
+  var mergedIds = null;  // 合体表示中のバナーid一覧（通常は null）
+  function alertDesire() {
+    var d = [];
+    if (ivShown) d.push("al-iv");
+    if (mvShown && Date.now() - mvShown.at < TDCore.SURGE_SHOW && mvShown.id !== lsRead(MV_CLOSED)) d.push("al-mv");
+    if (vxShown && vxShown.id !== lsRead(VX_CLOSED)) d.push("al-vx");
+    return d;
+  }
+  function unmerge() {
+    var mg = alertsBox.querySelector("#al-merged");
+    if (mg) mg.hidden = true;
+    if (mergedIds) {
+      var d = alertDesire();
+      mergedIds.forEach(function (id) { var el = alertsBox.querySelector("#" + id); if (el) el.hidden = d.indexOf(id) < 0; });
+      mergedIds = null;
+    }
+  }
+  function buildMerged(ids) {
+    var mg = alertsBox.querySelector("#al-merged");
+    var wrap = mg.querySelector(".mg-wrap"); wrap.innerHTML = "";
+    ids.forEach(function (id) {
+      var src = alertsBox.querySelector("#" + id);
+      var sec = document.createElement("div"); sec.className = "mg-sec";
+      var b = document.createElement("b"); b.innerHTML = src.querySelector("b").innerHTML;
+      var sp = document.createElement("span"); sp.textContent = src.querySelector("span").textContent;
+      sec.appendChild(b); sec.appendChild(sp); wrap.appendChild(sec);
+      src.hidden = true;
+    });
+    mg.className = "dk-al mg" + (ids.indexOf("al-mv") >= 0 && mvShown && mvShown.level === "emergency" ? " emg" : "");
+    mg.hidden = false;
+    mergedIds = ids.slice();
+  }
+  function placeAlerts(vis) {
+    if (!alertsBox) return;
+    var reset = function () { alertsBox.style.left = ""; alertsBox.style.top = ""; alertsBox.style.width = ""; };
+    if (!vis || mode === "pager" || mode === "flow") { if (mergedIds) unmerge(); reset(); return; }
+    if (mergedIds) {
+      if (alertDesire().join() === mergedIds.join()) { buildMerged(mergedIds); scanPlace(); return; }
+      unmerge();
+    }
+    var bans = [];
+    alertsBox.querySelectorAll(":scope > .dk-al").forEach(function (el) { if (el.id !== "al-merged" && !el.hidden) bans.push(el.id); });
+    if (bans.length >= 2) {
+      var key = scanPlace();
+      if (key && key[0] === 0 && key[1] === 0) return;
+      /* 積み重ねのままでは重なりゼロの置き場が無い場合：2枚以上を1枚に合体して置く（2026-11-26 Boss承認）。
+         合体時は各バナーの見出しと本文を横並びで残し、補足行（small）は省く */
+      buildMerged(bans);
+      scanPlace();
+      return;
+    }
+    scanPlace();
+  }
+  /* 実レイアウト走査配置：表示中の全操作要素（ボタン・リンク・入力）の矩形を実測し、
+     バナーの積み重ね（実寸）と重ならない位置を探して置く。候補が無い場合は
+     重なる主要ボタンの個数→全体の個数→面積が最小の位置に置く（フォールバック）。
+     戻り値は最良候補のキー [主要の重なり数, 全体の重なり数, 面積, y, 中央からの距離] */
+  function scanPlace() {
+    var vw = window.innerWidth, vh = window.innerHeight;
+    alertsBox.style.width = "min(560px, 100vw)";
+    var W = alertsBox.offsetWidth, H = alertsBox.offsetHeight;
+    if (!W || !H) { alertsBox.style.left = ""; alertsBox.style.top = ""; alertsBox.style.width = ""; return null; }
+    var els = document.querySelectorAll("#stage button, #stage a, #stage [role='button'], #stage input, #stage select, #stage textarea");
+    var rs = [], ps = [];
+    for (var i = 0; i < els.length; i++) {
+      var b = els[i].getBoundingClientRect(), cs = getComputedStyle(els[i]);
+      if (b.width > 0 && b.height > 0 && cs.display !== "none" && cs.visibility !== "hidden") {
+        rs.push(b);
+        /* 主要ボタン（銘柄の見出し・時計の操作・タブ類）は、重なりゼロの置き場が無い時でも最後まで避ける */
+        ps.push(!!els[i].closest("#markets .head, #clock, .tp-tab, .tabs, .mk-idx, .mk-cue, .pt-tab, .pt-pick, .cal-nav"));
+      }
+    }
+    var hit = function (x, y) {
+      var n = 0, area = 0, pn = 0;
+      for (var j = 0; j < rs.length; j++) {
+        var r = rs[j];
+        var ox = Math.min(x + W, r.right) - Math.max(x, r.left);
+        var oy = Math.min(y + H, r.bottom) - Math.max(y, r.top);
+        if (ox > 0.5 && oy > 0.5) { n++; area += ox * oy; if (ps[j]) pn++; }
+      }
+      return [pn, n, area];
+    };
+    var better = function (k, b) {
+      if (!b) return true;
+      for (var i = 0; i < 5; i++) { if (k[i] !== b[i]) return k[i] < b[i]; }
+      return false;
+    };
+    var best = null, bestKey = null;
+    for (var y = 0; y + H <= vh; y += 8) {
+      for (var x = 0; x + W <= vw; x += 8) {
+        var h = hit(x, y);
+        var key = [h[0], h[1], h[2], y, Math.abs(x + W / 2 - vw / 2)];
+        if (better(key, bestKey)) { bestKey = key; best = [x, y]; }
+      }
+      if (bestKey && bestKey[0] === 0 && bestKey[1] === 0 && best && best[1] === y) break;
+    }
+    if (best) { alertsBox.style.left = best[0] + "px"; alertsBox.style.top = best[1] + "px"; }
+    return bestKey;
+  }
+
+
   function alertEls() {
     if (alertsBox) return alertsBox;
     alertsBox = document.createElement("div"); alertsBox.className = "dk-alerts"; alertsBox.id = "dk-alerts";
     alertsBox.innerHTML = '<div class="dk-al" id="al-iv" role="status" hidden><button type="button" class="x" aria-label="介入警戒の表示を閉じる">✕</button><b>⚠ 為替介入への警戒</b><span></span><small></small></div>' +
       '<div class="dk-al" id="al-mv" role="alert" hidden><button type="button" class="x" aria-label="急変の表示を閉じる">✕</button><b></b><span></span><small></small></div>' +
       '<div class="dk-al vx" id="al-vx" role="status" hidden><button type="button" class="x" aria-label="市場の怖さの表示を閉じる">✕</button><b>🌡 市場の怖さが急上昇</b><span></span><small></small></div>' +
+      '<div class="dk-al mg" id="al-merged" role="alert" hidden><button type="button" class="x" aria-label="警戒表示を閉じる">✕</button><div class="mg-wrap"></div></div>' +
       '<div class="dk-check" id="al-check" hidden><b>急変したときの確認</b><ol>' +
       "<li>最初の1〜2本は見送る。急変直後は往って来いになりやすい</li>" +
       "<li>新規エントリーは止め、保有ポジションの損切り位置を確認する</li>" +
@@ -4107,12 +4210,21 @@ window.renderAirHome = renderAirHome;
       '</ol><button type="button" data-check-close>閉じる</button></div>';
     document.body.appendChild(alertsBox);
     if (window.ResizeObserver) new ResizeObserver(applyAlertSpace).observe(alertsBox);
+    document.addEventListener("click", function (e) { if (e.target && e.target.closest && e.target.closest("#stage")) requestAnimationFrame(function () { applyAlertSpace(); }); }, true);
     applyAlertSpace();
     var chk = alertsBox.querySelector("#al-check");
     alertsBox.addEventListener("click", function (e) {
       if (e.target.closest("a")) return;  // 出典のリンクはそのまま開く
       if (e.target.closest("[data-check-close]")) { chk.hidden = true; return; }
       var al = e.target.closest(".dk-al"); if (!al) return;
+      if (al.id === "al-merged") {
+        if (e.target.closest(".x")) {
+          (mergedIds || []).slice().forEach(function (id) { var t = alertsBox.querySelector("#" + id + " .x"); if (t) t.click(); });
+          return;
+        }
+        if (mergedIds && mergedIds.indexOf("al-mv") >= 0 && mvShown) surgeAck(mvShown.id);
+        chk.hidden = !chk.hidden; return;
+      }
       if (e.target.closest(".x")) {
         if (al.id === "al-iv" && ivShown) lsWrite(IV_CLOSED, ivShown.title);
         if (al.id === "al-mv" && mvShown) { lsWrite(MV_CLOSED, mvShown.id); surgeAck(mvShown.id); }
@@ -4159,6 +4271,7 @@ window.renderAirHome = renderAirHome;
       vxEl.querySelector("small").textContent = "市場の怖さの数字からの警戒情報です。タップで対応を確認";
     }
     if (iv.hidden && mv.hidden && vxEl.hidden) box.querySelector("#al-check").hidden = true;
+    applyAlertSpace();
   }
   function loadNews() {
     if (!window.fetch || PREVIEW) return;

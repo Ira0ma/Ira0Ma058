@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="edbea86a31">
+<meta name="build" content="ce8fc6e414">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -472,6 +472,8 @@ html:not(.lowpower) .mreg .rg-dot { transition: left .6s ease; }
 .dk-al small { font-size: 11px; color: var(--ink-2); line-height: 1.45; }
 .dk-al small a { color: var(--gold); }
 .dk-al .x { position: absolute; top: 4px; right: 4px; font: inherit; font-size: 13px; line-height: 1; color: var(--ink-2); background: none; border: 0; padding: 6px 8px; cursor: pointer; }
+#al-merged .mg-wrap { display: flex; gap: 12px; }
+#al-merged .mg-sec { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .dk-check { pointer-events: auto; width: min(560px, 100%); box-sizing: border-box; border-radius: 12px; padding: 10px 14px; background: rgba(16,19,24,.98); border: 1px solid var(--glass-line); box-shadow: 0 4px 18px rgba(0,0,0,.55); font-size: 12.5px; color: var(--ink); line-height: 1.6; }
 .dk-check ol { margin: 6px 0 4px; padding-left: 20px; }
 .dk-check p { margin: 0; font-size: 11px; color: var(--ink-3); }
@@ -2432,11 +2434,11 @@ window.TDFontApply();
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
   var SHEETS = {
-    gold: { src: "gold.html?v=7f57b50481", title: "GOLD分析" },
-    silver: { src: "learn/silver.html?v=25e3825b2d", title: "シルバー分析" },
-    usdjpy: { src: "usdjpy.html?v=bce9cfb39f", title: "ドル円分析" },
-    btc: { src: "btc.html?v=2551e8fc17", title: "BTC分析" },
-    oil: { src: "oil.html?v=be4f0a5f2d", title: "オイル分析" },
+    gold: { src: "gold.html?v=b7c4001b62", title: "GOLD分析" },
+    silver: { src: "learn/silver.html?v=8b2561377c", title: "シルバー分析" },
+    usdjpy: { src: "usdjpy.html?v=c5b8960475", title: "ドル円分析" },
+    btc: { src: "btc.html?v=033fff0f26", title: "BTC分析" },
+    oil: { src: "oil.html?v=8424f36e43", title: "オイル分析" },
     lots: { src: "learn/lotsim.html", title: "ロット図説" },
     weekend: { src: "learn/weekend.html", title: "週末ボード" }
   };
@@ -4107,17 +4109,68 @@ window.renderAirHome = renderAirHome;
   }
   /* バナーの重ね位置は、画面内の全操作ボタンと重ならない場所を実測で探して決める（2026-11-26 Boss追加条件）。
      タブレット表示（stage）以外では従来の上端表示のままにする */
+  var mergedIds = null;  // 合体表示中のバナーid一覧（通常は null）
+  function alertDesire() {
+    var d = [];
+    if (ivShown) d.push("al-iv");
+    if (mvShown && Date.now() - mvShown.at < TDCore.SURGE_SHOW && mvShown.id !== lsRead(MV_CLOSED)) d.push("al-mv");
+    if (vxShown && vxShown.id !== lsRead(VX_CLOSED)) d.push("al-vx");
+    return d;
+  }
+  function unmerge() {
+    var mg = alertsBox.querySelector("#al-merged");
+    if (mg) mg.hidden = true;
+    if (mergedIds) {
+      var d = alertDesire();
+      mergedIds.forEach(function (id) { var el = alertsBox.querySelector("#" + id); if (el) el.hidden = d.indexOf(id) < 0; });
+      mergedIds = null;
+    }
+  }
+  function buildMerged(ids) {
+    var mg = alertsBox.querySelector("#al-merged");
+    var wrap = mg.querySelector(".mg-wrap"); wrap.innerHTML = "";
+    ids.forEach(function (id) {
+      var src = alertsBox.querySelector("#" + id);
+      var sec = document.createElement("div"); sec.className = "mg-sec";
+      var b = document.createElement("b"); b.innerHTML = src.querySelector("b").innerHTML;
+      var sp = document.createElement("span"); sp.textContent = src.querySelector("span").textContent;
+      sec.appendChild(b); sec.appendChild(sp); wrap.appendChild(sec);
+      src.hidden = true;
+    });
+    mg.className = "dk-al mg" + (ids.indexOf("al-mv") >= 0 && mvShown && mvShown.level === "emergency" ? " emg" : "");
+    mg.hidden = false;
+    mergedIds = ids.slice();
+  }
   function placeAlerts(vis) {
     if (!alertsBox) return;
     var reset = function () { alertsBox.style.left = ""; alertsBox.style.top = ""; alertsBox.style.width = ""; };
-    if (!vis || mode === "pager" || mode === "flow") { reset(); return; }
-    /* 実レイアウト走査配置：表示中の全操作要素（ボタン・リンク・入力）の矩形を実測し、
-       バナーの積み重ね（実寸）と重ならない位置を探して置く。候補が無い場合は
-       重なるボタンの個数→面積が最小の位置に置く（フォールバック）。 */
+    if (!vis || mode === "pager" || mode === "flow") { if (mergedIds) unmerge(); reset(); return; }
+    if (mergedIds) {
+      if (alertDesire().join() === mergedIds.join()) { buildMerged(mergedIds); scanPlace(); return; }
+      unmerge();
+    }
+    var bans = [];
+    alertsBox.querySelectorAll(":scope > .dk-al").forEach(function (el) { if (el.id !== "al-merged" && !el.hidden) bans.push(el.id); });
+    if (bans.length >= 2) {
+      var key = scanPlace();
+      if (key && key[0] === 0 && key[1] === 0) return;
+      /* 積み重ねのままでは重なりゼロの置き場が無い場合：2枚以上を1枚に合体して置く（2026-11-26 Boss承認）。
+         合体時は各バナーの見出しと本文を横並びで残し、補足行（small）は省く */
+      buildMerged(bans);
+      scanPlace();
+      return;
+    }
+    scanPlace();
+  }
+  /* 実レイアウト走査配置：表示中の全操作要素（ボタン・リンク・入力）の矩形を実測し、
+     バナーの積み重ね（実寸）と重ならない位置を探して置く。候補が無い場合は
+     重なる主要ボタンの個数→全体の個数→面積が最小の位置に置く（フォールバック）。
+     戻り値は最良候補のキー [主要の重なり数, 全体の重なり数, 面積, y, 中央からの距離] */
+  function scanPlace() {
     var vw = window.innerWidth, vh = window.innerHeight;
     alertsBox.style.width = "min(560px, 100vw)";
     var W = alertsBox.offsetWidth, H = alertsBox.offsetHeight;
-    if (!W || !H) { reset(); return; }
+    if (!W || !H) { alertsBox.style.left = ""; alertsBox.style.top = ""; alertsBox.style.width = ""; return null; }
     var els = document.querySelectorAll("#stage button, #stage a, #stage [role='button'], #stage input, #stage select, #stage textarea");
     var rs = [], ps = [];
     for (var i = 0; i < els.length; i++) {
@@ -4153,7 +4206,9 @@ window.renderAirHome = renderAirHome;
       if (bestKey && bestKey[0] === 0 && bestKey[1] === 0 && best && best[1] === y) break;
     }
     if (best) { alertsBox.style.left = best[0] + "px"; alertsBox.style.top = best[1] + "px"; }
+    return bestKey;
   }
+
 
   function alertEls() {
     if (alertsBox) return alertsBox;
@@ -4161,6 +4216,7 @@ window.renderAirHome = renderAirHome;
     alertsBox.innerHTML = '<div class="dk-al" id="al-iv" role="status" hidden><button type="button" class="x" aria-label="介入警戒の表示を閉じる">✕</button><b>⚠ 為替介入への警戒</b><span></span><small></small></div>' +
       '<div class="dk-al" id="al-mv" role="alert" hidden><button type="button" class="x" aria-label="急変の表示を閉じる">✕</button><b></b><span></span><small></small></div>' +
       '<div class="dk-al vx" id="al-vx" role="status" hidden><button type="button" class="x" aria-label="市場の怖さの表示を閉じる">✕</button><b>🌡 市場の怖さが急上昇</b><span></span><small></small></div>' +
+      '<div class="dk-al mg" id="al-merged" role="alert" hidden><button type="button" class="x" aria-label="警戒表示を閉じる">✕</button><div class="mg-wrap"></div></div>' +
       '<div class="dk-check" id="al-check" hidden><b>急変したときの確認</b><ol>' +
       "<li>最初の1〜2本は見送る。急変直後は往って来いになりやすい</li>" +
       "<li>新規エントリーは止め、保有ポジションの損切り位置を確認する</li>" +
@@ -4176,6 +4232,14 @@ window.renderAirHome = renderAirHome;
       if (e.target.closest("a")) return;  // 出典のリンクはそのまま開く
       if (e.target.closest("[data-check-close]")) { chk.hidden = true; return; }
       var al = e.target.closest(".dk-al"); if (!al) return;
+      if (al.id === "al-merged") {
+        if (e.target.closest(".x")) {
+          (mergedIds || []).slice().forEach(function (id) { var t = alertsBox.querySelector("#" + id + " .x"); if (t) t.click(); });
+          return;
+        }
+        if (mergedIds && mergedIds.indexOf("al-mv") >= 0 && mvShown) surgeAck(mvShown.id);
+        chk.hidden = !chk.hidden; return;
+      }
       if (e.target.closest(".x")) {
         if (al.id === "al-iv" && ivShown) lsWrite(IV_CLOSED, ivShown.title);
         if (al.id === "al-mv" && mvShown) { lsWrite(MV_CLOSED, mvShown.id); surgeAck(mvShown.id); }
@@ -4222,6 +4286,7 @@ window.renderAirHome = renderAirHome;
       vxEl.querySelector("small").textContent = "市場の怖さの数字からの警戒情報です。タップで対応を確認";
     }
     if (iv.hidden && mv.hidden && vxEl.hidden) box.querySelector("#al-check").hidden = true;
+    applyAlertSpace();
   }
   function loadNews() {
     if (!window.fetch || PREVIEW) return;
