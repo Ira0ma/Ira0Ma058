@@ -4105,19 +4105,56 @@ window.renderAirHome = renderAirHome;
     var t = vis ? Math.ceil(alertsBox.getBoundingClientRect().bottom) + 4 + "px" : "0px";
     document.documentElement.style.setProperty("--alertb", t);  // 全画面ダイアログの上端をバナー下端に合わせる（.hz/.gbook/.shelf/.dash-sheet の top が参照）。デスク本体（#fit/#flow/#pager）には触らない
   }
-  /* バナーの重ね位置は、上の段のボタンの下端より下に置く（2026-11-26 Boss追加条件：バナーがボタンに被らないこと）。
-     対象ボタンは時計カードの通知・音量と、各銘柄カードの見出しボタン。実物の表示位置を毎回測って決めるため、
-     画面サイズや拡大率が変わってもボタンへは被らない。タブレット表示（stage）以外では従来の上端表示のままにする */
+  /* バナーの重ね位置は、画面内の全操作ボタンと重ならない場所を実測で探して決める（2026-11-26 Boss追加条件）。
+     タブレット表示（stage）以外では従来の上端表示のままにする */
   function placeAlerts(vis) {
     if (!alertsBox) return;
-    if (!vis || mode === "pager" || mode === "flow") { alertsBox.style.top = ""; return; }
-    var low = 0;
-    document.querySelectorAll("#clock .notify-btn, #clock .sound-btn, #markets .mkt .head").forEach(function (b) {
-      var r = b.getBoundingClientRect();
-      if (r.height > 0 && r.bottom > low) low = r.bottom;
-    });
-    alertsBox.style.top = low ? Math.ceil(low) + 6 + "px" : "";
+    var reset = function () { alertsBox.style.left = ""; alertsBox.style.top = ""; alertsBox.style.width = ""; };
+    if (!vis || mode === "pager" || mode === "flow") { reset(); return; }
+    /* 実レイアウト走査配置：表示中の全操作要素（ボタン・リンク・入力）の矩形を実測し、
+       バナーの積み重ね（実寸）と重ならない位置を探して置く。候補が無い場合は
+       重なるボタンの個数→面積が最小の位置に置く（フォールバック）。 */
+    var vw = window.innerWidth, vh = window.innerHeight;
+    alertsBox.style.width = "min(560px, 100vw)";
+    var W = alertsBox.offsetWidth, H = alertsBox.offsetHeight;
+    if (!W || !H) { reset(); return; }
+    var els = document.querySelectorAll("#stage button, #stage a, #stage [role='button'], #stage input, #stage select, #stage textarea");
+    var rs = [], ps = [];
+    for (var i = 0; i < els.length; i++) {
+      var b = els[i].getBoundingClientRect(), cs = getComputedStyle(els[i]);
+      if (b.width > 0 && b.height > 0 && cs.display !== "none" && cs.visibility !== "hidden") {
+        rs.push(b);
+        /* 主要ボタン（銘柄の見出し・時計の操作・タブ類）は、重なりゼロの置き場が無い時でも最後まで避ける */
+        ps.push(!!els[i].closest("#markets .head, #clock, .tp-tab, .tabs, .mk-idx, .mk-cue, .pt-tab, .pt-pick, .cal-nav"));
+      }
+    }
+    var hit = function (x, y) {
+      var n = 0, area = 0, pn = 0;
+      for (var j = 0; j < rs.length; j++) {
+        var r = rs[j];
+        var ox = Math.min(x + W, r.right) - Math.max(x, r.left);
+        var oy = Math.min(y + H, r.bottom) - Math.max(y, r.top);
+        if (ox > 0.5 && oy > 0.5) { n++; area += ox * oy; if (ps[j]) pn++; }
+      }
+      return [pn, n, area];
+    };
+    var better = function (k, b) {
+      if (!b) return true;
+      for (var i = 0; i < 5; i++) { if (k[i] !== b[i]) return k[i] < b[i]; }
+      return false;
+    };
+    var best = null, bestKey = null;
+    for (var y = 0; y + H <= vh; y += 8) {
+      for (var x = 0; x + W <= vw; x += 8) {
+        var h = hit(x, y);
+        var key = [h[0], h[1], h[2], y, Math.abs(x + W / 2 - vw / 2)];
+        if (better(key, bestKey)) { bestKey = key; best = [x, y]; }
+      }
+      if (bestKey && bestKey[0] === 0 && bestKey[1] === 0 && best && best[1] === y) break;
+    }
+    if (best) { alertsBox.style.left = best[0] + "px"; alertsBox.style.top = best[1] + "px"; }
   }
+
   function alertEls() {
     if (alertsBox) return alertsBox;
     alertsBox = document.createElement("div"); alertsBox.className = "dk-alerts"; alertsBox.id = "dk-alerts";
@@ -4132,6 +4169,7 @@ window.renderAirHome = renderAirHome;
       '</ol><button type="button" data-check-close>閉じる</button></div>';
     document.body.appendChild(alertsBox);
     if (window.ResizeObserver) new ResizeObserver(applyAlertSpace).observe(alertsBox);
+    document.addEventListener("click", function (e) { if (e.target && e.target.closest && e.target.closest("#stage")) requestAnimationFrame(function () { applyAlertSpace(); }); }, true);
     applyAlertSpace();
     var chk = alertsBox.querySelector("#al-check");
     alertsBox.addEventListener("click", function (e) {
