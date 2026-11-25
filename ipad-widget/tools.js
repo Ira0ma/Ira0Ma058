@@ -21,7 +21,7 @@
   var TABS = [["guide", "使い方"], ["money", "資金管理"], ["check", "取引前チェック"], ["journal", "日誌"], ["pnl", "トレード収支"], ["kakeibo", "家計簿"], ["tax", "確定申告"], ["signals", "シグナル履歴"], ["hours", "市場時間"], ["status", "データ状態"], ["settings", "設定"]];
   var css = document.createElement("style");
   css.textContent = [
-    ".tdt{position:fixed;inset:0;z-index:45;background:rgba(4,5,8,.72);display:flex;align-items:stretch;justify-content:center;padding:max(10px,var(--safe-top,env(safe-area-inset-top,0px))) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}",
+    ".tdt{position:fixed;top:var(--alertb,0px);left:0;right:0;bottom:0;z-index:45;background:rgba(4,5,8,.72);display:flex;align-items:stretch;justify-content:center;padding:max(10px,var(--safe-top,env(safe-area-inset-top,0px))) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}",
     ".tdt[hidden]{display:none}",
     ".tdt-box{width:min(980px,100%);display:flex;flex-direction:column;background:#101219;border:1px solid rgba(227,184,103,.35);border-radius:18px;color:#f4f1ea;overflow:hidden;font-size:14px;line-height:1.6}",
     ".tdt-top{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08)}",

@@ -56,12 +56,21 @@ def search(words):
         yield {"t": t, "title": title, "source": src, "link": it.findtext("link") or ""}
 
 
+FX_CONTEXT = ("為替", "円高", "円安", "ドル円", "円相場", "円買い", "円売り", "財務省", "財務相", "財務官", "日銀", "外国為替")
+
+
 def tone(title):
     if "利下げ" in title and any(w in title for w in ("慎重", "否定", "見送", "急がない")):
         return "hawkish"  # "cautious about cutting" reads hawkish although it says 利下げ
     if "利上げ" in title and any(w in title for w in ("慎重", "否定", "見送", "急がない")):
         return "dovish"
     for name, words in TONES:
+        if name == "intervention":
+            # 「介入」や口先介入の言い回しだけでは採用しない。為替の文脈の語と組み合わさった時だけ
+            # 介入警戒とする（医療・政治等の介入や、株価への「憂慮」などの誤マッチを防ぐ。2026-11-25）
+            if any(w in title for w in words) and any(c in title for c in FX_CONTEXT):
+                return name
+            continue
         if any(w in title for w in words):
             return name
     return ""

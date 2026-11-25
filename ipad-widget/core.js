@@ -648,11 +648,17 @@
   }
   /* 為替介入への警戒：news.json の中で、ドル円に関わる介入警戒（tone intervention）の見出しのうち、
      発言から24時間以内の最新1件。なければ null */
+  var IV_WORDS = ["介入", "過度な変動", "投機的", "憂慮", "緊張感", "断固たる", "あらゆる措置"];
+  var IV_FX = ["為替", "円高", "円安", "ドル円", "円相場", "円買い", "円売り", "財務省", "財務相", "財務官", "日銀", "外国為替"];
+  function ivTitleOk(t) {  // バナーに出すのは、介入の言い回しと為替の文脈がそろった見出しだけ（2026-11-25 誤マッチ修正）
+    if (typeof t !== "string") return false;
+    return IV_WORDS.some(function (w) { return t.indexOf(w) >= 0; }) && IV_FX.some(function (w) { return t.indexOf(w) >= 0; });
+  }
   function interventionPick(news, now) {
     var items = news && Array.isArray(news.items) ? news.items : [];
     var best = null;
     items.forEach(function (i) {
-      if (!i || i.tone !== "intervention" || !(i.pages || []).some(function (p) { return p === "usdjpy"; })) return;
+      if (!i || i.tone !== "intervention" || !ivTitleOk(i.title) || !(i.pages || []).some(function (p) { return p === "usdjpy"; })) return;
       var t = +i.t * 1000;
       if (!(t <= now + 5 * MIN) || now - t > DAY) return;
       if (!best || t > best.t * 1000) best = i;
