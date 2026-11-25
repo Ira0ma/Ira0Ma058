@@ -149,6 +149,9 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@v4
         if: github.event_name != 'schedule' || steps.fresh.outputs.stale == 'true'
+      - name: Deploy retry (GitHub-side artifact lookup intermittently fails; retry once in the same run)
+        if: failure() && (github.event_name != 'schedule' || steps.fresh.outputs.stale == 'true')
+        uses: actions/deploy-pages@v4
       - name: Keep the hourly schedule alive
         # GitHub turns off scheduled workflows after 60 days without repository activity;
         # re-enabling this workflow each run resets that timer.
