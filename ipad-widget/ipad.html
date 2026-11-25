@@ -2407,7 +2407,7 @@ window.TDFontApply();
       cards.forEach(function (el) { stage.appendChild(el); });
     }
     mode = m;
-    applyAlertSpace();  // モード切替で作られたコンテナ（#flow／#pager）にも、表示中のバナー分の下げを即反映する
+    applyAlertSpace();  // ダイアログ用の --alertb を現在のバナー表示に合わせて更新する（デスク本体のレイアウトは変えない）
   }
   function layout() {
     var m = pickMode();
@@ -2427,6 +2427,7 @@ window.TDFontApply();
     }
     placeSteps();
     drawScenes(); markets.forEach(function (m) { m.draw(); }); bg.resize();
+    applyAlertSpace();  // 画面サイズ・表示モードが変わったら、バナーの重ね位置（ボタン回避）も合わせ直す
   }
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
@@ -4091,22 +4092,31 @@ window.renderAirHome = renderAirHome;
       mk.surgeId = e.level === "emergency" && !e.ack ? e.id : "";
     });
   }
-  /* 警戒バナーが出ている間はデスク全体をバナーの下端まで下げ、カードに重ならないようにする（2026-11-18 banner-overlap修正）
-     下げ方は paddingTop で行う：対象コンテナは position:fixed;inset:0 で、top を変えると flex の中央寄せが効いて
-     実際の移動は指定の半分ほどになり、時計カード上端のボタン行がバナーの下に残った（2026-11-18夜の再点検で検出）。
-     さらに表示モードが3つあり、コンテナがモードごとに別（stage=#fit／flow=#flow／pager=#pager）ため、
-     #fit だけ下げても flow・pager では重なりが残った（同夜の実機相当確認で検出）。3コンテナすべてに同じ
-     paddingTop を入れれば、どのモードでも内容の上端は必ずバナー下端+4pxより下になる（layout()・layoutPhone() は
-     padding を差し引いて大きさを決める。layoutFlow() は幅のみ使用し、paddingTop はそのまま内容を押し下げる） */
+  /* 警戒バナーは画面の上に重なるだけの表示（オーバーレイ）で、デスク本体のレイアウトには一切触らない
+     （2026-11-26 banner-overlay 変更、Bossの実機写真を受けた指示）。以前はバナーの下端まで paddingTop で
+     デスク全体を下げていたため、バナーが出るたびに各パネルが圧縮されていた（2026-11-18〜25の方式）。
+     バナー側は .dk-alerts が position:fixed で、操作を受ける範囲はバナー実物（pointer-events:auto）だけ。
+     ここで設定する --alertb は全画面ダイアログ（.hz/.gbook/.shelf/.dash-sheet）の上端合わせ専用で、
+     パネルの寸法・配置には影響しない */
   function applyAlertSpace() {
     if (!alertsBox || !fit) return;
     var vis = alertsBox.querySelectorAll(":scope > :not([hidden])").length > 0;
-    var t = vis ? Math.ceil(alertsBox.getBoundingClientRect().bottom) + 4 + "px" : "";
-    document.documentElement.style.setProperty("--alertb", vis ? t : "0px");  // 全画面ダイアログの上端をバナー下端に合わせる（.hz/.gbook/.shelf/.dash-sheet の top が参照）
-    var targets = [fit, document.getElementById("flow"), document.getElementById("pager")];
-    var changed = false;
-    targets.forEach(function (el) { if (el && el.style.paddingTop !== t) { el.style.paddingTop = t; changed = true; } });
-    if (changed) layout();
+    placeAlerts(vis);
+    var t = vis ? Math.ceil(alertsBox.getBoundingClientRect().bottom) + 4 + "px" : "0px";
+    document.documentElement.style.setProperty("--alertb", t);  // 全画面ダイアログの上端をバナー下端に合わせる（.hz/.gbook/.shelf/.dash-sheet の top が参照）。デスク本体（#fit/#flow/#pager）には触らない
+  }
+  /* バナーの重ね位置は、上の段のボタンの下端より下に置く（2026-11-26 Boss追加条件：バナーがボタンに被らないこと）。
+     対象ボタンは時計カードの通知・音量と、各銘柄カードの見出しボタン。実物の表示位置を毎回測って決めるため、
+     画面サイズや拡大率が変わってもボタンへは被らない。タブレット表示（stage）以外では従来の上端表示のままにする */
+  function placeAlerts(vis) {
+    if (!alertsBox) return;
+    if (!vis || mode === "pager" || mode === "flow") { alertsBox.style.top = ""; return; }
+    var low = 0;
+    document.querySelectorAll("#clock .notify-btn, #clock .sound-btn, #markets .mkt .head").forEach(function (b) {
+      var r = b.getBoundingClientRect();
+      if (r.height > 0 && r.bottom > low) low = r.bottom;
+    });
+    alertsBox.style.top = low ? Math.ceil(low) + 6 + "px" : "";
   }
   function alertEls() {
     if (alertsBox) return alertsBox;
