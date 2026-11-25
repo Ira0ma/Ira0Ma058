@@ -29,7 +29,26 @@ jobs:
         with:
           ref: claude/amazon-affiliate-articles
           path: src
+      - name: Freshness gate (scheduled runs only)
+        id: fresh
+        run: |
+          python3 - <<'PY'
+          import json, os, time
+          stale = True
+          try:
+              with open("dl/market.json") as f:
+                  updated = json.load(f)["updated"]
+              import datetime
+              t = datetime.datetime.fromisoformat(updated.replace("Z", "+00:00")).timestamp()
+              stale = (time.time() - t) > 15 * 60
+              print(f"backup market.json age: {(time.time() - t) / 60:.1f} min -> stale={stale}")
+          except Exception as e:
+              print(f"freshness check failed ({e}); treating as stale")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"stale={'true' if stale else 'false'}\n")
+          PY
       - name: Generate the backup data
+        if: github.event_name != 'schedule' || steps.fresh.outputs.stale == 'true'
         run: |
           mkdir -p out
           if [ ! -f dl/market.json ]; then
@@ -39,6 +58,7 @@ jobs:
           python3 ipad-widget/analyze.py "$GITHUB_WORKSPACE/out/market.json" --prev="$GITHUB_WORKSPACE/dl/market.json"
           ls -la "$GITHUB_WORKSPACE/out"
       - name: Commit and push to data-live if anything changed
+        if: github.event_name != 'schedule' || steps.fresh.outputs.stale == 'true'
         run: |
           for f in market.json spothist.json market-status.json; do
             if [ -f "out/$f" ]; then cp "out/$f" "dl/$f"; fi

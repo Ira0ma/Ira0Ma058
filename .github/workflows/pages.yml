@@ -23,8 +23,11 @@ permissions:
   actions: write  # keep-alive below
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  # Scheduled runs get their own group and never cancel a run: on 2026-11-26 00:29 a pages run that
+  # the backup chain was waiting on vanished mid-flight and both chains stopped. A scheduled
+  # freshness check must not be able to kill the run that is keeping the data alive.
+  group: ${{ github.event_name == 'schedule' && 'pages-sched' || 'pages' }}
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
 
 jobs:
   deploy:
@@ -46,7 +49,25 @@ jobs:
             curl -fsSL --retry 2 "${{ steps.pages.outputs.base_url }}/$f" -o "prev/$f" || rm -f "prev/$f"
           done
           ls -la prev
+      - name: Freshness gate (scheduled runs only)
+        id: fresh
+        run: |
+          python3 - <<'PY'
+          import datetime, json, os, time
+          stale = True
+          try:
+              with open("prev/market.json") as f:
+                  updated = json.load(f)["updated"]
+              t = datetime.datetime.fromisoformat(updated.replace("Z", "+00:00")).timestamp()
+              stale = (time.time() - t) > 15 * 60
+              print(f"published market.json age: {(time.time() - t) / 60:.1f} min -> stale={stale}")
+          except Exception as e:
+              print(f"freshness check failed ({e}); treating as stale")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"stale={'true' if stale else 'false'}\n")
+          PY
       - name: Build site
+        if: github.event_name != 'schedule' || steps.fresh.outputs.stale == 'true'
         run: |
           python3 ipad-widget/build.py
           mkdir -p _site
@@ -64,6 +85,7 @@ jobs:
           cp -r ipad-widget/learn _site/learn  # 学習の本（パターン図鑑・ドル円入門・FVG詳説）のデータと図。learn-src は公開しない
           cp ipad-widget/strategy.json _site/strategy.json || true  # daily recap and outlook (written by the morning report task)
       - name: Fetch economic calendar
+        if: github.event_name != 'schedule' || steps.fresh.outputs.stale == 'true'
         continue-on-error: true
         run: |
           if curl -fsSL --retry 3 -A "Mozilla/5.0 (TradeDeskWidget)" \
@@ -84,6 +106,7 @@ jobs:
             echo "calendar fetch failed; keeping the published copy"; cp prev/calendar.json _site/calendar.json
           fi
       - name: Fetch Japanese public holidays
+        if: github.event_name != 'schedule' || steps.fresh.outputs.stale == 'true'
         continue-on-error: true
         run: |
           if curl -fsSL --retry 3 https://holidays-jp.github.io/api/v1/date.json -o holidays.json \
@@ -93,32 +116,39 @@ jobs:
             echo "holiday fetch failed; keeping the published copy"; cp prev/holidays.json _site/holidays.json
           fi
       - name: Work out US and UK market holidays (from their rules; no outside source)
+        if: github.event_name != 'schedule' || steps.fresh.outputs.stale == 'true'
         continue-on-error: true
         run: python3 ipad-widget/market_holidays.py _site/market_holidays.json || cp prev/market_holidays.json _site/market_holidays.json || true
       - name: Fetch remarks by central bankers and officials
+        if: github.event_name != 'schedule' || steps.fresh.outputs.stale == 'true'
         continue-on-error: true
         run: |
           python3 ipad-widget/news.py _site/news.json prev/news.json \
             || cp prev/news.json _site/news.json || true
       - name: Fetch typhoons (JMA) and pollen (Weathernews) for the weather card
+        if: github.event_name != 'schedule' || steps.fresh.outputs.stale == 'true'
         continue-on-error: true
         run: python3 ipad-widget/hazards.py _site prev
       - name: Fetch prices and build chart analysis
+        if: github.event_name != 'schedule' || steps.fresh.outputs.stale == 'true'
         continue-on-error: true
         run: |
           python3 ipad-widget/analyze.py _site/market.json --prev=prev/market.json \
             || { cp prev/market.json _site/market.json; cp prev/spothist.json _site/spothist.json || true; }
       - name: Measure the reactions to past releases (from the site's own candles; history kept from the published copy)
+        if: github.event_name != 'schedule' || steps.fresh.outputs.stale == 'true'
         continue-on-error: true
         run: |
           python3 ipad-widget/reactions.py _site/reactions.json _site/market.json _site/calendar.json --prev=prev/reactions.json \
             --backfill=ipad-widget/reaction_backfill.json \
             || cp prev/reactions.json _site/reactions.json || true
       - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'schedule' || steps.fresh.outputs.stale == 'true'
         with:
           path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
+        if: github.event_name != 'schedule' || steps.fresh.outputs.stale == 'true'
       - name: Keep the hourly schedule alive
         # GitHub turns off scheduled workflows after 60 days without repository activity;
         # re-enabling this workflow each run resets that timer.

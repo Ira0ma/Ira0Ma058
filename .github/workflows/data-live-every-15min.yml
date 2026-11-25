@@ -1,0 +1,35 @@
+name: Refresh the backup data every 15 minutes
+
+# Starter chain for data-live-gen.yml, mirroring pages-every-15min.yml: GitHub starts frequent
+# schedules only about once an hour, so this hourly run starts data-live-gen.yml by hand
+# (workflow_dispatch, which GitHub does not hold back) four times, 15 minutes apart.
+# On 2026-11-26 00:29 the backup self-chain ended without dispatching a successor
+# (guarded: pages active-run / too-soon) and nothing on the GitHub side restarted it;
+# this loop is the independent restart path. The freshness gate inside data-live-gen.yml
+# makes these starts cheap while the data is fresh.
+on:
+  schedule:
+    - cron: "26 * * * *"  # once an hour (GitHub may start it late; the loop below covers the hour)
+  workflow_dispatch:
+
+permissions:
+  actions: write  # to start data-live-gen.yml
+  contents: read
+
+concurrency:
+  group: data-live-every-15min
+  cancel-in-progress: false  # a late start waits for the running loop instead of piling up
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Start the backup generation now, then every 15 minutes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in 1 2 3 4; do
+            gh workflow run data-live-gen.yml --repo "${{ github.repository }}" --ref "${{ github.ref_name }}" || echo "start failed (next one in 15 minutes)"
+            if [ "$i" -lt 4 ]; then sleep 900; fi
+          done
