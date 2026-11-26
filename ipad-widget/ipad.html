@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-cup.png">
 <link rel="icon" type="image/png" href="icon-cup.png">
-<meta name="build" content="d75a939e45">
+<meta name="build" content="b902f533e4">
 <title>Desk One</title>
 <style>:root{--gutter:0px!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -472,26 +472,10 @@ html:not(.lowpower) .mreg .rg-dot { transition: left .6s ease; }
 .dk-al small { font-size: 11px; color: var(--ink-2); line-height: 1.45; }
 .dk-al small a { color: var(--gold); }
 .dk-al .x { position: absolute; top: 4px; right: 4px; font: inherit; font-size: 13px; line-height: 1; color: var(--ink-2); background: none; border: 0; padding: 6px 8px; cursor: pointer; }
-#al-merged .mg-wrap { display: flex; gap: 12px; }
-#al-merged .mg-sec { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .dk-check { pointer-events: auto; width: min(560px, 100%); box-sizing: border-box; border-radius: 12px; padding: 10px 14px; background: rgba(16,19,24,.98); border: 1px solid var(--glass-line); box-shadow: 0 4px 18px rgba(0,0,0,.55); font-size: 12.5px; color: var(--ink); line-height: 1.6; }
 .dk-check ol { margin: 6px 0 4px; padding-left: 20px; }
 .dk-check p { margin: 0; font-size: 11px; color: var(--ink-3); }
 .dk-check button { font: inherit; font-size: 12px; color: var(--ink-2); background: none; border: 1px solid var(--glass-line); border-radius: 999px; padding: 3px 12px; margin-top: 6px; cursor: pointer; }
-/* 帯ドック（2026-11-26 banner-dock）：タブレット表示（stage）では、バナーをパネルより上の帯（最初のパネルの上端まで）に
-   細い帯状で固定する。帯の中には操作要素もパネルも無いため、データや文面によらず重ならない。
-   帯に収まらない場合は .nosmalls で出典行（small）を落とす（fitAlertsToStrip が実行時に切り替える） */
-.dk-alerts.docked { left: 50%; right: auto; transform: translateX(-50%); width: min(1160px, 97vw); padding: 0; align-items: stretch; }
-.dk-alerts.docked .dk-al { width: 100%; flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 10px; row-gap: 1px; padding: 7px 36px 7px 12px; }
-.dk-alerts.docked .dk-al b { white-space: nowrap; flex: none; }
-.dk-alerts.docked .dk-al span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
-.dk-alerts.docked .dk-al small { flex-basis: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
-.dk-alerts.docked.nosmalls .dk-al small { display: none; }
-.dk-alerts.docked .dk-check { width: 100%; }
-.dk-alerts.docked #al-merged .mg-wrap { flex: 1; min-width: 0; flex-wrap: nowrap; }
-.dk-alerts.docked #al-merged .mg-sec { flex-direction: row; align-items: center; gap: 10px; }
-.dk-alerts.docked #al-merged .mg-sec b { white-space: nowrap; flex: none; }
-.dk-alerts.docked #al-merged .mg-sec span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* 急変中の銘柄：カードの名前の下に印（緊急で未確認のときだけ点滅。タップで止まり、印は残る） */
 .mkt .sg { display: none; font-size: 11px; font-weight: 700; margin-top: 1px; white-space: nowrap; color: #f5c04a; }
 .mkt .sg.emg { color: #ff8a7e; }
@@ -2423,7 +2407,7 @@ window.TDFontApply();
       cards.forEach(function (el) { stage.appendChild(el); });
     }
     mode = m;
-    applyAlertSpace();  // ダイアログ用の --alertb を現在のバナー表示に合わせて更新する（デスク本体のレイアウトは変えない）
+    applyAlertSpace();  // ダイアログ用の --alertb を更新する（バナーは表示しないため常に 0）
   }
   function layout() {
     var m = pickMode();
@@ -2443,7 +2427,7 @@ window.TDFontApply();
     }
     placeSteps();
     drawScenes(); markets.forEach(function (m) { m.draw(); }); bg.resize();
-    applyAlertSpace();  // 画面サイズ・表示モードが変わったら、バナーの帯ドックも合わせ直す
+    applyAlertSpace();  // 画面サイズ・表示モードが変わっても、バナーは表示しない
   }
 
   /* ---------- GOLD / USDJPY dashboard sheets: open full-screen over the desk; closing keeps them loaded ---------- */
@@ -4108,99 +4092,14 @@ window.renderAirHome = renderAirHome;
       mk.surgeId = e.level === "emergency" && !e.ack ? e.id : "";
     });
   }
-  /* 警戒バナーはデスク本体のレイアウトには一切触らない（2026-11-26 banner-overlay 変更、Bossの実機写真を受けた指示）。
-     以前はバナーの下端まで paddingTop でデスク全体を下げていたため、バナーが出るたびに各パネルが圧縮されていた
-     （2026-11-18〜25の方式）。タブレット表示（stage）では、バナーをパネルより上の帯に細い帯状で固定する
-     （2026-11-26 banner-dock 変更。帯の中には操作要素もパネルも無く、走査配置でパネル内側に置いた方式は
-     リンクとの間が5pxしかない位置を合格にしてしまい実機で被ったため廃止した）。
-     ここで設定する --alertb は全画面ダイアログ（.hz/.gbook/.shelf/.dash-sheet）の上端合わせ専用で、
-     パネルの寸法・配置には影響しない */
+  /* アラートバナーは表示しない（2026-11-26 Boss決定で表示そのものを取りやめ）。
+     検知（介入の警戒・急変・市場の怖さ）とデータは従来どおり動き、paintAlerts も呼ばれるが、
+     どのバナーも描画しない。帯ドック・走査配置・パネル圧縮の方式はすべて廃止した。
+     --alertb は全画面ダイアログの上端合わせ専用で、バナーが無いため常に 0 */
   function applyAlertSpace() {
-    if (!alertsBox || !fit) return;
-    var vis = alertsBox.querySelectorAll(":scope > :not([hidden])").length > 0;
-    placeAlerts(vis);
-    var t = vis ? Math.ceil(alertsBox.getBoundingClientRect().bottom) + 4 + "px" : "0px";
-    document.documentElement.style.setProperty("--alertb", t);  // 全画面ダイアログの上端をバナー下端に合わせる（.hz/.gbook/.shelf/.dash-sheet の top が参照）。デスク本体（#fit/#flow/#pager）には触らない
-  }
-  /* バナーの重ね位置は、画面内の全操作ボタンと重ならない場所を実測で探して決める（2026-11-26 Boss追加条件）。
-     タブレット表示（stage）以外では従来の上端表示のままにする */
-  var mergedIds = null;  // 合体表示中のバナーid一覧（通常は null）
-  function alertDesire() {
-    var d = [];
-    if (ivShown) d.push("al-iv");
-    if (mvShown && Date.now() - mvShown.at < TDCore.SURGE_SHOW && mvShown.id !== lsRead(MV_CLOSED)) d.push("al-mv");
-    if (vxShown && vxShown.id !== lsRead(VX_CLOSED)) d.push("al-vx");
-    return d;
-  }
-  function unmerge() {
-    var mg = alertsBox.querySelector("#al-merged");
-    if (mg) mg.hidden = true;
-    if (mergedIds) {
-      var d = alertDesire();
-      mergedIds.forEach(function (id) { var el = alertsBox.querySelector("#" + id); if (el) el.hidden = d.indexOf(id) < 0; });
-      mergedIds = null;
-    }
-  }
-  function buildMerged(ids) {
-    var mg = alertsBox.querySelector("#al-merged");
-    var wrap = mg.querySelector(".mg-wrap"); wrap.innerHTML = "";
-    ids.forEach(function (id) {
-      var src = alertsBox.querySelector("#" + id);
-      var sec = document.createElement("div"); sec.className = "mg-sec";
-      var b = document.createElement("b"); b.innerHTML = src.querySelector("b").innerHTML;
-      var sp = document.createElement("span"); sp.textContent = src.querySelector("span").textContent;
-      sec.appendChild(b); sec.appendChild(sp); wrap.appendChild(sec);
-      src.hidden = true;
-    });
-    mg.className = "dk-al mg" + (ids.indexOf("al-mv") >= 0 && mvShown && mvShown.level === "emergency" ? " emg" : "");
-    mg.hidden = false;
-    mergedIds = ids.slice();
-  }
-  function placeAlerts(vis) {
-    if (!alertsBox) return;
-    var reset = function () {
-      alertsBox.classList.remove("docked", "nosmalls");
-      alertsBox.style.left = ""; alertsBox.style.top = ""; alertsBox.style.width = "";
-      alertsBox.style.maxHeight = ""; alertsBox.style.overflow = "";
-    };
-    if (!vis || mode !== "stage") { if (mergedIds) unmerge(); reset(); return; }
-    /* タブレット表示（stage）：帯ドック。パネルより上の帯に固定する（下の fitAlertsToStrip で帯の高さに収める）。
-       2枚以上のときは常時合体して1行にし、帯の高さに収める */
-    var desire = alertDesire();
-    if (mergedIds) {
-      if (mergedIds.join() === desire.join()) buildMerged(mergedIds);  // paintAlerts が戻した表示を合体し直す
-      else { unmerge(); if (desire.length >= 2) buildMerged(desire); }
-    } else if (desire.length >= 2) buildMerged(desire);
-    alertsBox.classList.add("docked");
-    alertsBox.style.left = ""; alertsBox.style.top = ""; alertsBox.style.width = "";  // 位置と幅は CSS の .docked が決める
-    fitAlertsToStrip();
-  }
-  /* 帯（画面の最上部から最初のパネルの上端まで）の中にバナーを収める。
-     帯の高さは実行時に #clock / #markets の上端で測る。はみ出す場合は出典行（small）を落とし、
-     それでもはみ出す場合は高さそのものを帯に制限する。帯の中には操作要素もパネルも無いため、
-     この範囲に収まる限り、どの文面・データでも重なることはない */
-  function fitAlertsToStrip() {
-    var chk = alertsBox.querySelector("#al-check");
-    var chkOpen = chk && !chk.hidden;  // 確認リストは利用者が開く一時的な重ね表示で、帯の計算からは外す
-    alertsBox.classList.remove("nosmalls");
-    alertsBox.style.maxHeight = ""; alertsBox.style.overflow = "";
-    var panelTop = Infinity;
-    ["clock", "markets"].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) { var t = el.getBoundingClientRect().top; if (t > 0 && t < panelTop) panelTop = t; }
-    });
-    if (!isFinite(panelTop)) return;
-    var limit = panelTop - 6;  // 最初のパネルとの間に 6px の余白を残す
-    var top = alertsBox.getBoundingClientRect().top;
-    var bannersH = function () {
-      var h = 0;
-      alertsBox.querySelectorAll(":scope > .dk-al").forEach(function (el) { if (!el.hidden) h += el.getBoundingClientRect().height + 6; });
-      return h;
-    };
-    if (top + bannersH() > limit) {
-      alertsBox.classList.add("nosmalls");
-      if (top + bannersH() > limit && !chkOpen) { alertsBox.style.maxHeight = Math.max(0, limit - top) + "px"; alertsBox.style.overflow = "hidden"; }
-    }
+    // アラートバナーは表示しない（2026-11-26 Boss決定）。検知とデータは残し、画面には出さない。
+    // --alertb はダイアログの上端合わせ専用で、バナーが無いため常に 0。
+    document.documentElement.style.setProperty("--alertb", "0px");
   }
 
   function alertEls() {
@@ -4209,7 +4108,6 @@ window.renderAirHome = renderAirHome;
     alertsBox.innerHTML = '<div class="dk-al" id="al-iv" role="status" hidden><button type="button" class="x" aria-label="介入警戒の表示を閉じる">✕</button><b>⚠ 為替介入への警戒</b><span></span><small></small></div>' +
       '<div class="dk-al" id="al-mv" role="alert" hidden><button type="button" class="x" aria-label="急変の表示を閉じる">✕</button><b></b><span></span><small></small></div>' +
       '<div class="dk-al vx" id="al-vx" role="status" hidden><button type="button" class="x" aria-label="市場の怖さの表示を閉じる">✕</button><b>🌡 市場の怖さが急上昇</b><span></span><small></small></div>' +
-      '<div class="dk-al mg" id="al-merged" role="alert" hidden><button type="button" class="x" aria-label="警戒表示を閉じる">✕</button><div class="mg-wrap"></div></div>' +
       '<div class="dk-check" id="al-check" hidden><b>急変したときの確認</b><ol>' +
       "<li>最初の1〜2本は見送る。急変直後は往って来いになりやすい</li>" +
       "<li>新規エントリーは止め、保有ポジションの損切り位置を確認する</li>" +
@@ -4225,14 +4123,6 @@ window.renderAirHome = renderAirHome;
       if (e.target.closest("a")) return;  // 出典のリンクはそのまま開く
       if (e.target.closest("[data-check-close]")) { chk.hidden = true; return; }
       var al = e.target.closest(".dk-al"); if (!al) return;
-      if (al.id === "al-merged") {
-        if (e.target.closest(".x")) {
-          (mergedIds || []).slice().forEach(function (id) { var t = alertsBox.querySelector("#" + id + " .x"); if (t) t.click(); });
-          return;
-        }
-        if (mergedIds && mergedIds.indexOf("al-mv") >= 0 && mvShown) surgeAck(mvShown.id);
-        chk.hidden = !chk.hidden; return;
-      }
       if (e.target.closest(".x")) {
         if (al.id === "al-iv" && ivShown) lsWrite(IV_CLOSED, ivShown.title);
         if (al.id === "al-mv" && mvShown) { lsWrite(MV_CLOSED, mvShown.id); surgeAck(mvShown.id); }
@@ -4278,7 +4168,9 @@ window.renderAirHome = renderAirHome;
       vxEl.querySelector("span").textContent = "VIX " + vxd.price.toFixed(2) + "（前日比 +" + vChg.toFixed(1) + "%）。相場が荒れやすい状態です";
       vxEl.querySelector("small").textContent = "市場の怖さの数字からの警戒情報です。タップで対応を確認";
     }
-    if (iv.hidden && mv.hidden && vxEl.hidden) box.querySelector("#al-check").hidden = true;
+    // アラートバナーは表示しない（2026-11-26 Boss決定）。検知（ivShown / mvShown / vxShown）とデータは残すが、描画は一切しない。
+    iv.hidden = true; mv.hidden = true; vxEl.hidden = true;
+    box.querySelector("#al-check").hidden = true;
     applyAlertSpace();
   }
   function loadNews() {
