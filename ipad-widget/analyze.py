@@ -4,6 +4,8 @@ technical read (trend from moving averages, levels from daily pivots, RSI, ATR).
 Usage: python3 analyze.py OUT.json [--prev=OLD.json]   (fetches from Yahoo Finance / gold-api.com / Swissquote;
                                                          OLD.json fills in instruments that fail)
        python3 analyze.py OUT.json FIXTURE    (FIXTURE: JSON {symbol: yahoo-chart-json} for tests)
+       python3 analyze.py --chain-only       (books the next generation run only;
+                                              no data is fetched or written)
 """
 import base64
 import bisect
@@ -1039,6 +1041,15 @@ def chain_dispatch():
     CHAIN = marker
 
 if __name__ == "__main__":
+    if "--chain-only" in sys.argv[1:]:
+        # 2026-11-26 (gate hole): the freshness gate in both workflows skips the
+        # generate step on scheduled runs that find fresh data, and chain_dispatch
+        # lives in the finally block of the generate path, so a skipped run booked
+        # nothing and the self-chain ended (17:57 JST stop, 36 min). The workflows
+        # now run this mode in an unconditional step after the generate step, so
+        # every run books its successor whether it generated or not.
+        chain_dispatch()
+        sys.exit(0)
     args = [a for a in sys.argv[1:] if not a.startswith("--prev=")]
     prev_path = next((a[7:] for a in sys.argv[1:] if a.startswith("--prev=")), None)
     prev = None
