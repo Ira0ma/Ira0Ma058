@@ -1,1 +1,1 @@
-{"status":"ok","at":"2026-11-26T05:13:16+00:00","chain":{"at":"2026-11-26T05:13:13+00:00","dispatched":["pages.yml","data-live-gen.yml"]}}
+{"status":"ok","at":"2026-11-26T05:14:41+00:00","chain":{"at":"2026-11-26T05:14:39+00:00","guarded":["pages.yml: active-run"],"dispatched":["data-live-gen.yml"]}}
