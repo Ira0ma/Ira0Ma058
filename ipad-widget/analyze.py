@@ -843,7 +843,8 @@ def one(key, sym, spot_sym, fixture, prev=None):
 # 2026-11-24 (D-0930-1): a single HTTPError from the dispatch API killed the
 # backup chain for over two hours, and a later guard skip left no trace, so
 # neither failure could be diagnosed from the record. The booking now records
-# why a guard held it back ("guarded: active-run" / "guarded: too-soon"),
+# why a guard held it back ("guarded: active-run"; "too-soon" was removed
+# 2026-11-26 after C-04, see the guard note below),
 # records the HTTP status code with every error, and retries a transient
 # dispatch failure (5xx / 429) up to two extra times, re-checking the guards
 # before every attempt so a retry can never multiply runs.
@@ -854,6 +855,19 @@ def one(key, sym, spot_sym, fixture, prev=None):
 # An active run that started over 60 minutes ago is therefore treated as
 # stuck and no longer blocks a booking, and the booking records the
 # exclusion under "stuck-ignored" so the wedge stays visible in the record.
+# 2026-11-26 (C-04): the "too-soon" rule (a completed run younger than 60
+# seconds blocks a booking) caused a mutual deferral that stopped both
+# chains: at 08:47:14 JST the backup run deferred the backup booking to an
+# active sibling ("active-run") and booked only pages; at 08:48:13 JST the
+# pages run deferred the backup booking to that just-completed backup run
+# ("too-soon"). Neither side booked the next backup generation, and no
+# schedule arrived for 50+ minutes. A completed run has already made its
+# booking decision in its finally block: if it booked nothing, a new
+# booking is required, not forbidden. The guard now judges only whether a
+# run of the target workflow is actually in progress or queued (plus the
+# stuck exclusion above); recency of a completed run no longer blocks.
+# The "too-soon" reason is gone for good: any market-status.json that
+# still shows it predates this change.
 CHAIN = {}
 
 def _gh_get(path, token):
@@ -914,6 +928,16 @@ def _chain_guard(runs, self_id):
     no trace in market-status.json, so a dead chain could not be told apart
     from a chain that was never booked.
 
+    The only reason to wait is a run of the target workflow that is actually
+    in progress or queued right now: that run will make its own booking
+    decision when it finishes, so booking another one would duplicate it.
+    A completed run never blocks, however recent it is: it already made its
+    booking decision in its finally block, and if it booked nothing, a new
+    booking is required (2026-11-26 C-04: a "too-soon" rule on completed
+    runs let the backup and pages runs defer to each other and stopped both
+    chains). The calling run itself never blocks: it is excluded by id, so
+    a run never defers to itself.
+
     Returns (reason, stuck). stuck counts the other runs that are still in
     an active state over 60 minutes after they started: such a run is
     wedged on GitHub's side (2026-11-24: a single wedged backup run held
@@ -935,14 +959,6 @@ def _chain_guard(runs, self_id):
             stuck += 1
         else:
             return "active-run", stuck
-    if others:
-        newest = max(r.get("created_at", "") for r in others)
-        try:
-            age = (now - datetime.fromisoformat(newest.replace("Z", "+00:00"))).total_seconds()
-        except Exception:
-            age = 9999
-        if age < 60:
-            return "too-soon", stuck
     return None, stuck
 
 def _chain_book(repo, wf, token):
