@@ -76,6 +76,13 @@ jobs:
             git pull --rebase origin data-live || true
             git push origin data-live
           fi
+      - name: Book the next generation (always, even when the gate skipped this run)
+        # 2026-11-26 (gate hole): a scheduled run that finds fresh data skips the
+        # generate step, and chain_dispatch lives in that step's finally block, so
+        # a skipped run booked nothing and the self-chain ended (17:57 JST stop).
+        # This step runs unconditionally so every run books its successor.
+        if: always()
+        run: python3 src/ipad-widget/analyze.py --chain-only
       - name: Keep the schedule alive
         if: github.event_name != 'push'
         continue-on-error: true
