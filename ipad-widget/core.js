@@ -648,24 +648,6 @@
   }
   /* 為替介入への警戒：news.json の中で、ドル円に関わる介入警戒（tone intervention）の見出しのうち、
      発言から24時間以内の最新1件。なければ null */
-  var IV_WORDS = ["介入", "過度な変動", "投機的", "憂慮", "緊張感", "断固たる", "あらゆる措置"];
-  var IV_FX = ["為替", "円高", "円安", "ドル円", "円相場", "円買い", "円売り", "財務省", "財務相", "財務官", "日銀", "外国為替"];
-  function ivTitleOk(t) {  // バナーに出すのは、介入の言い回しと為替の文脈がそろった見出しだけ（2026-11-25 誤マッチ修正）
-    if (typeof t !== "string") return false;
-    return IV_WORDS.some(function (w) { return t.indexOf(w) >= 0; }) && IV_FX.some(function (w) { return t.indexOf(w) >= 0; });
-  }
-  function interventionPick(news, now) {
-    var items = news && Array.isArray(news.items) ? news.items : [];
-    var best = null;
-    items.forEach(function (i) {
-      if (!i || i.tone !== "intervention" || !ivTitleOk(i.title) || !(i.pages || []).some(function (p) { return p === "usdjpy"; })) return;
-      var t = +i.t * 1000;
-      if (!(t <= now + 5 * MIN) || now - t > DAY) return;
-      if (!best || t > best.t * 1000) best = i;
-    });
-    return best;
-  }
-
   /* ---------- 相場タイプ判定（テクニカル／ファンダメンタル） ----------
      仕様：market-regime-spec-20261105.md（v2）。判定は純関数 regimeJudge に閉じ込め、
      画面側は既存データのスナップショットを渡すだけにする。新規の外部通信は持たない。
@@ -870,7 +852,7 @@
     checkMarket: checkMarket, realCandles: realCandles, sequencer: sequencer,
     weeklyHours: weeklyHours, REOPEN_NOTE: REOPEN_NOTE, LEVEL_JA: LEVEL_JA,
     positionSize: positionSize, riskReward: riskReward, dailyLoss: dailyLoss, dayKey: dayKey, journalDays: journalDays, dailyBook: dailyBook, periodSummary: periodSummary, weekOf: weekOf, gotobi: gotobi, surpriseOf: surpriseOf, indDirection: indDirection, indUnit: indUnit, indAffects: indAffects, rxInsts: rxInsts, RX_JA: RX_JA, reactionStats: reactionStats, moveText: moveText, INST_JA: INST_JA,
-    SURGE: SURGE, SURGE_GAP: SURGE_GAP, SURGE_COOL: SURGE_COOL, SURGE_SHOW: SURGE_SHOW, surgeAdd: surgeAdd, surgeCheck: surgeCheck, surgeGate: surgeGate, surgeText: surgeText, interventionPick: interventionPick,
+    SURGE: SURGE, SURGE_GAP: SURGE_GAP, SURGE_COOL: SURGE_COOL, SURGE_SHOW: SURGE_SHOW, surgeAdd: surgeAdd, surgeCheck: surgeCheck, surgeGate: surgeGate, surgeText: surgeText,
     regimeEventClass: regimeEventClass, regimeJudge: regimeJudge, regimeStage: regimeStage, regimeFxMult: regimeFxMult, regimeNarrow: regimeNarrow, regimeNewsCount: regimeNewsCount, REGIME_STAGES: REGIME_STAGES, REGIME_NEAR: REGIME_NEAR, REGIME_RXREF: REGIME_RXREF, REGIME_FX_BASE: REGIME_FX_BASE,
     newStore: newStore, updateSignal: updateSignal, expireSignals: expireSignals, loadStore: loadStore, COOLDOWN: COOLDOWN,
     toCSV: toCSV, parseCSV: parseCSV, importCSV: importCSV,

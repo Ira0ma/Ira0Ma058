@@ -53,16 +53,3 @@ test("文言：円高は「円高方向」、円安方向も緊急になり、�
   assert.equal(b.head, "ドル円が急変（円安方向）"); assert.equal(b.level, "緊急");
   [a, b].forEach(function (x) { assert.doesNotMatch(JSON.stringify(x), /介入|防衛線|ライン/); });
 });
-test("介入警戒の見出し：ドル円・24時間以内の最新1件だけ", () => {
-  var now = T0, h = 3600;
-  var news = { items: [
-    { t: now / 1000 - 2 * h, title: "財務相、為替介入の可能性に言及", tone: "intervention", pages: ["usdjpy", "gold"], who: "財務省" },
-    { t: now / 1000 - 1 * h, title: "B", tone: "hawkish", pages: ["usdjpy"], who: "日銀" },
-    { t: now / 1000 - 30 * h, title: "財務官、円安に断固たる措置", tone: "intervention", pages: ["usdjpy"], who: "財務省" },
-    { t: now / 1000 - 0.5 * h, title: "財務官、為替介入の可能性に言及", tone: "intervention", pages: ["gold"], who: "財務省" }] };
-  assert.equal(C.interventionPick(news, now).title, "財務相、為替介入の可能性に言及");
-  // 介入の言い回しがあっても為替の文脈が無い見出しは、バナーに出さない（2026-11-25 誤マッチ修正）
-  assert.equal(C.interventionPick({ items: [{ t: now / 1000 - h, title: "政府、介護保険制度への介入を検討", tone: "intervention", pages: ["usdjpy"], who: "財務省" }] }, now), null);
-  assert.equal(C.interventionPick({ items: [news.items[2]] }, now), null);
-  assert.equal(C.interventionPick(null, now), null);
-});
