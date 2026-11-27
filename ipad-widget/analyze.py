@@ -393,6 +393,22 @@ def build(fixture=None, prev=None):
         if fixture is None:
             time.sleep(0.4)
     BUILD_STATUS["fresh"] = fresh
+    # K-03 (Desk One side): publish each instrument's last bar per timeframe in
+    # market-status.json, so a stall of one instrument/timeframe is visible outside the
+    # generator's logs. (2026-11-27: the 27.5-hour GOLD freeze was visible only in the
+    # logs — the file kept advancing and every watcher stayed quiet.)
+    candles = {}
+    for key, inst in out["instruments"].items():
+        last = {}
+        for tf in ("1m", "5m", "15m", "1h", "4h", "1d"):
+            rows = (inst.get("candles") or {}).get(tf) or []
+            if rows:
+                t = rows[-1][0]
+                t = t / 1000 if t > 1e12 else t
+                last[tf] = datetime.fromtimestamp(t, timezone.utc).isoformat(timespec="seconds")
+        if last:
+            candles[key] = last
+    BUILD_STATUS["candles"] = candles
     if fresh == 0 and prev:
         return prev  # nothing new at all: republish the previous file unchanged
     return out
@@ -1249,6 +1265,8 @@ if __name__ == "__main__":
                   "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
         if BUILD_STATUS["stale"]:
             status["stale"] = BUILD_STATUS["stale"]
+        if BUILD_STATUS.get("candles"):
+            status["candles"] = BUILD_STATUS["candles"]
         if status["status"] == "fail" and prev:
             status["since"] = prev.get("updated")
         if CHAIN:
