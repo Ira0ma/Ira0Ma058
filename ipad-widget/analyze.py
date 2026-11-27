@@ -401,6 +401,66 @@ def build(fixture=None, prev=None):
 _cache = {}
 
 
+OKX_PERP = {"GC=F": "XAU-USDT-SWAP", "SI=F": "XAG-USDT-SWAP", "CL=F": "CL-USDT-SWAP"}
+OKX_BARS = {"1m": "1m", "5m": "5m", "15m": "15m", "1h": "1H"}
+OKX_IV = {"1m": "1m", "5m": "5m", "15m": "15m", "1h": "60m"}  # Yahoo interval names, for VOLUME
+
+
+def okx_candles(inst, bar, limit=300, total=None):
+    """OKX perpetual candles as [t, o, h, l, c] rows (epoch seconds, ascending) and {t: volume}.
+    The desk already reads OKX perpetuals (oil's published price), so the same feed is the
+    fallback candle source when Yahoo's intraday series stops advancing: on 2026-11-27 Yahoo
+    published no GC=F / SI=F / CL=F / DX-Y intraday bars after the pre-Thanksgiving session
+    (last bar 2026-11-26 04:58 UTC) while its quotes stayed live, which froze those four
+    instruments' candles for over a day with the spot price still moving.
+    With total > limit, older bars are paged in from the history endpoint: the hourly series
+    needs more than 1440 bars or one() stops rebuilding the daily candles from hours and the
+    published dailies fall back to Yahoo's raw futures-basis series."""
+    def take(data, rows, vol):
+        for r in reversed(data or []):
+            t = int(r[0]) // 1000
+            rows.append([t, float(r[1]), float(r[2]), float(r[3]), float(r[4])])
+            try:
+                v = float(r[5])
+                if v:
+                    vol[t] = v
+            except Exception:
+                pass
+
+    rows, vol = [], {}
+    take(get_json(f"https://www.okx.com/api/v5/market/candles?instId={inst}&bar={bar}&limit={limit}").get("data"), rows, vol)
+    while total and len(rows) < total and rows:
+        older, ovol = [], {}
+        take(get_json(f"https://www.okx.com/api/v5/market/history-candles?instId={inst}&bar={bar}&limit=300&after={rows[0][0] * 1000}").get("data"), older, ovol)
+        if not older:
+            break
+        rows = older + rows
+        vol.update(ovol)
+    return rows, vol
+
+
+def _session_open(now=None):
+    """Approximate CME Globex / ICE trading week in UTC: closed Fri 21:00 to Sun 22:00, plus a
+    daily halt 21:00-23:00 Mon-Thu. Outside the session a stale Yahoo intraday series is
+    expected (weekends, the daily break), and the fallbacks stay off so closed-market charts
+    keep their established shape."""
+    now = now or datetime.now(timezone.utc)
+    wd, hh = now.weekday(), now.hour  # Mon=0 .. Sun=6
+    if wd == 5:
+        return False
+    if wd == 6:
+        return hh >= 22
+    if wd == 4 and hh >= 21:
+        return False
+    if wd in (0, 1, 2, 3) and 21 <= hh < 23:
+        return False
+    return True
+
+
+def _stale(rows, minutes=30):
+    return bool(rows) and time.time() - rows[-1][0] > minutes * 60
+
+
 def fetch_series(sym, fixture):
     """Raw candles per timeframe for one Yahoo symbol (cached within a run)."""
     if sym not in _cache:
@@ -417,6 +477,27 @@ def fetch_series(sym, fixture):
         except Exception as e:
             print(sym, "monthly candles unavailable:", e)
             _cache[sym]["1mo"] = []
+        if fixture is None and sym in OKX_PERP and _session_open() and _stale(_cache[sym].get("1m")):
+            # Yahoo's intraday bars for this future stopped advancing while its quote stayed
+            # live (2026-11-27, see okx_candles). Take the intraday timeframes from the OKX
+            # perpetual instead; the daily and longer candles still come from Yahoo (its
+            # daily bars kept updating through the same incident), and the basis machinery
+            # in one() moves the perpetual onto the spot price exactly as it does futures.
+            try:
+                got = {}
+                for tf, bar in OKX_BARS.items():
+                    rows, vol = okx_candles(OKX_PERP[sym], bar, total=1600 if tf == "1h" else None)
+                    if rows:
+                        got[tf] = rows
+                        VOLUME[(sym, OKX_IV[tf])] = vol
+                if got.get("1m") and got["1m"][-1][0] > _cache[sym]["1m"][-1][0] + 900:
+                    yahoo_last = datetime.fromtimestamp(_cache[sym]["1m"][-1][0], timezone.utc)
+                    for tf, rows in got.items():
+                        _cache[sym][tf] = rows
+                    print(sym, "Yahoo intraday stale since", yahoo_last.isoformat(),
+                          "-> OKX perpetual candles in use")
+            except Exception as e:
+                print(sym, "OKX fallback unavailable:", e)
     return {tf: [r[:] for r in rows] for tf, rows in _cache[sym].items()}
 
 
@@ -437,6 +518,38 @@ def jxy_series(fixture):
             rows.append([t, 100 * o ** k, 100 * h ** k, 100 * l ** k, 100 * c ** k])
         if tf in ("1h", "1d") and len(rows) < 30:
             raise ValueError(f"JXY: only {len(rows)} aligned {tf} candles")
+        out[tf] = rows
+    return out
+
+
+DXY_PARTS = (("EURUSD=X", -0.576), ("JPY=X", 0.136), ("GBPUSD=X", -0.119),
+             ("CHF=X", 0.091), ("CAD=X", 0.091), ("SEK=X", 0.042))
+DXY_BASE = 50.14348112
+
+
+def dxy_computed(fixture):
+    """The dollar index rebuilt from its six FX components (the ICE formula), aligned by
+    timestamp like jxy_series. Fallback only: DX-Y.NYB has no OKX perpetual, and its Yahoo
+    intraday bars stopped in the same 2026-11-27 incident while the FX series stayed fresh.
+    The caller scales the result onto the last Yahoo close so the splice has no jump; the
+    daily and longer candles keep coming from Yahoo itself."""
+    comps = {s: fetch_series(s, fixture) for s, _ in DXY_PARTS}
+    out = {}
+    for tf, _, _ in TF_FETCH:
+        if tf in ("1d", "1w", "1mo"):
+            continue
+        maps = [{r[0]: r for r in comps[s][tf]} for s, _ in DXY_PARTS]
+        common = sorted(set.intersection(*(set(m) for m in maps)))
+        rows = []
+        for t in common:
+            o = h = l = c = DXY_BASE
+            for m, (_, w) in zip(maps, DXY_PARTS):
+                r = m[t]
+                o *= r[1] ** w
+                c *= r[4] ** w
+                h *= (r[2] if w > 0 else r[3]) ** w  # an inverse component's low lifts the index high
+                l *= (r[3] if w > 0 else r[2]) ** w
+            rows.append([t, o, h, l, c])
         out[tf] = rows
     return out
 
@@ -690,6 +803,22 @@ def slim(key, sym, fixture):
 
 def one(key, sym, spot_sym, fixture, prev=None):
     ser = jxy_series(fixture) if key == "jxy" else fetch_series(sym, fixture)
+    if key == "dxy" and fixture is None and _session_open() and _stale(ser.get("1m")):
+        # DX-Y.NYB intraday bars stopped (2026-11-27) and there is no perpetual to fall back
+        # to, so rebuild the intraday timeframes from the six fresh FX components, scaled
+        # onto the last Yahoo close so the splice has no jump.
+        try:
+            comp = dxy_computed(fixture)
+            ymap = {r[0]: r[4] for r in ser["1m"]}
+            scale = next((ymap[r[0]] / r[4] for r in reversed(comp["1m"]) if r[0] in ymap and r[4]), None)
+            if scale:
+                for tf in ("1m", "5m", "15m", "1h"):
+                    rows = [[r[0]] + [v * scale for v in r[1:]] for r in comp[tf]]
+                    if rows and rows[-1][0] > ser[tf][-1][0]:
+                        ser[tf] = rows
+                print("dxy Yahoo intraday stale -> computed from FX components, scale", round(scale, 6))
+        except Exception as e:
+            print("dxy computed fallback unavailable:", e)
     m1, m5, m15, h1, d1, w1, mo = (ser[tf] for tf in ("1m", "5m", "15m", "1h", "1d", "1w", "1mo"))
     # Futures trade above spot (XM/XS quote spot), so metals are moved onto the spot price by the
     # futures-to-spot gap. Without a spot quote this hour, the last known gap is reused for a while.
