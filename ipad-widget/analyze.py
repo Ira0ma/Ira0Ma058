@@ -440,17 +440,21 @@ def okx_candles(inst, bar, limit=300, total=None):
 
 
 def _session_open(now=None):
-    """Approximate CME Globex / ICE trading week in UTC: closed Fri 21:00 to Sun 22:00, plus a
-    daily halt 21:00-23:00 Mon-Thu. Outside the session a stale Yahoo intraday series is
-    expected (weekends, the daily break), and the fallbacks stay off so closed-market charts
-    keep their established shape."""
+    """Approximate CME Globex / ICE trading week in UTC, using the later (winter) clock so
+    no live hour is ever treated as closed: closed Fri 22:00 to Sun 22:00, plus a daily
+    halt 21:00-23:00 Mon-Thu (the halt spans both the summer and winter clock). Outside the
+    session a stale Yahoo intraday series is expected (weekends, the daily break), and the
+    fallbacks stay off so closed-market charts keep their established shape. (2026-11-28:
+    the Friday close was coded as 21:00, the summer clock, so on a winter Friday the
+    fallback switched off at 21:00 UTC while the market ran until 22:00 — and Yahoo's feed
+    had already died at 18:00, so the published bars fell back to 03:00 JST.)"""
     now = now or datetime.now(timezone.utc)
     wd, hh = now.weekday(), now.hour  # Mon=0 .. Sun=6
     if wd == 5:
         return False
     if wd == 6:
         return hh >= 22
-    if wd == 4 and hh >= 21:
+    if wd == 4 and hh >= 22:
         return False
     if wd in (0, 1, 2, 3) and 21 <= hh < 23:
         return False
@@ -484,11 +488,20 @@ def _hole(rows, hours=6, last_n=None):
     return False
 
 
-def _intraday_broken(ser):
-    """The intraday series cannot be published as-is: its last bar is stale, or a hole
-    sits inside the 1-minute or 1-hour publication window."""
-    return (_stale(ser.get("1m")) or _hole(ser.get("1m"), last_n=1500)
-            or _hole(ser.get("1h"), last_n=300))
+def _intraday_holed(ser):
+    """A hole sits inside the 1-minute or 1-hour publication window. Unlike staleness,
+    this needs no session gate: the hole detector already excludes weekend closures, so
+    a >6h in-week hole is a data defect at any hour. (2026-11-28: after the market
+    closed, Yahoo's series ended at 18:00 UTC with the hole still in its window; the
+    session gate kept the fallback off, so the Friday-evening bars never came back.)"""
+    return _hole(ser.get("1m"), last_n=1500) or _hole(ser.get("1h"), last_n=300)
+
+
+def _intraday_broken(ser, session_open):
+    """The intraday series cannot be published as-is: its last bar is stale during the
+    session, or a hole sits inside the publication window."""
+    return (_intraday_holed(ser)
+            or (session_open and _stale(ser.get("1m"))))
 
 
 def fetch_series(sym, fixture):
@@ -507,7 +520,7 @@ def fetch_series(sym, fixture):
         except Exception as e:
             print(sym, "monthly candles unavailable:", e)
             _cache[sym]["1mo"] = []
-        if fixture is None and sym in OKX_PERP and _session_open() and _intraday_broken(_cache[sym]):
+        if fixture is None and sym in OKX_PERP and _intraday_broken(_cache[sym], _session_open()):
             # Yahoo's intraday bars for this future stopped advancing while its quote stayed
             # live (2026-11-27, see okx_candles). Take the intraday timeframes from the OKX
             # perpetual instead; the daily and longer candles still come from Yahoo (its
@@ -835,7 +848,7 @@ def slim(key, sym, fixture):
 
 def one(key, sym, spot_sym, fixture, prev=None):
     ser = jxy_series(fixture) if key == "jxy" else fetch_series(sym, fixture)
-    if key == "dxy" and fixture is None and _session_open() and _intraday_broken(ser):
+    if key == "dxy" and fixture is None and _intraday_broken(ser, _session_open()):
         # DX-Y.NYB intraday bars stopped (2026-11-27) and there is no perpetual to fall back
         # to, so rebuild the intraday timeframes from the six fresh FX components, scaled
         # onto the last Yahoo close so the splice has no jump.
