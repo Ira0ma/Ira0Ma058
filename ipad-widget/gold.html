@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="6bb88d08b9">
+<meta name="build" content="aeab0eac34">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1483,7 +1483,16 @@ const SITE_FALLBACK_STATUS='https://raw.githubusercontent.com/Ira0ma/Ira0Ma058/d
 async function getSite(){
   if(siteCache.d&&Date.now()-siteCache.t<60000)return siteCache.d;
   const c=new AbortController(),timer=setTimeout(()=>c.abort(),12000);
+  let staleBackup=null;
   try{
+    // 主経路は予備データ（data-live）: Pages の公開工程を経由しないため、公開の反映が滞ってもデータが進む（2026-11-27 案1、C-10対策）。サイト側の market.json は予備に回した
+    try{
+      const fd=await getJSON(SITE_FALLBACK+'?t='+Math.floor(Date.now()/300000),12000);
+      if(fd?.instruments?.[INSTR.site]){
+        if(Date.now()-Date.parse(fd.updated||0)<=20*60000){siteFromBackup=true;siteUpdatedMs=Date.parse(fd.updated||0);siteCache={t:Date.now(),d:fd,tag:''};return fd}
+        staleBackup=fd;  // 予備が古い時だけ、サイト側と比べて新しい方を使う
+      }
+    }catch{}
     const r=await fetch(URLS.siteMarket+'?t='+Math.floor(Date.now()/300000),{cache:'default',signal:c.signal,headers:{'Accept':'application/json'}});  // バスターは5分単位（生成は約15分周期。毎分単位だとHTTPキャッシュが効かず約330KBを取り直し続けるため、2026-11-16監査で変更）
     const tag=(r.headers.get('etag')||'')+'|'+(r.headers.get('last-modified')||'');
     if(r.ok&&siteCache.d&&tag!=='|'&&tag===siteCache.tag){try{r.body&&r.body.cancel()}catch{}siteCache.t=Date.now();return siteCache.d}
@@ -1492,11 +1501,11 @@ async function getSite(){
     if(!r.ok)throw new Error(d?.message||d?.error||('HTTP '+r.status));
     if(!d?.instruments?.[INSTR.site])throw new Error(INSTR.site+' missing');
     siteFromBackup=false;
-    if(Date.now()-Date.parse(d.updated||0)>20*60000){try{const fd=await getJSON(SITE_FALLBACK+'?t='+Math.floor(Date.now()/300000),12000);if(fd?.instruments?.[INSTR.site]&&Date.parse(fd.updated||0)>Date.parse(d.updated||0)){d=fd;siteFromBackup=true}}catch{}}
+    if(staleBackup&&Date.parse(staleBackup.updated||0)>Date.parse(d.updated||0)){d=staleBackup;siteFromBackup=true}
     siteUpdatedMs=Date.parse(d.updated||0);
     siteCache={t:Date.now(),d,tag};return d;
   }catch(e){
-    try{const fd=await getJSON(SITE_FALLBACK+'?t='+Math.floor(Date.now()/300000),12000);if(fd?.instruments?.[INSTR.site]){siteFromBackup=true;siteUpdatedMs=Date.parse(fd.updated||0);siteCache={t:Date.now(),d:fd,tag:''};return fd}}catch{}
+    if(staleBackup){siteFromBackup=true;siteUpdatedMs=Date.parse(staleBackup.updated||0);siteCache={t:Date.now(),d:staleBackup,tag:''};return staleBackup}
     throw e;
   }finally{clearTimeout(timer)}
 }
@@ -5285,7 +5294,7 @@ function renderAll(){
   const risk=calcRisk();
   renderChecks(risk,reb);updateCaution();
   $('lastUpdate').textContent=state.lastOk?localTime(state.lastOk):'--';
-  const ssEl=$('siteSrc');if(ssEl&&siteUpdatedMs){ssEl.textContent='土台データ：'+(siteFromBackup?'予備を表示中':'本番')+'（'+localTime(siteUpdatedMs)+'）';ssEl.classList.toggle('srcbk',siteFromBackup)}
+  const ssEl=$('siteSrc');if(ssEl&&siteUpdatedMs){ssEl.textContent='土台データ：'+(siteFromBackup?'data-live 配信':'サイト配信')+'（'+localTime(siteUpdatedMs)+'）';ssEl.classList.toggle('srcbk',siteFromBackup)}
   const S=state.src,ok=(k,v)=>v?`${k} ✓ ${v}`:`${k} ✕ 未接続`;
   $('srcLine').textContent='データ接続状況：'+[ok('価格',S.spot),ok('チャート',S.chart)].concat(!IS_FX?[ok('ドル円',S.fx)]:[],[ok('経済指標',S.calendar)]).join('　')+(state.src.spot?'｜いまの価格の取得先：'+state.src.spot:'');  // 札と同じ取得先
   updateNotice();
