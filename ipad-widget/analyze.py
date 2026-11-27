@@ -461,6 +461,36 @@ def _stale(rows, minutes=30):
     return bool(rows) and time.time() - rows[-1][0] > minutes * 60
 
 
+def _hole(rows, hours=6, last_n=None):
+    """A gap of more than `hours` inside the published window that no scheduled closure
+    explains: the daily halt is about an hour, and the weekend gap starts on Friday
+    evening. Yahoo resumed after the 2026-11-27 freeze without backfilling, leaving a
+    33.5-hour hole (2026-11-26 04:58 to 11-27 14:30 UTC) behind a fresh last bar, plus
+    two off-grid hour bars — a defect the staleness check alone cannot see. Only the
+    last `last_n` rows are judged, matching the window each timeframe publishes, so a
+    hole stops engaging the fallback once it slides out of view."""
+    if not rows:
+        return False
+    rows = rows[-last_n:] if last_n else rows
+    limit = hours * 3600
+    for a, b in zip(rows, rows[1:]):
+        if b[0] - a[0] > limit:
+            start = datetime.fromtimestamp(a[0], timezone.utc)
+            if start.weekday() == 4 and start.hour >= 20:
+                continue  # the weekend closure
+            if start.weekday() in (5, 6):
+                continue
+            return True
+    return False
+
+
+def _intraday_broken(ser):
+    """The intraday series cannot be published as-is: its last bar is stale, or a hole
+    sits inside the 1-minute or 1-hour publication window."""
+    return (_stale(ser.get("1m")) or _hole(ser.get("1m"), last_n=1500)
+            or _hole(ser.get("1h"), last_n=300))
+
+
 def fetch_series(sym, fixture):
     """Raw candles per timeframe for one Yahoo symbol (cached within a run)."""
     if sym not in _cache:
@@ -477,7 +507,7 @@ def fetch_series(sym, fixture):
         except Exception as e:
             print(sym, "monthly candles unavailable:", e)
             _cache[sym]["1mo"] = []
-        if fixture is None and sym in OKX_PERP and _session_open() and _stale(_cache[sym].get("1m")):
+        if fixture is None and sym in OKX_PERP and _session_open() and _intraday_broken(_cache[sym]):
             # Yahoo's intraday bars for this future stopped advancing while its quote stayed
             # live (2026-11-27, see okx_candles). Take the intraday timeframes from the OKX
             # perpetual instead; the daily and longer candles still come from Yahoo (its
@@ -490,11 +520,13 @@ def fetch_series(sym, fixture):
                     if rows:
                         got[tf] = rows
                         VOLUME[(sym, OKX_IV[tf])] = vol
-                if got.get("1m") and got["1m"][-1][0] > _cache[sym]["1m"][-1][0] + 900:
+                # OKX must not lag Yahoo materially; it need not be newer — in the hole
+                # case Yahoo's tail is fresh and OKX's value is its continuity.
+                if got.get("1m") and got["1m"][-1][0] > _cache[sym]["1m"][-1][0] - 900:
                     yahoo_last = datetime.fromtimestamp(_cache[sym]["1m"][-1][0], timezone.utc)
                     for tf, rows in got.items():
                         _cache[sym][tf] = rows
-                    print(sym, "Yahoo intraday stale since", yahoo_last.isoformat(),
+                    print(sym, "Yahoo intraday stale or holed (last bar", yahoo_last.isoformat() + ")",
                           "-> OKX perpetual candles in use")
             except Exception as e:
                 print(sym, "OKX fallback unavailable:", e)
@@ -803,7 +835,7 @@ def slim(key, sym, fixture):
 
 def one(key, sym, spot_sym, fixture, prev=None):
     ser = jxy_series(fixture) if key == "jxy" else fetch_series(sym, fixture)
-    if key == "dxy" and fixture is None and _session_open() and _stale(ser.get("1m")):
+    if key == "dxy" and fixture is None and _session_open() and _intraday_broken(ser):
         # DX-Y.NYB intraday bars stopped (2026-11-27) and there is no perpetual to fall back
         # to, so rebuild the intraday timeframes from the six fresh FX components, scaled
         # onto the last Yahoo close so the splice has no jump.
@@ -814,9 +846,9 @@ def one(key, sym, spot_sym, fixture, prev=None):
             if scale:
                 for tf in ("1m", "5m", "15m", "1h"):
                     rows = [[r[0]] + [v * scale for v in r[1:]] for r in comp[tf]]
-                    if rows and rows[-1][0] > ser[tf][-1][0]:
+                    if rows and rows[-1][0] >= ser[tf][-1][0] - 900:
                         ser[tf] = rows
-                print("dxy Yahoo intraday stale -> computed from FX components, scale", round(scale, 6))
+                print("dxy Yahoo intraday stale or holed -> computed from FX components, scale", round(scale, 6))
         except Exception as e:
             print("dxy computed fallback unavailable:", e)
     m1, m5, m15, h1, d1, w1, mo = (ser[tf] for tf in ("1m", "5m", "15m", "1h", "1d", "1w", "1mo"))
