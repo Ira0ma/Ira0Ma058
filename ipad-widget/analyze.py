@@ -417,7 +417,10 @@ def build(fixture=None, prev=None):
 _cache = {}
 
 
-OKX_PERP = {"GC=F": "XAU-USDT-SWAP", "SI=F": "XAG-USDT-SWAP", "CL=F": "CL-USDT-SWAP"}
+OKX_PERP = {"GC=F": "XAU-USDT-SWAP", "SI=F": "XAG-USDT-SWAP", "CL=F": "CL-USDT-SWAP",
+             "BTC-USD": "BTC-USDT-SWAP"}  # 2026-11-28: Yahoo's BTC-USD intraday developed a hole
+# (20:00-23:00 UTC bars missing behind a fresh tail) and the published 1h fell back to
+# 04:00 JST; BTC trades around the clock, so it gets the same perpetual fallback.
 OKX_BARS = {"1m": "1m", "5m": "5m", "15m": "15m", "1h": "1H"}
 OKX_IV = {"1m": "1m", "5m": "5m", "15m": "15m", "1h": "60m"}  # Yahoo interval names, for VOLUME
 
@@ -428,7 +431,9 @@ def okx_candles(inst, bar, limit=300, total=None):
     fallback candle source when Yahoo's intraday series stops advancing: on 2026-11-27 Yahoo
     published no GC=F / SI=F / CL=F / DX-Y intraday bars after the pre-Thanksgiving session
     (last bar 2026-11-26 04:58 UTC) while its quotes stayed live, which froze those four
-    instruments' candles for over a day with the spot price still moving.
+    instruments' candles for over a day with the spot price still moving; on 2026-11-28
+    Yahoo's BTC-USD intraday developed a hole (20:00-23:00 UTC bars missing behind a fresh
+    tail) and the published 1h fell back to 04:00 JST.
     With total > limit, older bars are paged in from the history endpoint: the hourly series
     needs more than 1440 bars or one() stops rebuilding the daily candles from hours and the
     published dailies fall back to Yahoo's raw futures-basis series."""
@@ -481,14 +486,16 @@ def _stale(rows, minutes=30):
     return bool(rows) and time.time() - rows[-1][0] > minutes * 60
 
 
-def _hole(rows, hours=6, last_n=None):
+def _hole(rows, hours=6, last_n=None, skip_weekend=True):
     """A gap of more than `hours` inside the published window that no scheduled closure
     explains: the daily halt is about an hour, and the weekend gap starts on Friday
     evening. Yahoo resumed after the 2026-11-27 freeze without backfilling, leaving a
     33.5-hour hole (2026-11-26 04:58 to 11-27 14:30 UTC) behind a fresh last bar, plus
     two off-grid hour bars — a defect the staleness check alone cannot see. Only the
     last `last_n` rows are judged, matching the window each timeframe publishes, so a
-    hole stops engaging the fallback once it slides out of view."""
+    hole stops engaging the fallback once it slides out of view. `skip_weekend` is False
+    for instruments that trade through the weekend (BTC): a Saturday gap is a defect
+    for them, not a closure."""
     if not rows:
         return False
     rows = rows[-last_n:] if last_n else rows
@@ -496,6 +503,8 @@ def _hole(rows, hours=6, last_n=None):
     for a, b in zip(rows, rows[1:]):
         if b[0] - a[0] > limit:
             start = datetime.fromtimestamp(a[0], timezone.utc)
+            if not skip_weekend:
+                return True
             if start.weekday() == 4 and start.hour >= 20:
                 continue  # the weekend closure
             if start.weekday() in (5, 6):
@@ -504,19 +513,23 @@ def _hole(rows, hours=6, last_n=None):
     return False
 
 
-def _intraday_holed(ser):
+def _intraday_holed(ser, skip_weekend=True, hole_hours=6):
     """A hole sits inside the 1-minute or 1-hour publication window. Unlike staleness,
     this needs no session gate: the hole detector already excludes weekend closures, so
     a >6h in-week hole is a data defect at any hour. (2026-11-28: after the market
     closed, Yahoo's series ended at 18:00 UTC with the hole still in its window; the
-    session gate kept the fallback off, so the Friday-evening bars never came back.)"""
-    return _hole(ser.get("1m"), last_n=1500) or _hole(ser.get("1h"), last_n=300)
+    session gate kept the fallback off, so the Friday-evening bars never came back.)
+    `hole_hours` is 1.5 for instruments that trade around the clock (BTC): with no
+    daily halt and no weekend closure, even one missing hour bar is a defect — the
+    2026-11-28 BTC hole was only a 5-hour gap in the 1h series and slipped past the
+    6-hour bar that fits halted futures."""
+    return _hole(ser.get("1m"), hours=hole_hours, last_n=1500, skip_weekend=skip_weekend) or _hole(ser.get("1h"), hours=hole_hours, last_n=300, skip_weekend=skip_weekend)
 
 
-def _intraday_broken(ser, session_open):
+def _intraday_broken(ser, session_open, skip_weekend=True, hole_hours=6):
     """The intraday series cannot be published as-is: its last bar is stale during the
     session, or a hole sits inside the publication window."""
-    return (_intraday_holed(ser)
+    return (_intraday_holed(ser, skip_weekend, hole_hours)
             or (session_open and _stale(ser.get("1m"))))
 
 
@@ -536,8 +549,12 @@ def fetch_series(sym, fixture):
         except Exception as e:
             print(sym, "monthly candles unavailable:", e)
             _cache[sym]["1mo"] = []
-        if fixture is None and sym in OKX_PERP and _intraday_broken(_cache[sym], _session_open()):
-            # Yahoo's intraday bars for this future stopped advancing while its quote stayed
+        # BTC trades around the clock, so its session is always open: on a weekend a
+        # stale Yahoo BTC series is a defect, not a closure; and a weekend gap is a
+        # hole, not the market being shut (2026-11-28 BTC hole incident).
+        session_open = True if sym == "BTC-USD" else _session_open()
+        if fixture is None and sym in OKX_PERP and _intraday_broken(_cache[sym], session_open, skip_weekend=(sym != "BTC-USD"), hole_hours=1.5 if sym == "BTC-USD" else 6):
+            # Yahoo's intraday bars for this symbol stopped advancing while its quote stayed
             # live (2026-11-27, see okx_candles). Take the intraday timeframes from the OKX
             # perpetual instead; the daily and longer candles still come from Yahoo (its
             # daily bars kept updating through the same incident), and the basis machinery
